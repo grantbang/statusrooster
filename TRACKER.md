@@ -1,7 +1,6 @@
-# Status### Day 1 — S### Day 2 — Monitors & Check Engine ✅affolding & Auth ✅ooster Build Tracker 🐓
+# Statu### Day 1 — S### Day 2 — Monitors & Check Engine ✅affolding & Auth ✅Rooster Build Tracker 🐓
 
-**Start:** Feb 25, 2026 · **Target Launch:** Mar 7, 2026
-
+**Start:** Feb 25, 2026 · **Target Launch:** Mar 7, 202| 1. Core Engine | 1-4 | 🟡 In progress |
 ---
 
 ## Phase 1: Core Engine — Days 1-4
@@ -34,15 +33,15 @@
 - [x] Cron auth: verify request comes from Cloud Scheduler (header or shared secret)
 
 ### Day 3 — Alerts & Incidents 🔲
-- [ ] Incident model + Firestore CRUD (create, resolve, list by monitor)
-- [ ] Status change detection: compare previous status vs current
-- [ ] On UP→DOWN: create incident, trigger alerts
-- [ ] On DOWN→UP: resolve incident (set `resolved_at`, calculate duration), send recovery alert
-- [ ] Alert deduplication: don't re-alert for same ongoing incident
-- [ ] SendGrid email alert (down notification — site, time, status code)
-- [ ] SendGrid email alert (recovery notification — site, duration)
-- [ ] Slack webhook alert (down + recovery, formatted message)
-- [ ] Alert service abstraction (easy to add SMS later)
+- [x] Incident model + Firestore CRUD (create, resolve, list by monitor)
+- [x] Status change detection: compare previous status vs current
+- [x] On UP→DOWN: create incident, trigger alerts
+- [x] On DOWN→UP: resolve incident (set `resolved_at`, calculate duration), send recovery alert
+- [x] Alert deduplication: don't re-alert for same ongoing incident
+- [x] SendGrid email alert (down notification — site, time, status code)
+- [x] SendGrid email alert (recovery notification — site, duration)
+- [x] Slack webhook alert (down + recovery, formatted message)
+- [x] Alert service abstraction (easy to add SMS later)
 - [ ] Test with real SendGrid + Slack webhook
 
 ### Day 4 — Dashboard UI 🔲
@@ -160,4 +159,4 @@
 | 3. Launch Prep | 9-10 | 🔲 Not started |
 | 4. Post-Launch | 11-14 | 🔲 Not started |
 
-**Current Day: 2** · **Current Phase: 1**
+**Current Day: 3** · **Current Phase: 1**

@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from app.database import get_db
 from app.models.monitor import get_all_monitors, update_monitor
 from app.models.check import create_check
+from app.models.incident import create_incident, resolve_incident, get_open_incident
+from app.services.alerts import send_down_alert, send_recovery_alert
 
 
 async def check_url(url: str, timeout: float = 10.0) -> dict:
@@ -91,9 +93,39 @@ async def run_checks():
         else:
             results["down"] += 1
 
-        # Store status change info for alert processing (Day 3)
-        result["previous_status"] = previous_status
-        result["new_status"] = new_status
-        result["monitor"] = monitor
+        # ----- Status change detection + Incidents + Alerts -----
+        status_changed = (
+            previous_status != new_status
+            and previous_status != "pending"  # Don't alert on first check
+        )
+
+        if status_changed and new_status == "down":
+            # UP → DOWN: Check for existing open incident (deduplication)
+            existing = get_open_incident(db, monitor["id"])
+            if existing is None:
+                # Create new incident
+                incident = create_incident(
+                    db,
+                    monitor_id=monitor["id"],
+                    monitor_name=monitor.get("name", ""),
+                    monitor_url=monitor.get("url", ""),
+                    status_code=result["status_code"],
+                    response_ms=result["response_ms"],
+                )
+                # Trigger down alerts
+                await send_down_alert(monitor, incident)
+                print(f"[checker] INCIDENT CREATED: {monitor['name']} is DOWN")
+            else:
+                print(f"[checker] {monitor['name']} still DOWN — incident already open, skipping alert")
+
+        elif status_changed and new_status == "up":
+            # DOWN → UP: Resolve open incident
+            open_incident = get_open_incident(db, monitor["id"])
+            if open_incident:
+                resolved = resolve_incident(db, open_incident["id"])
+                # Trigger recovery alerts
+                await send_recovery_alert(monitor, resolved)
+                duration = resolved.get("duration_seconds", 0)
+                print(f"[checker] INCIDENT RESOLVED: {monitor['name']} is UP (down for {duration}s)")
 
     return results
