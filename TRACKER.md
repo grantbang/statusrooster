@@ -1,4 +1,4 @@
-# Status### Day 1 — Scaffolding & Auth ✅ooster Build Tracker 🐓
+# Status### Day 1 — S### Day 2 — Monitors & Check Engine ✅affolding & Auth ✅ooster Build Tracker 🐓
 
 **Start:** Feb 25, 2026 · **Target Launch:** Mar 7, 2026
 
@@ -19,19 +19,19 @@
 - [x] Health check endpoint (`/health`)
 - [x] Deploy skeleton to Cloud Run (app starts, `/health` returns 200)
 
-### Day 2 — Monitors & Check Engine 🔲
-- [ ] Monitor model + Firestore CRUD (create, list by user, get, update, delete)
-- [ ] Plan enforcement: free users capped at 5 monitors
-- [ ] `POST /api/monitors` — create monitor (validate URL, generate slug)
-- [ ] `GET /api/monitors` — list user's monitors
-- [ ] `PUT /api/monitors/{id}` — update monitor
-- [ ] `DELETE /api/monitors/{id}` — delete monitor + cleanup checks
-- [ ] HTTP check function (GET with timeout, measure response_ms, capture status code)
-- [ ] False positive prevention: retry once after 5s before marking down
-- [ ] `POST /cron/check` — iterate all monitors, run checks, write results to Firestore
-- [ ] Update monitor doc after each check (status, last_checked, response_ms, uptime%)
-- [ ] Cloud Scheduler job: hits `/cron/check` every 60 seconds
-- [ ] Cron auth: verify request comes from Cloud Scheduler (header or shared secret)
+### Day 2 — Monitors & Check Engine �
+- [x] Monitor model + Firestore CRUD (create, list by user, get, update, delete)
+- [x] Plan enforcement: free users capped at 5 monitors
+- [x] `POST /api/monitors` — create monitor (validate URL, generate slug)
+- [x] `GET /api/monitors` — list user's monitors
+- [x] `PUT /api/monitors/{id}` — update monitor
+- [x] `DELETE /api/monitors/{id}` — delete monitor + cleanup checks
+- [x] HTTP check function (GET with timeout, measure response_ms, capture status code)
+- [x] False positive prevention: retry once after 5s before marking down
+- [x] `POST /cron/check` — iterate all monitors, run checks, write results to Firestore
+- [x] Update monitor doc after each check (status, last_checked, response_ms, uptime%)
+- [x] Cloud Scheduler job: hits `/cron/check` every 60 seconds
+- [x] Cron auth: verify request comes from Cloud Scheduler (header or shared secret)
 
 ### Day 3 — Alerts & Incidents 🔲
 - [ ] Incident model + Firestore CRUD (create, resolve, list by monitor)
@@ -160,4 +160,4 @@
 | 3. Launch Prep | 9-10 | 🔲 Not started |
 | 4. Post-Launch | 11-14 | 🔲 Not started |
 
-**Current Day: 1** · **Current Phase: 1**
+**Current Day: 2** · **Current Phase: 1**

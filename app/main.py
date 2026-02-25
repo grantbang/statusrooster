@@ -1,13 +1,15 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from app.routers import auth
+from app.routers import auth, monitors, cron
 import os
 
 app = FastAPI(title="StatusRooster", version="0.1.0")
 
 # Routers
 app.include_router(auth.router)
+app.include_router(monitors.router)
+app.include_router(cron.router)
 
 # Static files
 static_dir = os.path.join(os.path.dirname(__file__), "static")
