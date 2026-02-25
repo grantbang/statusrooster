@@ -8,7 +8,7 @@
 
 ### Day 1 — Scaffolding & Auth �
 - [x] FastAPI project structure (`app/`, `routers/`, `services/`, `templates/`, `static/`)
-- [ ] `requirements.txt` + `Dockerfile` + `.dockerignore`
+- [x] `requirements.txt` + `Dockerfile` + `.dockerignore`
 - [ ] Config/settings module (loads `.env`)
 - [ ] Firestore client singleton
 - [ ] User model + Firestore CRUD (create, get by email, get by ID)
