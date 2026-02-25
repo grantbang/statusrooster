@@ -15,8 +15,8 @@
 - [x] Auth: signup endpoint (email + password, bcrypt hash)
 - [x] Auth: login endpoint (verify password, return JWT)
 - [x] Auth: JWT middleware (protect routes, extract current user)
-- [ ] Base Jinja2 template (`base.html` — nav, footer, block content)
-- [ ] Health check endpoint (`/health`)
+- [x] Base Jinja2 template (`base.html` — nav, footer, block content)
+- [x] Health check endpoint (`/health`)
 - [ ] Deploy skeleton to Cloud Run (app starts, `/health` returns 200)
 
 ### Day 2 — Monitors & Check Engine 🔲
