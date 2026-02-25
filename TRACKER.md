@@ -1,4 +1,4 @@
-# StatusRooster Build Tracker 🐓
+# Status### Day 1 — Scaffolding & Auth ✅ooster Build Tracker 🐓
 
 **Start:** Feb 25, 2026 · **Target Launch:** Mar 7, 2026
 
@@ -17,7 +17,7 @@
 - [x] Auth: JWT middleware (protect routes, extract current user)
 - [x] Base Jinja2 template (`base.html` — nav, footer, block content)
 - [x] Health check endpoint (`/health`)
-- [ ] Deploy skeleton to Cloud Run (app starts, `/health` returns 200)
+- [x] Deploy skeleton to Cloud Run (app starts, `/health` returns 200)
 
 ### Day 2 — Monitors & Check Engine 🔲
 - [ ] Monitor model + Firestore CRUD (create, list by user, get, update, delete)
@@ -155,7 +155,7 @@
 
 | Phase | Days | Status |
 |-------|------|--------|
-| 1. Core Engine | 1-4 | 🔲 Not started |
+| 1. Core Engine | 1-4 | � In progress |
 | 2. Status Pages & Billing | 5-8 | 🔲 Not started |
 | 3. Launch Prep | 9-10 | 🔲 Not started |
 | 4. Post-Launch | 11-14 | 🔲 Not started |
