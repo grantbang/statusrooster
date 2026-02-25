@@ -9,12 +9,12 @@
 ### Day 1 — Scaffolding & Auth �
 - [x] FastAPI project structure (`app/`, `routers/`, `services/`, `templates/`, `static/`)
 - [x] `requirements.txt` + `Dockerfile` + `.dockerignore`
-- [ ] Config/settings module (loads `.env`)
-- [ ] Firestore client singleton
-- [ ] User model + Firestore CRUD (create, get by email, get by ID)
-- [ ] Auth: signup endpoint (email + password, bcrypt hash)
-- [ ] Auth: login endpoint (verify password, return JWT)
-- [ ] Auth: JWT middleware (protect routes, extract current user)
+- [x] Config/settings module (loads `.env`)
+- [x] Firestore client singleton
+- [x] User model + Firestore CRUD (create, get by email, get by ID)
+- [x] Auth: signup endpoint (email + password, bcrypt hash)
+- [x] Auth: login endpoint (verify password, return JWT)
+- [x] Auth: JWT middleware (protect routes, extract current user)
 - [ ] Base Jinja2 template (`base.html` — nav, footer, block content)
 - [ ] Health check endpoint (`/health`)
 - [ ] Deploy skeleton to Cloud Run (app starts, `/health` returns 200)
@@ -103,6 +103,7 @@
 - [ ] Meta tags (title, description, OG image) on all public pages
 - [ ] Favicon + basic branding
 - [ ] Logout functionality
+- [ ] Password reset flow (forgot password → email link → reset form)
 - [ ] Loading states / disabled buttons on form submit
 
 **✅ Day 8 Checkpoint:** Full product. Signup → monitor → alerts → status page → upgrade → manage subscription.
