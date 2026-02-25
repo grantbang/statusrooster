@@ -6,8 +6,8 @@
 
 ## Phase 1: Core Engine — Days 1-4
 
-### Day 1 — Scaffolding & Auth 🔲
-- [ ] FastAPI project structure (`app/`, `routers/`, `services/`, `templates/`, `static/`)
+### Day 1 — Scaffolding & Auth �
+- [x] FastAPI project structure (`app/`, `routers/`, `services/`, `templates/`, `static/`)
 - [ ] `requirements.txt` + `Dockerfile` + `.dockerignore`
 - [ ] Config/settings module (loads `.env`)
 - [ ] Firestore client singleton
