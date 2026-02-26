@@ -1,11 +1,11 @@
-# Statu### Day 1 — S### Day 2 — Monitors & Check Engine ✅affolding & Auth ✅Rooster Build Tracker 🐓
+# StatusRooster Build Tracker 🐓
 
-**Start:** Feb 25, 2026 · **Target Launch:** Mar 7, 202| 1. Core Engine | 1-4 | 🟡 In progress |
+**Start:** Feb 25, 2026 · **Target Launch:** Mar 7, 2026
 ---
 
 ## Phase 1: Core Engine — Days 1-4
 
-### Day 1 — Scaffolding & Auth �
+### Day 1 — Scaffolding & Auth ✅
 - [x] FastAPI project structure (`app/`, `routers/`, `services/`, `templates/`, `static/`)
 - [x] `requirements.txt` + `Dockerfile` + `.dockerignore`
 - [x] Config/settings module (loads `.env`)
@@ -18,7 +18,7 @@
 - [x] Health check endpoint (`/health`)
 - [x] Deploy skeleton to Cloud Run (app starts, `/health` returns 200)
 
-### Day 2 — Monitors & Check Engine �
+### Day 2 — Monitors & Check Engine ✅
 - [x] Monitor model + Firestore CRUD (create, list by user, get, update, delete)
 - [x] Plan enforcement: free users capped at 5 monitors
 - [x] `POST /api/monitors` — create monitor (validate URL, generate slug)
@@ -32,7 +32,7 @@
 - [x] Cloud Scheduler job: hits `/cron/check` every 60 seconds
 - [x] Cron auth: verify request comes from Cloud Scheduler (header or shared secret)
 
-### Day 3 — Alerts & Incidents 🔲
+### Day 3 — Alerts & Incidents ✅
 - [x] Incident model + Firestore CRUD (create, resolve, list by monitor)
 - [x] Status change detection: compare previous status vs current
 - [x] On UP→DOWN: create incident, trigger alerts
@@ -42,7 +42,7 @@
 - [x] SendGrid email alert (recovery notification — site, duration)
 - [x] Slack webhook alert (down + recovery, formatted message)
 - [x] Alert service abstraction (easy to add SMS later)
-- [ ] Test with real SendGrid + Slack webhook
+- [x] Test with real SendGrid + Slack webhook
 
 ### Day 4 — Dashboard UI 🔲
 - [ ] Signup page (`/signup` — form, validation, redirect to dashboard)
@@ -154,9 +154,9 @@
 
 | Phase | Days | Status |
 |-------|------|--------|
-| 1. Core Engine | 1-4 | � In progress |
+| 1. Core Engine | 1-4 | 🟡 In progress |
 | 2. Status Pages & Billing | 5-8 | 🔲 Not started |
 | 3. Launch Prep | 9-10 | 🔲 Not started |
 | 4. Post-Launch | 11-14 | 🔲 Not started |
 
-**Current Day: 3** · **Current Phase: 1**
+**Current Day: 4** · **Current Phase: 1**

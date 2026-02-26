@@ -94,10 +94,7 @@ async def run_checks():
             results["down"] += 1
 
         # ----- Status change detection + Incidents + Alerts -----
-        status_changed = (
-            previous_status != new_status
-            and previous_status != "pending"  # Don't alert on first check
-        )
+        status_changed = previous_status != new_status
 
         if status_changed and new_status == "down":
             # UP → DOWN: Check for existing open incident (deduplication)
