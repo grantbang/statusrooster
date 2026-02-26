@@ -160,3 +160,15 @@
 | 4. Post-Launch | 11-14 | 🔲 Not started |
 
 **Current Day: 4** · **Current Phase: 1**
+
+---
+
+## 🔧 Next Session: Domain & Email Setup (~20 min)
+- [ ] Point `statusrooster.com` DNS to Cloud Run (A/AAAA records or CNAME)
+- [ ] Map custom domain in Cloud Run (`gcloud run domain-mappings create`)
+- [ ] SSL certificate provisioned (automatic via Cloud Run)
+- [ ] SendGrid domain authentication (add CNAME records for `statusrooster.com`)
+- [ ] Update `SENDGRID_FROM_EMAIL` to `alerts@statusrooster.com`
+- [ ] Email forwarding: `alerts@statusrooster.com` → `gjbangerter@gmail.com` (Namecheap)
+- [ ] Test email delivery end-to-end (confirm inbox, not spam)
+- [ ] Update `APP_URL` env var to `https://statusrooster.com`
