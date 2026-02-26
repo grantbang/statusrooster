@@ -163,12 +163,12 @@
 
 ---
 
-## 🔧 Next Session: Domain & Email Setup (~20 min)
-- [ ] Point `statusrooster.com` DNS to Cloud Run (A/AAAA records or CNAME)
-- [ ] Map custom domain in Cloud Run (`gcloud run domain-mappings create`)
-- [ ] SSL certificate provisioned (automatic via Cloud Run)
-- [ ] SendGrid domain authentication (add CNAME records for `statusrooster.com`)
-- [ ] Update `SENDGRID_FROM_EMAIL` to `alerts@statusrooster.com`
-- [ ] Email forwarding: `alerts@statusrooster.com` → `gjbangerter@gmail.com` (Namecheap)
-- [ ] Test email delivery end-to-end (confirm inbox, not spam)
-- [ ] Update `APP_URL` env var to `https://statusrooster.com`
+## 🔧 Domain & Email Setup ✅
+- [x] Point `statusrooster.com` DNS to Cloud Run (4x A records)
+- [x] Map custom domain in Cloud Run (`gcloud run domain-mappings create`)
+- [x] SSL certificate provisioned (automatic via Cloud Run)
+- [x] SendGrid domain authentication (3x CNAME records validated)
+- [x] Update `SENDGRID_FROM_EMAIL` to `alerts@statusrooster.com`
+- [x] Email forwarding: catch-all `*@statusrooster.com` → `gjbangerter@gmail.com` (Namecheap)
+- [x] Test email delivery end-to-end (confirmed inbox delivery, not spam!)
+- [x] Update `APP_URL` env var to `https://statusrooster.com`
