@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+
+{% block title %}{{ monitor.name }}{% endblock %}
+
+{% block extra_css %}
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+.detail-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.detail-title h1 {
+    font-size: 1.5rem;
+}
+.detail-url {
+    color: #888;
+    font-size: 0.85rem;
+    word-break: break-all;
+}
+.detail-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Status Banner */
+.status-banner {
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1rem;
+}
+.status-up {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+.status-down {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+.status-pending {
+    background: #f0f0f0;
+    color: #666;
+    border: 1px solid #e0e0e0;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+.stat-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    text-align: center;
+}
+.stat-card .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+.stat-card .label {
+    font-size: 0.75rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.25rem;
+}
+
+/* Chart */
+.chart-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    margin-bottom: 2rem;
+}
+.chart-card h2 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+/* Alert Settings */
+.settings-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    margin-bottom: 2rem;
+}
+.settings-card h2 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: #333;
+}
+.setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.9rem;
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-label {
+    font-weight: 600;
+    color: #555;
+}
+.setting-value {
+    color: #888;
+    font-family: monospace;
+    font-size: 0.85rem;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.setting-value.active { color: #2d6a4f; }
+.setting-value.inactive { color: #ccc; font-style: italic; }
+
+/* Incidents */
+.incidents-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+}
+.incidents-card h2 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: #333;
+}
+.incident-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+}
+.incident-item:last-child { border-bottom: none; }
+.incident-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.incident-time {
+    color: #888;
+}
+.incident-duration {
+    color: #666;
+    font-weight: 600;
+}
+.no-incidents {
+    color: #999;
+    font-size: 0.9rem;
+    padding: 1rem 0;
+}
+
+@media (max-width: 640px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .detail-header { flex-direction: column; gap: 1rem; }
+}
+{% endblock %}
+
+{% block content %}
+<div class="detail-header">
+    <div>
+        <div class="detail-title">
+            <span style="font-size: 1.5rem;">
+                {% if monitor.status == 'up' %}🟢
+                {% elif monitor.status == 'down' %}🔴
+                {% else %}⚪{% endif %}
+            </span>
+            <h1>{{ monitor.name }}</h1>
+        </div>
+        <div class="detail-url">{{ monitor.url }}</div>
+    </div>
+    <div class="detail-actions">
+        <a href="/monitors/{{ monitor.id }}/edit" class="btn btn-secondary">✏️ Edit</a>
+        <a href="/dashboard" class="btn btn-secondary">← Back</a>
+    </div>
+</div>
+
+<!-- Status Banner -->
+<div class="status-banner status-{{ monitor.status }}">
+    {% if monitor.status == 'up' %}
+        🟢 Currently UP — all good!
+    {% elif monitor.status == 'down' %}
+        🔴 Currently DOWN — we're alerting you
+    {% else %}
+        ⚪ Pending — waiting for first check
+    {% endif %}
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="value">{{ monitor.uptime_percent | default(100) }}%</div>
+        <div class="label">Uptime</div>
+    </div>
+    <div class="stat-card">
+        <div class="value">{{ monitor.last_response_ms | default('—') }}{{ 'ms' if monitor.last_response_ms }}</div>
+        <div class="label">Last Response</div>
+    </div>
+    <div class="stat-card">
+        <div class="value">{{ monitor.checks_total | default(0) }}</div>
+        <div class="label">Total Checks</div>
+    </div>
+    <div class="stat-card">
+        <div class="value">{{ monitor.last_status_code | default('—') }}</div>
+        <div class="label">Status Code</div>
+    </div>
+</div>
+
+<!-- Response Time Chart -->
+<div class="chart-card">
+    <h2>📈 Response Time (Last 24h)</h2>
+    <canvas id="responseChart" height="100"></canvas>
+</div>
+
+<!-- Alert Settings -->
+<div class="settings-card">
+    <h2>🔔 Alert Settings</h2>
+    <div class="setting-row">
+        <span class="setting-label">📧 Email</span>
+        <span class="setting-value {{ 'active' if monitor.alert_email else 'inactive' }}">
+            {{ monitor.alert_email or 'Not configured' }}
+        </span>
+    </div>
+    <div class="setting-row">
+        <span class="setting-label">💬 Slack</span>
+        <span class="setting-value {{ 'active' if monitor.alert_slack_webhook else 'inactive' }}">
+            {{ 'Connected' if monitor.alert_slack_webhook else 'Not configured' }}
+        </span>
+    </div>
+    <div class="setting-row">
+        <span class="setting-label">📱 SMS</span>
+        <span class="setting-value inactive">Coming soon</span>
+    </div>
+</div>
+
+<!-- Recent Incidents -->
+<div class="incidents-card">
+    <h2>🚨 Recent Incidents</h2>
+    {% if incidents %}
+    {% for inc in incidents %}
+    <div class="incident-item">
+        <div class="incident-status">
+            {% if inc.status == 'open' %}
+                🔴 <strong>Ongoing</strong>
+            {% else %}
+                ✅ Resolved
+            {% endif %}
+            — {{ inc.monitor_name }}
+        </div>
+        <div>
+            <span class="incident-time">
+                {{ inc.started_at.strftime('%b %d, %H:%M UTC') if inc.started_at else '' }}
+            </span>
+            {% if inc.duration_seconds %}
+            <span class="incident-duration">
+                {% if inc.duration_seconds < 60 %}{{ inc.duration_seconds }}s
+                {% elif inc.duration_seconds < 3600 %}{{ (inc.duration_seconds // 60) }}m
+                {% else %}{{ (inc.duration_seconds // 3600) }}h {{ ((inc.duration_seconds % 3600) // 60) }}m
+                {% endif %}
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="no-incidents">No incidents recorded yet. 🎉</div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// Parse checks data passed from server
+const checks = {{ checks | tojson }};
+
+// Prepare chart data — reverse so oldest is first
+const sorted = checks.slice().reverse();
+const labels = sorted.map(c => {
+    if (!c.timestamp) return '';
+    // Handle Firestore timestamp (could be string or object)
+    let d;
+    if (typeof c.timestamp === 'string') {
+        d = new Date(c.timestamp);
+    } else if (c.timestamp._seconds) {
+        d = new Date(c.timestamp._seconds * 1000);
+    } else {
+        d = new Date(c.timestamp);
+    }
+    return d.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+});
+const data = sorted.map(c => c.response_ms || null);
+
+// Downsample if too many points (keep it to ~100 for performance)
+function downsample(labels, data, maxPoints) {
+    if (labels.length <= maxPoints) return { labels, data };
+    const step = Math.ceil(labels.length / maxPoints);
+    return {
+        labels: labels.filter((_, i) => i % step === 0),
+        data: data.filter((_, i) => i % step === 0),
+    };
+}
+const sampled = downsample(labels, data, 100);
+
+const ctx = document.getElementById('responseChart').getContext('2d');
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: sampled.labels,
+        datasets: [{
+            label: 'Response Time (ms)',
+            data: sampled.data,
+            borderColor: '#e63946',
+            backgroundColor: 'rgba(230, 57, 70, 0.08)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.3,
+            pointRadius: 0,
+            pointHitRadius: 10,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ctx.parsed.y ? `${ctx.parsed.y}ms` : 'Timeout'
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: { display: true, text: 'ms' },
+                grid: { color: '#f0f0f0' },
+            },
+            x: {
+                grid: { display: false },
+                ticks: { maxTicksLimit: 12, font: { size: 11 } }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

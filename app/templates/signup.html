@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up{% endblock %}
+
+{% block extra_css %}
+.auth-container {
+    max-width: 420px;
+    margin: 3rem auto;
+}
+.auth-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 2.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+.auth-card h1 {
+    font-size: 1.75rem;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+.auth-card .subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+}
+.form-group {
+    margin-bottom: 1.25rem;
+}
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    font-size: 0.9rem;
+    color: #333;
+}
+.form-group input {
+    width: 100%;
+    padding: 0.7rem 0.9rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+}
+.form-group input:focus {
+    outline: none;
+    border-color: #e63946;
+}
+.password-wrapper {
+    position: relative;
+}
+.password-wrapper input {
+    padding-right: 3rem;
+}
+.password-toggle {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: #999;
+    padding: 0.25rem;
+    line-height: 1;
+}
+.password-toggle:hover {
+    color: #333;
+}
+.strength-meter {
+    margin-top: 0.5rem;
+}
+.strength-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: #e0e0e0;
+    overflow: hidden;
+    margin-bottom: 0.3rem;
+}
+.strength-bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 2px;
+    transition: width 0.3s, background 0.3s;
+}
+.strength-label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #999;
+}
+.match-indicator {
+    margin-top: 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    display: none;
+}
+.auth-error {
+    background: #fff5f5;
+    color: #e63946;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.25rem;
+    font-size: 0.9rem;
+    border: 1px solid #fecaca;
+}
+.auth-submit {
+    width: 100%;
+    padding: 0.8rem;
+    background: #e63946;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.auth-submit:hover {
+    background: #c1121f;
+}
+.auth-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: #666;
+}
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h1>🐓 Create Account</h1>
+        <p class="subtitle">Start monitoring in 30 seconds. Free forever.</p>
+
+        {% if error %}
+        <div class="auth-error">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" action="/signup">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" value="{{ email | default('', true) }}" placeholder="you@example.com" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" name="password" placeholder="At least 8 characters" required minlength="8" oninput="updateStrength(this.value); checkMatch()">
+                    <button type="button" class="password-toggle" onclick="togglePassword('password', this)">👁️</button>
+                </div>
+                <div class="strength-meter" id="strength-meter" style="display:none;">
+                    <div class="strength-bar">
+                        <div class="strength-bar-fill" id="strength-fill"></div>
+                    </div>
+                    <span class="strength-label" id="strength-label"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="password_confirm">Confirm Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password_confirm" name="password_confirm" placeholder="Type it again" required minlength="8" oninput="checkMatch()">
+                    <button type="button" class="password-toggle" onclick="togglePassword('password_confirm', this)">👁️</button>
+                </div>
+                <div class="match-indicator" id="match-indicator"></div>
+            </div>
+            <button type="submit" class="auth-submit">Create Account →</button>
+        </form>
+
+        <div class="auth-footer">
+            Already have an account? <a href="/login">Log in</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePassword(fieldId, btn) {
+    const input = document.getElementById(fieldId);
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈';
+    } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+    }
+}
+
+function checkMatch() {
+    const pw = document.getElementById('password').value;
+    const confirm = document.getElementById('password_confirm').value;
+    const indicator = document.getElementById('match-indicator');
+
+    if (!confirm) {
+        indicator.style.display = 'none';
+        return;
+    }
+    indicator.style.display = 'block';
+    if (pw === confirm) {
+        indicator.textContent = '✓ Passwords match';
+        indicator.style.color = '#2a9d8f';
+    } else {
+        indicator.textContent = '✗ Passwords don\'t match';
+        indicator.style.color = '#e63946';
+    }
+}
+
+function updateStrength(password) {
+    const meter = document.getElementById('strength-meter');
+    const fill = document.getElementById('strength-fill');
+    const label = document.getElementById('strength-label');
+
+    if (!password) {
+        meter.style.display = 'none';
+        return;
+    }
+    meter.style.display = 'block';
+
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+    if (/\d/.test(password)) score++;
+    if (/[^a-zA-Z0-9]/.test(password)) score++;
+
+    const levels = [
+        { max: 1, width: '20%',  color: '#e63946', text: 'Weak' },
+        { max: 2, width: '40%',  color: '#f4a261', text: 'Fair' },
+        { max: 3, width: '60%',  color: '#e9c46a', text: 'Good' },
+        { max: 4, width: '80%',  color: '#2a9d8f', text: 'Strong' },
+        { max: 5, width: '100%', color: '#264653', text: 'Very strong 💪' },
+    ];
+
+    const level = levels[Math.min(score, levels.length) - 1] || levels[0];
+    fill.style.width = level.width;
+    fill.style.background = level.color;
+    label.textContent = level.text;
+    label.style.color = level.color;
+}
+</script>
+{% endblock %}

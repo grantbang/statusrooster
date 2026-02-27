@@ -44,18 +44,18 @@
 - [x] Alert service abstraction (easy to add SMS later)
 - [x] Test with real SendGrid + Slack webhook
 
-### Day 4 — Dashboard UI 🔲
-- [ ] Signup page (`/signup` — form, validation, redirect to dashboard)
-- [ ] Login page (`/login` — form, error states, redirect to dashboard)
-- [ ] Auth cookie handling (set JWT in httpOnly cookie on login)
-- [ ] Dashboard page (`/dashboard` — list all monitors with status indicators)
-- [ ] Monitor status badges (🟢 Up / 🔴 Down / ⚪ Pending)
-- [ ] Add monitor form (modal or inline — URL, name, alert settings)
-- [ ] Edit monitor form (pre-filled, save changes)
-- [ ] Delete monitor (confirmation prompt)
-- [ ] Monitor detail view (response time chart — Chart.js, last 24h)
-- [ ] Alert settings per monitor (email, Slack webhook URL)
-- [ ] Flash messages (success/error feedback on actions)
+### Day 4 — Dashboard UI ✅
+- [x] Signup page (`/signup` — form, validation, redirect to dashboard)
+- [x] Login page (`/login` — form, error states, redirect to dashboard)
+- [x] Auth cookie handling (set JWT in httpOnly cookie on login)
+- [x] Dashboard page (`/dashboard` — list all monitors with status indicators)
+- [x] Monitor status badges (🟢 Up / 🔴 Down / ⚪ Pending)
+- [x] Add monitor form (modal or inline — URL, name, alert settings)
+- [x] Edit monitor form (pre-filled, save changes)
+- [x] Delete monitor (confirmation prompt)
+- [x] Monitor detail view (response time chart — Chart.js, last 24h)
+- [x] Alert settings per monitor (email, Slack webhook URL)
+- [x] Flash messages (success/error feedback on actions)
 
 **✅ Day 4 Checkpoint:** Sign up → add URL → see checks → get alert on down → see recovery.
 
@@ -84,7 +84,13 @@
 - [ ] Manage subscription link (Stripe Customer Portal)
 - [ ] Plan badge on dashboard (Free / Pro)
 
-### Day 7 — Landing Page 🔲
+### Day 7 — Public API, Docs & Landing Page 🔲
+- [ ] API key model (generate, store hashed, revoke)
+- [ ] API key auth middleware (check `X-API-Key` header)
+- [ ] API key management UI (generate/revoke from dashboard settings)
+- [ ] `GET /api/monitors` — list monitors (API key auth)
+- [ ] `GET /api/monitors/{id}/checks` — export checks as JSON
+- [ ] API docs page (`/docs` — endpoints, auth, examples with curl)
 - [ ] Marketing landing page (`/`)
 - [ ] Hero section: headline, subhead, CTA button
 - [ ] Features grid (6 features with icons)
@@ -93,7 +99,14 @@
 - [ ] Footer (links, legal placeholder)
 - [ ] Mobile responsive
 
-### Day 8 — Polish 🔲
+### Day 8 — UI Polish & Hardening 🔲
+- [ ] UI polish pass: clean typography, spacing, color consistency (think Google, not AI-generated)
+- [ ] Dashboard card redesign (tighter layout, better hierarchy)
+- [ ] Dashboard filtering (All / Up / Down / Pending)
+- [ ] Dashboard sorting (name, status, uptime%, response time)
+- [ ] Dashboard search (filter by name or URL)
+- [ ] Monitor detail page polish (chart styling, stat cards)
+- [ ] Auth pages polish (signup, login — consistent with dashboard)
 - [ ] Mobile responsive pass on all pages (dashboard, status page, forms)
 - [ ] Error states: form validation messages, API error handling
 - [ ] Rate limiting on auth endpoints (prevent brute force)
@@ -106,6 +119,67 @@
 - [ ] Loading states / disabled buttons on form submit
 
 **✅ Day 8 Checkpoint:** Full product. Signup → monitor → alerts → status page → upgrade → manage subscription.
+
+### Day 8.5 — Automated Test Suite 🔲
+_Goal: Comprehensive pytest suite that covers every route, edge case, and failure mode. CI/CD-ready._
+
+**Test Infrastructure**
+- [ ] pytest + httpx async test client setup
+- [ ] Test fixtures: mock Firestore, test user, test monitor
+- [ ] Conftest with reusable auth helpers (create user, get token, get cookie)
+- [ ] GitHub Actions CI workflow (run tests on every push/PR)
+
+**Auth Tests (10+)**
+- [ ] Signup with valid credentials → 302 + cookie + user in DB
+- [ ] Signup with duplicate email → error "Email already registered"
+- [ ] Signup with mismatched passwords → error "Passwords don't match"
+- [ ] Signup with short password (<8 chars) → error
+- [ ] Signup with invalid email format → error
+- [ ] Login with correct credentials → 302 + cookie
+- [ ] Login with wrong password → error "Invalid email or password"
+- [ ] Login with non-existent email → same generic error (no info leak)
+- [ ] Access /dashboard without cookie → redirect to /login
+- [ ] Access /dashboard with expired JWT → redirect to /login
+- [ ] Access /dashboard with tampered JWT → redirect to /login
+- [ ] Logout clears cookie → redirect to /login
+
+**Monitor CRUD Tests (10+)**
+- [ ] Create monitor with valid URL → appears in dashboard
+- [ ] Create monitor with invalid URL → error
+- [ ] Create monitor without auth → redirect to /login
+- [ ] Create 6th monitor on free plan → error "Upgrade to Pro"
+- [ ] Edit monitor name → name updated in Firestore
+- [ ] Edit monitor URL → URL updated
+- [ ] Edit someone else's monitor → 404 (no cross-user access)
+- [ ] Delete monitor → removed from dashboard + Firestore
+- [ ] Delete someone else's monitor → 404
+- [ ] List monitors only shows current user's monitors
+
+**Check Engine Tests (8+)**
+- [ ] Cron endpoint without secret → 401
+- [ ] Cron endpoint with wrong secret → 401
+- [ ] Cron endpoint with valid secret → runs checks
+- [ ] Check against UP site → is_up=true, status_code=200
+- [ ] Check against DOWN site → is_up=false after retry
+- [ ] Status change UP→DOWN → creates incident + triggers alerts
+- [ ] Status change DOWN→UP → resolves incident + sends recovery
+- [ ] No status change → no duplicate alerts
+
+**API Tests (6+)**
+- [ ] API endpoints return JSON (not HTML)
+- [ ] API with valid JWT → 200 + data
+- [ ] API without auth → 401
+- [ ] API with invalid token → 401
+- [ ] Monitor API respects user isolation
+- [ ] Check export returns correct data shape
+
+**Edge Cases & Security (6+)**
+- [ ] SQL/NoSQL injection attempts in email field
+- [ ] XSS attempt in monitor name → properly escaped
+- [ ] Extremely long URL → handled gracefully
+- [ ] Concurrent duplicate signup → only one user created
+- [ ] Empty form submission → proper validation errors
+- [ ] CORS headers on API endpoints
 
 ---
 
@@ -154,7 +228,7 @@
 
 | Phase | Days | Status |
 |-------|------|--------|
-| 1. Core Engine | 1-4 | 🟡 In progress |
+| 1. Core Engine | 1-4 | ✅ Complete |
 | 2. Status Pages & Billing | 5-8 | 🔲 Not started |
 | 3. Launch Prep | 9-10 | 🔲 Not started |
 | 4. Post-Launch | 11-14 | 🔲 Not started |
@@ -166,7 +240,7 @@
 ## 🔧 Domain & Email Setup ✅
 - [x] Point `statusrooster.com` DNS to Cloud Run (4x A records)
 - [x] Map custom domain in Cloud Run (`gcloud run domain-mappings create`)
-- [x] SSL certificate provisioned (automatic via Cloud Run)
+- [x] SSL certificate provisioned (automatic via Cloud Run) — verified ✅ `https://statusrooster.com/health` → 200
 - [x] SendGrid domain authentication (3x CNAME records validated)
 - [x] Update `SENDGRID_FROM_EMAIL` to `alerts@statusrooster.com`
 - [x] Email forwarding: catch-all `*@statusrooster.com` → `gjbangerter@gmail.com` (Namecheap)

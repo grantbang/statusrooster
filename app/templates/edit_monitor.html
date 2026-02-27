@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ monitor.name }}{% endblock %}
+
+{% block extra_css %}
+.edit-container {
+    max-width: 520px;
+    margin: 2rem auto;
+}
+.edit-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 2.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+.edit-card h1 {
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+}
+.form-group {
+    margin-bottom: 1.25rem;
+}
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    font-size: 0.9rem;
+    color: #333;
+}
+.form-group input {
+    width: 100%;
+    padding: 0.7rem 0.9rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+}
+.form-group input:focus {
+    outline: none;
+    border-color: #e63946;
+}
+.form-group .hint {
+    font-size: 0.75rem;
+    color: #999;
+    margin-top: 0.3rem;
+}
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+.form-actions .btn {
+    flex: 1;
+    text-align: center;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+.btn-save {
+    background: #e63946;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+.btn-save:hover { background: #c1121f; }
+.btn-cancel {
+    background: #f0f0f0;
+    color: #333;
+    border: none;
+}
+.btn-cancel:hover { background: #e0e0e0; }
+{% endblock %}
+
+{% block content %}
+<div class="edit-container">
+    <div class="edit-card">
+        <h1>✏️ Edit Monitor</h1>
+        <form method="POST" action="/monitors/{{ monitor.id }}/edit">
+            <div class="form-group">
+                <label for="url">URL</label>
+                <input type="url" id="url" name="url" value="{{ monitor.url }}" required>
+            </div>
+            <div class="form-group">
+                <label for="name">Display Name</label>
+                <input type="text" id="name" name="name" value="{{ monitor.name }}" required>
+            </div>
+            <div class="form-group">
+                <label for="alert_email">Alert Email</label>
+                <input type="email" id="alert_email" name="alert_email" value="{{ monitor.alert_email }}">
+                <div class="hint">Receives down/recovery notifications</div>
+            </div>
+            <div class="form-group">
+                <label for="alert_slack_webhook">Slack Webhook URL</label>
+                <input type="url" id="alert_slack_webhook" name="alert_slack_webhook" value="{{ monitor.alert_slack_webhook }}">
+            </div>
+            <div class="form-actions">
+                <a href="/dashboard" class="btn btn-cancel">Cancel</a>
+                <button type="submit" class="btn btn-save">Save Changes →</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

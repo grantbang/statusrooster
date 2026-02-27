@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+/* Dashboard Layout */
+.dash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+.dash-header h1 {
+    font-size: 1.5rem;
+}
+.monitor-count {
+    color: #666;
+    font-size: 0.9rem;
+    font-weight: normal;
+}
+
+/* Monitor Cards */
+.monitors-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.monitor-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: box-shadow 0.2s;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+.monitor-card:hover {
+    box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+    text-decoration: none;
+}
+.status-badge {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+.monitor-info {
+    flex: 1;
+    min-width: 0;
+}
+.monitor-name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #1a1a2e;
+}
+.monitor-url {
+    font-size: 0.8rem;
+    color: #888;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.monitor-stats {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    flex-shrink: 0;
+}
+.stat {
+    text-align: center;
+}
+.stat-value {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #1a1a2e;
+}
+.stat-label {
+    font-size: 0.7rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.monitor-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+.btn-icon {
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    border: 1px solid #e0e0e0;
+    background: #fff;
+    cursor: pointer;
+    color: #666;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+.btn-icon:hover {
+    background: #f0f0f0;
+    text-decoration: none;
+}
+.btn-icon-danger:hover {
+    background: #fff5f5;
+    border-color: #fecaca;
+    color: #e63946;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #888;
+}
+.empty-state .emoji {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+.empty-state h2 {
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+/* Add Monitor Modal */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+}
+.modal-overlay.active {
+    display: flex;
+}
+.modal {
+    background: #fff;
+    border-radius: 12px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    position: relative;
+}
+.modal h2 {
+    margin-bottom: 1.5rem;
+    font-size: 1.25rem;
+}
+.modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    border: none;
+    background: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    color: #999;
+    padding: 0.25rem;
+}
+.modal-close:hover { color: #333; }
+.form-group {
+    margin-bottom: 1.25rem;
+}
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    font-size: 0.9rem;
+    color: #333;
+}
+.form-group input {
+    width: 100%;
+    padding: 0.65rem 0.9rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+}
+.form-group input:focus {
+    outline: none;
+    border-color: #e63946;
+}
+.form-group .hint {
+    font-size: 0.75rem;
+    color: #999;
+    margin-top: 0.3rem;
+}
+.form-row {
+    display: flex;
+    gap: 1rem;
+}
+.form-row .form-group { flex: 1; }
+.modal-submit {
+    width: 100%;
+    padding: 0.75rem;
+    background: #e63946;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.modal-submit:hover { background: #c1121f; }
+
+/* Delete confirmation */
+.delete-form {
+    display: inline;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .monitor-stats { display: none; }
+    .dash-header { flex-direction: column; gap: 1rem; align-items: flex-start; }
+}
+{% endblock %}
+
+{% block content %}
+<div class="dash-header">
+    <h1>
+        📊 Dashboard
+        <span class="monitor-count">({{ monitors | length }} monitor{{ 's' if monitors | length != 1 else '' }})</span>
+    </h1>
+    <button class="btn btn-primary" onclick="openModal()">+ Add Monitor</button>
+</div>
+
+{% if monitors %}
+<div class="monitors-grid">
+    {% for m in monitors %}
+    <div class="monitor-card" onclick="window.location='/monitors/{{ m.id }}'">
+        <div class="status-badge">
+            {% if m.status == 'up' %}🟢
+            {% elif m.status == 'down' %}🔴
+            {% else %}⚪{% endif %}
+        </div>
+        <div class="monitor-info">
+            <div class="monitor-name">{{ m.name }}</div>
+            <div class="monitor-url">{{ m.url }}</div>
+        </div>
+        <div class="monitor-stats">
+            <div class="stat">
+                <div class="stat-value">{{ m.uptime_percent | default(100) }}%</div>
+                <div class="stat-label">Uptime</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">{{ m.last_response_ms | default('—') }}{{ 'ms' if m.last_response_ms }}</div>
+                <div class="stat-label">Response</div>
+            </div>
+        </div>
+        <div class="monitor-actions" onclick="event.stopPropagation()">
+            <a href="/monitors/{{ m.id }}/edit" class="btn-icon" title="Edit">✏️</a>
+            <form method="POST" action="/monitors/{{ m.id }}/delete" class="delete-form"
+                  onsubmit="return confirm('Delete {{ m.name }}? This cannot be undone.')">
+                <button type="submit" class="btn-icon btn-icon-danger" title="Delete">🗑️</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="emoji">🐓</div>
+    <h2>No monitors yet</h2>
+    <p>Add your first URL to start monitoring uptime.</p>
+    <br>
+    <button class="btn btn-primary" onclick="openModal()">+ Add Your First Monitor</button>
+</div>
+{% endif %}
+
+<!-- Add Monitor Modal -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <button class="modal-close" onclick="closeModal()">✕</button>
+        <h2>🐓 Add Monitor</h2>
+        <form method="POST" action="/monitors/add">
+            <div class="form-group">
+                <label for="url">URL to Monitor</label>
+                <input type="url" id="url" name="url" placeholder="https://example.com" required>
+                <div class="hint">We'll check this URL every 60 seconds</div>
+            </div>
+            <div class="form-group">
+                <label for="name">Display Name</label>
+                <input type="text" id="name" name="name" placeholder="My Website" required>
+            </div>
+            <div class="form-group">
+                <label for="alert_email">Alert Email</label>
+                <input type="email" id="alert_email" name="alert_email" value="{{ user.email }}" placeholder="you@example.com">
+                <div class="hint">We'll email you when this site goes down</div>
+            </div>
+            <div class="form-group">
+                <label for="alert_slack_webhook">Slack Webhook URL <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                <input type="url" id="alert_slack_webhook" name="alert_slack_webhook" placeholder="https://hooks.slack.com/services/...">
+            </div>
+            <button type="submit" class="modal-submit">Add Monitor →</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openModal() {
+    document.getElementById('addModal').classList.add('active');
+}
+function closeModal() {
+    document.getElementById('addModal').classList.remove('active');
+}
+// Close on overlay click
+document.getElementById('addModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+// Close on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
+});
+</script>
+{% endblock %}
