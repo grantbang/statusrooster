@@ -14,7 +14,7 @@ def generate_slug(name: str) -> str:
 
 
 def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
-                   alert_slack_webhook: str = "", public: bool = True) -> dict:
+                   alert_slack_webhook: str = "", public: bool = False) -> dict:
     """Create a new monitor. Returns monitor dict with id."""
     doc_ref = db.collection(COLLECTION).document()
     slug = generate_slug(name)
@@ -87,6 +87,21 @@ def delete_monitor(db, monitor_id: str) -> None:
 
     # Delete the monitor itself
     db.collection(COLLECTION).document(monitor_id).delete()
+
+
+def get_monitor_by_slug(db, slug: str) -> dict | None:
+    """Get a monitor by its public slug. Used for status pages."""
+    docs = (
+        db.collection(COLLECTION)
+        .where("slug", "==", slug)
+        .limit(1)
+        .get()
+    )
+    for doc in docs:
+        m = doc.to_dict()
+        m["id"] = doc.id
+        return m
+    return None
 
 
 def get_all_monitors(db) -> list[dict]:

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ monitor.name }} — Status</title>
+    <meta name="description" content="Live status and uptime history for {{ monitor.name }}">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #1a1a2e;
+            background: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        a { color: #e63946; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* Header */
+        .status-header {
+            text-align: center;
+            padding: 3rem 1rem 2rem;
+        }
+        .status-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1.25rem;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .status-up { background: #d4edda; color: #155724; }
+        .status-down { background: #f8d7da; color: #721c24; }
+        .status-pending { background: #e2e3e5; color: #383d41; }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-dot.up { background: #28a745; }
+        .status-dot.down { background: #dc3545; }
+        .status-dot.pending { background: #adb5bd; }
+
+        /* Container */
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 0 1.5rem 3rem;
+            flex: 1;
+        }
+
+        /* Uptime Section */
+        .uptime-section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            margin-bottom: 1.5rem;
+        }
+        .uptime-section h2 {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        .uptime-bar {
+            display: flex;
+            gap: 2px;
+            align-items: flex-end;
+            height: 34px;
+        }
+        .uptime-bar .day {
+            flex: 1;
+            min-width: 0;
+            border-radius: 2px;
+            position: relative;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+        .uptime-bar .day:hover {
+            opacity: 0.8;
+        }
+        .uptime-bar .day.up { background: #2ecc71; height: 100%; }
+        .uptime-bar .day.down { background: #e74c3c; height: 100%; }
+        .uptime-bar .day.partial { background: #f39c12; height: 100%; }
+        .uptime-bar .day.no-data { background: #e0e0e0; height: 60%; }
+
+        .uptime-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: #999;
+        }
+        .uptime-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #f0f0f0;
+        }
+        .uptime-percent {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+        .uptime-legend {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: #888;
+        }
+        .uptime-legend span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            display: inline-block;
+        }
+
+        /* Stats */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            text-align: center;
+        }
+        .stat-card .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+        .stat-card .stat-label {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 0.25rem;
+        }
+
+        /* Incidents */
+        .incidents-section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            margin-bottom: 1.5rem;
+        }
+        .incidents-section h2 {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        .incident-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f5f5f5;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .incident-item:last-child { border-bottom: none; }
+        .incident-status {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .incident-status.open { color: #dc3545; }
+        .incident-status.resolved { color: #28a745; }
+        .incident-meta {
+            font-size: 0.8rem;
+            color: #888;
+            text-align: right;
+        }
+        .no-incidents {
+            text-align: center;
+            padding: 2rem;
+            color: #aaa;
+            font-size: 0.95rem;
+        }
+
+        /* Tooltip */
+        .day-tooltip {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a2e;
+            color: #fff;
+            padding: 0.4rem 0.7rem;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .day:hover .day-tooltip {
+            display: block;
+        }
+
+        /* Footer */
+        .status-footer {
+            text-align: center;
+            padding: 2rem;
+            color: #aaa;
+            font-size: 0.85rem;
+        }
+        .status-footer a {
+            color: #888;
+            font-weight: 600;
+        }
+        .status-footer a:hover { color: #e63946; }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .stats-row { grid-template-columns: 1fr; }
+            .status-header h1 { font-size: 1.35rem; }
+            .uptime-bar { height: 28px; }
+            .uptime-percent { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="status-header">
+        <h1>{{ monitor.name }}</h1>
+        {% if monitor.status == "up" %}
+            <div class="status-badge status-up">
+                <span class="status-dot up"></span> All Systems Operational
+            </div>
+        {% elif monitor.status == "down" %}
+            <div class="status-badge status-down">
+                <span class="status-dot down"></span> Service Disruption
+            </div>
+        {% else %}
+            <div class="status-badge status-pending">
+                <span class="status-dot pending"></span> Checking...
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="container">
+
+        <!-- Uptime Bar (90 days) -->
+        <div class="uptime-section">
+            <h2>Uptime — Last 90 Days</h2>
+            <div class="uptime-bar">
+                {% for day in daily_uptime %}
+                    {% if day.total == 0 %}
+                        <div class="day no-data" title="{{ day.date }}">
+                            <div class="day-tooltip">{{ day.date }}<br>No data</div>
+                        </div>
+                    {% elif day.uptime_percent == 100 %}
+                        <div class="day up" title="{{ day.date }}: 100%">
+                            <div class="day-tooltip">{{ day.date }}<br>{{ day.up }}/{{ day.total }} checks OK — 100%</div>
+                        </div>
+                    {% elif day.uptime_percent == 0 %}
+                        <div class="day down" title="{{ day.date }}: 0%">
+                            <div class="day-tooltip">{{ day.date }}<br>{{ day.down }}/{{ day.total }} checks failed — 0%</div>
+                        </div>
+                    {% else %}
+                        <div class="day partial" title="{{ day.date }}: {{ day.uptime_percent }}%">
+                            <div class="day-tooltip">{{ day.date }}<br>{{ day.down }} failed / {{ day.total }} total — {{ day.uptime_percent }}%</div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <div class="uptime-labels">
+                <span>90 days ago</span>
+                <span>Today</span>
+            </div>
+            <div class="uptime-summary">
+                <div class="uptime-percent">{{ "%.2f"|format(monitor.uptime_percent) }}%</div>
+                <div class="uptime-legend">
+                    <span><span class="legend-dot" style="background:#2ecc71;"></span> Up</span>
+                    <span><span class="legend-dot" style="background:#f39c12;"></span> Partial</span>
+                    <span><span class="legend-dot" style="background:#e74c3c;"></span> Down</span>
+                    <span><span class="legend-dot" style="background:#e0e0e0;"></span> No Data</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-value">
+                    {% if monitor.last_response_ms %}
+                        {{ "%.0f"|format(monitor.last_response_ms) }}ms
+                    {% else %}
+                        —
+                    {% endif %}
+                </div>
+                <div class="stat-label">Response Time</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ monitor.checks_total }}</div>
+                <div class="stat-label">Total Checks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">
+                    {% if monitor.last_status_code %}
+                        {{ monitor.last_status_code }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </div>
+                <div class="stat-label">Last Status Code</div>
+            </div>
+        </div>
+
+        <!-- Incidents -->
+        <div class="incidents-section">
+            <h2>Recent Incidents</h2>
+            {% if incidents %}
+                {% for inc in incidents %}
+                    <div class="incident-item">
+                        <div>
+                            {% if inc.status == "open" %}
+                                <div class="incident-status open">🔴 Ongoing</div>
+                            {% else %}
+                                <div class="incident-status resolved">✅ Resolved</div>
+                            {% endif %}
+                            <div style="font-size: 0.85rem; color: #555; margin-top: 0.25rem;">
+                                {{ inc.monitor_name }}
+                                {% if inc.status_code %} — HTTP {{ inc.status_code }}{% endif %}
+                            </div>
+                        </div>
+                        <div class="incident-meta">
+                            <div>{{ inc.started_at.strftime('%b %d, %H:%M UTC') if inc.started_at else '—' }}</div>
+                            {% if inc.status == "resolved" and inc.duration_seconds %}
+                                <div>Duration: {{ format_duration(inc.duration_seconds) }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-incidents">
+                    No incidents recorded yet. 🎉
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="status-footer">
+        <p>Powered by <a href="https://statusrooster.com">StatusRooster 🐓</a></p>
+        <p style="margin-top: 0.25rem;">Free uptime monitoring — <a href="https://statusrooster.com/signup">Sign up</a></p>
+    </div>
+
+</body>
+</html>

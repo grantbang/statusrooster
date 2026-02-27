@@ -7,10 +7,11 @@ from fastapi import APIRouter, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from app.database import get_db
 from app.models.user import create_user, get_user_by_email, verify_password
-from app.models.monitor import list_monitors_by_user, get_monitor, create_monitor, update_monitor, delete_monitor
-from app.models.check import get_recent_checks
+from app.models.monitor import list_monitors_by_user, get_monitor, get_monitor_by_slug, create_monitor, update_monitor, delete_monitor
+from app.models.check import get_recent_checks, get_daily_uptime
 from app.models.incident import list_incidents_by_monitor
 from app.services.auth import create_access_token, decode_access_token
+from app.services.alerts import _format_duration
 from app.models.user import get_user_by_id
 import os
 
@@ -225,6 +226,8 @@ async def edit_monitor_submit(
     name: str = Form(...),
     alert_email: str = Form(""),
     alert_slack_webhook: str = Form(""),
+    slug: str = Form(""),
+    public: str = Form(""),
 ):
     user = get_user_from_cookie(request)
     if not user:
@@ -239,11 +242,20 @@ async def edit_monitor_submit(
     if not url.startswith(("http://", "https://")):
         url = f"https://{url}"
 
+    # Clean up slug (lowercase, hyphens only)
+    import re
+    if slug:
+        slug = re.sub(r"[^a-z0-9\-]", "", slug.lower().replace(" ", "-")).strip("-")
+    else:
+        slug = monitor.get("slug", "")
+
     update_monitor(db, monitor_id, {
         "url": url,
         "name": name,
         "alert_email": alert_email,
         "alert_slack_webhook": alert_slack_webhook,
+        "slug": slug,
+        "public": public == "true",
     })
 
     return RedirectResponse(
@@ -301,4 +313,35 @@ async def monitor_detail(request: Request, monitor_id: str):
         "monitor": monitor,
         "checks": checks,
         "incidents": incidents,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Public Status Page (no auth required)
+# ---------------------------------------------------------------------------
+
+@router.get("/s/{slug}", response_class=HTMLResponse)
+async def public_status_page(request: Request, slug: str):
+    """Public status page — anyone can view if monitor is set to public."""
+    db = get_db()
+    monitor = get_monitor_by_slug(db, slug)
+
+    if not monitor:
+        raise HTTPException(status_code=404, detail="Status page not found")
+
+    if not monitor.get("public", False):
+        raise HTTPException(status_code=404, detail="Status page not found")
+
+    # Get 90-day uptime data for the bar chart
+    daily_uptime = get_daily_uptime(db, monitor["id"], days=90)
+
+    # Get recent incidents
+    incidents = list_incidents_by_monitor(db, monitor["id"], limit=10)
+
+    return templates.TemplateResponse("status_page.html", {
+        "request": request,
+        "monitor": monitor,
+        "daily_uptime": daily_uptime,
+        "incidents": incidents,
+        "format_duration": _format_duration,
     })

@@ -63,15 +63,15 @@
 
 ## Phase 2: Status Pages & Billing — Days 5-8
 
-### Day 5 — Public Status Pages 🔲
-- [ ] Status page route: `GET /s/{slug}`
-- [ ] Status page template: site name, current status, uptime bars (90 days)
-- [ ] Uptime bar component (green/red/gray day-by-day blocks)
-- [ ] Incident history list (last 10 incidents with timestamps + durations)
-- [ ] "Powered by StatusRooster 🐓" footer with signup link
-- [ ] User can toggle monitor public/private
-- [ ] User can set/edit slug for their status page
-- [ ] Status page works when logged out (public)
+### Day 5 — Public Status Pages ✅
+- [x] Status page route: `GET /s/{slug}`
+- [x] Status page template: site name, current status, uptime bars (90 days)
+- [x] Uptime bar component (green/red/gray day-by-day blocks)
+- [x] Incident history list (last 10 incidents with timestamps + durations)
+- [x] "Powered by StatusRooster 🐓" footer with signup link
+- [x] User can toggle monitor public/private
+- [x] User can set/edit slug for their status page
+- [x] Status page works when logged out (public)
 
 ### Day 6 — Stripe Billing 🔲
 - [ ] Stripe Checkout session creation (`POST /api/billing/checkout`)

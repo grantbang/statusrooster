@@ -234,6 +234,21 @@
     <canvas id="responseChart" height="100"></canvas>
 </div>
 
+<!-- Public Status Page -->
+{% if monitor.public and monitor.slug %}
+<div class="settings-card">
+    <h2>📊 Public Status Page</h2>
+    <div class="setting-row">
+        <span class="setting-label">🔗 Share this link with your users</span>
+        <span class="setting-value active" style="max-width: none;">
+            <a href="/s/{{ monitor.slug }}" target="_blank" style="color: #2d6a4f; text-decoration: none;">
+                statusrooster.com/s/{{ monitor.slug }} ↗
+            </a>
+        </span>
+    </div>
+</div>
+{% endif %}
+
 <!-- Alert Settings -->
 <div class="settings-card">
     <h2>🔔 Alert Settings</h2>
