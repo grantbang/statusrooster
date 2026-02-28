@@ -74,15 +74,22 @@
 - [x] Status page works when logged out (public)
 
 ### Day 6 — Stripe Billing 🔲
-- [ ] Stripe Checkout session creation (`POST /api/billing/checkout`)
-- [ ] Redirect user to Stripe Checkout for Pro upgrade
-- [ ] Stripe webhook endpoint (`POST /api/billing/webhook`)
-- [ ] Handle `checkout.session.completed` → update user plan to Pro
-- [ ] Handle `customer.subscription.deleted` → downgrade to Free
-- [ ] Plan enforcement: block monitor creation beyond 5 on Free
-- [ ] Upgrade prompt on dashboard when at monitor limit
-- [ ] Manage subscription link (Stripe Customer Portal)
-- [ ] Plan badge on dashboard (Free / Pro)
+- [x] Stripe Checkout session creation (`POST /api/billing/checkout`)
+- [x] Redirect user to Stripe Checkout for Pro upgrade
+- [x] Stripe webhook endpoint (`POST /api/billing/webhook`)
+- [x] Handle `checkout.session.completed` → update user plan to Pro
+- [x] Handle `customer.subscription.deleted` → downgrade to Free
+- [x] Plan enforcement: block monitor creation beyond 5 on Free
+- [x] Upgrade prompt on dashboard when at monitor limit
+- [x] Manage subscription link (Stripe Customer Portal)
+- [x] Plan badge on dashboard (Free / Pro)
+- [x] Upgrade accessible from nav, dashboard, pricing page, landing page
+- [x] Landing page with interactive URL checker (live ping demo)
+- [x] Enriched URL check: status, response time, server, SSL issuer, SSL expiry, redirects
+- [x] Logged-in users redirect from `/` → `/dashboard`
+- [x] "About Our Code" transparency section on landing page
+- [ ] Deploy Day 6 to production
+- [ ] Git commit Day 6
 
 ### Day 7 — Public API, Docs & Landing Page 🔲
 - [ ] API key model (generate, store hashed, revoke)

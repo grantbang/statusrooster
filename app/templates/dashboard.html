@@ -217,6 +217,65 @@
     .monitor-stats { display: none; }
     .dash-header { flex-direction: column; gap: 1rem; align-items: flex-start; }
 }
+
+/* Plan Badge */
+.plan-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    vertical-align: middle;
+    margin-left: 0.5rem;
+}
+.plan-free {
+    background: #e9ecef;
+    color: #666;
+}
+.plan-pro {
+    background: #e63946;
+    color: #fff;
+}
+
+/* Upgrade Banner */
+.upgrade-banner {
+    background: linear-gradient(135deg, #1a1a2e, #2d2d4e);
+    color: #fff;
+    padding: 1.25rem 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+.upgrade-banner p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+.upgrade-banner strong { color: #e63946; }
+.upgrade-btn {
+    background: #e63946;
+    color: #fff;
+    padding: 0.5rem 1.25rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-decoration: none;
+    white-space: nowrap;
+    border: none;
+    cursor: pointer;
+}
+.upgrade-btn:hover { background: #c1121f; text-decoration: none; }
+
+/* Manage sub link */
+.manage-sub {
+    font-size: 0.8rem;
+    color: #888;
+    margin-left: 0.5rem;
+}
 {% endblock %}
 
 {% block content %}
@@ -224,9 +283,34 @@
     <h1>
         📊 Dashboard
         <span class="monitor-count">({{ monitors | length }} monitor{{ 's' if monitors | length != 1 else '' }})</span>
+        {% if user.get('plan', 'free') == 'pro' %}
+            <span class="plan-badge plan-pro">Pro</span>
+        {% else %}
+            <span class="plan-badge plan-free">Free</span>
+        {% endif %}
     </h1>
-    <button class="btn btn-primary" onclick="openModal()">+ Add Monitor</button>
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+        {% if user.get('plan', 'free') == 'pro' %}
+            <form method="POST" action="/api/billing/portal" style="margin:0;">
+                <button type="submit" class="btn btn-secondary" style="font-size: 0.85rem;">Manage Subscription</button>
+            </form>
+        {% else %}
+            <form method="POST" action="/api/billing/checkout" style="margin:0;">
+                <button type="submit" class="btn btn-secondary" style="font-size: 0.85rem; background: linear-gradient(135deg, #1a1a2e, #2d2d4e);">⚡ Upgrade to Pro</button>
+            </form>
+        {% endif %}
+        <button class="btn btn-primary" onclick="openModal()">+ Add Monitor</button>
+    </div>
 </div>
+
+{% if user.get('plan', 'free') == 'free' and monitors | length >= 5 %}
+<div class="upgrade-banner">
+    <p>You've hit the <strong>5 monitor limit</strong> on the Free plan. Upgrade to Pro for unlimited monitors.</p>
+    <form method="POST" action="/api/billing/checkout" style="margin:0;">
+        <button type="submit" class="upgrade-btn">Upgrade to Pro — $9/mo →</button>
+    </form>
+</div>
+{% endif %}
 
 {% if monitors %}
 <div class="monitors-grid">

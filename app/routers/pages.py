@@ -41,6 +41,115 @@ def get_user_from_cookie(request: Request) -> dict | None:
 
 
 # ---------------------------------------------------------------------------
+# Landing Page
+# ---------------------------------------------------------------------------
+
+@router.get("/", response_class=HTMLResponse)
+async def landing_page(request: Request):
+    user = get_user_from_cookie(request)
+    if user:
+        return RedirectResponse(url="/dashboard", status_code=302)
+    return templates.TemplateResponse("landing.html", {"request": request, "user": None})
+
+
+# ---------------------------------------------------------------------------
+# Public URL Check (landing page teaser)
+# ---------------------------------------------------------------------------
+
+@router.post("/api/check-url")
+async def public_url_check(request: Request):
+    """Public endpoint: check a single URL and return enriched status."""
+    import httpx, time, re, ssl, socket
+    from fastapi.responses import JSONResponse
+    from datetime import datetime, timezone
+
+    body = await request.json()
+    url = body.get("url", "").strip()
+
+    if not url:
+        return JSONResponse({"error": "URL is required"}, status_code=400)
+    if not re.match(r'^https?://', url):
+        url = f"https://{url}"
+
+    # Rich check — we do it inline to grab headers + SSL info
+    result = {
+        "url": url,
+        "is_up": False,
+        "status_code": None,
+        "response_ms": None,
+        "server": None,
+        "content_type": None,
+        "ssl_issuer": None,
+        "ssl_expiry": None,
+        "redirects": 0,
+        "final_url": url,
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            start = time.monotonic()
+            resp = await client.get(url, timeout=8.0, follow_redirects=True)
+            elapsed_ms = round((time.monotonic() - start) * 1000, 2)
+
+            result["is_up"] = 200 <= resp.status_code < 400
+            result["status_code"] = resp.status_code
+            result["response_ms"] = elapsed_ms
+            result["server"] = resp.headers.get("server")
+            result["content_type"] = (resp.headers.get("content-type") or "").split(";")[0].strip() or None
+            result["redirects"] = len(resp.history)
+            result["final_url"] = str(resp.url)
+    except Exception:
+        pass
+
+    # SSL certificate info
+    try:
+        from urllib.parse import urlparse
+        from cryptography import x509
+        from cryptography.hazmat.backends import default_backend
+
+        parsed = urlparse(result["final_url"])
+        if parsed.scheme == "https":
+            hostname = parsed.hostname
+            port = parsed.port or 443
+
+            # Connect without strict verification so we always get the cert
+            ctx2 = ssl.create_default_context()
+            ctx2.check_hostname = False
+            ctx2.verify_mode = ssl.CERT_NONE
+            with socket.create_connection((hostname, port), timeout=4) as sock:
+                with ctx2.wrap_socket(sock, server_hostname=hostname) as ssock:
+                    der = ssock.getpeercert(binary_form=True)
+                    if der:
+                        cert = x509.load_der_x509_certificate(der, default_backend())
+                        # Issuer org name
+                        try:
+                            org = cert.issuer.get_attributes_for_oid(x509.oid.NameOID.ORGANIZATION_NAME)
+                            result["ssl_issuer"] = org[0].value if org else None
+                        except Exception:
+                            pass
+                        if not result["ssl_issuer"]:
+                            try:
+                                cn = cert.issuer.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)
+                                result["ssl_issuer"] = cn[0].value if cn else "Valid"
+                            except Exception:
+                                result["ssl_issuer"] = "Valid"
+                        # Expiry
+                        exp = cert.not_valid_after_utc
+                        days_left = (exp - datetime.now(timezone.utc)).days
+                        result["ssl_expiry"] = f"{exp.strftime('%b %d, %Y')} ({days_left}d)"
+    except Exception:
+        pass
+
+    return JSONResponse(result)
+
+
+@router.get("/pricing", response_class=HTMLResponse)
+async def pricing_page(request: Request):
+    user = get_user_from_cookie(request)
+    return templates.TemplateResponse("pricing.html", {"request": request, "user": user})
+
+
+# ---------------------------------------------------------------------------
 # Auth Pages
 # ---------------------------------------------------------------------------
 

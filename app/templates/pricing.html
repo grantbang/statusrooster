@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Pricing{% endblock %}
+{% block description %}Simple pricing for uptime monitoring. Free for up to 5 monitors, Pro for unlimited.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pricing-page {
+        text-align: center;
+        padding: 3rem 0;
+    }
+    .pricing-page h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        color: #1a1a2e;
+    }
+    .pricing-page > p {
+        color: #666;
+        font-size: 1.1rem;
+        margin-bottom: 2.5rem;
+    }
+    .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        max-width: 680px;
+        margin: 0 auto;
+    }
+    .price-card {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 2.5rem 2rem;
+        text-align: left;
+    }
+    .price-card.featured {
+        border-color: #e63946;
+        box-shadow: 0 0 0 2px #e63946;
+        position: relative;
+    }
+    .price-card.featured::before {
+        content: "Most Popular";
+        position: absolute;
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #e63946;
+        color: #fff;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+    }
+    .price-card h3 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        color: #1a1a2e;
+    }
+    .price-card .subtitle {
+        font-size: 0.85rem;
+        color: #888;
+        margin-bottom: 1rem;
+    }
+    .price-amount {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #1a1a2e;
+        margin: 0.75rem 0;
+    }
+    .price-amount span { font-size: 1rem; font-weight: 400; color: #888; }
+    .price-features {
+        list-style: none;
+        margin: 1.5rem 0;
+        font-size: 0.9rem;
+        color: #444;
+    }
+    .price-features li {
+        padding: 0.4rem 0;
+    }
+    .price-features li::before {
+        content: "✓ ";
+        color: #2a9d8f;
+        font-weight: 700;
+    }
+    .price-cta {
+        display: block;
+        text-align: center;
+        padding: 0.8rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        margin-top: 1.5rem;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+    }
+    .price-cta:hover { text-decoration: none; opacity: 0.9; }
+    .price-cta-free {
+        background: #f8f9fa;
+        color: #1a1a2e;
+        border: 1px solid #dee2e6;
+    }
+    .price-cta-pro {
+        background: #e63946;
+        color: #fff;
+    }
+    .current-plan {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+        cursor: default;
+    }
+
+    @media (max-width: 600px) {
+        .pricing-page h1 { font-size: 1.5rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="pricing-page">
+    <h1>Simple, honest pricing</h1>
+    <p>Start free. Upgrade when you need more.</p>
+
+    <div class="pricing-grid">
+        <!-- Free Plan -->
+        <div class="price-card">
+            <h3>Free</h3>
+            <div class="subtitle">For side projects & personal sites</div>
+            <div class="price-amount">$0 <span>/ month</span></div>
+            <ul class="price-features">
+                <li>Up to 5 monitors</li>
+                <li>60-second checks</li>
+                <li>Email alerts</li>
+                <li>Slack alerts</li>
+                <li>Public status pages</li>
+            </ul>
+            {% if user and user.get('plan', 'free') == 'free' %}
+                <button class="price-cta current-plan" disabled>✓ Current Plan</button>
+            {% elif user and user.get('plan', 'free') == 'pro' %}
+                <button class="price-cta price-cta-free" disabled style="opacity:0.5; cursor:default;">Free</button>
+            {% else %}
+                <a href="/signup" class="price-cta price-cta-free">Get started free</a>
+            {% endif %}
+        </div>
+
+        <!-- Pro Plan -->
+        <div class="price-card featured">
+            <h3>Pro</h3>
+            <div class="subtitle">For teams & businesses</div>
+            <div class="price-amount">$9 <span>/ month</span></div>
+            <ul class="price-features">
+                <li>Unlimited monitors</li>
+                <li>60-second checks</li>
+                <li>Email alerts</li>
+                <li>Slack alerts</li>
+                <li>Public status pages</li>
+                <li>Priority support</li>
+            </ul>
+            {% if user and user.get('plan', 'free') == 'pro' %}
+                <button class="price-cta current-plan" disabled>✓ Current Plan</button>
+            {% elif user %}
+                <form method="POST" action="/api/billing/checkout" style="margin:0;">
+                    <button type="submit" class="price-cta price-cta-pro">Upgrade to Pro →</button>
+                </form>
+            {% else %}
+                <a href="/signup" class="price-cta price-cta-pro">Start free, upgrade anytime</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

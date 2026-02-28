@@ -86,6 +86,9 @@
         <a href="/" class="nav-brand">🐓 StatusRooster</a>
         <div class="nav-links">
             {% if user %}
+                {% if user.get('plan', 'free') != 'pro' %}
+                    <a href="/pricing" style="color: #e63946; font-weight: 600;">⚡ Upgrade</a>
+                {% endif %}
                 <a href="/dashboard">Dashboard</a>
                 <a href="/logout">Log out</a>
             {% else %}

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from app.routers import auth, monitors, cron, pages
+from app.routers import auth, monitors, cron, pages, billing
 from datetime import datetime
 import json
 import os
@@ -12,6 +12,7 @@ app = FastAPI(title="StatusRooster", version="0.1.0")
 app.include_router(pages.router)
 app.include_router(auth.router)
 app.include_router(monitors.router)
+app.include_router(billing.router)
 app.include_router(cron.router)
 
 # Static files
