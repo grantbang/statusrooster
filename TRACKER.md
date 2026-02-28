@@ -223,10 +223,25 @@ _Goal: Make everything look professional and feel bulletproof. No jank. Simple a
 - [ ] Password reset flow (forgot password → email link → reset form)
 - [ ] Loading states / disabled buttons on form submit
 
+**CI/CD Pipeline**
+- [ ] Create `statusrooster-dev` Cloud Run service (separate service, same GCP project)
+- [ ] Dev accessible at Cloud Run URL (no custom domain needed)
+- [ ] Separate env vars for dev (e.g., `APP_URL` points to dev Cloud Run URL, Stripe test keys)
+- [ ] GitHub Actions CI workflow: lint + test on every push and PR to `main`
+- [ ] Block merges if tests fail (branch protection rule on `main`)
+- [ ] GitHub Actions CD — **dev**: auto-deploy to `statusrooster-dev` on push to `main` (if CI passes)
+- [ ] GitHub Actions CD — **prod**: manual trigger (`workflow_dispatch`) or git tag push to deploy to `statusrooster` (prod)
+- [ ] Workload Identity Federation (keyless auth from GitHub Actions → GCP, no service account key)
+- [ ] Health check gate: after deploy, hit `/health` — fail the workflow if it doesn't return 200
+- [ ] `.github/workflows/ci.yml` + `.github/workflows/deploy-dev.yml` + `.github/workflows/deploy-prod.yml`
+
+_Flow: push to main → tests pass → auto-deploy to dev → verify on dev → manually trigger prod deploy._
+_Staging environment deferred — add when there's a team or paying customers to protect._
+
 - [ ] Deploy Day 9 to production
 - [ ] Git commit Day 9
 
-**✅ Day 9 Checkpoint:** Full-featured product. Every page polished. Every form validated. Every edge handled.
+**✅ Day 9 Checkpoint:** Full-featured product. Every page polished. Every form validated. Every edge handled. CI/CD pipeline live — push to main auto-deploys if tests pass.
 
 ---
 
@@ -241,7 +256,7 @@ _Goal: Comprehensive pytest suite that covers every route, edge case, and failur
 - [ ] pytest + httpx async test client setup
 - [ ] Test fixtures: mock Firestore, test user, test monitor
 - [ ] Conftest with reusable auth helpers (create user, get token, get cookie)
-- [ ] GitHub Actions CI workflow (run tests on every push/PR)
+- [ ] Tests run in CI pipeline (set up in Day 9)
 
 **Auth Tests (12)**
 - [ ] Signup with valid credentials → 302 + cookie + user in DB
