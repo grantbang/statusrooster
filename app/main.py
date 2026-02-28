@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from app.routers import auth, monitors, cron, pages, billing
+from app.routers import auth, monitors, cron, pages, billing, api_v1
 from datetime import datetime
 import json
 import os
@@ -13,6 +13,7 @@ app.include_router(pages.router)
 app.include_router(auth.router)
 app.include_router(monitors.router)
 app.include_router(billing.router)
+app.include_router(api_v1.router)
 app.include_router(cron.router)
 
 # Static files

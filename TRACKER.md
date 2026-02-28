@@ -1,6 +1,16 @@
 # StatusRooster Build Tracker 🐓
 
 **Start:** Feb 25, 2026 · **Target Launch:** Mar 7, 2026
+
+| Phase | Days | Status |
+|-------|------|--------|
+| 1. Core Engine | 1-4 | ✅ Complete |
+| 2. Feature Suite & Billing | 5-9 | 🔄 In Progress (Day 8 done) |
+| 3. Testing & Launch | 10-12 | 🔲 Not started |
+| 4. Post-Launch | 13-14+ | 🔲 Not started |
+
+**Current Day: 8** · **Current Phase: 2**
+
 ---
 
 ## Phase 1: Core Engine — Days 1-4
@@ -156,28 +166,32 @@ Maintenance windows, Aggregate status page, 10 status pages
 - 🔲 Domain Expiry Monitoring — deferred to post-launch (needs WHOIS library)
 - 🔲 API access gating (Free vs Pro) — Day 8 scope
 
-- [ ] Deploy Day 7 to production
-- [ ] Git commit Day 7
+- [x] Deploy Day 7 to production (revision `statusrooster-00012-4xq`)
+- [x] Git commit Day 7 (`227ce35`)
 
-### Day 8 — Public API & Developer Experience 🔲
+### Day 8 — Public API & Developer Experience �
 _Goal: Give developers programmatic access. API keys, docs, exports._
 
 **API Keys**
-- [ ] API key model (generate, store hashed, revoke)
-- [ ] API key auth middleware (check `X-API-Key` header)
-- [ ] API key management UI (generate/revoke from dashboard settings page)
+- [x] API key model (generate, store hashed, revoke)
+- [x] API key auth middleware (check `X-API-Key` header)
+- [x] API key management UI (generate/revoke from Settings page)
 
 **API Endpoints**
-- [ ] `GET /api/v1/monitors` — list monitors (API key auth)
-- [ ] `GET /api/v1/monitors/{id}` — single monitor detail
-- [ ] `GET /api/v1/monitors/{id}/checks` — export checks as JSON (with pagination)
-- [ ] `POST /api/v1/monitors` — create monitor via API
-- [ ] `DELETE /api/v1/monitors/{id}` — delete monitor via API
-- [ ] All API responses follow consistent JSON shape `{data, error, meta}`
+- [x] `GET /api/v1/monitors` — list monitors (API key auth)
+- [x] `GET /api/v1/monitors/{id}` — single monitor detail
+- [x] `GET /api/v1/monitors/{id}/checks` — export checks as JSON (with pagination)
+- [x] `POST /api/v1/monitors` — create monitor via API
+- [x] `DELETE /api/v1/monitors/{id}` — delete monitor via API
+- [x] All API responses follow consistent JSON shape `{data, error, meta}`
 
 **Documentation**
-- [ ] API docs page (`/docs` — endpoints, auth, examples with curl)
-- [ ] Interactive "Try it" examples on docs page
+- [x] API docs page (`/docs/api` — endpoints, auth, examples with curl)
+- [x] Python + JavaScript quick-start examples on docs page
+
+**Navigation**
+- [x] Settings link in nav bar
+- [x] API docs link in nav bar
 
 - [ ] Deploy Day 8 to production
 - [ ] Git commit Day 8

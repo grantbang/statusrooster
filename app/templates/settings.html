@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block extra_css %}
+.settings-header {
+    margin-bottom: 2rem;
+}
+.settings-header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+}
+.settings-header p {
+    color: #888;
+    font-size: 0.9rem;
+}
+
+/* Section */
+.settings-section {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+}
+.settings-section h2 {
+    font-size: 1.15rem;
+    margin-bottom: 0.25rem;
+}
+.settings-section .section-desc {
+    color: #888;
+    font-size: 0.85rem;
+    margin-bottom: 1.25rem;
+}
+
+/* New key alert */
+.new-key-box {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+}
+.new-key-box p {
+    font-size: 0.85rem;
+    color: #155724;
+    margin-bottom: 0.5rem;
+}
+.new-key-box .key-value {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.9rem;
+    background: #fff;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    word-break: break-all;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+}
+.copy-btn {
+    background: #155724;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.copy-btn:hover { background: #0d3d16; }
+
+/* Generate form */
+.generate-form {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-end;
+    margin-bottom: 1.5rem;
+}
+.generate-form .form-group {
+    flex: 1;
+}
+.generate-form label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 0.3rem;
+}
+.generate-form input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+.generate-form input:focus {
+    outline: none;
+    border-color: #e63946;
+}
+
+/* Key table */
+.keys-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.keys-table th {
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #888;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #eee;
+    letter-spacing: 0.3px;
+}
+.keys-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.9rem;
+    vertical-align: middle;
+}
+.keys-table tr:last-child td { border-bottom: none; }
+.key-prefix {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    background: #f4f4f4;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+}
+.key-label {
+    font-weight: 600;
+}
+.key-revoked {
+    color: #dc3545;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.key-active {
+    color: #28a745;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.key-date {
+    color: #888;
+    font-size: 0.8rem;
+}
+.revoke-btn {
+    background: none;
+    border: 1px solid #dc3545;
+    color: #dc3545;
+    border-radius: 4px;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.revoke-btn:hover { background: #dc3545; color: #fff; }
+
+.no-keys {
+    text-align: center;
+    padding: 2rem;
+    color: #888;
+}
+
+/* Account info */
+.account-info {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+.account-info dt {
+    color: #888;
+    font-weight: 600;
+}
+.account-info dd {
+    color: #333;
+}
+
+/* Docs link */
+.docs-callout {
+    background: #f0f0ff;
+    border: 1px solid #d0d0ff;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    font-size: 0.9rem;
+}
+.docs-callout a {
+    font-weight: 600;
+}
+{% endblock %}
+
+{% block content %}
+<div class="settings-header">
+    <h1>⚙️ Settings</h1>
+    <p>Manage your account and API access.</p>
+</div>
+
+<!-- Account Info -->
+<div class="settings-section">
+    <h2>Account</h2>
+    <div class="section-desc">Your account details.</div>
+    <dl class="account-info">
+        <dt>Email</dt>
+        <dd>{{ user.email }}</dd>
+        <dt>Plan</dt>
+        <dd>
+            {% if user.get('plan', 'free') == 'pro' %}
+                <span style="color: #e63946; font-weight: 700;">Pro</span>
+            {% else %}
+                Free &nbsp;·&nbsp; <a href="/pricing">Upgrade to Pro →</a>
+            {% endif %}
+        </dd>
+        <dt>Monitors</dt>
+        <dd>{{ user.get('monitors_count', 0) }}</dd>
+    </dl>
+</div>
+
+<!-- API Keys -->
+<div class="settings-section">
+    <h2>🔑 API Keys</h2>
+    <div class="section-desc">Create API keys to access the <a href="/docs/api">StatusRooster API</a> programmatically.</div>
+
+    {% if new_api_key %}
+    <div class="new-key-box">
+        <p><strong>⚠️ Copy your API key now.</strong> You won't be able to see it again.</p>
+        <div class="key-value">
+            <span id="newKeyValue">{{ new_api_key }}</span>
+            <button class="copy-btn" onclick="copyKey()">Copy</button>
+        </div>
+    </div>
+    {% endif %}
+
+    <form method="POST" action="/settings/api-keys/generate" class="generate-form">
+        <div class="form-group">
+            <label for="label">Key Label</label>
+            <input type="text" id="label" name="label" placeholder="e.g. Production, CI/CD" maxlength="50">
+        </div>
+        <button type="submit" class="btn btn-primary">Generate API Key</button>
+    </form>
+
+    <div class="docs-callout">
+        📄 Use your key with <code>X-API-Key</code> header. <a href="/docs/api">View API documentation →</a>
+    </div>
+
+    <br>
+
+    {% if api_keys %}
+    <table class="keys-table">
+        <thead>
+            <tr>
+                <th>Label</th>
+                <th>Key</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Last Used</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for key in api_keys %}
+            <tr>
+                <td class="key-label">{{ key.label }}</td>
+                <td><span class="key-prefix">{{ key.prefix }}...</span></td>
+                <td>
+                    {% if key.revoked %}
+                        <span class="key-revoked">Revoked</span>
+                    {% else %}
+                        <span class="key-active">Active</span>
+                    {% endif %}
+                </td>
+                <td class="key-date">
+                    {% if key.created_at %}
+                        {{ key.created_at.strftime('%b %d, %Y') if key.created_at.strftime is defined else key.created_at }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td class="key-date">
+                    {% if key.last_used_at %}
+                        {{ key.last_used_at.strftime('%b %d, %Y') if key.last_used_at.strftime is defined else key.last_used_at }}
+                    {% else %}
+                        Never
+                    {% endif %}
+                </td>
+                <td>
+                    {% if not key.revoked %}
+                    <form method="POST" action="/settings/api-keys/{{ key.id }}/revoke"
+                          onsubmit="return confirm('Revoke this API key? It will immediately stop working.')">
+                        <button type="submit" class="revoke-btn">Revoke</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="no-keys">
+        <p>No API keys yet. Generate one above to get started.</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyKey() {
+    var keyEl = document.getElementById('newKeyValue');
+    if (keyEl) {
+        navigator.clipboard.writeText(keyEl.textContent).then(function() {
+            var btn = document.querySelector('.copy-btn');
+            btn.textContent = 'Copied!';
+            setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+        });
+    }
+}
+</script>
+{% endblock %}

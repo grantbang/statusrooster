@@ -10,6 +10,7 @@ from app.models.user import create_user, get_user_by_email, verify_password
 from app.models.monitor import list_monitors_by_user, get_monitor, get_monitor_by_slug, create_monitor, update_monitor, delete_monitor
 from app.models.check import get_recent_checks, get_daily_uptime
 from app.models.incident import list_incidents_by_monitor
+from app.models.api_key import generate_api_key, list_api_keys, revoke_api_key
 from app.services.auth import create_access_token, decode_access_token
 from app.services.alerts import _format_duration, send_test_alert
 from app.models.user import get_user_by_id
@@ -567,4 +568,91 @@ async def public_status_page(request: Request, slug: str):
         "daily_uptime": daily_uptime,
         "incidents": incidents,
         "format_duration": _format_duration,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Settings / API Keys
+# ---------------------------------------------------------------------------
+
+@router.get("/settings", response_class=HTMLResponse)
+async def settings_page(request: Request):
+    user = get_user_from_cookie(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+
+    db = get_db()
+    api_keys = list_api_keys(db, user["id"])
+
+    # Check for flash
+    flash_message = request.cookies.get("flash_message")
+    flash_type = request.cookies.get("flash_type", "success")
+    new_api_key = request.cookies.get("new_api_key")
+
+    response = templates.TemplateResponse("settings.html", {
+        "request": request,
+        "user": user,
+        "api_keys": api_keys,
+        "flash_message": flash_message,
+        "flash_type": flash_type,
+        "new_api_key": new_api_key,
+    })
+
+    # Clear flash cookies
+    if flash_message:
+        response.delete_cookie("flash_message")
+        response.delete_cookie("flash_type")
+    if new_api_key:
+        response.delete_cookie("new_api_key")
+
+    return response
+
+
+@router.post("/settings/api-keys/generate", response_class=HTMLResponse)
+async def generate_api_key_page(request: Request, label: str = Form("Default")):
+    user = get_user_from_cookie(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+
+    db = get_db()
+    key_data = generate_api_key(db, user["id"], label=label.strip() or "Default")
+
+    response = RedirectResponse(url="/settings", status_code=302)
+    response.set_cookie("flash_message", "API key created! Copy it now -- you won't see it again.", max_age=10)
+    response.set_cookie("flash_type", "success", max_age=10)
+    response.set_cookie("new_api_key", key_data["raw_key"], max_age=10)
+    return response
+
+
+@router.post("/settings/api-keys/{key_id}/revoke", response_class=HTMLResponse)
+async def revoke_api_key_page(request: Request, key_id: str):
+    user = get_user_from_cookie(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+
+    db = get_db()
+    success = revoke_api_key(db, key_id, user["id"])
+
+    response = RedirectResponse(url="/settings", status_code=302)
+    if success:
+        response.set_cookie("flash_message", "API key revoked.", max_age=10)
+        response.set_cookie("flash_type", "success", max_age=10)
+    else:
+        response.set_cookie("flash_message", "Could not revoke key.", max_age=10)
+        response.set_cookie("flash_type", "error", max_age=10)
+    return response
+
+
+# ---------------------------------------------------------------------------
+# API Documentation Page
+# ---------------------------------------------------------------------------
+
+@router.get("/docs/api", response_class=HTMLResponse)
+async def api_docs_page(request: Request):
+    user = get_user_from_cookie(request)
+    from app.config import settings as app_settings
+    return templates.TemplateResponse("api_docs.html", {
+        "request": request,
+        "user": user,
+        "app_url": app_settings.APP_URL,
     })
