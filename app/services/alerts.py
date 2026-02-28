@@ -216,3 +216,261 @@ async def send_recovery_alert(monitor: dict, incident: dict) -> None:
     sms_number = monitor.get("alert_sms", "")
     if sms_number:
         await send_sms(sms_number, f"UP: {name} ({url}) — back up after {duration_str}")
+
+
+# ---------------------------------------------------------------------------
+# SSL Expiry Alert
+# ---------------------------------------------------------------------------
+
+async def send_ssl_expiry_alert(monitor: dict, days_left: int, expiry_date) -> None:
+    """Send SSL certificate expiry warning through all configured channels."""
+    name = monitor.get("name", monitor.get("url", "Unknown"))
+    url = monitor.get("url", "")
+    monitor_id = monitor.get("id", "")
+    app_url = settings.APP_URL or "https://statusrooster.com"
+    detail_url = f"{app_url}/monitors/{monitor_id}"
+    expiry_str = expiry_date.strftime("%b %d, %Y") if expiry_date else "Unknown"
+
+    urgency = "⚠️" if days_left > 7 else "🚨"
+
+    # --- Email ---
+    alert_email = monitor.get("alert_email", "")
+    if alert_email:
+        subject = f"{urgency} SSL Certificate expires in {days_left} days: {name}"
+        html = f"""
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto;">
+            <h2 style="color: #e76f51;">{urgency} SSL Certificate Expiring Soon</h2>
+            <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+                <tr><td style="padding: 8px 0; color: #666;">Monitor</td><td style="padding: 8px 0;"><strong>{name}</strong></td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">URL</td><td style="padding: 8px 0;"><a href="{url}">{url}</a></td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">Expires</td><td style="padding: 8px 0;"><strong>{expiry_str}</strong></td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">Days Left</td><td style="padding: 8px 0;"><strong style="color: #e63946;">{days_left} days</strong></td></tr>
+            </table>
+            <p>Renew your SSL certificate before it expires to avoid downtime.</p>
+            <p><a href="{detail_url}" style="display: inline-block; background: #e76f51; color: #fff; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">View Monitor →</a></p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+            <p style="color: #aaa; font-size: 12px;">StatusRooster 🐓 — Uptime monitoring for developers</p>
+        </div>
+        """
+        await send_email(alert_email, subject, html)
+
+    # --- Slack ---
+    slack_webhook = monitor.get("alert_slack_webhook", "")
+    if slack_webhook:
+        message = (
+            f"{urgency} *SSL Certificate Expiring: {name}*\n"
+            f"URL: {url}\n"
+            f"Expires: {expiry_str} ({days_left} days left)\n"
+            f"<{detail_url}|View on StatusRooster →>"
+        )
+        await send_slack(slack_webhook, message)
+
+
+# ---------------------------------------------------------------------------
+# Keyword Missing Alert
+# ---------------------------------------------------------------------------
+
+async def send_keyword_alert(monitor: dict, keyword: str) -> None:
+    """Send alert when expected keyword is not found on the page."""
+    name = monitor.get("name", monitor.get("url", "Unknown"))
+    url = monitor.get("url", "")
+    monitor_id = monitor.get("id", "")
+    app_url = settings.APP_URL or "https://statusrooster.com"
+    detail_url = f"{app_url}/monitors/{monitor_id}"
+    time_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
+    # --- Email ---
+    alert_email = monitor.get("alert_email", "")
+    if alert_email:
+        subject = f"🔍 Keyword missing on {name}"
+        html = f"""
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto;">
+            <h2 style="color: #e76f51;">🔍 Keyword Not Found</h2>
+            <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+                <tr><td style="padding: 8px 0; color: #666;">Monitor</td><td style="padding: 8px 0;"><strong>{name}</strong></td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">URL</td><td style="padding: 8px 0;"><a href="{url}">{url}</a></td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">Expected Keyword</td><td style="padding: 8px 0;"><code>{keyword}</code></td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">Detected</td><td style="padding: 8px 0;">{time_str}</td></tr>
+            </table>
+            <p>The page responded with 200 OK but the expected keyword was not found in the response body.</p>
+            <p><a href="{detail_url}" style="display: inline-block; background: #e76f51; color: #fff; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">View Monitor →</a></p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+            <p style="color: #aaa; font-size: 12px;">StatusRooster 🐓 — Uptime monitoring for developers</p>
+        </div>
+        """
+        await send_email(alert_email, subject, html)
+
+    # --- Slack ---
+    slack_webhook = monitor.get("alert_slack_webhook", "")
+    if slack_webhook:
+        message = (
+            f"🔍 *Keyword Missing: {name}*\n"
+            f"URL: {url}\n"
+            f"Expected: `{keyword}`\n"
+            f"Detected: {time_str}\n"
+            f"<{detail_url}|View on StatusRooster →>"
+        )
+        await send_slack(slack_webhook, message)
+
+
+# ---------------------------------------------------------------------------
+# Response Time Threshold Alert
+# ---------------------------------------------------------------------------
+
+async def send_threshold_alert(monitor: dict, actual_ms: float, threshold_ms: int) -> None:
+    """Send alert when response time exceeds user-defined threshold."""
+    name = monitor.get("name", monitor.get("url", "Unknown"))
+    url = monitor.get("url", "")
+    monitor_id = monitor.get("id", "")
+    app_url = settings.APP_URL or "https://statusrooster.com"
+    detail_url = f"{app_url}/monitors/{monitor_id}"
+    time_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
+    # --- Email ---
+    alert_email = monitor.get("alert_email", "")
+    if alert_email:
+        subject = f"🐢 Slow response on {name}: {actual_ms:.0f}ms"
+        html = f"""
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto;">
+            <h2 style="color: #e76f51;">🐢 Slow Response Detected</h2>
+            <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+                <tr><td style="padding: 8px 0; color: #666;">Monitor</td><td style="padding: 8px 0;"><strong>{name}</strong></td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">URL</td><td style="padding: 8px 0;"><a href="{url}">{url}</a></td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">Response Time</td><td style="padding: 8px 0;"><strong style="color: #e63946;">{actual_ms:.0f}ms</strong></td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">Threshold</td><td style="padding: 8px 0;">{threshold_ms}ms</td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">Detected</td><td style="padding: 8px 0;">{time_str}</td></tr>
+            </table>
+            <p><a href="{detail_url}" style="display: inline-block; background: #e76f51; color: #fff; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">View Monitor →</a></p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+            <p style="color: #aaa; font-size: 12px;">StatusRooster 🐓 — Uptime monitoring for developers</p>
+        </div>
+        """
+        await send_email(alert_email, subject, html)
+
+    # --- Slack ---
+    slack_webhook = monitor.get("alert_slack_webhook", "")
+    if slack_webhook:
+        message = (
+            f"🐢 *Slow Response: {name}*\n"
+            f"URL: {url}\n"
+            f"Response: {actual_ms:.0f}ms (threshold: {threshold_ms}ms)\n"
+            f"Detected: {time_str}\n"
+            f"<{detail_url}|View on StatusRooster →>"
+        )
+        await send_slack(slack_webhook, message)
+
+
+# ---------------------------------------------------------------------------
+# Webhook Notification (Pro feature)
+# ---------------------------------------------------------------------------
+
+async def send_webhook_notification(monitor: dict, event: str, check_result: dict) -> bool:
+    """Send a webhook POST to user's configured URL on status change."""
+    webhook_url = monitor.get("webhook_url", "")
+    if not webhook_url:
+        return False
+
+    payload = {
+        "event": event,
+        "monitor_name": monitor.get("name", ""),
+        "monitor_url": monitor.get("url", ""),
+        "status": "up" if check_result.get("is_up") else "down",
+        "status_code": check_result.get("status_code"),
+        "response_ms": check_result.get("response_ms"),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                webhook_url,
+                json=payload,
+                headers={"Content-Type": "application/json", "User-Agent": "StatusRooster/1.0"},
+                timeout=10.0,
+            )
+            if resp.status_code < 400:
+                print(f"[alert] Webhook sent to {webhook_url}: {event}")
+                return True
+            else:
+                print(f"[alert] Webhook error {resp.status_code}: {resp.text[:200]}")
+                return False
+    except Exception as e:
+        print(f"[alert] Webhook exception: {e}")
+        return False
+
+
+# ---------------------------------------------------------------------------
+# Test Alert (send a test notification to verify config)
+# ---------------------------------------------------------------------------
+
+async def send_test_alert(monitor: dict, user_plan: str = "free") -> dict:
+    """
+    Send a test alert through all configured channels.
+    Returns dict of results per channel.
+    """
+    name = monitor.get("name", monitor.get("url", "Unknown"))
+    url = monitor.get("url", "")
+    monitor_id = monitor.get("id", "")
+    app_url = settings.APP_URL or "https://statusrooster.com"
+    detail_url = f"{app_url}/monitors/{monitor_id}"
+    time_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
+    results = {"email": False, "slack": False, "webhook": False}
+
+    # --- Email ---
+    alert_email = monitor.get("alert_email", "")
+    if alert_email:
+        subject = f"🧪 Test Alert: {name}"
+        html = f"""
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto;">
+            <h2 style="color: #2a9d8f;">🧪 Test Alert — It Works!</h2>
+            <p>This is a test notification from StatusRooster. Your alert configuration is working correctly.</p>
+            <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+                <tr><td style="padding: 8px 0; color: #666;">Monitor</td><td style="padding: 8px 0;"><strong>{name}</strong></td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">URL</td><td style="padding: 8px 0;"><a href="{url}">{url}</a></td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">Sent At</td><td style="padding: 8px 0;">{time_str}</td></tr>
+            </table>
+            <p><a href="{detail_url}" style="display: inline-block; background: #2a9d8f; color: #fff; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">View Monitor →</a></p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+            <p style="color: #aaa; font-size: 12px;">StatusRooster 🐓 — Uptime monitoring for developers</p>
+        </div>
+        """
+        results["email"] = await send_email(alert_email, subject, html)
+
+    # --- Slack ---
+    slack_webhook = monitor.get("alert_slack_webhook", "")
+    if slack_webhook:
+        message = (
+            f"🧪 *Test Alert: {name}*\n"
+            f"This is a test notification — your Slack alerts are working!\n"
+            f"URL: {url}\n"
+            f"Sent: {time_str}\n"
+            f"<{detail_url}|View on StatusRooster →>"
+        )
+        results["slack"] = await send_slack(slack_webhook, message)
+
+    # --- Webhook (Pro only) ---
+    webhook_url = monitor.get("webhook_url", "")
+    if webhook_url and user_plan != "free":
+        payload = {
+            "event": "test",
+            "monitor_name": name,
+            "monitor_url": url,
+            "status": "test",
+            "status_code": None,
+            "response_ms": None,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(
+                    webhook_url,
+                    json=payload,
+                    headers={"Content-Type": "application/json", "User-Agent": "StatusRooster/1.0"},
+                    timeout=10.0,
+                )
+                results["webhook"] = resp.status_code < 400
+        except Exception:
+            results["webhook"] = False
+
+    return results

@@ -73,7 +73,7 @@
 - [x] User can set/edit slug for their status page
 - [x] Status page works when logged out (public)
 
-### Day 6 — Stripe Billing 🔲
+### Day 6 — Stripe Billing ✅
 - [x] Stripe Checkout session creation (`POST /api/billing/checkout`)
 - [x] Redirect user to Stripe Checkout for Pro upgrade
 - [x] Stripe webhook endpoint (`POST /api/billing/webhook`)
@@ -88,47 +88,140 @@
 - [x] Enriched URL check: status, response time, server, SSL issuer, SSL expiry, redirects
 - [x] Logged-in users redirect from `/` → `/dashboard`
 - [x] "About Our Code" transparency section on landing page
-- [ ] Deploy Day 6 to production
-- [ ] Git commit Day 6
+- [x] Deploy Day 6 to production (revision `statusrooster-00011-6mp`)
+- [x] Git commit Day 6 (`dbc0afb`)
 
-### Day 7 — Public API, Docs & Landing Page 🔲
+### Day 7 — Monitoring Suite Features ✅
+_Goal: Build real monitoring features people actually need. Lean into simplicity — not trying to be UptimeRobot, just a great uptime tool for freelancers, indie devs, and small agencies._
+
+**Strategic Positioning (decided Day 7):**
+- ❌ NOT competing head-to-head with UptimeRobot
+- ✅ Positioning on simplicity: "No bloat. No confusion. Just uptime monitoring."
+- ✅ Honest feature stack — only claim what's actually built
+- ✅ Target audience: freelancers, indie devs, small agencies who want simple, not enterprise
+- ✅ Goal: $10-20K/mo niche SaaS, not a VC-backed UptimeRobot killer
+
+**What's Actually Built (Free tier):**
+```
+50 monitors, HTTP/HTTPS monitoring, SSL expiry monitoring + alerts,
+Keyword monitoring, Response time threshold alerts, Email alerts,
+Slack integration, Test alert button, 1 public status page
+```
+**What's Actually Built (Pro $9/mo):**
+```
+Everything in Free + Unlimited monitors, Webhook notifications,
+Maintenance windows, Aggregate status page, 10 status pages
+```
+
+**Tier 1 — Core Monitor Enhancements (ALL plans, including Free) ✅**
+- [x] SSL Expiry Monitoring: on each check, grab cert expiry → store on monitor doc
+- [x] SSL Expiry Alerts: alert at 14 days, 7 days, 3 days before cert expires
+- [x] SSL expiry visible on monitor detail page + dashboard card
+- [x] Keyword/Content Check: user sets "expected keyword" → alert if page body doesn't contain it
+- [x] Keyword field on add/edit monitor form
+- [x] Response Time Threshold: user sets max acceptable ms → alert if exceeded
+- [x] Threshold field on add/edit monitor form (e.g., "Alert if > 2000ms")
+- [x] Response time threshold visible on monitor detail page
+- [x] **Test Alert Button**: "Send Test" on each monitor → fires test email/Slack/webhook to verify config
+- [x] Test alert endpoint: `POST /api/monitors/{id}/test-alert`
+- [x] Test alert sends clearly-labeled test notification (email + Slack + webhook if configured)
+- [x] Test alert button visible on monitor detail page
+
+**Tier 2 — Pro Features (gated behind Pro $9/mo plan) ✅**
+- [x] Webhook Notification: user provides a URL → POST JSON payload on status change
+- [x] Webhook URL field on add/edit monitor form (show upgrade prompt for Free users)
+- [x] Webhook payload: `{event, monitor_name, monitor_url, status, status_code, response_ms, timestamp}`
+- [x] Scheduled Maintenance Windows: "Don't alert me [day] [start]-[end] UTC"
+- [x] Maintenance window fields on edit monitor form (Pro only)
+- [x] Check engine skips alerting (still checks) during maintenance windows
+
+**Tier 2 — Status Pages & Reporting (Pro only) ✅**
+- [x] Aggregate Status Page: shows ALL public monitors for a user
+- [x] Aggregate page: overall status badge + individual monitor rows + uptime bars
+
+**Plan Enforcement Updates (partial)**
+- [x] Webhook/maintenance fields hidden or show "Upgrade to Pro" for Free users
+- [x] Monitor limit enforcement: Free = 50, Pro = Unlimited
+- [ ] Check interval enforcement: Free = 5 min cron, Pro = 60 sec cron _(deferred — needs per-monitor scheduling)_
+- [ ] Status page limit enforcement: Free = 1, Pro = 10 _(not yet enforced in code)_
+
+**Pricing Page ✅**
+- [x] Rewrote pricing.html — simplicity positioning, accurate feature lists, FAQ section
+- [x] Removed UptimeRobot comparison table (was overclaiming features we don't have)
+- [x] Removed "Weekly uptime digest email" from Pro features (not built yet)
+- [x] Every feature listed on pricing page is actually built and working
+
+**NOT built (removed from scope or deferred):**
+- 🔲 Weekly Uptime Digest Email — removed from pricing page claims, deferred to post-launch
+- 🔲 Domain Expiry Monitoring — deferred to post-launch (needs WHOIS library)
+- 🔲 API access gating (Free vs Pro) — Day 8 scope
+
+- [ ] Deploy Day 7 to production
+- [ ] Git commit Day 7
+
+### Day 8 — Public API & Developer Experience 🔲
+_Goal: Give developers programmatic access. API keys, docs, exports._
+
+**API Keys**
 - [ ] API key model (generate, store hashed, revoke)
 - [ ] API key auth middleware (check `X-API-Key` header)
-- [ ] API key management UI (generate/revoke from dashboard settings)
-- [ ] `GET /api/monitors` — list monitors (API key auth)
-- [ ] `GET /api/monitors/{id}/checks` — export checks as JSON
-- [ ] API docs page (`/docs` — endpoints, auth, examples with curl)
-- [ ] Marketing landing page (`/`)
-- [ ] Hero section: headline, subhead, CTA button
-- [ ] Features grid (6 features with icons)
-- [ ] Pricing table (Free vs Pro, side-by-side)
-- [ ] FAQ section (5-6 common questions)
-- [ ] Footer (links, legal placeholder)
-- [ ] Mobile responsive
+- [ ] API key management UI (generate/revoke from dashboard settings page)
 
-### Day 8 — UI Polish & Hardening 🔲
-- [ ] UI polish pass: clean typography, spacing, color consistency (think Google, not AI-generated)
-- [ ] Dashboard card redesign (tighter layout, better hierarchy)
-- [ ] Dashboard filtering (All / Up / Down / Pending)
+**API Endpoints**
+- [ ] `GET /api/v1/monitors` — list monitors (API key auth)
+- [ ] `GET /api/v1/monitors/{id}` — single monitor detail
+- [ ] `GET /api/v1/monitors/{id}/checks` — export checks as JSON (with pagination)
+- [ ] `POST /api/v1/monitors` — create monitor via API
+- [ ] `DELETE /api/v1/monitors/{id}` — delete monitor via API
+- [ ] All API responses follow consistent JSON shape `{data, error, meta}`
+
+**Documentation**
+- [ ] API docs page (`/docs` — endpoints, auth, examples with curl)
+- [ ] Interactive "Try it" examples on docs page
+
+- [ ] Deploy Day 8 to production
+- [ ] Git commit Day 8
+
+### Day 9 — UI Polish & Hardening 🔲
+_Goal: Make everything look professional and feel bulletproof. No jank. Simple and crisp._
+
+**UI Polish**
+- [ ] UI polish pass: clean typography, spacing, color consistency
+- [ ] Dashboard card redesign (tighter layout, better hierarchy, show SSL + keyword status)
+- [ ] Monitor detail page polish (chart styling, stat cards, SSL info, keyword status)
+- [ ] Auth pages polish (signup, login — consistent with landing page aesthetic)
+- [ ] Landing page update: feature grid reflects ALL new features (SSL, keyword, webhooks, etc.)
+- [ ] Mobile responsive pass on ALL pages
+- [ ] Consistent button styles, form inputs, card shadows across all pages
+
+**Dashboard UX**
+- [ ] Dashboard filtering (All / Up / Down / Pending / SSL Warning)
 - [ ] Dashboard sorting (name, status, uptime%, response time)
 - [ ] Dashboard search (filter by name or URL)
-- [ ] Monitor detail page polish (chart styling, stat cards)
-- [ ] Auth pages polish (signup, login — consistent with dashboard)
-- [ ] Mobile responsive pass on all pages (dashboard, status page, forms)
+
+**Hardening**
 - [ ] Error states: form validation messages, API error handling
 - [ ] Rate limiting on auth endpoints (prevent brute force)
 - [ ] Custom 404 page
 - [ ] Custom 500 page
 - [ ] Meta tags (title, description, OG image) on all public pages
-- [ ] Favicon + basic branding
-- [ ] Logout functionality
+- [ ] Favicon + branding assets
 - [ ] Password reset flow (forgot password → email link → reset form)
 - [ ] Loading states / disabled buttons on form submit
 
-**✅ Day 8 Checkpoint:** Full product. Signup → monitor → alerts → status page → upgrade → manage subscription.
+- [ ] Deploy Day 9 to production
+- [ ] Git commit Day 9
 
-### Day 8.5 — Automated Test Suite 🔲
-_Goal: Comprehensive pytest suite that covers every route, edge case, and failure mode. CI/CD-ready._
+**✅ Day 9 Checkpoint:** Full-featured product. Every page polished. Every form validated. Every edge handled.
+
+---
+
+## Phase 3: Testing & Launch — Days 10-12
+
+### Day 10 — Automated Test Suite 🔲
+_Goal: Comprehensive pytest suite that covers every route, edge case, and failure mode. Nothing ships without passing tests._
+
+**⚠️ RULE: Every test must pass before Day 11 deploy. No exceptions.**
 
 **Test Infrastructure**
 - [ ] pytest + httpx async test client setup
@@ -136,7 +229,7 @@ _Goal: Comprehensive pytest suite that covers every route, edge case, and failur
 - [ ] Conftest with reusable auth helpers (create user, get token, get cookie)
 - [ ] GitHub Actions CI workflow (run tests on every push/PR)
 
-**Auth Tests (10+)**
+**Auth Tests (12)**
 - [ ] Signup with valid credentials → 302 + cookie + user in DB
 - [ ] Signup with duplicate email → error "Email already registered"
 - [ ] Signup with mismatched passwords → error "Passwords don't match"
@@ -150,11 +243,13 @@ _Goal: Comprehensive pytest suite that covers every route, edge case, and failur
 - [ ] Access /dashboard with tampered JWT → redirect to /login
 - [ ] Logout clears cookie → redirect to /login
 
-**Monitor CRUD Tests (10+)**
+**Monitor CRUD Tests (12)**
 - [ ] Create monitor with valid URL → appears in dashboard
 - [ ] Create monitor with invalid URL → error
 - [ ] Create monitor without auth → redirect to /login
-- [ ] Create 6th monitor on free plan → error "Upgrade to Pro"
+- [ ] Create 51st monitor on free plan → error "Upgrade to Pro"
+- [ ] Create monitor with keyword check → keyword stored
+- [ ] Create monitor with response threshold → threshold stored
 - [ ] Edit monitor name → name updated in Firestore
 - [ ] Edit monitor URL → URL updated
 - [ ] Edit someone else's monitor → 404 (no cross-user access)
@@ -162,7 +257,7 @@ _Goal: Comprehensive pytest suite that covers every route, edge case, and failur
 - [ ] Delete someone else's monitor → 404
 - [ ] List monitors only shows current user's monitors
 
-**Check Engine Tests (8+)**
+**Check Engine Tests (12)**
 - [ ] Cron endpoint without secret → 401
 - [ ] Cron endpoint with wrong secret → 401
 - [ ] Cron endpoint with valid secret → runs checks
@@ -171,37 +266,97 @@ _Goal: Comprehensive pytest suite that covers every route, edge case, and failur
 - [ ] Status change UP→DOWN → creates incident + triggers alerts
 - [ ] Status change DOWN→UP → resolves incident + sends recovery
 - [ ] No status change → no duplicate alerts
+- [ ] Keyword present → check passes
+- [ ] Keyword missing → check fails, alert sent
+- [ ] Response time over threshold → alert sent
+- [ ] SSL cert parsed and expiry stored on monitor doc
 
-**API Tests (6+)**
-- [ ] API endpoints return JSON (not HTML)
-- [ ] API with valid JWT → 200 + data
-- [ ] API without auth → 401
-- [ ] API with invalid token → 401
-- [ ] Monitor API respects user isolation
-- [ ] Check export returns correct data shape
+**API Key & API Tests (10)**
+- [ ] Generate API key → key returned, hash stored
+- [ ] List API keys → shows masked keys
+- [ ] Revoke API key → key no longer works
+- [ ] `GET /api/v1/monitors` with valid key → 200 + monitors
+- [ ] `GET /api/v1/monitors` without key → 401
+- [ ] `GET /api/v1/monitors` with revoked key → 401
+- [ ] `GET /api/v1/monitors/{id}/checks` → returns check history
+- [ ] `POST /api/v1/monitors` via API → monitor created
+- [ ] API respects user isolation (can't see other user's monitors)
+- [ ] API responses follow `{data, error, meta}` shape
 
-**Edge Cases & Security (6+)**
-- [ ] SQL/NoSQL injection attempts in email field
-- [ ] XSS attempt in monitor name → properly escaped
-- [ ] Extremely long URL → handled gracefully
+**Webhook & Integration Tests (6)**
+- [ ] Status change fires webhook POST to configured URL
+- [ ] Webhook payload contains all expected fields
+- [ ] Webhook failure doesn't block other alerts (email/Slack still sent)
+- [ ] Maintenance window suppresses alerts during window
+- [ ] Maintenance window still records checks (just no alerts)
+- [ ] Maintenance window expires → alerts resume
+
+**Test Alert Tests (4)**
+- [ ] `POST /api/monitors/{id}/test-alert` sends test email notification
+- [ ] Test alert sends test Slack message (if webhook configured)
+- [ ] Test alert sends test webhook POST (if webhook URL configured, Pro only)
+- [ ] Test alert on Free user's monitor with webhook → skips webhook, sends email/Slack only
+
+**Billing Tests (6)**
+- [ ] Checkout endpoint creates Stripe session → redirects
+- [ ] Webhook with valid signature → processes event
+- [ ] Webhook with invalid signature → 400
+- [ ] checkout.session.completed → user upgraded to Pro
+- [ ] customer.subscription.deleted → user downgraded to Free
+- [ ] Portal endpoint creates session → redirects
+
+**Edge Cases & Security (8)**
+- [ ] NoSQL injection attempts in email field → properly handled
+- [ ] XSS attempt in monitor name → properly escaped in HTML
+- [ ] XSS attempt in keyword field → properly escaped
+- [ ] Extremely long URL (>2000 chars) → handled gracefully
 - [ ] Concurrent duplicate signup → only one user created
 - [ ] Empty form submission → proper validation errors
-- [ ] CORS headers on API endpoints
+- [ ] Invalid monitor ID in URL → 404, not 500
+- [ ] Rate limiting on login endpoint → 429 after threshold
 
----
+- [ ] **ALL TESTS PASSING** ✅
+- [ ] Git commit Day 10
 
-## Phase 3: Launch Prep — Days 9-10
+### Day 11 — End-to-End Testing & Pre-Launch 🔲
+_Goal: Manual smoke test the ENTIRE product. Deploy final build. Dogfood it._
 
-### Day 9 — Bonus Features & Testing 🔲
-- [ ] SSL expiration check (connect to host, read cert expiry, alert if < 14 days)
-- [ ] SSL monitor type in UI (add SSL check to a monitor)
-- [ ] End-to-end manual test: full user journey (signup → monitors → alerts → status page → billing)
-- [ ] Set up StatusRooster monitoring itself (eat your own dog food)
+**Manual E2E Test (every path, in production)**
+- [ ] Fresh signup → lands on dashboard
+- [ ] Add monitor (with keyword + threshold + webhook) → monitor appears
+- [ ] Wait for check cycle → monitor shows UP with SSL info
+- [ ] Edit monitor → changes saved
+- [ ] **Send Test Alert → email arrives, Slack message appears**
+- [ ] View monitor detail → chart renders, stats correct
+- [ ] Make monitor public → status page works at `/s/{slug}`
+- [ ] Aggregate status page works at `/status/{slug}`
+- [ ] Trigger a DOWN event → email + Slack + webhook all fire
+- [ ] Recovery → recovery alerts all fire
+- [ ] Set maintenance window → alerts suppressed during window
+- [ ] Upgrade to Pro (Stripe test card `4242...`) → plan badge changes
+- [ ] Manage Subscription → Stripe portal opens
+- [ ] Generate API key → use it with curl to hit API
+- [ ] Revoke API key → curl returns 401
+- [ ] Password reset flow → email received → password changed → can login
+- [ ] Landing page URL checker works with SSL info
+- [ ] Mobile: test entire flow on phone-sized viewport
+- [ ] Log out → redirect to login → can't access dashboard
+
+**Dogfooding**
+- [ ] Set up StatusRooster monitoring statusrooster.com (eat our own dog food)
+- [ ] Set up monitoring on 2-3 other real sites
+
+**Pre-Launch Prep**
+- [ ] Final Cloud Run deploy with production env vars
+- [ ] Switch Stripe from test mode to live mode (when ready)
 - [ ] Write Show HN post draft
 - [ ] Take screenshots / record demo GIF
-- [ ] Final Cloud Run deploy with production env vars
+- [ ] Verify all env vars correct in production
 
-### Day 10 — Launch 🔲
+- [ ] **EVERYTHING WORKS** ✅
+- [ ] Git commit Day 11
+
+### Day 12 — Launch 🔲
 - [ ] Submit Show HN
 - [ ] Post to r/SideProject, r/webdev, r/SaaS
 - [ ] Post to IndieHackers
@@ -213,21 +368,37 @@ _Goal: Comprehensive pytest suite that covers every route, edge case, and failur
 
 ---
 
-## Phase 4: Post-Launch — Days 11-14
+## Phase 4: Post-Launch — Days 13-14+
 
-### Days 11-12 — Bug Fixes & Quick Wins 🔲
+### Days 13-14 — Bug Fixes & Growth 🔲
 - [ ] Fix bugs from real user feedback
 - [ ] Add most-requested small features
 - [ ] Performance improvements if needed
 - [ ] Monitor error logs
-
-### Days 13-14 — Growth & SEO 🔲
 - [ ] SEO blog post: "Free Website Uptime Monitoring"
 - [ ] SEO blog post: "UptimeRobot Alternatives 2026"
 - [ ] Free SSL checker tool page (standalone, ranks on Google)
-- [ ] Submit to AlternativeTo
-- [ ] Submit to G2
+- [ ] Submit to AlternativeTo, G2
 - [ ] Plan Product Hunt launch (week 3)
+
+### Future Features (Post-Launch Backlog) 🔲
+- [ ] **Team Plan ($29/mo)**: 200 monitors, 30s intervals, 5 login seats, unlimited status pages
+- [ ] SMS Alerts (Twilio integration)
+- [ ] TCP/Ping Checks (non-HTTP services)
+- [ ] Port Monitoring
+- [ ] DNS Monitoring
+- [ ] Team / Multi-User accounts (login seats, roles)
+- [ ] API Response Validation (check JSON fields)
+- [ ] Multiple check regions (US-East, EU, Asia)
+- [ ] Uptime badges (embeddable SVG for README files)
+- [ ] PagerDuty / Opsgenie integration
+- [ ] Custom check intervals (30s, 5m, 15m)
+- [ ] Incident postmortem notes
+- [ ] Cron Job / Heartbeat monitoring
+- [ ] Custom HTTP headers per monitor
+- [ ] Password-protected status pages
+- [ ] Status page subscribers (email notifications on status change)
+- [ ] Monthly email reports (in addition to weekly digest)
 
 ---
 
@@ -236,11 +407,11 @@ _Goal: Comprehensive pytest suite that covers every route, edge case, and failur
 | Phase | Days | Status |
 |-------|------|--------|
 | 1. Core Engine | 1-4 | ✅ Complete |
-| 2. Status Pages & Billing | 5-8 | 🔲 Not started |
-| 3. Launch Prep | 9-10 | 🔲 Not started |
-| 4. Post-Launch | 11-14 | 🔲 Not started |
+| 2. Feature Suite & Billing | 5-9 | � In Progress (Day 6 done) |
+| 3. Testing & Launch | 10-12 | 🔲 Not started |
+| 4. Post-Launch | 13-14+ | 🔲 Not started |
 
-**Current Day: 4** · **Current Phase: 1**
+**Current Day: 6** · **Current Phase: 2**
 
 ---
 

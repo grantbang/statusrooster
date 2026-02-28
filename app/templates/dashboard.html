@@ -303,9 +303,9 @@
     </div>
 </div>
 
-{% if user.get('plan', 'free') == 'free' and monitors | length >= 5 %}
+{% if user.get('plan', 'free') == 'free' and monitors | length >= 40 %}
 <div class="upgrade-banner">
-    <p>You've hit the <strong>5 monitor limit</strong> on the Free plan. Upgrade to Pro for unlimited monitors.</p>
+    <p>You're using <strong>{{ monitors | length }} of 50</strong> free monitors. Upgrade to Pro for unlimited monitors, webhooks, and maintenance windows.</p>
     <form method="POST" action="/api/billing/checkout" style="margin:0;">
         <button type="submit" class="upgrade-btn">Upgrade to Pro — $9/mo →</button>
     </form>
@@ -323,7 +323,18 @@
         </div>
         <div class="monitor-info">
             <div class="monitor-name">{{ m.name }}</div>
-            <div class="monitor-url">{{ m.url }}</div>
+            <div class="monitor-url">
+                {{ m.url }}
+                {% if m.get('keyword') %}<span style="display:inline-block;background:#eef;color:#336;font-size:0.65rem;padding:0.1rem 0.4rem;border-radius:4px;margin-left:0.4rem;vertical-align:middle;">🔑 Keyword</span>{% endif %}
+                {% if m.get('ssl_expiry') %}
+                    {% set days_left = m.get('ssl_expiry_days', 999) %}
+                    {% if days_left is number and days_left <= 14 %}
+                        <span style="display:inline-block;background:#fff3cd;color:#856404;font-size:0.65rem;padding:0.1rem 0.4rem;border-radius:4px;margin-left:0.4rem;vertical-align:middle;">🔒 SSL {{days_left}}d</span>
+                    {% else %}
+                        <span style="display:inline-block;background:#d4edda;color:#155724;font-size:0.65rem;padding:0.1rem 0.4rem;border-radius:4px;margin-left:0.4rem;vertical-align:middle;">🔒 SSL OK</span>
+                    {% endif %}
+                {% endif %}
+            </div>
         </div>
         <div class="monitor-stats">
             <div class="stat">
@@ -379,6 +390,25 @@
                 <label for="alert_slack_webhook">Slack Webhook URL <span style="color: #999; font-weight: normal;">(optional)</span></label>
                 <input type="url" id="alert_slack_webhook" name="alert_slack_webhook" placeholder="https://hooks.slack.com/services/...">
             </div>
+            <div class="form-group">
+                <label for="keyword">Keyword Check <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                <input type="text" id="keyword" name="keyword" placeholder="e.g. Welcome">
+                <div class="hint">Alert if this text is NOT found on the page</div>
+            </div>
+            <div class="form-group">
+                <label for="response_threshold_ms">Response Threshold <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                <input type="number" id="response_threshold_ms" name="response_threshold_ms" placeholder="e.g. 3000" min="100" step="100">
+                <div class="hint">Alert if response takes longer than this (ms)</div>
+            </div>
+            {% if user.get('plan', 'free') != 'free' %}
+            <div class="form-group">
+                <label for="webhook_url">Webhook URL <span style="color: #999; font-weight: normal;">(Pro)</span></label>
+                <input type="url" id="webhook_url" name="webhook_url" placeholder="https://your-api.com/webhook">
+                <div class="hint">We'll POST JSON to this URL on status changes</div>
+            </div>
+            {% else %}
+            <input type="hidden" name="webhook_url" value="">
+            {% endif %}
             <button type="submit" class="modal-submit">Add Monitor →</button>
         </form>
     </div>

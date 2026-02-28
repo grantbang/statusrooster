@@ -11,7 +11,7 @@ from app.models.monitor import list_monitors_by_user, get_monitor, get_monitor_b
 from app.models.check import get_recent_checks, get_daily_uptime
 from app.models.incident import list_incidents_by_monitor
 from app.services.auth import create_access_token, decode_access_token
-from app.services.alerts import _format_duration
+from app.services.alerts import _format_duration, send_test_alert
 from app.models.user import get_user_by_id
 import os
 
@@ -274,6 +274,9 @@ async def add_monitor(
     name: str = Form(...),
     alert_email: str = Form(""),
     alert_slack_webhook: str = Form(""),
+    keyword: str = Form(""),
+    response_threshold_ms: str = Form(""),
+    webhook_url: str = Form(""),
 ):
     user = get_user_from_cookie(request)
     if not user:
@@ -283,9 +286,9 @@ async def add_monitor(
 
     # Plan enforcement
     existing = list_monitors_by_user(db, user["id"])
-    if user.get("plan", "free") == "free" and len(existing) >= 5:
+    if user.get("plan", "free") == "free" and len(existing) >= 50:
         return RedirectResponse(
-            url="/dashboard?msg=Free+plan+limited+to+5+monitors.+Upgrade+to+Pro!&msg_type=error",
+            url="/dashboard?msg=Free+plan+limited+to+50+monitors.+Upgrade+to+Pro+for+unlimited!&msg_type=error",
             status_code=302,
         )
 
@@ -300,6 +303,9 @@ async def add_monitor(
         name=name,
         alert_email=alert_email or user.get("email", ""),
         alert_slack_webhook=alert_slack_webhook,
+        keyword=keyword,
+        response_threshold_ms=int(response_threshold_ms) if response_threshold_ms else None,
+        webhook_url=webhook_url if user.get("plan", "free") != "free" else "",
     )
 
     return RedirectResponse(
@@ -337,6 +343,12 @@ async def edit_monitor_submit(
     alert_slack_webhook: str = Form(""),
     slug: str = Form(""),
     public: str = Form(""),
+    keyword: str = Form(""),
+    response_threshold_ms: str = Form(""),
+    webhook_url: str = Form(""),
+    maintenance_day: str = Form(""),
+    maintenance_start: str = Form(""),
+    maintenance_end: str = Form(""),
 ):
     user = get_user_from_cookie(request)
     if not user:
@@ -358,14 +370,32 @@ async def edit_monitor_submit(
     else:
         slug = monitor.get("slug", "")
 
-    update_monitor(db, monitor_id, {
+    # Build maintenance window dict
+    maintenance_window = None
+    if maintenance_day and maintenance_start and maintenance_end and user.get("plan", "free") != "free":
+        maintenance_window = {
+            "day": maintenance_day,
+            "start_utc": maintenance_start,
+            "end_utc": maintenance_end,
+        }
+
+    updates = {
         "url": url,
         "name": name,
         "alert_email": alert_email,
         "alert_slack_webhook": alert_slack_webhook,
         "slug": slug,
         "public": public == "true",
-    })
+        "keyword": keyword,
+        "response_threshold_ms": int(response_threshold_ms) if response_threshold_ms else None,
+    }
+
+    # Pro-only fields
+    if user.get("plan", "free") != "free":
+        updates["webhook_url"] = webhook_url
+        updates["maintenance_window"] = maintenance_window
+
+    update_monitor(db, monitor_id, updates)
 
     return RedirectResponse(
         url=f"/dashboard?msg=Monitor+'{name}'+updated!&msg_type=success",
@@ -416,12 +446,96 @@ async def monitor_detail(request: Request, monitor_id: str):
     # Get incidents
     incidents = list_incidents_by_monitor(db, monitor_id, limit=10)
 
+    # Get flash message from query params
+    flash_message = request.query_params.get("msg")
+    flash_type = request.query_params.get("msg_type", "success")
+
     return templates.TemplateResponse("monitor_detail.html", {
         "request": request,
         "user": user,
         "monitor": monitor,
         "checks": checks,
         "incidents": incidents,
+        "flash_message": flash_message,
+        "flash_type": flash_type,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Test Alert (form-based)
+# ---------------------------------------------------------------------------
+
+@router.post("/monitors/{monitor_id}/test-alert")
+async def test_alert_page(request: Request, monitor_id: str):
+    user = get_user_from_cookie(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+
+    db = get_db()
+    monitor = get_monitor(db, monitor_id)
+
+    if not monitor or monitor["user_id"] != user["id"]:
+        return RedirectResponse(url="/dashboard?msg=Monitor+not+found&msg_type=error", status_code=302)
+
+    results = await send_test_alert(monitor, user.get("plan", "free"))
+
+    # Build a readable message
+    parts = []
+    if results.get("email"):
+        parts.append("email")
+    if results.get("slack"):
+        parts.append("Slack")
+    if results.get("webhook"):
+        parts.append("webhook")
+
+    if parts:
+        msg = f"Test+alert+sent+via+{'+%26+'.join(parts)}!"
+    else:
+        msg = "No+alert+channels+configured.+Add+an+email+or+Slack+webhook+first."
+
+    return RedirectResponse(
+        url=f"/monitors/{monitor_id}?msg={msg}&msg_type=success",
+        status_code=302,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Aggregate Status Page (public — shows all public monitors for a user)
+# ---------------------------------------------------------------------------
+
+@router.get("/status/{user_id}", response_class=HTMLResponse)
+async def aggregate_status_page(request: Request, user_id: str):
+    db = get_db()
+
+    # Get the user
+    owner = get_user_by_id(db, user_id)
+    if not owner:
+        raise HTTPException(status_code=404, detail="Status page not found")
+
+    # Pro-only feature check
+    if owner.get("plan", "free") == "free":
+        raise HTTPException(status_code=404, detail="Status page not found")
+
+    # Get all public monitors for this user
+    all_monitors = list_monitors_by_user(db, user_id)
+    public_monitors = [m for m in all_monitors if m.get("public", False)]
+
+    if not public_monitors:
+        raise HTTPException(status_code=404, detail="No public monitors found")
+
+    # Get daily uptime for each monitor
+    for mon in public_monitors:
+        mon["daily_uptime"] = get_daily_uptime(db, mon["id"], days=90)
+
+    # Overall status
+    all_up = all(m.get("status") == "up" for m in public_monitors)
+
+    return templates.TemplateResponse("aggregate_status.html", {
+        "request": request,
+        "owner": owner,
+        "monitors": public_monitors,
+        "all_up": all_up,
+        "format_duration": _format_duration,
     })
 
 

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Website Uptime Monitoring{% endblock %}
-{% block description %}Simple, affordable uptime monitoring for developers and small teams. Get instant alerts when your site goes down.{% endblock %}
+{% block title %}Simple Uptime Monitoring — No Bloat, Just Alerts{% endblock %}
+{% block description %}Monitor up to 50 websites free. SSL expiry alerts, keyword monitoring, response time tracking. Email & Slack alerts in under a minute. No credit card required.{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -445,8 +445,8 @@
 
 <!-- Hero with Live URL Checker -->
 <section class="hero">
-    <h1>Is your website <span>up right now?</span></h1>
-    <p class="subtitle">Check any URL instantly. Then monitor it 24/7 with alerts — free.</p>
+    <h1>No bloat. No confusion.<br><span>Just uptime monitoring.</span></h1>
+    <p class="subtitle">50 free monitors. SSL expiry alerts. Keyword checks. Response time tracking. Set up in 30 seconds.</p>
 
     <div class="url-checker">
         <form class="checker-form" id="checkerForm" onsubmit="return checkUrl(event)">
@@ -501,10 +501,11 @@
 
 <!-- Trust Bar -->
 <div class="trust-bar">
+    <div class="trust-item">🆓 50 monitors free</div>
+    <div class="trust-item">� SSL expiry alerts</div>
+    <div class="trust-item">� Keyword monitoring</div>
     <div class="trust-item">⚡ 60-second checks</div>
     <div class="trust-item">📧 Email & Slack alerts</div>
-    <div class="trust-item">🔒 No credit card required</div>
-    <div class="trust-item">⏱️ Set up in 30 seconds</div>
 </div>
 
 <!-- How It Works -->
@@ -532,66 +533,68 @@
 <!-- Features -->
 <section class="features">
     <div class="feature-card">
-        <div class="feature-icon">📊</div>
+        <div class="feature-icon">�</div>
+        <h3>SSL Certificate Monitoring</h3>
+        <p>We check your SSL cert on every request. Get alerts at 14, 7, and 3 days before expiry — included free.</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">�</div>
+        <h3>Keyword Monitoring</h3>
+        <p>Set an expected keyword. If it disappears from your page, we alert you — even if the site returns 200 OK.</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">⏱️</div>
+        <h3>Response Time Alerts</h3>
+        <p>Set a threshold. If your site takes longer than, say, 2 seconds to respond, you'll know immediately.</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">�</div>
         <h3>Public Status Pages</h3>
-        <p>Share a beautiful status page with your users. 90-day uptime history and incident log.</p>
+        <p>Share a clean status page with your users. 90-day uptime history, incident log, and live status.</p>
     </div>
     <div class="feature-card">
-        <div class="feature-icon">🔄</div>
+        <div class="feature-icon">�</div>
         <h3>False Positive Prevention</h3>
-        <p>We retry failed checks before alerting — so you only hear about real downtime.</p>
+        <p>Failed check? We retry after 5 seconds before alerting. You only hear about real downtime.</p>
     </div>
     <div class="feature-card">
-        <div class="feature-icon">📈</div>
-        <h3>Response Time Charts</h3>
-        <p>Track your site's performance over time with response time graphs.</p>
-    </div>
-    <div class="feature-card">
-        <div class="feature-icon">📧</div>
-        <h3>Email & Slack Alerts</h3>
-        <p>Get notified instantly via email or Slack when your site goes down — and when it recovers.</p>
-    </div>
-    <div class="feature-card">
-        <div class="feature-icon">🐓</div>
-        <h3>Built for Developers</h3>
-        <p>No enterprise bloat. Just clean, fast monitoring that works.</p>
-    </div>
-    <div class="feature-card">
-        <div class="feature-icon">💰</div>
-        <h3>Actually Affordable</h3>
-        <p>Free for 5 monitors. $9/mo for unlimited. No per-seat pricing nonsense.</p>
+        <div class="feature-icon">🧪</div>
+        <h3>Test Your Alerts</h3>
+        <p>Hit "Send Test Alert" on any monitor to verify your email and Slack notifications are working.</p>
     </div>
 </section>
 
 <!-- Pricing -->
 <section class="pricing-section">
     <h2>Simple pricing</h2>
-    <p>Start free. Upgrade when you need more.</p>
+    <p>Most uptime tools charge for what we give away free.</p>
     <div class="pricing-grid">
         <div class="price-card">
             <h3>Free</h3>
             <div class="price-amount">$0 <span>/ month</span></div>
             <ul class="price-features">
-                <li>Up to 5 monitors</li>
-                <li>60-second checks</li>
-                <li>Email alerts</li>
-                <li>Slack alerts</li>
-                <li>Public status pages</li>
+                <li>Up to 50 monitors</li>
+                <li>SSL expiry monitoring & alerts</li>
+                <li>Keyword monitoring</li>
+                <li>Response time threshold alerts</li>
+                <li>Email & Slack alerts</li>
+                <li>Public status page</li>
+                <li>Test alert button</li>
             </ul>
-            <a href="/signup" class="price-cta price-cta-free">Get started</a>
+            <a href="/signup" class="price-cta price-cta-free">Get started free</a>
         </div>
         <div class="price-card featured">
             <h3>Pro</h3>
             <div class="price-amount">$9 <span>/ month</span></div>
             <ul class="price-features">
+                <li>Everything in Free</li>
                 <li>Unlimited monitors</li>
-                <li>60-second checks</li>
-                <li>Email alerts</li>
-                <li>Slack alerts</li>
-                <li>Public status pages</li>
-                <li>Priority support</li>
+                <li>Webhook notifications (JSON POST)</li>
+                <li>Scheduled maintenance windows</li>
+                <li>Aggregate status page</li>
+                <li>Priority email support</li>
             </ul>
-            <a href="/pricing" class="price-cta price-cta-pro">Upgrade to Pro →</a>
+            <a href="/pricing" class="price-cta price-cta-pro">See full details →</a>
         </div>
     </div>
 </section>
@@ -639,6 +642,7 @@
         </div>
     </div>
     <p class="transparency-footer">No VC funding. No enterprise bloat. Just a simple tool that works.<br>
+    Built for freelancers, indie devs, and small agencies who just want to know when their stuff is down.<br>
     Have questions? Email <a href="mailto:grant@statusrooster.com">grant@statusrooster.com</a></p>
 </section>
 

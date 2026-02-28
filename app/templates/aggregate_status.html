@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Status</title>
+    <meta name="description" content="Live status page showing all monitored services">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #1a1a2e;
+            background: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        a { color: #e63946; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* Header */
+        .status-header {
+            text-align: center;
+            padding: 3rem 1rem 2rem;
+        }
+        .status-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1.25rem;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .status-all-up { background: #d4edda; color: #155724; }
+        .status-some-down { background: #f8d7da; color: #721c24; }
+
+        /* Content */
+        .container {
+            max-width: 700px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 1rem 3rem;
+        }
+
+        /* Monitor Row */
+        .monitor-row {
+            background: #fff;
+            border-radius: 10px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .monitor-row .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .dot-up { background: #28a745; }
+        .dot-down { background: #dc3545; }
+        .dot-pending { background: #adb5bd; }
+        .monitor-row .info {
+            flex: 1;
+            min-width: 0;
+        }
+        .monitor-row .name {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+        .monitor-row .url {
+            font-size: 0.8rem;
+            color: #888;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .monitor-row .stats {
+            display: flex;
+            gap: 1.25rem;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .monitor-row .stat {
+            text-align: center;
+        }
+        .monitor-row .stat-value {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        .monitor-row .stat-label {
+            font-size: 0.65rem;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Uptime Bar */
+        .uptime-bar {
+            display: flex;
+            gap: 1px;
+            margin-top: 0.5rem;
+            height: 20px;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .uptime-bar .day {
+            flex: 1;
+            min-width: 2px;
+            position: relative;
+            cursor: pointer;
+        }
+        .uptime-bar .day.up { background: #28a745; }
+        .uptime-bar .day.partial { background: #ffc107; }
+        .uptime-bar .day.down { background: #dc3545; }
+        .uptime-bar .day.none { background: #e9ecef; }
+        .uptime-bar .day:hover { opacity: 0.8; }
+
+        /* Tooltip */
+        .day-tooltip {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a2e;
+            color: #fff;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            z-index: 10;
+            margin-bottom: 4px;
+        }
+        .day:hover .day-tooltip { display: block; }
+
+        /* Footer */
+        .powered-by {
+            text-align: center;
+            padding: 2rem 0 1.5rem;
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: auto;
+        }
+        .powered-by a { color: #e63946; font-weight: 600; }
+
+        @media (max-width: 640px) {
+            .monitor-row .stats { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="status-header">
+    <h1>System Status</h1>
+    {% if all_up %}
+        <span class="status-badge status-all-up">
+            🟢 All Systems Operational
+        </span>
+    {% else %}
+        <span class="status-badge status-some-down">
+            🔴 Some Systems Experiencing Issues
+        </span>
+    {% endif %}
+</div>
+
+<div class="container">
+    {% for m in monitors %}
+    <div class="monitor-row">
+        <div class="dot dot-{{ m.status }}"></div>
+        <div class="info">
+            <div class="name">{{ m.name }}</div>
+            <div class="url">{{ m.url }}</div>
+            <!-- 90-day uptime bar -->
+            <div class="uptime-bar">
+                {% for day in m.daily_uptime %}
+                <div class="day {{ 'up' if day.uptime == 100 else ('down' if day.uptime == 0 else ('none' if day.total == 0 else 'partial')) }}">
+                    <div class="day-tooltip">{{ day.date }}: {{ day.uptime }}%</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value">{{ m.uptime_percent | default(100) }}%</div>
+                <div class="stat-label">Uptime</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">{{ m.last_response_ms | default('—') }}{{ 'ms' if m.last_response_ms }}</div>
+                <div class="stat-label">Response</div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="powered-by">
+    Powered by <a href="https://statusrooster.com" target="_blank">🐓 StatusRooster</a>
+</div>
+
+</body>
+</html>

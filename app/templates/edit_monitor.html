@@ -96,7 +96,58 @@
             </div>
 
             <hr style="border: none; border-top: 1px solid #eee; margin: 1.5rem 0;">
-            <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #333;">📊 Public Status Page</h3>
+            <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #333;">� Advanced Monitoring</h3>
+
+            <div class="form-group">
+                <label for="keyword">Keyword Check</label>
+                <input type="text" id="keyword" name="keyword" value="{{ monitor.get('keyword', '') }}">
+                <div class="hint">Alert if this text is NOT found on the page (leave empty to skip)</div>
+            </div>
+            <div class="form-group">
+                <label for="response_threshold_ms">Response Time Threshold (ms)</label>
+                <input type="number" id="response_threshold_ms" name="response_threshold_ms"
+                       value="{{ monitor.get('response_threshold_ms', '') or '' }}"
+                       placeholder="e.g. 3000" min="100" step="100">
+                <div class="hint">Alert if response takes longer than this</div>
+            </div>
+
+            {% if user.get('plan', 'free') != 'free' %}
+            <hr style="border: none; border-top: 1px solid #eee; margin: 1.5rem 0;">
+            <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #333;">⚡ Pro Features</h3>
+
+            <div class="form-group">
+                <label for="webhook_url">Webhook URL</label>
+                <input type="url" id="webhook_url" name="webhook_url" value="{{ monitor.get('webhook_url', '') }}">
+                <div class="hint">We'll POST JSON to this URL on status changes</div>
+            </div>
+
+            <div class="form-group">
+                <label>Maintenance Window</label>
+                <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                    <select name="maintenance_day" style="padding: 0.5rem; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.9rem;">
+                        <option value="">No maintenance window</option>
+                        {% set mw = monitor.get('maintenance_window') or {} %}
+                        {% for day in ['monday','tuesday','wednesday','thursday','friday','saturday','sunday','daily'] %}
+                        <option value="{{ day }}" {% if mw.get('day') == day %}selected{% endif %}>{{ day | capitalize }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="time" name="maintenance_start" value="{{ (monitor.get('maintenance_window') or {}).get('start_utc', '') }}"
+                           style="padding: 0.5rem; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.9rem;" placeholder="Start (UTC)">
+                    <span style="color: #999;">to</span>
+                    <input type="time" name="maintenance_end" value="{{ (monitor.get('maintenance_window') or {}).get('end_utc', '') }}"
+                           style="padding: 0.5rem; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.9rem;" placeholder="End (UTC)">
+                </div>
+                <div class="hint">Suppress alerts during this window (times in UTC)</div>
+            </div>
+            {% else %}
+            <input type="hidden" name="webhook_url" value="">
+            <input type="hidden" name="maintenance_day" value="">
+            <input type="hidden" name="maintenance_start" value="">
+            <input type="hidden" name="maintenance_end" value="">
+            {% endif %}
+
+            <hr style="border: none; border-top: 1px solid #eee; margin: 1.5rem 0;">
+            <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #333;">�📊 Public Status Page</h3>
 
             <div class="form-group">
                 <label class="toggle-label" for="public" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">

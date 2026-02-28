@@ -198,6 +198,12 @@
 </div>
 
 <!-- Status Banner -->
+{% if flash_message %}
+<div class="status-banner" style="background: {{ '#d4edda' if flash_type == 'success' else '#f8d7da' }}; color: {{ '#155724' if flash_type == 'success' else '#721c24' }}; border: 1px solid {{ '#c3e6cb' if flash_type == 'success' else '#f5c6cb' }}; margin-bottom: 1rem;">
+    {{ '✅' if flash_type == 'success' else '⚠️' }} {{ flash_message }}
+</div>
+{% endif %}
+
 <div class="status-banner status-{{ monitor.status }}">
     {% if monitor.status == 'up' %}
         🟢 Currently UP — all good!
@@ -234,6 +240,64 @@
     <canvas id="responseChart" height="100"></canvas>
 </div>
 
+<!-- SSL Certificate Info -->
+{% if monitor.get('ssl_expiry') or monitor.get('ssl_issuer') %}
+<div class="settings-card">
+    <h2>🔒 SSL Certificate</h2>
+    <div class="setting-row">
+        <span class="setting-label">Issuer</span>
+        <span class="setting-value active">{{ monitor.get('ssl_issuer', '—') }}</span>
+    </div>
+    <div class="setting-row">
+        <span class="setting-label">Expires</span>
+        <span class="setting-value {{ 'active' if (monitor.get('ssl_expiry_days', 999) or 999) > 14 else '' }}"
+              style="{% if (monitor.get('ssl_expiry_days', 999) or 999) <= 14 %}color: #e63946; font-weight: 700;{% endif %}">
+            {% if monitor.get('ssl_expiry') %}
+                {{ monitor.ssl_expiry.strftime('%b %d, %Y') if monitor.ssl_expiry.strftime is defined else monitor.ssl_expiry }}
+                {% if monitor.get('ssl_expiry_days') is not none %}
+                    ({{ monitor.ssl_expiry_days }} days left)
+                {% endif %}
+            {% else %}
+                —
+            {% endif %}
+        </span>
+    </div>
+</div>
+{% endif %}
+
+<!-- Monitoring Features -->
+{% if monitor.get('keyword') or monitor.get('response_threshold_ms') or monitor.get('webhook_url') or monitor.get('maintenance_window') %}
+<div class="settings-card">
+    <h2>🔍 Advanced Monitoring</h2>
+    {% if monitor.get('keyword') %}
+    <div class="setting-row">
+        <span class="setting-label">🔑 Keyword Check</span>
+        <span class="setting-value active">Looking for: "{{ monitor.keyword }}"</span>
+    </div>
+    {% endif %}
+    {% if monitor.get('response_threshold_ms') %}
+    <div class="setting-row">
+        <span class="setting-label">⏱️ Response Threshold</span>
+        <span class="setting-value active">{{ monitor.response_threshold_ms }}ms</span>
+    </div>
+    {% endif %}
+    {% if monitor.get('webhook_url') %}
+    <div class="setting-row">
+        <span class="setting-label">🔗 Webhook</span>
+        <span class="setting-value active">{{ monitor.webhook_url }}</span>
+    </div>
+    {% endif %}
+    {% if monitor.get('maintenance_window') %}
+    <div class="setting-row">
+        <span class="setting-label">🔧 Maintenance Window</span>
+        <span class="setting-value active">
+            {{ monitor.maintenance_window.day | capitalize }} {{ monitor.maintenance_window.start_utc }}–{{ monitor.maintenance_window.end_utc }} UTC
+        </span>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
 <!-- Public Status Page -->
 {% if monitor.public and monitor.slug %}
 <div class="settings-card">
@@ -251,7 +315,15 @@
 
 <!-- Alert Settings -->
 <div class="settings-card">
-    <h2>🔔 Alert Settings</h2>
+    <h2 style="display: flex; justify-content: space-between; align-items: center;">
+        <span>🔔 Alert Settings</span>
+        <form method="POST" action="/monitors/{{ monitor.id }}/test-alert" style="margin:0;">
+            <button type="submit" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 1rem;"
+                    onclick="this.textContent='Sending...'; this.disabled=true; this.form.submit();">
+                🧪 Send Test Alert
+            </button>
+        </form>
+    </h2>
     <div class="setting-row">
         <span class="setting-label">📧 Email</span>
         <span class="setting-value {{ 'active' if monitor.alert_email else 'inactive' }}">

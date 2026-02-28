@@ -14,7 +14,9 @@ def generate_slug(name: str) -> str:
 
 
 def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
-                   alert_slack_webhook: str = "", public: bool = False) -> dict:
+                   alert_slack_webhook: str = "", public: bool = False,
+                   keyword: str = "", response_threshold_ms: int | None = None,
+                   webhook_url: str = "") -> dict:
     """Create a new monitor. Returns monitor dict with id."""
     doc_ref = db.collection(COLLECTION).document()
     slug = generate_slug(name)
@@ -33,6 +35,14 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
         "alert_email": alert_email,
         "alert_slack_webhook": alert_slack_webhook,
         "alert_sms": "",
+        # Day 7: Monitoring suite fields
+        "keyword": keyword,                      # Expected keyword in response body
+        "response_threshold_ms": response_threshold_ms,  # Alert if response > this many ms
+        "webhook_url": webhook_url,              # POST JSON on status change (Pro only)
+        "ssl_expiry": None,            # SSL cert expiry date (auto-detected)
+        "ssl_issuer": None,            # SSL cert issuer (auto-detected)
+        "ssl_expiry_alerted_days": None,  # Track which threshold we last alerted at
+        "maintenance_window": None,    # Dict: {day, start_utc, end_utc} (Pro only)
         "public": public,
         "slug": slug,
         "created_at": datetime.now(timezone.utc),

@@ -7,10 +7,11 @@ from app.models.monitor import (
     update_monitor, delete_monitor,
 )
 from app.models.user import update_user
+from app.services.alerts import send_test_alert
 
 router = APIRouter(prefix="/api/monitors", tags=["monitors"])
 
-FREE_MONITOR_LIMIT = 5
+FREE_MONITOR_LIMIT = 50
 
 
 class CreateMonitorRequest(BaseModel):
@@ -18,6 +19,9 @@ class CreateMonitorRequest(BaseModel):
     name: str
     alert_email: str = ""
     alert_slack_webhook: str = ""
+    keyword: str = ""
+    response_threshold_ms: int | None = None
+    webhook_url: str = ""
     public: bool = True
 
 
@@ -26,6 +30,9 @@ class UpdateMonitorRequest(BaseModel):
     name: str | None = None
     alert_email: str | None = None
     alert_slack_webhook: str | None = None
+    keyword: str | None = None
+    response_threshold_ms: int | None = None
+    webhook_url: str | None = None
     public: bool | None = None
 
 
@@ -51,6 +58,19 @@ async def create(req: CreateMonitorRequest, user: dict = Depends(get_current_use
         alert_slack_webhook=req.alert_slack_webhook,
         public=req.public,
     )
+
+    # Set Day 7 fields that aren't in create_monitor params
+    extra_fields = {}
+    if req.keyword:
+        extra_fields["keyword"] = req.keyword
+    if req.response_threshold_ms:
+        extra_fields["response_threshold_ms"] = req.response_threshold_ms
+    if req.webhook_url and user.get("plan", "free") != "free":
+        extra_fields["webhook_url"] = req.webhook_url
+    if extra_fields:
+        from app.models.monitor import update_monitor as update_mon
+        update_mon(db, monitor["id"], extra_fields)
+        monitor.update(extra_fields)
 
     # Update user's monitor count
     update_user(db, user["id"], {"monitors_count": (user.get("monitors_count", 0) + 1)})
@@ -92,10 +112,28 @@ async def update(monitor_id: str, req: UpdateMonitorRequest, user: dict = Depend
     if "url" in updates:
         updates["url"] = str(updates["url"])
 
+    # Gate Pro-only fields
+    if "webhook_url" in updates and user.get("plan", "free") == "free":
+        del updates["webhook_url"]
+
     if updates:
         update_monitor(db, monitor_id, updates)
 
     return {"monitor": {**monitor, **updates}}
+
+
+@router.post("/{monitor_id}/test-alert")
+async def test_alert(monitor_id: str, user: dict = Depends(get_current_user)):
+    db = get_db()
+    monitor = get_monitor(db, monitor_id)
+
+    if not monitor:
+        raise HTTPException(status_code=404, detail="Monitor not found")
+    if monitor["user_id"] != user["id"]:
+        raise HTTPException(status_code=403, detail="Not your monitor")
+
+    results = await send_test_alert(monitor, user.get("plan", "free"))
+    return {"results": results}
 
 
 @router.delete("/{monitor_id}")
