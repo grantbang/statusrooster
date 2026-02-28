@@ -199,14 +199,72 @@ _Goal: Give developers programmatic access. API keys, docs, exports._
 ### Day 9 — UI Polish & Hardening 🔲
 _Goal: Make everything look professional and feel bulletproof. No jank. Simple and crisp._
 
-**UI Polish**
-- [ ] UI polish pass: clean typography, spacing, color consistency
-- [ ] Dashboard card redesign (tighter layout, better hierarchy, show SSL + keyword status)
-- [ ] Monitor detail page polish (chart styling, stat cards, SSL info, keyword status)
-- [ ] Auth pages polish (signup, login — consistent with landing page aesthetic)
-- [ ] Landing page update: feature grid reflects ALL new features (SSL, keyword, webhooks, etc.)
-- [ ] Mobile responsive pass on ALL pages
-- [ ] Consistent button styles, form inputs, card shadows across all pages
+**⚠️ UI STRATEGY: Extract → Unify → Touch-up (NOT rewrite)**
+_Current problem: All styles are inline in 12 templates. Form styles redefined 6x. Card styles redefined 5x. Inline `style=""` scattered everywhere. Random border-radius (6/8/10/12/14px). Inconsistent shadows. Button classes duplicated across templates._
+_Solution: Extract shared CSS to one file, define design tokens, then do surgical per-template touch-ups. No Big Bang rewrites._
+
+**Layer 1 — Extract shared `app/static/style.css`** _(single biggest win)_
+- [ ] Create `app/static/style.css` with all shared styles + CSS custom properties
+- [ ] Define design tokens as CSS variables:
+  ```
+  --color-primary: #e63946       --color-primary-dark: #c1121f
+  --color-navy: #1a1a2e          --color-navy-light: #2d2d4e
+  --color-text: #1a1a2e          --color-text-secondary: #666
+  --color-text-muted: #999       --color-bg: #f8f9fa
+  --color-card: #fff             --color-border: #e9ecef
+  --color-border-light: #f0f0f0  --color-success: #2a9d8f
+  --color-warning: #e9c46a       --color-danger: #e63946
+  --radius-sm: 6px               --radius-md: 10px
+  --radius-lg: 14px              --shadow-sm: 0 1px 3px rgba(0,0,0,0.08)
+  --shadow-md: 0 2px 12px rgba(0,0,0,0.08)
+  --shadow-lg: 0 4px 24px rgba(0,0,0,0.12)
+  --font-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace
+  ```
+- [ ] Move into `style.css` — currently duplicated across templates:
+  - Reset & base body styles (from `base.html`)
+  - Nav styles + **new mobile hamburger menu** (from `base.html`)
+  - Container, footer (from `base.html`)
+  - Flash messages (from `base.html`)
+  - Unified button system: `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-danger`, `.btn-ghost` (replaces `.auth-submit`, `.modal-submit`, `.checker-btn`, `.upgrade-btn`, `.price-cta`, etc.)
+  - Form elements: `.form-group`, `label`, `input`, `select`, `textarea`, `.hint` (currently redefined in dashboard, login, signup, edit_monitor, settings, landing)
+  - Card component: `.card` with consistent shadow + radius (replaces `.auth-card`, `.edit-card`, `.settings-section`, `.stat-card`, `.api-section`, etc.)
+  - Stat cards, tables, badges (`.badge-up`, `.badge-down`, `.badge-pro`, `.badge-free`)
+  - Status indicators, modal overlay/modal
+  - Typography scale (define clear rem scale instead of arbitrary 0.65rem–2.75rem)
+  - Responsive breakpoints (shared `@media` rules)
+
+**Layer 2 — Update `base.html`**
+- [ ] Replace inline `<style>` block with `<link rel="stylesheet" href="/static/style.css">`
+- [ ] Add mobile hamburger nav (nav links currently just overflow/vanish on mobile)
+- [ ] Keep `{% block extra_css %}` for truly page-specific layout only (must be wrapped in `<style>` tags — some templates currently emit raw CSS)
+
+**Layer 3 — Per-template touch-ups** _(work through one at a time, test after each)_
+- [ ] `dashboard.html` — Remove duplicated form/card/button CSS (~100 lines). Replace inline `style=""` on badges (SSL, keyword) with proper classes. Fix mobile: show condensed stats instead of `display: none`.
+- [ ] `monitor_detail.html` — Remove duplicated stat-card/settings-card CSS. Use shared `.card` class. Polish chart container styling.
+- [ ] `edit_monitor.html` — Remove duplicated `.edit-card`, `.form-group`, `.btn` CSS. Replace inline `style=""` on `<hr>`, `<h3>` section headers, and `<select>`/`<input type="time">` maintenance fields with proper classes.
+- [ ] `settings.html` — Remove duplicated `.settings-section`, form, table CSS. Use shared classes.
+- [ ] `landing.html` — Keep page-specific hero/checker/features CSS in `extra_css`. Remove any shared button/form styles that now live in `style.css`.
+- [ ] `pricing.html` — Keep pricing card layout in `extra_css`. Remove shared button/card styles.
+- [ ] `api_docs.html` — Keep endpoint card layout in `extra_css`. Remove shared section/button styles.
+- [ ] `login.html` — Remove duplicated `.auth-card`, `.form-group`, `.auth-submit` CSS (all now in `style.css`). Template should have ~0 lines of `extra_css`.
+- [ ] `signup.html` — Same as login. Password strength meter styles stay in `extra_css`.
+
+**⏸️ Checkpoint: After Layer 2, before Layer 3**
+- [ ] Start dev server, visually verify every page still renders identically (no regressions from CSS extraction)
+- [ ] Check desktop + mobile (narrow viewport) on: landing, login, signup, dashboard, monitor detail, edit monitor, settings, pricing, api docs
+
+**Execution order:**
+1. Layer 1: Create `style.css` (extract + unify)
+2. Layer 2: Update `base.html` (swap `<style>` → `<link>`, add mobile nav)
+3. Checkpoint: Visual regression check on all 9 pages
+4. Layer 3 templates in order: `dashboard.html` → `monitor_detail.html` → `edit_monitor.html` → `settings.html` → `api_docs.html` → `landing.html` → `pricing.html` → `login.html` → `signup.html` _(most visible/complex first so regressions are caught early, auth pages last since they'll mostly just work)_
+5. Final visual pass on all pages
+
+**What we intentionally DON'T touch:**
+- `status_page.html` and `aggregate_status.html` — standalone (no `base.html`), intentionally self-contained for public embeddability. Only update if CSS variable colors drift.
+- No CSS framework (Tailwind/Bootstrap) — overkill for 12 templates
+- No dark mode — not for launch
+- No color palette changes — current palette is solid
 
 **Dashboard UX**
 - [ ] Dashboard filtering (All / Up / Down / Pending / SSL Warning)
