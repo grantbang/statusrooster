@@ -193,8 +193,8 @@ _Goal: Give developers programmatic access. API keys, docs, exports._
 - [x] Settings link in nav bar
 - [x] API docs link in nav bar
 
-- [ ] Deploy Day 8 to production
-- [ ] Git commit Day 8
+- [x] Deploy Day 8 to production (revision `statusrooster-00013-zld`)
+- [x] Git commit Day 8 (`8951176`)
 
 ### Day 9 — UI Polish & Hardening 🔲
 _Goal: Make everything look professional and feel bulletproof. No jank. Simple and crisp._
