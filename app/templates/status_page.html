@@ -337,9 +337,9 @@
                     <div class="incident-item">
                         <div>
                             {% if inc.status == "open" %}
-                                <div class="incident-status open">🔴 Ongoing</div>
+                                <div class="incident-status open">Ongoing</div>
                             {% else %}
-                                <div class="incident-status resolved">✅ Resolved</div>
+                                <div class="incident-status resolved">Resolved</div>
                             {% endif %}
                             <div style="font-size: 0.85rem; color: #555; margin-top: 0.25rem;">
                                 {{ inc.monitor_name }}
@@ -356,7 +356,7 @@
                 {% endfor %}
             {% else %}
                 <div class="no-incidents">
-                    No incidents recorded yet. 🎉
+                    No incidents recorded yet.
                 </div>
             {% endif %}
         </div>
@@ -365,7 +365,7 @@
 
     <!-- Footer -->
     <div class="status-footer">
-        <p>Powered by <a href="https://statusrooster.com">StatusRooster 🐓</a></p>
+        <p>Powered by <a href="https://statusrooster.com">StatusRooster</a></p>
         <p style="margin-top: 0.25rem;">Free uptime monitoring — <a href="https://statusrooster.com/signup">Sign up</a></p>
     </div>
 

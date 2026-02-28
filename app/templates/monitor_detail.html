@@ -3,214 +3,37 @@
 {% block title %}{{ monitor.name }}{% endblock %}
 
 {% block extra_css %}
-.detail-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 2rem;
-}
-.detail-title {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-.detail-title h1 {
-    font-size: 1.5rem;
-}
-.detail-url {
-    color: #888;
-    font-size: 0.85rem;
-    word-break: break-all;
-}
-.detail-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-/* Status Banner */
-.status-banner {
-    padding: 1rem 1.5rem;
-    border-radius: 10px;
-    margin-bottom: 2rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 1rem;
-}
-.status-up {
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-}
-.status-down {
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-}
-.status-pending {
-    background: #f0f0f0;
-    color: #666;
-    border: 1px solid #e0e0e0;
-}
-
-/* Stats Grid */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-    margin-bottom: 2rem;
-}
-.stat-card {
-    background: #fff;
-    border-radius: 10px;
-    padding: 1.25rem;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
-    text-align: center;
-}
-.stat-card .value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #1a1a2e;
-}
-.stat-card .label {
-    font-size: 0.75rem;
-    color: #999;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-top: 0.25rem;
-}
-
-/* Chart */
-.chart-card {
-    background: #fff;
-    border-radius: 10px;
-    padding: 1.5rem;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
-    margin-bottom: 2rem;
-}
-.chart-card h2 {
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-    color: #333;
-}
-
-/* Alert Settings */
-.settings-card {
-    background: #fff;
-    border-radius: 10px;
-    padding: 1.5rem;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
-    margin-bottom: 2rem;
-}
-.settings-card h2 {
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-    color: #333;
-}
-.setting-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.6rem 0;
-    border-bottom: 1px solid #f0f0f0;
-    font-size: 0.9rem;
-}
-.setting-row:last-child { border-bottom: none; }
-.setting-label {
-    font-weight: 600;
-    color: #555;
-}
-.setting-value {
-    color: #888;
-    font-family: monospace;
-    font-size: 0.85rem;
-    max-width: 300px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.setting-value.active { color: #2d6a4f; }
-.setting-value.inactive { color: #ccc; font-style: italic; }
-
-/* Incidents */
-.incidents-card {
-    background: #fff;
-    border-radius: 10px;
-    padding: 1.5rem;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
-}
-.incidents-card h2 {
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-    color: #333;
-}
-.incident-item {
-    padding: 0.75rem 0;
-    border-bottom: 1px solid #f0f0f0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.85rem;
-}
-.incident-item:last-child { border-bottom: none; }
-.incident-status {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-.incident-time {
-    color: #888;
-}
-.incident-duration {
-    color: #666;
-    font-weight: 600;
-}
-.no-incidents {
-    color: #999;
-    font-size: 0.9rem;
-    padding: 1rem 0;
-}
-
-@media (max-width: 640px) {
-    .stats-grid { grid-template-columns: repeat(2, 1fr); }
-    .detail-header { flex-direction: column; gap: 1rem; }
-}
 {% endblock %}
 
 {% block content %}
 <div class="detail-header">
     <div>
         <div class="detail-title">
-            <span style="font-size: 1.5rem;">
-                {% if monitor.status == 'up' %}🟢
-                {% elif monitor.status == 'down' %}🔴
-                {% else %}⚪{% endif %}
-            </span>
-            <h1>{{ monitor.name }}</h1>
+            <span class="status-dot-lg {% if monitor.status == 'up' %}dot-up{% elif monitor.status == 'down' %}dot-down{% else %}dot-pending{% endif %}"></span>
+            <h1><span class="page-icon">🐓</span> {{ monitor.name }}</h1>
         </div>
         <div class="detail-url">{{ monitor.url }}</div>
     </div>
     <div class="detail-actions">
-        <a href="/monitors/{{ monitor.id }}/edit" class="btn btn-secondary">✏️ Edit</a>
-        <a href="/dashboard" class="btn btn-secondary">← Back</a>
+        <a href="/monitors/{{ monitor.id }}/edit" class="btn btn-secondary">Edit</a>
+        <a href="/dashboard" class="btn btn-secondary">Back</a>
     </div>
 </div>
 
 <!-- Status Banner -->
 {% if flash_message %}
 <div class="status-banner" style="background: {{ '#d4edda' if flash_type == 'success' else '#f8d7da' }}; color: {{ '#155724' if flash_type == 'success' else '#721c24' }}; border: 1px solid {{ '#c3e6cb' if flash_type == 'success' else '#f5c6cb' }}; margin-bottom: 1rem;">
-    {{ '✅' if flash_type == 'success' else '⚠️' }} {{ flash_message }}
+    {{ flash_message }}
 </div>
 {% endif %}
 
 <div class="status-banner status-{{ monitor.status }}">
     {% if monitor.status == 'up' %}
-        🟢 Currently UP — all good!
+        Currently up
     {% elif monitor.status == 'down' %}
-        🔴 Currently DOWN — we're alerting you
+        Currently down — alerting
     {% else %}
-        ⚪ Pending — waiting for first check
+        Pending — waiting for first check
     {% endif %}
 </div>
 
@@ -236,14 +59,14 @@
 
 <!-- Response Time Chart -->
 <div class="chart-card">
-    <h2>📈 Response Time (Last 24h)</h2>
+    <h2>Response Time (Last 24h)</h2>
     <canvas id="responseChart" height="100"></canvas>
 </div>
 
 <!-- SSL Certificate Info -->
 {% if monitor.get('ssl_expiry') or monitor.get('ssl_issuer') %}
 <div class="settings-card">
-    <h2>🔒 SSL Certificate</h2>
+    <h2>SSL Certificate</h2>
     <div class="setting-row">
         <span class="setting-label">Issuer</span>
         <span class="setting-value active">{{ monitor.get('ssl_issuer', '—') }}</span>
@@ -268,28 +91,28 @@
 <!-- Monitoring Features -->
 {% if monitor.get('keyword') or monitor.get('response_threshold_ms') or monitor.get('webhook_url') or monitor.get('maintenance_window') %}
 <div class="settings-card">
-    <h2>🔍 Advanced Monitoring</h2>
+    <h2>Advanced Monitoring</h2>
     {% if monitor.get('keyword') %}
     <div class="setting-row">
-        <span class="setting-label">🔑 Keyword Check</span>
+        <span class="setting-label">Keyword Check</span>
         <span class="setting-value active">Looking for: "{{ monitor.keyword }}"</span>
     </div>
     {% endif %}
     {% if monitor.get('response_threshold_ms') %}
     <div class="setting-row">
-        <span class="setting-label">⏱️ Response Threshold</span>
+        <span class="setting-label">Response Threshold</span>
         <span class="setting-value active">{{ monitor.response_threshold_ms }}ms</span>
     </div>
     {% endif %}
     {% if monitor.get('webhook_url') %}
     <div class="setting-row">
-        <span class="setting-label">🔗 Webhook</span>
+        <span class="setting-label">Webhook</span>
         <span class="setting-value active">{{ monitor.webhook_url }}</span>
     </div>
     {% endif %}
     {% if monitor.get('maintenance_window') %}
     <div class="setting-row">
-        <span class="setting-label">🔧 Maintenance Window</span>
+        <span class="setting-label">Maintenance Window</span>
         <span class="setting-value active">
             {{ monitor.maintenance_window.day | capitalize }} {{ monitor.maintenance_window.start_utc }}–{{ monitor.maintenance_window.end_utc }} UTC
         </span>
@@ -301,9 +124,9 @@
 <!-- Public Status Page -->
 {% if monitor.public and monitor.slug %}
 <div class="settings-card">
-    <h2>📊 Public Status Page</h2>
+    <h2>Public Status Page</h2>
     <div class="setting-row">
-        <span class="setting-label">🔗 Share this link with your users</span>
+        <span class="setting-label">Share this link with your users</span>
         <span class="setting-value active" style="max-width: none;">
             <a href="/s/{{ monitor.slug }}" target="_blank" style="color: #2d6a4f; text-decoration: none;">
                 statusrooster.com/s/{{ monitor.slug }} ↗
@@ -316,43 +139,43 @@
 <!-- Alert Settings -->
 <div class="settings-card">
     <h2 style="display: flex; justify-content: space-between; align-items: center;">
-        <span>🔔 Alert Settings</span>
+        <span>Alert Settings</span>
         <form method="POST" action="/monitors/{{ monitor.id }}/test-alert" style="margin:0;">
             <button type="submit" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 1rem;"
                     onclick="this.textContent='Sending...'; this.disabled=true; this.form.submit();">
-                🧪 Send Test Alert
+                Send test alert
             </button>
         </form>
     </h2>
     <div class="setting-row">
-        <span class="setting-label">📧 Email</span>
+        <span class="setting-label">Email</span>
         <span class="setting-value {{ 'active' if monitor.alert_email else 'inactive' }}">
             {{ monitor.alert_email or 'Not configured' }}
         </span>
     </div>
     <div class="setting-row">
-        <span class="setting-label">💬 Slack</span>
+        <span class="setting-label">Slack</span>
         <span class="setting-value {{ 'active' if monitor.alert_slack_webhook else 'inactive' }}">
             {{ 'Connected' if monitor.alert_slack_webhook else 'Not configured' }}
         </span>
     </div>
     <div class="setting-row">
-        <span class="setting-label">📱 SMS</span>
+        <span class="setting-label">SMS</span>
         <span class="setting-value inactive">Coming soon</span>
     </div>
 </div>
 
 <!-- Recent Incidents -->
 <div class="incidents-card">
-    <h2>🚨 Recent Incidents</h2>
+    <h2>Recent Incidents</h2>
     {% if incidents %}
     {% for inc in incidents %}
     <div class="incident-item">
         <div class="incident-status">
             {% if inc.status == 'open' %}
-                🔴 <strong>Ongoing</strong>
+                <strong>Ongoing</strong>
             {% else %}
-                ✅ Resolved
+                Resolved
             {% endif %}
             — {{ inc.monitor_name }}
         </div>
@@ -372,7 +195,7 @@
     </div>
     {% endfor %}
     {% else %}
-    <div class="no-incidents">No incidents recorded yet. 🎉</div>
+    <div class="no-incidents">No incidents recorded yet.</div>
     {% endif %}
 </div>
 {% endblock %}

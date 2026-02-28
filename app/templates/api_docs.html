@@ -3,223 +3,12 @@
 {% block title %}API Documentation{% endblock %}
 
 {% block extra_css %}
-.api-docs {
-    max-width: 800px;
-}
-
-.api-docs h1 {
-    font-size: 1.75rem;
-    margin-bottom: 0.5rem;
-}
-.api-docs .subtitle {
-    color: #888;
-    font-size: 0.95rem;
-    margin-bottom: 2rem;
-}
-
-.api-section {
-    background: #fff;
-    border-radius: 10px;
-    padding: 1.5rem 2rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    margin-bottom: 1.5rem;
-}
-.api-section h2 {
-    font-size: 1.15rem;
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid #eee;
-}
-.api-section p {
-    color: #555;
-    font-size: 0.9rem;
-    margin-bottom: 0.75rem;
-    line-height: 1.6;
-}
-
-/* Endpoint cards */
-.endpoint {
-    border: 1px solid #eee;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    overflow: hidden;
-}
-.endpoint-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    background: #fafafa;
-    border-bottom: 1px solid #eee;
-    cursor: pointer;
-    user-select: none;
-}
-.endpoint-header:hover { background: #f4f4f4; }
-.endpoint-header .chevron {
-    margin-left: auto;
-    font-size: 0.7rem;
-    color: #aaa;
-    transition: transform 0.2s;
-}
-.endpoint.open .endpoint-header .chevron { transform: rotate(90deg); }
-.method-badge {
-    font-family: 'SF Mono', monospace;
-    font-size: 0.7rem;
-    font-weight: 700;
-    padding: 0.2rem 0.5rem;
-    border-radius: 3px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    flex-shrink: 0;
-}
-.method-get { background: #d4edda; color: #155724; }
-.method-post { background: #cce5ff; color: #004085; }
-.method-delete { background: #f8d7da; color: #721c24; }
-.endpoint-path {
-    font-family: 'SF Mono', monospace;
-    font-size: 0.85rem;
-    color: #333;
-}
-.endpoint-desc {
-    font-size: 0.85rem;
-    color: #888;
-}
-.endpoint-body {
-    padding: 1rem;
-    display: none;
-}
-.endpoint.open .endpoint-body { display: block; }
-
-/* Field reference tables */
-.field-ref { margin: 0.75rem 0; }
-.field-ref summary {
-    cursor: pointer;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: #555;
-    padding: 0.4rem 0;
-    user-select: none;
-}
-.field-ref summary:hover { color: #333; }
-.field-ref-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.8rem;
-    margin-top: 0.25rem;
-}
-.field-ref-table th {
-    text-align: left;
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #999;
-    padding: 0.35rem 0.5rem;
-    border-bottom: 1px solid #eee;
-}
-.field-ref-table td {
-    padding: 0.3rem 0.5rem;
-    border-bottom: 1px solid #f5f5f5;
-    vertical-align: top;
-    line-height: 1.4;
-}
-.field-ref-table code {
-    font-family: 'SF Mono', monospace;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #333;
-}
-.field-type {
-    font-family: 'SF Mono', monospace;
-    font-size: 0.7rem;
-    color: #888;
-}
-.field-note {
-    color: #999;
-    font-size: 0.75rem;
-    font-style: italic;
-}
-
-/* Code blocks */
-.code-block {
-    background: #1a1a2e;
-    color: #e0e0e0;
-    border-radius: 6px;
-    padding: 1rem 1.25rem;
-    font-family: 'SF Mono', 'Fira Code', monospace;
-    font-size: 0.8rem;
-    line-height: 1.5;
-    overflow-x: auto;
-    margin: 0.75rem 0;
-    white-space: pre;
-}
-.code-comment { color: #6c757d; }
-.code-string { color: #98c379; }
-.code-key { color: #e5c07b; }
-.code-url { color: #61afef; }
-
-/* Response shape */
-.response-shape {
-    background: #f8f9fa;
-    border: 1px solid #eee;
-    border-radius: 6px;
-    padding: 0.75rem 1rem;
-    font-family: 'SF Mono', monospace;
-    font-size: 0.8rem;
-    line-height: 1.5;
-    margin: 0.75rem 0;
-}
-
-/* Param table */
-.param-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.85rem;
-    margin: 0.75rem 0;
-}
-.param-table th {
-    text-align: left;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    color: #888;
-    padding: 0.4rem 0.5rem;
-    border-bottom: 1px solid #eee;
-}
-.param-table td {
-    padding: 0.4rem 0.5rem;
-    border-bottom: 1px solid #f0f0f0;
-    vertical-align: top;
-}
-.param-name {
-    font-family: 'SF Mono', monospace;
-    font-weight: 600;
-    color: #333;
-}
-.param-required {
-    color: #e63946;
-    font-size: 0.7rem;
-    font-weight: 600;
-}
-.param-optional {
-    color: #888;
-    font-size: 0.7rem;
-}
-
-/* Settings link callout */
-.key-callout {
-    background: #fff3cd;
-    border: 1px solid #ffc107;
-    border-radius: 8px;
-    padding: 1rem 1.25rem;
-    font-size: 0.9rem;
-    margin-bottom: 1.5rem;
-}
-.key-callout a { font-weight: 600; }
 {% endblock %}
 
 {% block content %}
 <div class="api-docs">
 
-<h1>📡 API Reference</h1>
+<h1><span class="page-icon">🐓</span> API Reference</h1>
 <p class="subtitle">Programmatic access to your StatusRooster monitors and check data.</p>
 
 <!-- Auth Section -->
@@ -229,11 +18,11 @@
 
     {% if user %}
     <div class="key-callout">
-        🔑 <a href="/settings">Generate an API key</a> in your Settings page.
+        <a href="/settings">Generate an API key</a> in your Settings page.
     </div>
     {% else %}
     <div class="key-callout">
-        🔑 <a href="/signup">Sign up</a> to get an API key.
+        <a href="/signup">Sign up</a> to get an API key.
     </div>
     {% endif %}
 

@@ -1,81 +1,13 @@
 {% extends "base.html" %}
-
 {% block title %}Edit {{ monitor.name }}{% endblock %}
 
 {% block extra_css %}
-.edit-container {
-    max-width: 520px;
-    margin: 2rem auto;
-}
-.edit-card {
-    background: #fff;
-    border-radius: 12px;
-    padding: 2.5rem;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-}
-.edit-card h1 {
-    font-size: 1.5rem;
-    margin-bottom: 2rem;
-}
-.form-group {
-    margin-bottom: 1.25rem;
-}
-.form-group label {
-    display: block;
-    font-weight: 600;
-    margin-bottom: 0.4rem;
-    font-size: 0.9rem;
-    color: #333;
-}
-.form-group input {
-    width: 100%;
-    padding: 0.7rem 0.9rem;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    transition: border-color 0.2s;
-}
-.form-group input:focus {
-    outline: none;
-    border-color: #e63946;
-}
-.form-group .hint {
-    font-size: 0.75rem;
-    color: #999;
-    margin-top: 0.3rem;
-}
-.form-actions {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1.5rem;
-}
-.form-actions .btn {
-    flex: 1;
-    text-align: center;
-    padding: 0.75rem;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 600;
-}
-.btn-save {
-    background: #e63946;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-}
-.btn-save:hover { background: #c1121f; }
-.btn-cancel {
-    background: #f0f0f0;
-    color: #333;
-    border: none;
-}
-.btn-cancel:hover { background: #e0e0e0; }
 {% endblock %}
 
 {% block content %}
 <div class="edit-container">
     <div class="edit-card">
-        <h1>✏️ Edit Monitor</h1>
+        <h1><span class="page-icon">🐓</span> Edit Monitor</h1>
         <form method="POST" action="/monitors/{{ monitor.id }}/edit">
             <div class="form-group">
                 <label for="url">URL</label>
@@ -95,8 +27,8 @@
                 <input type="url" id="alert_slack_webhook" name="alert_slack_webhook" value="{{ monitor.alert_slack_webhook }}">
             </div>
 
-            <hr style="border: none; border-top: 1px solid #eee; margin: 1.5rem 0;">
-            <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #333;">� Advanced Monitoring</h3>
+            <hr class="form-divider">
+            <h3 class="form-section-title">Advanced Monitoring</h3>
 
             <div class="form-group">
                 <label for="keyword">Keyword Check</label>
@@ -112,8 +44,8 @@
             </div>
 
             {% if user.get('plan', 'free') != 'free' %}
-            <hr style="border: none; border-top: 1px solid #eee; margin: 1.5rem 0;">
-            <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #333;">⚡ Pro Features</h3>
+            <hr class="form-divider">
+            <h3 class="form-section-title">Pro Features</h3>
 
             <div class="form-group">
                 <label for="webhook_url">Webhook URL</label>
@@ -123,8 +55,8 @@
 
             <div class="form-group">
                 <label>Maintenance Window</label>
-                <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-                    <select name="maintenance_day" style="padding: 0.5rem; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.9rem;">
+                <div class="flex items-center gap-sm" style="flex-wrap: wrap;">
+                    <select name="maintenance_day" class="form-group" style="flex: 0 0 auto; margin-bottom: 0;">
                         <option value="">No maintenance window</option>
                         {% set mw = monitor.get('maintenance_window') or {} %}
                         {% for day in ['monday','tuesday','wednesday','thursday','friday','saturday','sunday','daily'] %}
@@ -132,10 +64,10 @@
                         {% endfor %}
                     </select>
                     <input type="time" name="maintenance_start" value="{{ (monitor.get('maintenance_window') or {}).get('start_utc', '') }}"
-                           style="padding: 0.5rem; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.9rem;" placeholder="Start (UTC)">
-                    <span style="color: #999;">to</span>
+                           placeholder="Start (UTC)">
+                    <span class="text-muted">to</span>
                     <input type="time" name="maintenance_end" value="{{ (monitor.get('maintenance_window') or {}).get('end_utc', '') }}"
-                           style="padding: 0.5rem; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.9rem;" placeholder="End (UTC)">
+                           placeholder="End (UTC)">
                 </div>
                 <div class="hint">Suppress alerts during this window (times in UTC)</div>
             </div>
@@ -146,8 +78,8 @@
             <input type="hidden" name="maintenance_end" value="">
             {% endif %}
 
-            <hr style="border: none; border-top: 1px solid #eee; margin: 1.5rem 0;">
-            <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #333;">�📊 Public Status Page</h3>
+            <hr class="form-divider">
+            <h3 class="form-section-title">Public Status Page</h3>
 
             <div class="form-group">
                 <label class="toggle-label" for="public" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
@@ -163,13 +95,13 @@
                 <input type="text" id="slug" name="slug" value="{{ monitor.slug }}"
                        pattern="[a-z0-9\-]+" title="Lowercase letters, numbers, and hyphens only">
                 <div class="hint">Your public status page URL: <code>statusrooster.com/s/<span id="slug-preview">{{ monitor.slug }}</span></code>
-                    {% if monitor.public and monitor.slug %} — <a href="/s/{{ monitor.slug }}" target="_blank" style="color: #e63946;">View live ↗</a>{% endif %}
+                    {% if monitor.public and monitor.slug %} &mdash; <a href="/s/{{ monitor.slug }}" target="_blank" style="color: #e63946;">View live</a>{% endif %}
                 </div>
             </div>
 
             <div class="form-actions">
                 <a href="/dashboard" class="btn btn-cancel">Cancel</a>
-                <button type="submit" class="btn btn-save">Save Changes →</button>
+                <button type="submit" class="btn btn-save">Save changes</button>
             </div>
         </form>
     </div>

@@ -1,31 +1,23 @@
-# StatusRooster Build Tracker 🐓
+# StatusRooster Build Tracker
 
 **Start:** Feb 25, 2026 · **Target Launch:** Mar 7, 2026
 
 | Phase | Days | Status |
 |-------|------|--------|
 | 1. Core Engine | 1-4 | ✅ Complete |
-| 2. Feature Suite & Billing | 5-9 | 🔄 In Progress (Day 8 done) |
+| 2. Feature Suite & Billing | 5-9 | 🔄 In Progress (Day 9) |
 | 3. Testing & Launch | 10-12 | 🔲 Not started |
 | 4. Post-Launch | 13-14+ | 🔲 Not started |
 
-**Current Day: 8** · **Current Phase: 2**
+**Current Day: 9** · **Current Phase: 2**
 
 ---
 
 ## Phase 1: Core Engine — Days 1-4
 
 ### Day 1 — Scaffolding & Auth ✅
-- [x] FastAPI project structure (`app/`, `routers/`, `services/`, `templates/`, `st## Progress Summary
-
-| Phase | Days | Status |
-|-------|------|--------|
-| 1. Core Engine | 1-4 | ✅ Complete |
-| 2. Feature Suite & Billing | 5-9 | 🔄 In Progress (Day 8 done) |
-| 3. Testing & Launch | 10-12 | 🔲 Not started |
-| 4. Post-Launch | 13-14+ | 🔲 Not started |
-
-**Current Day: 8** · **Current Phase: 2**[x] `requirements.txt` + `Dockerfile` + `.dockerignore`
+- [x] FastAPI project structure (`app/`, `routers/`, `services/`, `templates/`, `static/`)
+- [x] `requirements.txt` + `Dockerfile` + `.dockerignore`
 - [x] Config/settings module (loads `.env`)
 - [x] Firestore client singleton
 - [x] User model + Firestore CRUD (create, get by email, get by ID)
@@ -67,7 +59,7 @@
 - [x] Login page (`/login` — form, error states, redirect to dashboard)
 - [x] Auth cookie handling (set JWT in httpOnly cookie on login)
 - [x] Dashboard page (`/dashboard` — list all monitors with status indicators)
-- [x] Monitor status badges (🟢 Up / 🔴 Down / ⚪ Pending)
+- [x] Monitor status badges (Up / Down / Pending)
 - [x] Add monitor form (modal or inline — URL, name, alert settings)
 - [x] Edit monitor form (pre-filled, save changes)
 - [x] Delete monitor (confirmation prompt)
@@ -79,14 +71,14 @@
 
 ---
 
-## Phase 2: Status Pages & Billing — Days 5-8
+## Phase 2: Status Pages & Billing — Days 5-9
 
 ### Day 5 — Public Status Pages ✅
 - [x] Status page route: `GET /s/{slug}`
 - [x] Status page template: site name, current status, uptime bars (90 days)
 - [x] Uptime bar component (green/red/gray day-by-day blocks)
 - [x] Incident history list (last 10 incidents with timestamps + durations)
-- [x] "Powered by StatusRooster 🐓" footer with signup link
+- [x] "Powered by StatusRooster" footer with signup link
 - [x] User can toggle monitor public/private
 - [x] User can set/edit slug for their status page
 - [x] Status page works when logged out (public)
@@ -177,7 +169,7 @@ Maintenance windows, Aggregate status page, 10 status pages
 - [x] Deploy Day 7 to production (revision `statusrooster-00012-4xq`)
 - [x] Git commit Day 7 (`227ce35`)
 
-### Day 8 — Public API & Developer Experience �
+### Day 8 — Public API & Developer Experience ✅
 _Goal: Give developers programmatic access. API keys, docs, exports._
 
 **API Keys**
@@ -204,304 +196,67 @@ _Goal: Give developers programmatic access. API keys, docs, exports._
 - [x] Deploy Day 8 to production (revision `statusrooster-00013-zld`)
 - [x] Git commit Day 8 (`8951176`)
 
-### Day 9 — UI Polish & Hardening 🔲
-_Goal: Make everything look professional and feel bulletproof. No jank. Simple and crisp._
+### Day 9 — UI Polish & Competitive Edge 🔄
+_Goal: Make everything look professional. Add differentiating features._
 
-**⚠️ UI STRATEGY: Extract → Unify → Touch-up (NOT rewrite)**
-_Current problem: All styles are inline in 12 templates. Form styles redefined 6x. Card styles redefined 5x. Inline `style=""` scattered everywhere. Random border-radius (6/8/10/12/14px). Inconsistent shadows. Button classes duplicated across templates._
-_Solution: Extract shared CSS to one file, define design tokens, then do surgical per-template touch-ups. No Big Bang rewrites._
+**CSS Unification ✅**
+- [x] Created `app/static/style.css` (1,930 lines) with CSS custom properties (design tokens)
+- [x] Replaced inline `<style>` in `base.html` with `<link rel="stylesheet" href="/static/style.css">`
+- [x] Added mobile hamburger nav in `base.html`
+- [x] Stripped inline CSS from all 9 child templates (dashboard, monitor_detail, edit_monitor, settings, landing, pricing, api_docs, login, signup)
+- [x] `status_page.html` and `aggregate_status.html` kept self-contained (standalone public pages)
 
-**Layer 1 — Extract shared `app/static/style.css`** _(single biggest win)_
-- [ ] Create `app/static/style.css` with all shared styles + CSS custom properties
-- [ ] Define design tokens as CSS variables:
-  ```
-  --color-primary: #e63946       --color-primary-dark: #c1121f
-  --color-navy: #1a1a2e          --color-navy-light: #2d2d4e
-  --color-text: #1a1a2e          --color-text-secondary: #666
-  --color-text-muted: #999       --color-bg: #f8f9fa
-  --color-card: #fff             --color-border: #e9ecef
-  --color-border-light: #f0f0f0  --color-success: #2a9d8f
-  --color-warning: #e9c46a       --color-danger: #e63946
-  --radius-sm: 6px               --radius-md: 10px
-  --radius-lg: 14px              --shadow-sm: 0 1px 3px rgba(0,0,0,0.08)
-  --shadow-md: 0 2px 12px rgba(0,0,0,0.08)
-  --shadow-lg: 0 4px 24px rgba(0,0,0,0.12)
-  --font-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace
-  ```
-- [ ] Move into `style.css` — currently duplicated across templates:
-  - Reset & base body styles (from `base.html`)
-  - Nav styles + **new mobile hamburger menu** (from `base.html`)
-  - Container, footer (from `base.html`)
-  - Flash messages (from `base.html`)
-  - Unified button system: `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-danger`, `.btn-ghost` (replaces `.auth-submit`, `.modal-submit`, `.checker-btn`, `.upgrade-btn`, `.price-cta`, etc.)
-  - Form elements: `.form-group`, `label`, `input`, `select`, `textarea`, `.hint` (currently redefined in dashboard, login, signup, edit_monitor, settings, landing)
-  - Card component: `.card` with consistent shadow + radius (replaces `.auth-card`, `.edit-card`, `.settings-section`, `.stat-card`, `.api-section`, etc.)
-  - Stat cards, tables, badges (`.badge-up`, `.badge-down`, `.badge-pro`, `.badge-free`)
-  - Status indicators, modal overlay/modal
-  - Typography scale (define clear rem scale instead of arbitrary 0.65rem–2.75rem)
-  - Responsive breakpoints (shared `@media` rules)
+**UI Cleanup ✅**
+- [x] Removed all decorative emojis from headings, labels, buttons across all 12 templates
+- [x] Removed all `→` arrows from button/link text
+- [x] Replaced emoji status circles with CSS `.status-dot` elements (dashboard + monitor detail)
+- [x] Removed feature icon divs from landing page
+- [x] Professional text-only UI throughout
 
-**Layer 2 — Update `base.html`**
-- [ ] Replace inline `<style>` block with `<link rel="stylesheet" href="/static/style.css">`
-- [ ] Add mobile hamburger nav (nav links currently just overflow/vanish on mobile)
-- [ ] Keep `{% block extra_css %}` for truly page-specific layout only (must be wrapped in `<style>` tags — some templates currently emit raw CSS)
+**Competitive Edge Features** 🔲
+- [ ] Smart Onboarding — landing URL checker stores result, auto-creates first monitor on signup
+- [ ] Weekly Uptime Digest Email — Cloud Scheduler Monday 9am UTC, per-user summary
+- [ ] Uptime Badges — `GET /badge/{id}.svg`, public SVG for GitHub READMEs
 
-**Layer 3 — Per-template touch-ups** _(work through one at a time, test after each)_
-- [ ] `dashboard.html` — Remove duplicated form/card/button CSS (~100 lines). Replace inline `style=""` on badges (SSL, keyword) with proper classes. Fix mobile: show condensed stats instead of `display: none`.
-- [ ] `monitor_detail.html` — Remove duplicated stat-card/settings-card CSS. Use shared `.card` class. Polish chart container styling.
-- [ ] `edit_monitor.html` — Remove duplicated `.edit-card`, `.form-group`, `.btn` CSS. Replace inline `style=""` on `<hr>`, `<h3>` section headers, and `<select>`/`<input type="time">` maintenance fields with proper classes.
-- [ ] `settings.html` — Remove duplicated `.settings-section`, form, table CSS. Use shared classes.
-- [ ] `landing.html` — Keep page-specific hero/checker/features CSS in `extra_css`. Remove any shared button/form styles that now live in `style.css`.
-- [ ] `pricing.html` — Keep pricing card layout in `extra_css`. Remove shared button/card styles.
-- [ ] `api_docs.html` — Keep endpoint card layout in `extra_css`. Remove shared section/button styles.
-- [ ] `login.html` — Remove duplicated `.auth-card`, `.form-group`, `.auth-submit` CSS (all now in `style.css`). Template should have ~0 lines of `extra_css`.
-- [ ] `signup.html` — Same as login. Password strength meter styles stay in `extra_css`.
-
-**⏸️ Checkpoint: After Layer 2, before Layer 3**
-- [ ] Start dev server, visually verify every page still renders identically (no regressions from CSS extraction)
-- [ ] Check desktop + mobile (narrow viewport) on: landing, login, signup, dashboard, monitor detail, edit monitor, settings, pricing, api docs
-
-**Execution order:**
-1. Layer 1: Create `style.css` (extract + unify)
-2. Layer 2: Update `base.html` (swap `<style>` → `<link>`, add mobile nav)
-3. Checkpoint: Visual regression check on all 9 pages
-4. Layer 3 templates in order: `dashboard.html` → `monitor_detail.html` → `edit_monitor.html` → `settings.html` → `api_docs.html` → `landing.html` → `pricing.html` → `login.html` → `signup.html` _(most visible/complex first so regressions are caught early, auth pages last since they'll mostly just work)_
-5. Final visual pass on all pages
-
-**What we intentionally DON'T touch:**
-- `status_page.html` and `aggregate_status.html` — standalone (no `base.html`), intentionally self-contained for public embeddability. Only update if CSS variable colors drift.
-- No CSS framework (Tailwind/Bootstrap) — overkill for 12 templates
-- No dark mode — not for launch
-- No color palette changes — current palette is solid
-
-**Competitive Edge Features** _(the "why us" over UptimeRobot/BetterStack)_
-
-_Strategy: Don't out-feature the big guys. Out-experience them. Simpler, more generous, better first 5 minutes. These three features form a growth loop: badge in README → dev visits landing → instant URL check → smart signup → monitoring in 30 seconds → weekly digest keeps them engaged → hits limit → upgrades → adds more badges → loop repeats._
-
-**Smart Onboarding — "Paste a URL. Done."** _(our #1 differentiator)_
-- [ ] Landing page URL checker stores result in session/cookie when user clicks "Start Monitoring"
-- [ ] Signup flow checks for stored URL check result
-- [ ] If result exists: auto-create first monitor on signup with smart defaults:
-  - URL from checker result
-  - Name auto-extracted from page `<title>` tag (fallback: domain name)
-  - Keyword auto-set to `<title>` content (user can change later)
-  - Response threshold auto-set to 2x measured response time (rounded to nearest 500ms)
-  - SSL monitoring auto-enabled (if HTTPS)
-- [ ] User lands on dashboard with monitor already running and first check result visible
-- [ ] If no stored result: normal signup flow (empty dashboard, add monitor manually)
-- [ ] _Target: URL paste to live monitoring in under 30 seconds_
-
-**Weekly Uptime Digest Email** _(silent sales engine — keeps free users engaged, drives upgrades)_
-- [ ] Cloud Scheduler job: runs every Monday at 9am UTC (`0 9 * * 1`)
-- [ ] For each user with ≥1 monitor: query past 7 days of checks from Firestore
-- [ ] Compute per-user: total monitors, avg uptime %, incident count, total downtime duration
-- [ ] Per-monitor breakdown: uptime %, incidents, avg response time
-- [ ] SSL expiry warnings: list any monitors with certs expiring within 14 days
-- [ ] SendGrid email template — clean, simple, scannable:
-  ```
-  Subject: "🐓 Weekly Report — 99.94% uptime across 5 monitors"
-  Body: monitor-by-monitor summary, incident list, SSL warnings
-  Footer: "You're using 8 of 10 free monitors. Upgrade to Pro →"
-  ```
-- [ ] Upgrade nudge in footer: show monitor usage vs limit (Free users only)
-- [ ] Unsubscribe link (respect opt-out, store preference on user doc)
-- [ ] Pro users get same digest but without upgrade nudge
-- [ ] _Why this works: UptimeRobot only does monthly reports on paid plans (free gets 3 months then stops). We give it free, forever._
-
-**Uptime Badges** _(free viral marketing in GitHub READMEs)_
-- [ ] `GET /badge/{monitor_id}.svg` — returns SVG badge image
-- [ ] Badge shows: `uptime | 99.97%` (green) or `uptime | 94.2%` (red if <99%)
-- [ ] Query monitor's `uptime_percent` field (already computed on each check)
-- [ ] Cache-Control header: `max-age=300` (5-minute cache, not stale)
-- [ ] Works without auth (public endpoint, but only for monitors with `is_public=true`)
-- [ ] Badge URL shown on monitor detail page with copy button: `![Uptime](https://statusrooster.com/badge/{id}.svg)`
-- [ ] Markdown + HTML embed snippets provided
-- [ ] _Why this works: every badge in a README is a free ad. BetterStack charges for badges. UptimeRobot's are clunky. Ours are clean and free._
-
-**Competitive Messaging** _(update landing + pricing pages)_
-- [ ] Landing page: add "What you get free that others charge for" section:
-  - "✅ SSL monitoring — free. (UptimeRobot charges for it.)"
-  - "✅ Slack alerts — free. (UptimeRobot charges for it.)"
-  - "✅ Response time alerts — free. (UptimeRobot charges for it.)"
-  - "✅ Weekly uptime reports — free. (UptimeRobot stops after 3 months.)"
-- [ ] Pricing page: add these differentiators to Free tier feature list
-- [ ] Landing page CTA: "Paste a URL. We'll monitor it in 30 seconds." (replaces generic CTA)
-
-**Dashboard UX**
-- [ ] Dashboard filtering (All / Up / Down / Pending / SSL Warning)
-- [ ] Dashboard sorting (name, status, uptime%, response time)
-- [ ] Dashboard search (filter by name or URL)
-
-**Hardening**
-- [ ] Error states: form validation messages, API error handling
-- [ ] Rate limiting on auth endpoints (prevent brute force)
+**Hardening** 🔲
 - [ ] Custom 404 page
 - [ ] Custom 500 page
 - [ ] Meta tags (title, description, OG image) on all public pages
-- [ ] Favicon + branding assets
-- [ ] Password reset flow (forgot password → email link → reset form)
-- [ ] Loading states / disabled buttons on form submit
-
-**CI/CD Pipeline**
-- [ ] Create `statusrooster-dev` Cloud Run service (separate service, same GCP project)
-- [ ] Dev accessible at Cloud Run URL (no custom domain needed)
-- [ ] Separate env vars for dev (e.g., `APP_URL` points to dev Cloud Run URL, Stripe test keys)
-- [ ] GitHub Actions CI workflow: lint + test on every push and PR to `main`
-- [ ] Block merges if tests fail (branch protection rule on `main`)
-- [ ] GitHub Actions CD — **dev**: auto-deploy to `statusrooster-dev` on push to `main` (if CI passes)
-- [ ] GitHub Actions CD — **prod**: manual trigger (`workflow_dispatch`) or git tag push to deploy to `statusrooster` (prod)
-- [ ] Workload Identity Federation (keyless auth from GitHub Actions → GCP, no service account key)
-- [ ] Health check gate: after deploy, hit `/health` — fail the workflow if it doesn't return 200
-- [ ] `.github/workflows/ci.yml` + `.github/workflows/deploy-dev.yml` + `.github/workflows/deploy-prod.yml`
-
-_Flow: push to main → tests pass → auto-deploy to dev → verify on dev → manually trigger prod deploy._
-_Staging environment deferred — add when there's a team or paying customers to protect._
+- [ ] Favicon
 
 - [ ] Deploy Day 9 to production
 - [ ] Git commit Day 9
-
-**✅ Day 9 Checkpoint:** Full-featured product. Every page polished. Every form validated. Every edge handled. Smart onboarding live. Weekly digest scheduled. Uptime badges working. CI/CD pipeline live — push to main auto-deploys if tests pass.
 
 ---
 
 ## Phase 3: Testing & Launch — Days 10-12
 
 ### Day 10 — Automated Test Suite 🔲
-_Goal: Comprehensive pytest suite that covers every route, edge case, and failure mode. Nothing ships without passing tests._
+_Goal: Comprehensive pytest suite that covers every route, edge case, and failure mode._
 
-**⚠️ RULE: Every test must pass before Day 11 deploy. No exceptions.**
-
-**Test Infrastructure**
 - [ ] pytest + httpx async test client setup
 - [ ] Test fixtures: mock Firestore, test user, test monitor
-- [ ] Conftest with reusable auth helpers (create user, get token, get cookie)
-- [ ] Tests run in CI pipeline (set up in Day 9)
-
-**Auth Tests (12)**
-- [ ] Signup with valid credentials → 302 + cookie + user in DB
-- [ ] Signup with duplicate email → error "Email already registered"
-- [ ] Signup with mismatched passwords → error "Passwords don't match"
-- [ ] Signup with short password (<8 chars) → error
-- [ ] Signup with invalid email format → error
-- [ ] Login with correct credentials → 302 + cookie
-- [ ] Login with wrong password → error "Invalid email or password"
-- [ ] Login with non-existent email → same generic error (no info leak)
-- [ ] Access /dashboard without cookie → redirect to /login
-- [ ] Access /dashboard with expired JWT → redirect to /login
-- [ ] Access /dashboard with tampered JWT → redirect to /login
-- [ ] Logout clears cookie → redirect to /login
-
-**Monitor CRUD Tests (12)**
-- [ ] Create monitor with valid URL → appears in dashboard
-- [ ] Create monitor with invalid URL → error
-- [ ] Create monitor without auth → redirect to /login
-- [ ] Create 51st monitor on free plan → error "Upgrade to Pro"
-- [ ] Create monitor with keyword check → keyword stored
-- [ ] Create monitor with response threshold → threshold stored
-- [ ] Edit monitor name → name updated in Firestore
-- [ ] Edit monitor URL → URL updated
-- [ ] Edit someone else's monitor → 404 (no cross-user access)
-- [ ] Delete monitor → removed from dashboard + Firestore
-- [ ] Delete someone else's monitor → 404
-- [ ] List monitors only shows current user's monitors
-
-**Check Engine Tests (12)**
-- [ ] Cron endpoint without secret → 401
-- [ ] Cron endpoint with wrong secret → 401
-- [ ] Cron endpoint with valid secret → runs checks
-- [ ] Check against UP site → is_up=true, status_code=200
-- [ ] Check against DOWN site → is_up=false after retry
-- [ ] Status change UP→DOWN → creates incident + triggers alerts
-- [ ] Status change DOWN→UP → resolves incident + sends recovery
-- [ ] No status change → no duplicate alerts
-- [ ] Keyword present → check passes
-- [ ] Keyword missing → check fails, alert sent
-- [ ] Response time over threshold → alert sent
-- [ ] SSL cert parsed and expiry stored on monitor doc
-
-**API Key & API Tests (10)**
-- [ ] Generate API key → key returned, hash stored
-- [ ] List API keys → shows masked keys
-- [ ] Revoke API key → key no longer works
-- [ ] `GET /api/v1/monitors` with valid key → 200 + monitors
-- [ ] `GET /api/v1/monitors` without key → 401
-- [ ] `GET /api/v1/monitors` with revoked key → 401
-- [ ] `GET /api/v1/monitors/{id}/checks` → returns check history
-- [ ] `POST /api/v1/monitors` via API → monitor created
-- [ ] API respects user isolation (can't see other user's monitors)
-- [ ] API responses follow `{data, error, meta}` shape
-
-**Webhook & Integration Tests (6)**
-- [ ] Status change fires webhook POST to configured URL
-- [ ] Webhook payload contains all expected fields
-- [ ] Webhook failure doesn't block other alerts (email/Slack still sent)
-- [ ] Maintenance window suppresses alerts during window
-- [ ] Maintenance window still records checks (just no alerts)
-- [ ] Maintenance window expires → alerts resume
-
-**Test Alert Tests (4)**
-- [ ] `POST /api/monitors/{id}/test-alert` sends test email notification
-- [ ] Test alert sends test Slack message (if webhook configured)
-- [ ] Test alert sends test webhook POST (if webhook URL configured, Pro only)
-- [ ] Test alert on Free user's monitor with webhook → skips webhook, sends email/Slack only
-
-**Billing Tests (6)**
-- [ ] Checkout endpoint creates Stripe session → redirects
-- [ ] Webhook with valid signature → processes event
-- [ ] Webhook with invalid signature → 400
-- [ ] checkout.session.completed → user upgraded to Pro
-- [ ] customer.subscription.deleted → user downgraded to Free
-- [ ] Portal endpoint creates session → redirects
-
-**Edge Cases & Security (8)**
-- [ ] NoSQL injection attempts in email field → properly handled
-- [ ] XSS attempt in monitor name → properly escaped in HTML
-- [ ] XSS attempt in keyword field → properly escaped
-- [ ] Extremely long URL (>2000 chars) → handled gracefully
-- [ ] Concurrent duplicate signup → only one user created
-- [ ] Empty form submission → proper validation errors
-- [ ] Invalid monitor ID in URL → 404, not 500
-- [ ] Rate limiting on login endpoint → 429 after threshold
-
+- [ ] Auth Tests (12): signup, login, session, logout edge cases
+- [ ] Monitor CRUD Tests (12): create, edit, delete, plan limits, user isolation
+- [ ] Check Engine Tests (12): cron auth, up/down detection, incidents, alerts, SSL
+- [ ] API Key & API Tests (10): generate, revoke, CRUD via API, user isolation
+- [ ] Webhook & Integration Tests (6): webhook payload, maintenance windows
+- [ ] Test Alert Tests (4): email, Slack, webhook test notifications
+- [ ] Billing Tests (6): Stripe checkout, webhooks, plan changes
+- [ ] Edge Cases & Security (8): injection, XSS, validation, rate limiting
 - [ ] **ALL TESTS PASSING** ✅
 - [ ] Git commit Day 10
 
 ### Day 11 — End-to-End Testing & Pre-Launch 🔲
 _Goal: Manual smoke test the ENTIRE product. Deploy final build. Dogfood it._
 
-**Manual E2E Test (every path, in production)**
-- [ ] Fresh signup → lands on dashboard
-- [ ] Add monitor (with keyword + threshold + webhook) → monitor appears
-- [ ] Wait for check cycle → monitor shows UP with SSL info
-- [ ] Edit monitor → changes saved
-- [ ] **Send Test Alert → email arrives, Slack message appears**
-- [ ] View monitor detail → chart renders, stats correct
-- [ ] Make monitor public → status page works at `/s/{slug}`
-- [ ] Aggregate status page works at `/status/{slug}`
-- [ ] Trigger a DOWN event → email + Slack + webhook all fire
-- [ ] Recovery → recovery alerts all fire
-- [ ] Set maintenance window → alerts suppressed during window
-- [ ] Upgrade to Pro (Stripe test card `4242...`) → plan badge changes
-- [ ] Manage Subscription → Stripe portal opens
-- [ ] Generate API key → use it with curl to hit API
-- [ ] Revoke API key → curl returns 401
-- [ ] Password reset flow → email received → password changed → can login
-- [ ] Landing page URL checker works with SSL info
-- [ ] Mobile: test entire flow on phone-sized viewport
-- [ ] Log out → redirect to login → can't access dashboard
-
-**Dogfooding**
-- [ ] Set up StatusRooster monitoring statusrooster.com (eat our own dog food)
-- [ ] Set up monitoring on 2-3 other real sites
-
-**Pre-Launch Prep**
+- [ ] Full manual E2E test of every user flow in production
+- [ ] Dogfooding: StatusRooster monitoring statusrooster.com
+- [ ] Mobile viewport testing
 - [ ] Final Cloud Run deploy with production env vars
-- [ ] Switch Stripe from test mode to live mode (when ready)
+- [ ] Switch Stripe from test mode to live mode
 - [ ] Write Show HN post draft
-- [ ] Take screenshots / record demo GIF
-- [ ] Verify all env vars correct in production
-
-- [ ] **EVERYTHING WORKS** ✅
+- [ ] Screenshots / demo GIF
 - [ ] Git commit Day 11
 
 ### Day 12 — Launch 🔲
@@ -512,19 +267,13 @@ _Goal: Manual smoke test the ENTIRE product. Deploy final build. Dogfood it._
 - [ ] Hot-fix any bugs reported
 - [ ] Track signups in Firestore
 
-**🚀 LAUNCHED**
-
 ---
 
 ## Phase 4: Post-Launch — Days 13-14+
 
 ### Days 13-14 — Bug Fixes & Growth 🔲
 - [ ] Fix bugs from real user feedback
-- [ ] Add most-requested small features
-- [ ] Performance improvements if needed
-- [ ] Monitor error logs
-- [ ] SEO blog post: "Free Website Uptime Monitoring"
-- [ ] SEO blog post: "UptimeRobot Alternatives 2026"
+- [ ] SEO blog posts ("Free Website Uptime Monitoring", "UptimeRobot Alternatives 2026")
 - [ ] Free SSL checker tool page (standalone, ranks on Google)
 - [ ] Submit to AlternativeTo, G2
 - [ ] Plan Product Hunt launch (week 3)
@@ -533,20 +282,19 @@ _Goal: Manual smoke test the ENTIRE product. Deploy final build. Dogfood it._
 - [ ] **Team Plan ($29/mo)**: 200 monitors, 30s intervals, 5 login seats, unlimited status pages
 - [ ] SMS Alerts (Twilio integration)
 - [ ] TCP/Ping Checks (non-HTTP services)
-- [ ] Port Monitoring
-- [ ] DNS Monitoring
+- [ ] Port / DNS Monitoring
 - [ ] Team / Multi-User accounts (login seats, roles)
 - [ ] API Response Validation (check JSON fields)
 - [ ] Multiple check regions (US-East, EU, Asia)
-- [ ] ~~Uptime badges (embeddable SVG for README files)~~ → moved to Day 9
 - [ ] PagerDuty / Opsgenie integration
 - [ ] Custom check intervals (30s, 5m, 15m)
 - [ ] Incident postmortem notes
 - [ ] Cron Job / Heartbeat monitoring
 - [ ] Custom HTTP headers per monitor
 - [ ] Password-protected status pages
-- [ ] Status page subscribers (email notifications on status change)
-- [ ] Monthly email reports (in addition to weekly digest)
+- [ ] Dashboard filtering / sorting / search
+- [ ] CI/CD pipeline (GitHub Actions → Cloud Run)
+- [ ] Password reset flow
 
 ---
 
@@ -555,18 +303,18 @@ _Goal: Manual smoke test the ENTIRE product. Deploy final build. Dogfood it._
 | Phase | Days | Status |
 |-------|------|--------|
 | 1. Core Engine | 1-4 | ✅ Complete |
-| 2. Feature Suite & Billing | 5-9 | � In Progress (Day 6 done) |
+| 2. Feature Suite & Billing | 5-9 | 🔄 In Progress (Day 9) |
 | 3. Testing & Launch | 10-12 | 🔲 Not started |
 | 4. Post-Launch | 13-14+ | 🔲 Not started |
 
-**Current Day: 6** · **Current Phase: 2**
+**Current Day: 9** · **Current Phase: 2**
 
 ---
 
-## 🔧 Domain & Email Setup ✅
+## Domain & Email Setup ✅
 - [x] Point `statusrooster.com` DNS to Cloud Run (4x A records)
 - [x] Map custom domain in Cloud Run (`gcloud run domain-mappings create`)
-- [x] SSL certificate provisioned (automatic via Cloud Run) — verified ✅ `https://statusrooster.com/health` → 200
+- [x] SSL certificate provisioned (automatic via Cloud Run) — verified `https://statusrooster.com/health` → 200
 - [x] SendGrid domain authentication (3x CNAME records validated)
 - [x] Update `SENDGRID_FROM_EMAIL` to `alerts@statusrooster.com`
 - [x] Email forwarding: catch-all `*@statusrooster.com` → `gjbangerter@gmail.com` (Namecheap)

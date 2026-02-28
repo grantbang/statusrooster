@@ -4,222 +4,6 @@
 {% block description %}Simple uptime monitoring. 50 monitors free, unlimited for $9/mo. No bloat, no confusion.{% endblock %}
 
 {% block extra_css %}
-<style>
-    .pricing-page { padding: 3rem 0 2rem; }
-    .pricing-hero {
-        text-align: center;
-        margin-bottom: 3rem;
-    }
-    .pricing-hero h1 {
-        font-size: 2.25rem;
-        font-weight: 800;
-        color: #1a1a2e;
-        margin-bottom: 0.5rem;
-    }
-    .pricing-hero .tagline {
-        color: #666;
-        font-size: 1.1rem;
-        max-width: 480px;
-        margin: 0 auto 0.75rem;
-    }
-    .pricing-hero .sub {
-        color: #999;
-        font-size: 0.9rem;
-    }
-
-    /* Plan Cards */
-    .pricing-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 1.5rem;
-        max-width: 720px;
-        margin: 0 auto 3.5rem;
-    }
-    .price-card {
-        background: #fff;
-        border: 1px solid #e9ecef;
-        border-radius: 14px;
-        padding: 2.5rem 2rem;
-        text-align: left;
-    }
-    .price-card.featured {
-        border-color: #e63946;
-        box-shadow: 0 0 0 2px #e63946;
-        position: relative;
-    }
-    .price-card.featured::before {
-        content: "Most Popular";
-        position: absolute;
-        top: -12px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #e63946;
-        color: #fff;
-        font-size: 0.7rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-    }
-    .price-card h3 {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #1a1a2e;
-        margin-bottom: 0.2rem;
-    }
-    .price-card .subtitle {
-        font-size: 0.85rem;
-        color: #888;
-        margin-bottom: 0.75rem;
-    }
-    .price-amount {
-        font-size: 2.75rem;
-        font-weight: 800;
-        color: #1a1a2e;
-        margin: 0.5rem 0 0.75rem;
-    }
-    .price-amount span { font-size: 1rem; font-weight: 400; color: #888; }
-    .section-label {
-        font-size: 0.7rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #aaa;
-        margin: 1rem 0 0.4rem;
-        padding-top: 0.75rem;
-        border-top: 1px solid #f0f0f0;
-    }
-    .section-label:first-of-type { border-top: none; margin-top: 0.5rem; }
-    .price-features {
-        list-style: none;
-        margin: 0;
-        font-size: 0.88rem;
-        color: #444;
-    }
-    .price-features li {
-        padding: 0.3rem 0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    .price-features .check { color: #2a9d8f; font-weight: 700; flex-shrink: 0; }
-    .price-features .cross { color: #ccc; flex-shrink: 0; }
-    .price-features .upgrade-hint {
-        color: #aaa;
-    }
-    .pro-tag {
-        display: inline-block;
-        background: #f0f0f0;
-        color: #888;
-        font-size: 0.6rem;
-        font-weight: 700;
-        padding: 0.1rem 0.35rem;
-        border-radius: 3px;
-        text-transform: uppercase;
-        margin-left: 0.2rem;
-    }
-    .price-cta {
-        display: block;
-        text-align: center;
-        padding: 0.85rem;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 0.95rem;
-        text-decoration: none;
-        margin-top: 1.5rem;
-        border: none;
-        cursor: pointer;
-        width: 100%;
-        transition: all 0.2s;
-    }
-    .price-cta:hover { text-decoration: none; }
-    .price-cta-free {
-        background: #f8f9fa;
-        color: #1a1a2e;
-        border: 1px solid #dee2e6;
-    }
-    .price-cta-free:hover { background: #e9ecef; }
-    .price-cta-pro {
-        background: #e63946;
-        color: #fff;
-    }
-    .price-cta-pro:hover { background: #c1121f; }
-    .current-plan {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-        cursor: default;
-    }
-
-    /* FAQ */
-    .faq-section {
-        max-width: 600px;
-        margin: 0 auto 3.5rem;
-    }
-    .faq-section h2 {
-        text-align: center;
-        font-size: 1.4rem;
-        font-weight: 800;
-        color: #1a1a2e;
-        margin-bottom: 1.5rem;
-    }
-    .faq-item {
-        background: #fff;
-        border: 1px solid #e9ecef;
-        border-radius: 10px;
-        padding: 1.25rem 1.5rem;
-        margin-bottom: 0.75rem;
-    }
-    .faq-item h4 {
-        font-size: 0.95rem;
-        font-weight: 700;
-        color: #1a1a2e;
-        margin-bottom: 0.4rem;
-    }
-    .faq-item p {
-        font-size: 0.88rem;
-        color: #666;
-        margin: 0;
-        line-height: 1.6;
-    }
-
-    /* Bottom CTA */
-    .bottom-cta {
-        text-align: center;
-        padding: 3rem 1rem;
-        background: linear-gradient(135deg, #1a1a2e, #2d2d4e);
-        border-radius: 14px;
-        max-width: 720px;
-        margin: 0 auto;
-    }
-    .bottom-cta h2 {
-        color: #fff;
-        font-size: 1.5rem;
-        margin-bottom: 0.5rem;
-    }
-    .bottom-cta p {
-        color: rgba(255,255,255,0.7);
-        margin-bottom: 1.5rem;
-        font-size: 0.95rem;
-    }
-    .bottom-cta a {
-        display: inline-block;
-        background: #e63946;
-        color: #fff;
-        padding: 0.8rem 2rem;
-        border-radius: 8px;
-        font-weight: 700;
-        text-decoration: none;
-        font-size: 1rem;
-    }
-    .bottom-cta a:hover { background: #c1121f; text-decoration: none; }
-
-    @media (max-width: 640px) {
-        .pricing-hero h1 { font-size: 1.6rem; }
-        .pricing-grid { gap: 1rem; }
-    }
-</style>
 {% endblock %}
 
 {% block content %}
@@ -227,7 +11,7 @@
 
     <!-- Hero -->
     <div class="pricing-hero">
-        <h1>No bloat. No confusion.<br>Just uptime monitoring.</h1>
+        <h1><span class="page-icon">🐓</span> No bloat. No confusion.<br>Just uptime monitoring.</h1>
         <p class="tagline">Two plans. One generous free tier. Upgrade when you're ready.</p>
         <p class="sub">No credit card required · Set up in 30 seconds</p>
     </div>
@@ -268,7 +52,7 @@
             {% elif user and user.get('plan', 'free') == 'pro' %}
                 <button class="price-cta price-cta-free" disabled style="opacity:0.5; cursor:default;">Free Plan</button>
             {% else %}
-                <a href="/signup" class="price-cta price-cta-free">Get started free →</a>
+                <a href="/signup" class="price-cta price-cta-free">Get started free</a>
             {% endif %}
         </div>
 
@@ -302,10 +86,10 @@
                 <button class="price-cta current-plan" disabled>✓ Current Plan</button>
             {% elif user %}
                 <form method="POST" action="/api/billing/checkout" style="margin:0;">
-                    <button type="submit" class="price-cta price-cta-pro">Upgrade to Pro →</button>
+                    <button type="submit" class="price-cta price-cta-pro">Upgrade to Pro</button>
                 </form>
             {% else %}
-                <a href="/signup" class="price-cta price-cta-pro">Start free, upgrade anytime →</a>
+                <a href="/signup" class="price-cta price-cta-pro">Start free, upgrade anytime</a>
             {% endif %}
         </div>
     </div>
@@ -347,12 +131,12 @@
 
     <!-- Bottom CTA -->
     <div class="bottom-cta">
-        <h2>🐓 Start monitoring in 30 seconds</h2>
+        <h2>Start monitoring in 30 seconds</h2>
         <p>50 monitors free. SSL alerts, keyword checks, and 60-second intervals included.</p>
         {% if user %}
-            <a href="/dashboard">Go to Dashboard →</a>
+            <a href="/dashboard">Go to dashboard</a>
         {% else %}
-            <a href="/signup">Create free account →</a>
+            <a href="/signup">Create free account</a>
         {% endif %}
     </div>
 
