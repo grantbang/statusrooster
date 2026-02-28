@@ -16,8 +16,16 @@
 ## Phase 1: Core Engine — Days 1-4
 
 ### Day 1 — Scaffolding & Auth ✅
-- [x] FastAPI project structure (`app/`, `routers/`, `services/`, `templates/`, `static/`)
-- [x] `requirements.txt` + `Dockerfile` + `.dockerignore`
+- [x] FastAPI project structure (`app/`, `routers/`, `services/`, `templates/`, `st## Progress Summary
+
+| Phase | Days | Status |
+|-------|------|--------|
+| 1. Core Engine | 1-4 | ✅ Complete |
+| 2. Feature Suite & Billing | 5-9 | 🔄 In Progress (Day 8 done) |
+| 3. Testing & Launch | 10-12 | 🔲 Not started |
+| 4. Post-Launch | 13-14+ | 🔲 Not started |
+
+**Current Day: 8** · **Current Phase: 2**[x] `requirements.txt` + `Dockerfile` + `.dockerignore`
 - [x] Config/settings module (loads `.env`)
 - [x] Firestore client singleton
 - [x] User model + Firestore CRUD (create, get by email, get by ID)
@@ -162,7 +170,7 @@ Maintenance windows, Aggregate status page, 10 status pages
 - [x] Every feature listed on pricing page is actually built and working
 
 **NOT built (removed from scope or deferred):**
-- 🔲 Weekly Uptime Digest Email — removed from pricing page claims, deferred to post-launch
+- 🔲 Weekly Uptime Digest Email — removed from pricing page claims, moved to Day 9 (competitive edge feature)
 - 🔲 Domain Expiry Monitoring — deferred to post-launch (needs WHOIS library)
 - 🔲 API access gating (Free vs Pro) — Day 8 scope
 
@@ -266,6 +274,59 @@ _Solution: Extract shared CSS to one file, define design tokens, then do surgica
 - No dark mode — not for launch
 - No color palette changes — current palette is solid
 
+**Competitive Edge Features** _(the "why us" over UptimeRobot/BetterStack)_
+
+_Strategy: Don't out-feature the big guys. Out-experience them. Simpler, more generous, better first 5 minutes. These three features form a growth loop: badge in README → dev visits landing → instant URL check → smart signup → monitoring in 30 seconds → weekly digest keeps them engaged → hits limit → upgrades → adds more badges → loop repeats._
+
+**Smart Onboarding — "Paste a URL. Done."** _(our #1 differentiator)_
+- [ ] Landing page URL checker stores result in session/cookie when user clicks "Start Monitoring"
+- [ ] Signup flow checks for stored URL check result
+- [ ] If result exists: auto-create first monitor on signup with smart defaults:
+  - URL from checker result
+  - Name auto-extracted from page `<title>` tag (fallback: domain name)
+  - Keyword auto-set to `<title>` content (user can change later)
+  - Response threshold auto-set to 2x measured response time (rounded to nearest 500ms)
+  - SSL monitoring auto-enabled (if HTTPS)
+- [ ] User lands on dashboard with monitor already running and first check result visible
+- [ ] If no stored result: normal signup flow (empty dashboard, add monitor manually)
+- [ ] _Target: URL paste to live monitoring in under 30 seconds_
+
+**Weekly Uptime Digest Email** _(silent sales engine — keeps free users engaged, drives upgrades)_
+- [ ] Cloud Scheduler job: runs every Monday at 9am UTC (`0 9 * * 1`)
+- [ ] For each user with ≥1 monitor: query past 7 days of checks from Firestore
+- [ ] Compute per-user: total monitors, avg uptime %, incident count, total downtime duration
+- [ ] Per-monitor breakdown: uptime %, incidents, avg response time
+- [ ] SSL expiry warnings: list any monitors with certs expiring within 14 days
+- [ ] SendGrid email template — clean, simple, scannable:
+  ```
+  Subject: "🐓 Weekly Report — 99.94% uptime across 5 monitors"
+  Body: monitor-by-monitor summary, incident list, SSL warnings
+  Footer: "You're using 8 of 10 free monitors. Upgrade to Pro →"
+  ```
+- [ ] Upgrade nudge in footer: show monitor usage vs limit (Free users only)
+- [ ] Unsubscribe link (respect opt-out, store preference on user doc)
+- [ ] Pro users get same digest but without upgrade nudge
+- [ ] _Why this works: UptimeRobot only does monthly reports on paid plans (free gets 3 months then stops). We give it free, forever._
+
+**Uptime Badges** _(free viral marketing in GitHub READMEs)_
+- [ ] `GET /badge/{monitor_id}.svg` — returns SVG badge image
+- [ ] Badge shows: `uptime | 99.97%` (green) or `uptime | 94.2%` (red if <99%)
+- [ ] Query monitor's `uptime_percent` field (already computed on each check)
+- [ ] Cache-Control header: `max-age=300` (5-minute cache, not stale)
+- [ ] Works without auth (public endpoint, but only for monitors with `is_public=true`)
+- [ ] Badge URL shown on monitor detail page with copy button: `![Uptime](https://statusrooster.com/badge/{id}.svg)`
+- [ ] Markdown + HTML embed snippets provided
+- [ ] _Why this works: every badge in a README is a free ad. BetterStack charges for badges. UptimeRobot's are clunky. Ours are clean and free._
+
+**Competitive Messaging** _(update landing + pricing pages)_
+- [ ] Landing page: add "What you get free that others charge for" section:
+  - "✅ SSL monitoring — free. (UptimeRobot charges for it.)"
+  - "✅ Slack alerts — free. (UptimeRobot charges for it.)"
+  - "✅ Response time alerts — free. (UptimeRobot charges for it.)"
+  - "✅ Weekly uptime reports — free. (UptimeRobot stops after 3 months.)"
+- [ ] Pricing page: add these differentiators to Free tier feature list
+- [ ] Landing page CTA: "Paste a URL. We'll monitor it in 30 seconds." (replaces generic CTA)
+
 **Dashboard UX**
 - [ ] Dashboard filtering (All / Up / Down / Pending / SSL Warning)
 - [ ] Dashboard sorting (name, status, uptime%, response time)
@@ -299,7 +360,7 @@ _Staging environment deferred — add when there's a team or paying customers to
 - [ ] Deploy Day 9 to production
 - [ ] Git commit Day 9
 
-**✅ Day 9 Checkpoint:** Full-featured product. Every page polished. Every form validated. Every edge handled. CI/CD pipeline live — push to main auto-deploys if tests pass.
+**✅ Day 9 Checkpoint:** Full-featured product. Every page polished. Every form validated. Every edge handled. Smart onboarding live. Weekly digest scheduled. Uptime badges working. CI/CD pipeline live — push to main auto-deploys if tests pass.
 
 ---
 
@@ -477,7 +538,7 @@ _Goal: Manual smoke test the ENTIRE product. Deploy final build. Dogfood it._
 - [ ] Team / Multi-User accounts (login seats, roles)
 - [ ] API Response Validation (check JSON fields)
 - [ ] Multiple check regions (US-East, EU, Asia)
-- [ ] Uptime badges (embeddable SVG for README files)
+- [ ] ~~Uptime badges (embeddable SVG for README files)~~ → moved to Day 9
 - [ ] PagerDuty / Opsgenie integration
 - [ ] Custom check intervals (30s, 5m, 15m)
 - [ ] Incident postmortem notes
