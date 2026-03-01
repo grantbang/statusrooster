@@ -250,15 +250,15 @@ _Goal: Reposition as developer-first. Modern design. API docs excellence. New pr
 - [ ] Backend feature gating: Slack/SMS/webhooks/response_threshold as Pro-only
 - [ ] Check interval enforcement: 5min Free vs 60s Pro in cron
 - [ ] SMS/Twilio integration (listed on pricing, not wired)
-- [ ] Deploy Day 9 to production
-- [x] Git commits: `50155fd`, `99f249a`, `de9bd73`, `0616228`
+- [x] Deploy Day 9 to production (revision `statusrooster-00001-hgw`)
+- [x] Git commits: `50155fd`, `99f249a`, `de9bd73`, `0616228`, `baf9847`
 
 ---
 
 ## Phase 3: Hardening & Launch — Days 10-12
 
-### Day 10 — Backend Gating & Hardening 🔲
-_Goal: Make pricing real. Gate features properly. Harden the product._
+### Day 10 — Backend Gating, Telemetry & Hardening 🔲
+_Goal: Make pricing real. Add internal analytics. Harden the product._
 
 **Feature Gating (make pricing honest)**
 - [ ] Slack webhook alerts → Pro only (Free users see upgrade prompt)
@@ -269,11 +269,33 @@ _Goal: Make pricing real. Gate features properly. Harden the product._
 - [ ] Check interval enforcement: Free = 5 min, Pro = 60s in cron job
 - [ ] Status page limit: Free = 1, Pro = 10
 
+**OAuth Login (Google + GitHub)**
+- [ ] Google OAuth: register app in Google Cloud Console, get client ID/secret
+- [ ] GitHub OAuth: register app in GitHub Developer Settings, get client ID/secret
+- [ ] `GET /auth/google` — redirect to Google consent screen
+- [ ] `GET /auth/google/callback` — exchange code for token, get email/name, create or find user
+- [ ] `GET /auth/github` — redirect to GitHub authorize URL
+- [ ] `GET /auth/github/callback` — exchange code for token, get email/name, create or find user
+- [ ] User model: add `auth_provider` field (email / google / github)
+- [ ] Link accounts: if email already exists with password, link OAuth to same account
+- [ ] Login page: "Continue with Google" + "Continue with GitHub" buttons
+- [ ] Signup page: same OAuth buttons above the email/password form
+- [ ] Store OAuth tokens securely (or stateless — just use email from provider)
+- [ ] Handle edge case: GitHub user with private email (use primary verified email)
+
 **SMS/Twilio Integration**
 - [ ] Twilio account + phone number
 - [ ] SMS alert on monitor down/up (Pro only)
 - [ ] SMS field on edit monitor form (Pro only)
 - [ ] Test alert includes SMS
+
+**Site Telemetry & Event Tracking**
+- [ ] Event logging service: write structured events to Firestore `events` collection
+- [ ] Track: signups, logins, monitor_created, monitor_deleted, upgrade, downgrade, api_key_created, alert_sent, check_run
+- [ ] Each event: `{type, user_id, timestamp, metadata}` (lightweight, append-only)
+- [ ] Middleware: track page views (path, user_id or anonymous, timestamp, referrer, user_agent)
+- [ ] Track API usage: endpoint, api_key_id, timestamp, response_ms
+- [ ] Cron stats: log per-run totals (monitors_checked, alerts_fired, avg_response_ms, errors) to `cron_stats` collection
 
 **Hardening**
 - [ ] Custom 404 page
@@ -285,9 +307,29 @@ _Goal: Make pricing real. Gate features properly. Harden the product._
 - [ ] Deploy Day 10 to production
 - [ ] Git commit Day 10
 
-### Day 11 — Testing & Pre-Launch 🔲
-_Goal: Automated tests + manual smoke test. Deploy final build._
+### Day 11 — Admin Dashboard, Testing & Pre-Launch 🔲
+_Goal: Internal metrics dashboard. Automated tests. Final smoke test._
 
+**Admin Dashboard (`/admin` — owner-only)**
+- [ ] Auth guard: only your email can access `/admin`
+- [ ] KPI cards: total users, Pro users, Free users, MRR ($), monitors total, checks today
+- [ ] Signup chart: signups per day (last 30 days, Chart.js)
+- [ ] Revenue tracking: MRR, total Stripe revenue, upgrades/downgrades over time
+- [ ] Active monitors breakdown: by plan, by status (up/down/pending)
+- [ ] Alert volume: alerts sent per day (email, Slack, SMS, webhook)
+- [ ] API usage: API calls per day, top users by call volume
+- [ ] Cron health: last run time, avg checks/run, error rate, avg response_ms
+- [ ] Page views: top pages, unique visitors (from telemetry middleware)
+- [ ] Cloud costs: link to GCP billing dashboard + manual monthly log
+- [ ] Funnel: landing page visits → signups → monitor created → Pro upgrade
+
+**Cost Tracking (manual + automated)**
+- [ ] `costs` Firestore collection: `{month, cloud_run, firestore, sendgrid, twilio, stripe_fees, domain, total}`
+- [ ] Admin page: log monthly costs, see burn rate vs MRR
+- [ ] Cloud Run: pull from GCP billing API or log manually
+- [ ] SendGrid/Twilio/Stripe: note monthly usage
+
+**Testing**
 - [ ] pytest + httpx async test client setup
 - [ ] Test fixtures: mock Firestore, test user, test monitor
 - [ ] Auth tests: signup, login, session, logout
@@ -312,7 +354,7 @@ _Goal: Ship it. Tell people._
 - [ ] Post to IndieHackers
 - [ ] Monitor comments, respond to feedback
 - [ ] Hot-fix any launch-day bugs
-- [ ] Track signups in Firestore
+- [ ] Monitor admin dashboard for signups, conversions, errors
 
 ---
 
@@ -386,6 +428,13 @@ _Goal: Ship it. Tell people._
 - ⚠️ Check interval — all monitors run at same 60s interval
 - ⚠️ SMS — listed on pricing, not implemented
 
+### What's NOT tracked yet (Day 10-11)
+- ⚠️ No event logging (signups, upgrades, alert volume)
+- ⚠️ No page view tracking
+- ⚠️ No admin dashboard
+- ⚠️ No cost tracking vs revenue
+- ⚠️ No cron health stats
+
 ---
 
 ## Domain & Email Setup ✅
@@ -397,3 +446,59 @@ _Goal: Ship it. Tell people._
 - [x] Email forwarding: catch-all `*@statusrooster.com` → `gjbangerter@gmail.com` (Namecheap)
 - [x] Test email delivery end-to-end (confirmed inbox delivery, not spam!)
 - [x] Update `APP_URL` env var to `https://statusrooster.com`
+
+---
+
+## Internal Metrics & Telemetry
+
+_Everything we need to know if the business is working._
+
+### Business Metrics (admin dashboard)
+| Metric | Source | Frequency |
+|--------|--------|-----------|
+| Total users (Free / Pro) | Firestore `users` collection | Real-time |
+| MRR | Stripe API or `users` where plan=pro × $9 | Real-time |
+| Total revenue (all-time) | Stripe Dashboard / API | Daily |
+| Signups per day | `events` collection (type=signup) | Real-time |
+| Upgrades / Downgrades | `events` collection (type=upgrade/downgrade) | Real-time |
+| Churn rate | Downgrades / total Pro users per month | Monthly |
+
+### Product Metrics (admin dashboard)
+| Metric | Source | Frequency |
+|--------|--------|-----------|
+| Total monitors (by plan, by status) | Firestore `monitors` collection | Real-time |
+| Checks per day | `cron_stats` collection | Per cron run |
+| Alerts sent (email/Slack/SMS/webhook) | `events` (type=alert_sent) | Real-time |
+| API calls per day | `events` (type=api_call) | Real-time |
+| Top API users by volume | `events` grouped by api_key_id | Daily |
+| Avg response time across all monitors | `cron_stats` avg_response_ms | Per cron run |
+| Error rate (failed checks) | `cron_stats` error_count | Per cron run |
+
+### Site Analytics (admin dashboard)
+| Metric | Source | Frequency |
+|--------|--------|-----------|
+| Page views (by path) | Telemetry middleware → `page_views` | Real-time |
+| Unique visitors | Dedupe by session/IP in `page_views` | Daily |
+| Top referrers | `page_views` referrer field | Daily |
+| Conversion funnel | Landing → Signup → Monitor Created → Pro | Daily |
+| Bounce rate (landing only visits) | `page_views` session analysis | Daily |
+
+### Infrastructure & Costs (admin dashboard + manual)
+| Metric | Source | Frequency |
+|--------|--------|-----------|
+| Cloud Run cost | GCP Billing (manual or API) | Monthly |
+| Firestore reads/writes | GCP Console | Monthly |
+| SendGrid usage | SendGrid dashboard | Monthly |
+| Twilio SMS cost | Twilio dashboard | Monthly |
+| Stripe fees | Stripe dashboard (2.9% + 30¢) | Monthly |
+| Domain renewal | Namecheap | Yearly |
+| Total burn rate | `costs` collection | Monthly |
+| Profit/loss | MRR − total costs | Monthly |
+
+### Firestore Collections for Telemetry
+```
+events/{auto_id}        → {type, user_id, timestamp, metadata}
+page_views/{auto_id}    → {path, user_id, session_id, timestamp, referrer, user_agent, ip_hash}
+cron_stats/{auto_id}    → {timestamp, monitors_checked, alerts_fired, avg_response_ms, errors, duration_ms}
+costs/{YYYY-MM}         → {month, cloud_run, firestore, sendgrid, twilio, stripe_fees, domain, total, mrr, profit}
+```

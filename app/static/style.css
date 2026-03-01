@@ -413,6 +413,64 @@ code {
     color: #666;
 }
 
+/* OAuth buttons */
+.oauth-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+.oauth-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: var(--text-base);
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    border: 1px solid var(--border-input);
+}
+.oauth-btn svg {
+    flex-shrink: 0;
+}
+.oauth-google {
+    background: #fff;
+    color: #3c4043;
+}
+.oauth-google:hover {
+    background: #f7f8f8;
+    border-color: #dadce0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.oauth-github {
+    background: #24292f;
+    color: #fff;
+    border-color: #24292f;
+}
+.oauth-github:hover {
+    background: #32383f;
+    border-color: #32383f;
+}
+.oauth-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    color: #999;
+    font-size: 0.85rem;
+}
+.oauth-divider::before,
+.oauth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-input);
+}
+
 /* Password wrapper */
 .password-wrapper { position: relative; }
 .password-wrapper input { padding-right: 3rem; }

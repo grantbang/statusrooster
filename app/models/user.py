@@ -11,15 +11,36 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(plain: str, hashed: str) -> bool:
+    if not hashed:
+        return False
     return pwd_context.verify(plain, hashed)
 
 
 def create_user(db, email: str, password: str) -> dict:
-    """Create a new user. Returns the user dict with id."""
+    """Create a new user with email/password. Returns the user dict with id."""
     doc_ref = db.collection(COLLECTION).document()
     user_data = {
         "email": email.lower().strip(),
         "password_hash": hash_password(password),
+        "auth_provider": "email",
+        "plan": "free",
+        "stripe_customer_id": None,
+        "monitors_count": 0,
+        "created_at": datetime.now(timezone.utc),
+    }
+    doc_ref.set(user_data)
+    user_data["id"] = doc_ref.id
+    return user_data
+
+
+def create_oauth_user(db, email: str, provider: str, name: str = None) -> dict:
+    """Create a new user from OAuth (no password). Returns the user dict with id."""
+    doc_ref = db.collection(COLLECTION).document()
+    user_data = {
+        "email": email.lower().strip(),
+        "password_hash": None,
+        "auth_provider": provider,
+        "name": name,
         "plan": "free",
         "stripe_customer_id": None,
         "monitors_count": 0,

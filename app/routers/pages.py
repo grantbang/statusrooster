@@ -204,7 +204,8 @@ async def login_page(request: Request):
     user = get_user_from_cookie(request)
     if user:
         return RedirectResponse(url="/dashboard", status_code=302)
-    return templates.TemplateResponse("login.html", {"request": request, "user": None, "error": None})
+    error = request.query_params.get("error")
+    return templates.TemplateResponse("login.html", {"request": request, "user": None, "error": error})
 
 
 @router.post("/login", response_class=HTMLResponse)
@@ -212,7 +213,21 @@ async def login_submit(request: Request, email: str = Form(...), password: str =
     db = get_db()
     user = get_user_by_email(db, email)
 
-    if not user or not verify_password(password, user["password_hash"]):
+    if not user:
+        return templates.TemplateResponse("login.html", {
+            "request": request, "user": None, "error": "Invalid email or password", "email": email
+        })
+
+    # OAuth-only user trying to use password login
+    if not user.get("password_hash"):
+        provider = user.get("auth_provider", "OAuth")
+        return templates.TemplateResponse("login.html", {
+            "request": request, "user": None,
+            "error": f"This account uses {provider.title()} login. Use the button above.",
+            "email": email
+        })
+
+    if not verify_password(password, user["password_hash"]):
         return templates.TemplateResponse("login.html", {
             "request": request, "user": None, "error": "Invalid email or password", "email": email
         })
