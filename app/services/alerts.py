@@ -129,14 +129,14 @@ async def send_down_alert(monitor: dict, incident: dict) -> None:
         subject = f"🔴 DOWN: {name} is not responding"
         html = f"""
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto;">
-            <h2 style="color: #e63946;">🔴 {name} is DOWN</h2>
+            <h2 style="color: #ef4444;">🔴 {name} is DOWN</h2>
             <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
                 <tr><td style="padding: 8px 0; color: #666;">URL</td><td style="padding: 8px 0;"><a href="{url}">{url}</a></td></tr>
                 <tr><td style="padding: 8px 0; color: #666;">Status Code</td><td style="padding: 8px 0;"><strong>{status_code}</strong></td></tr>
                 <tr><td style="padding: 8px 0; color: #666;">Response Time</td><td style="padding: 8px 0;">{response_str}</td></tr>
                 <tr><td style="padding: 8px 0; color: #666;">Detected</td><td style="padding: 8px 0;">{time_str}</td></tr>
             </table>
-            <p><a href="{detail_url}" style="display: inline-block; background: #e63946; color: #fff; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">View Monitor Details →</a></p>
+            <p><a href="{detail_url}" style="display: inline-block; background: #6366f1; color: #fff; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">View Monitor Details →</a></p>
             <p style="color: #888; font-size: 13px; margin-top: 24px;">We'll notify you when it recovers.</p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
             <p style="color: #aaa; font-size: 12px;">StatusRooster 🐓 — Uptime monitoring for developers</p>
@@ -185,14 +185,14 @@ async def send_recovery_alert(monitor: dict, incident: dict) -> None:
         subject = f"🟢 RECOVERED: {name} is back up"
         html = f"""
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto;">
-            <h2 style="color: #2a9d8f;">🟢 {name} is back UP</h2>
+            <h2 style="color: #22c55e;">🟢 {name} is back UP</h2>
             <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
                 <tr><td style="padding: 8px 0; color: #666;">URL</td><td style="padding: 8px 0;"><a href="{url}">{url}</a></td></tr>
                 <tr><td style="padding: 8px 0; color: #666;">Downtime</td><td style="padding: 8px 0;"><strong>{duration_str}</strong></td></tr>
                 <tr><td style="padding: 8px 0; color: #666;">Response Time</td><td style="padding: 8px 0;">{response_str}</td></tr>
                 <tr><td style="padding: 8px 0; color: #666;">Recovered</td><td style="padding: 8px 0;">{time_str}</td></tr>
             </table>
-            <p><a href="{detail_url}" style="display: inline-block; background: #2a9d8f; color: #fff; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">View Monitor Details →</a></p>
+            <p><a href="{detail_url}" style="display: inline-block; background: #6366f1; color: #fff; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">View Monitor Details →</a></p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
             <p style="color: #aaa; font-size: 12px;">StatusRooster 🐓 — Uptime monitoring for developers</p>
         </div>
@@ -244,7 +244,7 @@ async def send_ssl_expiry_alert(monitor: dict, days_left: int, expiry_date) -> N
                 <tr><td style="padding: 8px 0; color: #666;">Monitor</td><td style="padding: 8px 0;"><strong>{name}</strong></td></tr>
                 <tr><td style="padding: 8px 0; color: #666;">URL</td><td style="padding: 8px 0;"><a href="{url}">{url}</a></td></tr>
                 <tr><td style="padding: 8px 0; color: #666;">Expires</td><td style="padding: 8px 0;"><strong>{expiry_str}</strong></td></tr>
-                <tr><td style="padding: 8px 0; color: #666;">Days Left</td><td style="padding: 8px 0;"><strong style="color: #e63946;">{days_left} days</strong></td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">Days Left</td><td style="padding: 8px 0;"><strong style="color: #ef4444;">{days_left} days</strong></td></tr>
             </table>
             <p>Renew your SSL certificate before it expires to avoid downtime.</p>
             <p><a href="{detail_url}" style="display: inline-block; background: #e76f51; color: #fff; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">View Monitor →</a></p>
@@ -336,7 +336,7 @@ async def send_threshold_alert(monitor: dict, actual_ms: float, threshold_ms: in
             <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
                 <tr><td style="padding: 8px 0; color: #666;">Monitor</td><td style="padding: 8px 0;"><strong>{name}</strong></td></tr>
                 <tr><td style="padding: 8px 0; color: #666;">URL</td><td style="padding: 8px 0;"><a href="{url}">{url}</a></td></tr>
-                <tr><td style="padding: 8px 0; color: #666;">Response Time</td><td style="padding: 8px 0;"><strong style="color: #e63946;">{actual_ms:.0f}ms</strong></td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">Response Time</td><td style="padding: 8px 0;"><strong style="color: #ef4444;">{actual_ms:.0f}ms</strong></td></tr>
                 <tr><td style="padding: 8px 0; color: #666;">Threshold</td><td style="padding: 8px 0;">{threshold_ms}ms</td></tr>
                 <tr><td style="padding: 8px 0; color: #666;">Detected</td><td style="padding: 8px 0;">{time_str}</td></tr>
             </table>
@@ -423,14 +423,14 @@ async def send_test_alert(monitor: dict, user_plan: str = "free") -> dict:
         subject = f"🧪 Test Alert: {name}"
         html = f"""
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto;">
-            <h2 style="color: #2a9d8f;">🧪 Test Alert — It Works!</h2>
+            <h2 style="color: #22c55e;">🧪 Test Alert — It Works!</h2>
             <p>This is a test notification from StatusRooster. Your alert configuration is working correctly.</p>
             <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
                 <tr><td style="padding: 8px 0; color: #666;">Monitor</td><td style="padding: 8px 0;"><strong>{name}</strong></td></tr>
                 <tr><td style="padding: 8px 0; color: #666;">URL</td><td style="padding: 8px 0;"><a href="{url}">{url}</a></td></tr>
                 <tr><td style="padding: 8px 0; color: #666;">Sent At</td><td style="padding: 8px 0;">{time_str}</td></tr>
             </table>
-            <p><a href="{detail_url}" style="display: inline-block; background: #2a9d8f; color: #fff; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">View Monitor →</a></p>
+            <p><a href="{detail_url}" style="display: inline-block; background: #6366f1; color: #fff; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">View Monitor →</a></p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
             <p style="color: #aaa; font-size: 12px;">StatusRooster 🐓 — Uptime monitoring for developers</p>
         </div>

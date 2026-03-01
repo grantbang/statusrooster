@@ -8,7 +8,7 @@
 {% block content %}
 <div class="auth-container">
     <div class="auth-card">
-        <h1><span class="page-icon">🐓</span> Create your account</h1>
+        <h1>Create your account</h1>
         <p class="subtitle">Start monitoring in 30 seconds. No credit card required.</p>
 
         {% if error %}
@@ -76,10 +76,10 @@ function checkMatch() {
     indicator.style.display = 'block';
     if (pw === confirm) {
         indicator.textContent = '✓ Passwords match';
-        indicator.style.color = '#2a9d8f';
+        indicator.style.color = '#22c55e';
     } else {
         indicator.textContent = '✗ Passwords don\'t match';
-        indicator.style.color = '#e63946';
+        indicator.style.color = '#ef4444';
     }
 }
 
@@ -102,11 +102,11 @@ function updateStrength(password) {
     if (/[^a-zA-Z0-9]/.test(password)) score++;
 
     const levels = [
-        { max: 1, width: '20%',  color: '#e63946', text: 'Weak' },
-        { max: 2, width: '40%',  color: '#f4a261', text: 'Fair' },
-        { max: 3, width: '60%',  color: '#e9c46a', text: 'Good' },
-        { max: 4, width: '80%',  color: '#2a9d8f', text: 'Strong' },
-        { max: 5, width: '100%', color: '#264653', text: 'Very strong 💪' },
+        { max: 1, width: '20%',  color: '#ef4444', text: 'Weak' },
+        { max: 2, width: '40%',  color: '#f59e0b', text: 'Fair' },
+        { max: 3, width: '60%',  color: '#eab308', text: 'Good' },
+        { max: 4, width: '80%',  color: '#22c55e', text: 'Strong' },
+        { max: 5, width: '100%', color: '#16a34a', text: 'Very strong 💪' },
     ];
 
     const level = levels[Math.min(score, levels.length) - 1] || levels[0];

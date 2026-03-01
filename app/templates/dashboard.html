@@ -8,7 +8,7 @@
 {% block content %}
 <div class="dash-header">
     <h1>
-        <span class="page-icon">🐓</span> Dashboard
+        Dashboard
         <span class="monitor-count">({{ monitors | length }} monitor{{ 's' if monitors | length != 1 else '' }})</span>
         {% if user.get('plan', 'free') == 'pro' %}
             <span class="plan-badge plan-pro">Pro</span>
@@ -23,16 +23,16 @@
             </form>
         {% else %}
             <form method="POST" action="/api/billing/checkout" style="margin:0;">
-                <button type="submit" class="btn btn-secondary" style="font-size: 0.85rem; background: linear-gradient(135deg, #1a1a2e, #2d2d4e);">Upgrade to Pro</button>
+                <button type="submit" class="btn btn-secondary" style="font-size: 0.85rem; background: #0a0a0a;">Upgrade to Pro</button>
             </form>
         {% endif %}
         <button class="btn btn-primary" onclick="openModal()">Add monitor</button>
     </div>
 </div>
 
-{% if user.get('plan', 'free') == 'free' and monitors | length >= 40 %}
+{% if user.get('plan', 'free') == 'free' and monitors | length >= 4 %}
 <div class="upgrade-banner">
-    <p>You're using <strong>{{ monitors | length }} of 50</strong> free monitors. Upgrade to Pro for unlimited monitors, webhooks, and maintenance windows.</p>
+    <p>You're using <strong>{{ monitors | length }} of 5</strong> free monitors. Upgrade to Pro for 250 monitors, 60s checks, and Slack/SMS alerts.</p>
     <form method="POST" action="/api/billing/checkout" style="margin:0;">
         <button type="submit" class="upgrade-btn">Upgrade to Pro — $9/mo</button>
     </form>
@@ -86,9 +86,12 @@
 {% else %}
 <div class="empty-state">
     <h2>No monitors yet</h2>
-    <p>Add your first URL to start monitoring uptime.</p>
+    <p>Add your first URL to start tracking uptime, SSL, and response time.</p>
     <br>
     <button class="btn btn-primary" onclick="openModal()">Add your first monitor</button>
+    <p style="margin-top: 1rem; font-size: 0.85rem; color: #999;">
+        Or use the <a href="/docs/api">REST API</a> to create one programmatically.
+    </p>
 </div>
 {% endif %}
 
@@ -101,7 +104,7 @@
             <div class="form-group">
                 <label for="url">URL to Monitor</label>
                 <input type="url" id="url" name="url" placeholder="https://example.com" required>
-                <div class="hint">We'll check this URL every 60 seconds</div>
+                <div class="hint">We'll check this URL every {% if user.get('plan', 'free') == 'pro' %}60 seconds{% else %}5 minutes{% endif %}</div>
             </div>
             <div class="form-group">
                 <label for="name">Display Name</label>

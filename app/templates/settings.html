@@ -7,7 +7,7 @@
 
 {% block content %}
 <div class="settings-header">
-    <h1><span class="page-icon">🐓</span> Settings</h1>
+    <h1>Settings</h1>
     <p>Manage your account and API access.</p>
 </div>
 
@@ -21,7 +21,7 @@
         <dt>Plan</dt>
         <dd>
             {% if user.get('plan', 'free') == 'pro' %}
-                <span style="color: #e63946; font-weight: 700;">Pro</span>
+                <span style="color: #6366f1; font-weight: 700;">Pro</span>
             {% else %}
                 Free &nbsp;·&nbsp; <a href="/pricing">Upgrade to Pro</a>
             {% endif %}

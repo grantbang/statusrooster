@@ -46,9 +46,9 @@ def get_user_from_cookie(request: Request) -> dict | None:
 # ---------------------------------------------------------------------------
 
 @router.get("/", response_class=HTMLResponse)
-async def landing_page(request: Request):
+async def landing_page(request: Request, preview: str = None):
     user = get_user_from_cookie(request)
-    if user:
+    if user and preview is None:
         return RedirectResponse(url="/dashboard", status_code=302)
     return templates.TemplateResponse("landing.html", {"request": request, "user": None})
 
@@ -287,9 +287,15 @@ async def add_monitor(
 
     # Plan enforcement
     existing = list_monitors_by_user(db, user["id"])
-    if user.get("plan", "free") == "free" and len(existing) >= 50:
+    plan = user.get("plan", "free")
+    if plan == "free" and len(existing) >= 5:
         return RedirectResponse(
-            url="/dashboard?msg=Free+plan+limited+to+50+monitors.+Upgrade+to+Pro+for+unlimited!&msg_type=error",
+            url="/dashboard?msg=Free+plan+limited+to+5+monitors.+Upgrade+to+Pro+for+up+to+250!&msg_type=error",
+            status_code=302,
+        )
+    if plan == "pro" and len(existing) >= 250:
+        return RedirectResponse(
+            url="/dashboard?msg=Pro+plan+limited+to+250+monitors.+Contact+us+if+you+need+more.&msg_type=error",
             status_code=302,
         )
 

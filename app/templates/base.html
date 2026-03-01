@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}StatusRooster{% endblock %} — StatusRooster</title>
     <meta name="description" content="{% block description %}Uptime monitoring for indie developers, not enterprises.{% endblock %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
     {% block extra_css %}{% endblock %}
 </head>
@@ -22,6 +25,8 @@
                 <a href="/settings">Settings</a>
                 <a href="/logout">Log out</a>
             {% else %}
+                <a href="/pricing">Pricing</a>
+                <a href="/docs/api">API</a>
                 <a href="/login">Log in</a>
                 <a href="/signup" class="btn btn-primary" style="padding: 0.4rem 1rem;">Sign up free</a>
             {% endif %}

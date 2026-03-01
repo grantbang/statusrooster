@@ -7,7 +7,7 @@
 {% block content %}
 <div class="edit-container">
     <div class="edit-card">
-        <h1><span class="page-icon">🐓</span> Edit Monitor</h1>
+        <h1>Edit Monitor</h1>
         <form method="POST" action="/monitors/{{ monitor.id }}/edit">
             <div class="form-group">
                 <label for="url">URL</label>
@@ -85,7 +85,7 @@
                 <label class="toggle-label" for="public" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
                     <input type="checkbox" id="public" name="public" value="true"
                            {% if monitor.public %}checked{% endif %}
-                           style="width: 18px; height: 18px; accent-color: #e63946;">
+                           style="width: 18px; height: 18px; accent-color: #6366f1;">
                     <span>Make this monitor public</span>
                 </label>
                 <div class="hint">When public, anyone can view the status page at <strong>/s/{{ monitor.slug }}</strong></div>
@@ -95,7 +95,7 @@
                 <input type="text" id="slug" name="slug" value="{{ monitor.slug }}"
                        pattern="[a-z0-9\-]+" title="Lowercase letters, numbers, and hyphens only">
                 <div class="hint">Your public status page URL: <code>statusrooster.com/s/<span id="slug-preview">{{ monitor.slug }}</span></code>
-                    {% if monitor.public and monitor.slug %} &mdash; <a href="/s/{{ monitor.slug }}" target="_blank" style="color: #e63946;">View live</a>{% endif %}
+                    {% if monitor.public and monitor.slug %} &mdash; <a href="/s/{{ monitor.slug }}" target="_blank" style="color: #6366f1;">View live</a>{% endif %}
                 </div>
             </div>
 

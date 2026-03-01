@@ -11,9 +11,8 @@
 
     <!-- Hero -->
     <div class="pricing-hero">
-        <h1><span class="page-icon">🐓</span> No bloat. No confusion.<br>Just uptime monitoring.</h1>
-        <p class="tagline">Two plans. One generous free tier. Upgrade when you're ready.</p>
-        <p class="sub">No credit card required · Set up in 30 seconds</p>
+        <h1>Simple pricing.<br>Start free, upgrade when you're ready.</h1>
+        <p class="tagline">Two plans. One generous free tier. No credit card required.</p>
     </div>
 
     <!-- Plan Cards -->
@@ -21,34 +20,38 @@
         <!-- Free Plan -->
         <div class="price-card">
             <h3>Free</h3>
-            <div class="subtitle">For developers & side projects</div>
+            <div class="subtitle">For side projects &amp; personal sites</div>
             <div class="price-amount">$0 <span>/ forever</span></div>
 
             <div class="section-label">Monitoring</div>
             <ul class="price-features">
-                <li><span class="check">✓</span> Up to 50 monitors</li>
-                <li><span class="check">✓</span> 60-second check interval</li>
+                <li><span class="check">✓</span> Up to 5 monitors</li>
+                <li><span class="check">✓</span> 5-minute check interval</li>
                 <li><span class="check">✓</span> SSL certificate expiry monitoring</li>
                 <li><span class="check">✓</span> Keyword / content verification</li>
-                <li><span class="check">✓</span> Response time threshold alerts</li>
             </ul>
 
             <div class="section-label">Alerts</div>
             <ul class="price-features">
                 <li><span class="check">✓</span> Email notifications</li>
-                <li><span class="check">✓</span> Slack notifications</li>
-                <li><span class="check">✓</span> Test alert button</li>
+            </ul>
+
+            <div class="section-label">Developer Tools</div>
+            <ul class="price-features">
+                <li><span class="check">✓</span> Full REST API access</li>
+                <li><span class="check">✓</span> Uptime badges for READMEs</li>
+                <li><span class="check">✓</span> OpenAPI spec</li>
             </ul>
 
             <div class="section-label">Status Pages</div>
             <ul class="price-features">
-                <li><span class="check">✓</span> Public status pages</li>
+                <li><span class="check">✓</span> 1 public status page</li>
                 <li><span class="check">✓</span> 90-day uptime history</li>
                 <li><span class="check">✓</span> Incident timeline</li>
             </ul>
 
             {% if user and user.get('plan', 'free') == 'free' %}
-                <button class="price-cta current-plan" disabled>✓ Current Plan</button>
+                <button class="price-cta current-plan" disabled>Current Plan</button>
             {% elif user and user.get('plan', 'free') == 'pro' %}
                 <button class="price-cta price-cta-free" disabled style="opacity:0.5; cursor:default;">Free Plan</button>
             {% else %}
@@ -59,22 +62,29 @@
         <!-- Pro Plan -->
         <div class="price-card featured">
             <h3>Pro</h3>
-            <div class="subtitle">For freelancers, agencies & businesses</div>
+            <div class="subtitle">For teams, freelancers &amp; agencies</div>
             <div class="price-amount">$9 <span>/ month</span></div>
 
             <div class="section-label">Everything in Free, plus</div>
             <ul class="price-features">
-                <li><span class="check">✓</span> <strong>Unlimited</strong> monitors</li>
+                <li><span class="check">✓</span> Up to <strong>250</strong> monitors</li>
+                <li><span class="check">✓</span> <strong>60-second</strong> check interval</li>
+                <li><span class="check">✓</span> Response time threshold alerts</li>
+            </ul>
+
+            <div class="section-label">Alerts</div>
+            <ul class="price-features">
+                <li><span class="check">✓</span> Email notifications</li>
+                <li><span class="check">✓</span> Slack notifications</li>
+                <li><span class="check">✓</span> SMS / text alerts</li>
                 <li><span class="check">✓</span> Webhook notifications (JSON POST)</li>
-                <li><span class="check">✓</span> Scheduled maintenance windows</li>
-                <li><span class="check">✓</span> Aggregate status page</li>
             </ul>
 
             <div class="section-label">Status Pages</div>
             <ul class="price-features">
-                <li><span class="check">✓</span> Multi-monitor aggregate page</li>
-                <li><span class="check">✓</span> "All Systems Operational" overview</li>
-                <li><span class="check">✓</span> Share one link for all monitors</li>
+                <li><span class="check">✓</span> Unlimited public status pages</li>
+                <li><span class="check">✓</span> Aggregate multi-monitor page</li>
+                <li><span class="check">✓</span> Scheduled maintenance windows</li>
             </ul>
 
             <div class="section-label">Support</div>
@@ -83,7 +93,7 @@
             </ul>
 
             {% if user and user.get('plan', 'free') == 'pro' %}
-                <button class="price-cta current-plan" disabled>✓ Current Plan</button>
+                <button class="price-cta current-plan" disabled>Current Plan</button>
             {% elif user %}
                 <form method="POST" action="/api/billing/checkout" style="margin:0;">
                     <button type="submit" class="price-cta price-cta-pro">Upgrade to Pro</button>
@@ -100,39 +110,39 @@
 
         <div class="faq-item">
             <h4>What counts as a monitor?</h4>
-            <p>Each URL you want to check = one monitor. We check it every 60 seconds and alert you if anything goes wrong.</p>
+            <p>Each URL you want to check = one monitor. Free gets 5, Pro gets 250.</p>
         </div>
 
         <div class="faq-item">
-            <h4>What types of checks do you do?</h4>
-            <p>We do HTTP/HTTPS checks — we load your URL, verify the status code, measure response time, check SSL certificates, and optionally look for a keyword on the page. If anything fails, you get alerted immediately.</p>
+            <h4>What's the difference in check intervals?</h4>
+            <p>Free monitors are checked every 5 minutes. Pro monitors are checked every 60 seconds — so you know about downtime faster.</p>
+        </div>
+
+        <div class="faq-item">
+            <h4>Do I get API access on Free?</h4>
+            <p>Yes — full REST API on every plan. Create monitors, pull check data, automate your workflow. Generate an API key in Settings.</p>
         </div>
 
         <div class="faq-item">
             <h4>Do I need a credit card to start?</h4>
-            <p>Nope. The free plan is genuinely free — 50 monitors with 60-second checks, SSL monitoring, keyword checks, and email + Slack alerts. No trial, no expiration.</p>
+            <p>Nope. The free plan is genuinely free — 5 monitors, SSL monitoring, keyword checks, email alerts, full API, and uptime badges. No trial, no expiration.</p>
         </div>
 
         <div class="faq-item">
             <h4>Can I cancel Pro anytime?</h4>
-            <p>Yes, cancel anytime from your dashboard. You'll keep Pro features through the end of your billing period, then drop back to the free plan. No questions asked.</p>
+            <p>Yes, cancel anytime from your dashboard. You'll keep Pro features through the end of your billing period. No questions asked.</p>
         </div>
 
         <div class="faq-item">
             <h4>What about status pages?</h4>
-            <p>Every monitor can have a public status page with 90 days of uptime history and incident timeline. Share it with your users or clients. Pro users get an aggregate page showing all monitors at once.</p>
-        </div>
-
-        <div class="faq-item">
-            <h4>What makes StatusRooster different?</h4>
-            <p>We're intentionally simple. No 47 features you'll never use. No confusing 4-tier pricing. Just reliable uptime monitoring with a generous free plan and one affordable upgrade. Set up in 30 seconds, not 30 minutes.</p>
+            <p>Free users get 1 public status page. Pro users get unlimited status pages plus an aggregate page showing all monitors at once.</p>
         </div>
     </div>
 
     <!-- Bottom CTA -->
     <div class="bottom-cta">
         <h2>Start monitoring in 30 seconds</h2>
-        <p>50 monitors free. SSL alerts, keyword checks, and 60-second intervals included.</p>
+        <p>5 monitors free. Full API, uptime badges, SSL alerts, and keyword checks included.</p>
         {% if user %}
             <a href="/dashboard">Go to dashboard</a>
         {% else %}

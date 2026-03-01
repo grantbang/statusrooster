@@ -10,7 +10,7 @@
     <div>
         <div class="detail-title">
             <span class="status-dot-lg {% if monitor.status == 'up' %}dot-up{% elif monitor.status == 'down' %}dot-down{% else %}dot-pending{% endif %}"></span>
-            <h1><span class="page-icon">🐓</span> {{ monitor.name }}</h1>
+            <h1>{{ monitor.name }}</h1>
         </div>
         <div class="detail-url">{{ monitor.url }}</div>
     </div>
@@ -74,7 +74,7 @@
     <div class="setting-row">
         <span class="setting-label">Expires</span>
         <span class="setting-value {{ 'active' if (monitor.get('ssl_expiry_days', 999) or 999) > 14 else '' }}"
-              style="{% if (monitor.get('ssl_expiry_days', 999) or 999) <= 14 %}color: #e63946; font-weight: 700;{% endif %}">
+              style="{% if (monitor.get('ssl_expiry_days', 999) or 999) <= 14 %}color: #ef4444; font-weight: 700;{% endif %}">
             {% if monitor.get('ssl_expiry') %}
                 {{ monitor.ssl_expiry.strftime('%b %d, %Y') if monitor.ssl_expiry.strftime is defined else monitor.ssl_expiry }}
                 {% if monitor.get('ssl_expiry_days') is not none %}
@@ -312,8 +312,8 @@ new Chart(ctx, {
         datasets: [{
             label: 'Response Time (ms)',
             data: sampled.data,
-            borderColor: '#e63946',
-            backgroundColor: 'rgba(230, 57, 70, 0.08)',
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99, 102, 241, 0.08)',
             borderWidth: 2,
             fill: true,
             tension: 0.3,

@@ -4,7 +4,8 @@ Authenticated via X-API-Key header.
 All responses follow: {data, error, meta}
 """
 
-from fastapi import APIRouter, HTTPException, Request, Depends
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, HttpUrl
 from app.database import get_db
 from app.models.api_key import get_user_by_api_key
@@ -18,14 +19,18 @@ from datetime import datetime
 
 router = APIRouter(prefix="/api/v1", tags=["monitors"])
 
-FREE_MONITOR_LIMIT = 50
+FREE_MONITOR_LIMIT = 5
+PRO_MONITOR_LIMIT = 250
+
+# Security scheme — tells Swagger to show an "Authorize" button + lock icons
+api_key_header = APIKeyHeader(name="X-API-Key", description="Your StatusRooster API key (starts with sr_)")
 
 
 # ─── Auth dependency ────────────────────────────────────────────────
 
-async def get_api_user(request: Request) -> dict:
+async def get_api_user(api_key: str = Depends(api_key_header)) -> dict:
     """Authenticate via X-API-Key header."""
-    api_key = request.headers.get("X-API-Key", "").strip()
+    api_key = api_key.strip()
     if not api_key:
         raise HTTPException(
             status_code=401,
@@ -158,10 +163,12 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
     db = get_db()
 
     # Plan enforcement
-    if user.get("plan", "free") == "free":
-        existing = list_monitors_by_user(db, user["id"])
-        if len(existing) >= FREE_MONITOR_LIMIT:
-            err(f"Free plan limited to {FREE_MONITOR_LIMIT} monitors. Upgrade to Pro for unlimited.", 403)
+    plan = user.get("plan", "free")
+    existing = list_monitors_by_user(db, user["id"])
+    if plan == "free" and len(existing) >= FREE_MONITOR_LIMIT:
+        err(f"Free plan limited to {FREE_MONITOR_LIMIT} monitors. Upgrade to Pro for up to {PRO_MONITOR_LIMIT}.", 403)
+    if plan == "pro" and len(existing) >= PRO_MONITOR_LIMIT:
+        err(f"Pro plan limited to {PRO_MONITOR_LIMIT} monitors. Contact us if you need more.", 403)
 
     monitor = create_monitor(
         db,

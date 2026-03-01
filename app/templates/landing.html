@@ -1,28 +1,71 @@
 {% extends "base.html" %}
 
-{% block title %}Simple Uptime Monitoring — No Bloat, Just Alerts{% endblock %}
-{% block description %}Monitor up to 50 websites free. SSL expiry alerts, keyword monitoring, response time tracking. Email & Slack alerts in under a minute. No credit card required.{% endblock %}
+{% block title %}Uptime Monitoring for Developers{% endblock %}
+{% block description %}Developer-first uptime monitoring. Full REST API, uptime badges for your README, SSL alerts, keyword checks. 5 monitors free, no credit card.{% endblock %}
 
 {% block extra_css %}
 {% endblock %}
 
 {% block content %}
 
-<!-- Hero with Live URL Checker -->
-<section class="hero">
-    <h1><span class="page-icon">🐓</span> No bloat. No confusion.<br><span>Just uptime monitoring.</span></h1>
-    <p class="subtitle">50 free monitors. SSL expiry alerts. Keyword checks. Response time tracking. Set up in 30 seconds.</p>
+<!-- Hero -->
+<section class="l-hero">
+    <h1>Uptime monitoring<br>built for developers.</h1>
+    <p class="l-hero-sub">Full REST API on every plan. Uptime badges for your README. SSL &amp; keyword monitoring. Set up a monitor in 30 seconds.</p>
 
+    <div class="l-hero-actions">
+        <a href="/signup" class="l-btn-primary">Start monitoring free</a>
+        <a href="/docs/api" class="l-btn-ghost">View API docs</a>
+    </div>
+    <p class="l-hero-meta">5 free monitors &middot; No credit card &middot; Full API access</p>
+
+    <div class="l-hero-code">
+        <div class="l-code">
+            <div class="l-code-bar"><span></span><span></span><span></span></div>
+<pre>$ curl -X POST https://statusrooster.com/api/v1/monitors \
+    -H "X-API-Key: sr_live_abc123" \
+    -d '{"url":"https://myapp.com","name":"Production"}'
+
+<span class="c-muted">{"id":"m_8f3k","status":"active","next_check":"2s"}</span></pre>
+        </div>
+    </div>
+</section>
+
+<!-- Value props row -->
+<section class="l-props">
+    <div class="l-prop">
+        <strong>5-min checks</strong>
+        <span>60s on Pro</span>
+    </div>
+    <div class="l-prop">
+        <strong>Full REST API</strong>
+        <span>Every plan</span>
+    </div>
+    <div class="l-prop">
+        <strong>README badges</strong>
+        <span>Live SVG</span>
+    </div>
+    <div class="l-prop">
+        <strong>SSL monitoring</strong>
+        <span>Expiry alerts</span>
+    </div>
+    <div class="l-prop">
+        <strong>Status pages</strong>
+        <span>Public &amp; free</span>
+    </div>
+</section>
+
+<!-- URL Checker -->
+<section class="l-checker-wrap">
+    <h2>Check any site right now</h2>
     <div class="url-checker">
         <form class="checker-form" id="checkerForm" onsubmit="return checkUrl(event)">
             <input type="text" class="checker-input" id="checkerUrl"
-                   placeholder="Enter a URL — e.g. google.com" autocomplete="off" required>
-            <button type="submit" class="checker-btn" id="checkerBtn">Check now</button>
+                   placeholder="https://example.com" autocomplete="off" required>
+            <button type="submit" class="checker-btn" id="checkerBtn">Check</button>
         </form>
-        <p class="checker-hint">Try it — no signup required</p>
     </div>
 
-    <!-- Result Card (hidden until check) -->
     <div class="check-result" id="checkResult">
         <div class="result-header">
             <div class="result-status-dot" id="resultDot"></div>
@@ -31,11 +74,11 @@
         </div>
         <div class="result-stats">
             <div>
-                <div class="result-stat-label">Status Code</div>
+                <div class="result-stat-label">Status</div>
                 <div class="result-stat-value" id="resultStatus">—</div>
             </div>
             <div>
-                <div class="result-stat-label">Response Time</div>
+                <div class="result-stat-label">Response</div>
                 <div class="result-stat-value" id="resultTime">—</div>
             </div>
             <div>
@@ -43,7 +86,7 @@
                 <div class="result-stat-value" id="resultServer">—</div>
             </div>
             <div>
-                <div class="result-stat-label">SSL Certificate</div>
+                <div class="result-stat-label">SSL</div>
                 <div class="result-stat-value" id="resultSSL">—</div>
             </div>
             <div>
@@ -57,159 +100,116 @@
         </div>
         <div class="result-cta">
             <p>Want to know the moment this site goes down?</p>
-            <a href="/signup" id="resultCtaLink">Monitor this site 24/7 — free</a>
-        </div>
-    </div>
-
-    <p class="hero-alt">or <a href="/signup">sign up and start monitoring</a></p>
-</section>
-
-<!-- Trust Bar -->
-<div class="trust-bar">
-    <div class="trust-item">50 monitors free</div>
-    <div class="trust-item">SSL expiry alerts</div>
-    <div class="trust-item">Keyword monitoring</div>
-    <div class="trust-item">60-second checks</div>
-    <div class="trust-item">Email &amp; Slack alerts</div>
-</div>
-
-<!-- How It Works -->
-<section class="how-section">
-    <h2>How it works</h2>
-    <div class="how-steps">
-        <div class="how-step">
-            <div class="how-number">1</div>
-            <h3>Add your URL</h3>
-            <p>Enter the URL you want to monitor. Takes 10 seconds.</p>
-        </div>
-        <div class="how-step">
-            <div class="how-number">2</div>
-            <h3>We check every minute</h3>
-            <p>StatusRooster pings your site every 60 seconds, around the clock.</p>
-        </div>
-        <div class="how-step">
-            <div class="how-number">3</div>
-            <h3>Get alerted instantly</h3>
-            <p>Email or Slack — you'll know within a minute when something breaks.</p>
+            <a href="/signup" id="resultCtaLink">Monitor this site free</a>
         </div>
     </div>
 </section>
 
 <!-- Features -->
-<section class="features">
-    <div class="feature-card">
-        <h3>SSL Certificate Monitoring</h3>
-        <p>We check your SSL cert on every request. Get alerts at 14, 7, and 3 days before expiry — included free.</p>
+<section class="l-features">
+    <div class="l-feature">
+        <div class="l-feature-content">
+            <h2>API-first monitoring.</h2>
+            <p>Create monitors, pull uptime data, and automate your workflow with a REST API that's available on every plan — including Free. API key auth, JSON in and out, <a href="/docs/api">full documentation</a>.</p>
+            <div class="l-code l-code-sm">
+<pre>$ curl -H "X-API-Key: sr_live_abc123" \
+    https://statusrooster.com/api/v1/monitors
+
+<span class="c-muted">[{"id":"m_8f3k","name":"Production","uptime_pct":99.98, ...}]</span></pre>
+            </div>
+        </div>
     </div>
-    <div class="feature-card">
-        <h3>Keyword Monitoring</h3>
-        <p>Set an expected keyword. If it disappears from your page, we alert you — even if the site returns 200 OK.</p>
+
+    <div class="l-feature">
+        <div class="l-feature-content">
+            <h2>Uptime badges for your README.</h2>
+            <p>Embed live uptime badges in your GitHub README, docs, or landing page. Three styles: uptime percentage, status, and response time. Updates every 5 minutes, zero config.</p>
+            <div class="l-code l-code-sm">
+<pre>![Uptime](https://statusrooster.com/badge/m_8f3k.svg)</pre>
+            </div>
+            <div class="l-badge-row">
+                <img src="/badge/demo.svg" alt="Uptime badge" onerror="this.style.display='none'" />
+                <img src="/badge/demo/status.svg" alt="Status badge" onerror="this.style.display='none'" />
+                <img src="/badge/demo/response.svg" alt="Response badge" onerror="this.style.display='none'" />
+            </div>
+        </div>
     </div>
-    <div class="feature-card">
-        <h3>Response Time Alerts</h3>
-        <p>Set a threshold. If your site takes longer than, say, 2 seconds to respond, you'll know immediately.</p>
+
+    <div class="l-feature">
+        <div class="l-feature-content">
+            <h2>A dashboard you'll actually use.</h2>
+            <p>Not everyone wants to curl. The dashboard gives you a clear overview of every monitor — status, uptime percentage, response time, SSL health — all at a glance. Click into any monitor for response time charts, incident history, and badge embed codes.</p>
+            <ul class="l-feature-list">
+                <li>All monitors in one view with live status</li>
+                <li>Response time charts &amp; incident history</li>
+                <li>One-click public status pages</li>
+                <li>Add monitors in seconds — no config files</li>
+            </ul>
+        </div>
     </div>
-    <div class="feature-card">
-        <h3>Public Status Pages</h3>
-        <p>Share a clean status page with your users. 90-day uptime history, incident log, and live status.</p>
-    </div>
-    <div class="feature-card">
-        <h3>False Positive Prevention</h3>
-        <p>Failed check? We retry after 5 seconds before alerting. You only hear about real downtime.</p>
-    </div>
-    <div class="feature-card">
-        <h3>Test Your Alerts</h3>
-        <p>Hit "Send Test Alert" on any monitor to verify your email and Slack notifications are working.</p>
+
+    <div class="l-feature-grid">
+        <div class="l-feature-card">
+            <h3>SSL monitoring</h3>
+            <p>We check your SSL certificate on every request and alert you before it expires.</p>
+        </div>
+        <div class="l-feature-card">
+            <h3>Keyword monitoring</h3>
+            <p>Set an expected keyword. If it disappears from the response, we alert you — even on a 200.</p>
+        </div>
+        <div class="l-feature-card">
+            <h3>Status pages</h3>
+            <p>Share a clean public status page with 90-day history, incident log, and live status.</p>
+        </div>
+        <div class="l-feature-card">
+            <h3>False positive prevention</h3>
+            <p>Failed check? We retry from another location before alerting. You only hear about real downtime.</p>
+        </div>
     </div>
 </section>
 
 <!-- Pricing -->
-<section class="pricing-section">
-    <h2>Simple pricing</h2>
-    <p>Most uptime tools charge for what we give away free.</p>
-    <div class="pricing-grid">
-        <div class="price-card">
+<section class="l-pricing">
+    <h2>Simple pricing.</h2>
+    <p class="l-pricing-sub">Start free. Upgrade when you need more.</p>
+    <div class="l-pricing-grid">
+        <div class="l-price-card">
             <h3>Free</h3>
-            <div class="price-amount">$0 <span>/ month</span></div>
-            <ul class="price-features">
-                <li>Up to 50 monitors</li>
-                <li>SSL expiry monitoring &amp; alerts</li>
-                <li>Keyword monitoring</li>
-                <li>Response time threshold alerts</li>
-                <li>Email &amp; Slack alerts</li>
-                <li>Public status page</li>
-                <li>Test alert button</li>
+            <div class="l-price">$0 <span>/ forever</span></div>
+            <ul>
+                <li>5 monitors</li>
+                <li>5-minute checks</li>
+                <li>Email alerts</li>
+                <li>SSL &amp; keyword monitoring</li>
+                <li>Full REST API</li>
+                <li>Uptime badges</li>
+                <li>1 status page</li>
             </ul>
-            <a href="/signup" class="price-cta price-cta-free">Get started free</a>
+            <a href="/signup" class="l-price-cta">Get started free</a>
         </div>
-        <div class="price-card featured">
+        <div class="l-price-card l-price-card-pro">
+            <div class="l-price-badge">Most popular</div>
             <h3>Pro</h3>
-            <div class="price-amount">$9 <span>/ month</span></div>
-            <ul class="price-features">
-                <li>Everything in Free</li>
-                <li>Unlimited monitors</li>
-                <li>Webhook notifications (JSON POST)</li>
-                <li>Scheduled maintenance windows</li>
-                <li>Aggregate status page</li>
-                <li>Priority email support</li>
+            <div class="l-price">$9 <span>/ mo</span></div>
+            <ul>
+                <li>250 monitors</li>
+                <li>60-second checks</li>
+                <li>Everything in Free, plus:</li>
+                <li>Slack, SMS &amp; webhooks</li>
+                <li>Response time alerts</li>
+                <li>Unlimited status pages</li>
+                <li>Maintenance windows</li>
             </ul>
-            <a href="/pricing" class="price-cta price-cta-pro">See full details</a>
+            <a href="/pricing" class="l-price-cta l-price-cta-pro">Upgrade to Pro</a>
         </div>
     </div>
-</section>
-
-<!-- Transparency -->
-<section class="transparency">
-    <h2>Built in the open</h2>
-    <p>No black boxes. Here's exactly what powers StatusRooster.</p>
-    <div class="stack-grid">
-        <div class="stack-item">
-            <div class="stack-item-label">Backend</div>
-            <div class="stack-item-value">Python + FastAPI</div>
-        </div>
-        <div class="stack-item">
-            <div class="stack-item-label">Database</div>
-            <div class="stack-item-value">Google Firestore</div>
-        </div>
-        <div class="stack-item">
-            <div class="stack-item-label">Hosting</div>
-            <div class="stack-item-value">Google Cloud Run</div>
-        </div>
-        <div class="stack-item">
-            <div class="stack-item-label">Checks</div>
-            <div class="stack-item-value">Every 60 seconds</div>
-        </div>
-        <div class="stack-item">
-            <div class="stack-item-label">Email Alerts</div>
-            <div class="stack-item-value">SendGrid</div>
-        </div>
-        <div class="stack-item">
-            <div class="stack-item-label">Payments</div>
-            <div class="stack-item-value">Stripe</div>
-        </div>
-        <div class="stack-item">
-            <div class="stack-item-label">SSL</div>
-            <div class="stack-item-value">Auto via Cloud Run</div>
-        </div>
-        <div class="stack-item">
-            <div class="stack-item-label">Source Code</div>
-            <div class="stack-item-value"><a href="https://github.com/grantbang/statusrooster" target="_blank">GitHub</a></div>
-        </div>
-        <div class="stack-item">
-            <div class="stack-item-label">Built By</div>
-            <div class="stack-item-value">A solo developer</div>
-        </div>
-    </div>
-    <p class="transparency-footer">No VC funding. No enterprise bloat. Just a simple tool that works.<br>
-    Built for freelancers, indie devs, and small agencies who just want to know when their stuff is down.<br>
-    Have questions? Email <a href="mailto:grant@statusrooster.com">grant@statusrooster.com</a></p>
 </section>
 
 <!-- Bottom CTA -->
-<section class="landing-bottom-cta">
-    <h2>Don't find out from your users.</h2>
-    <p>Start monitoring your sites in under a minute.</p>
-    <a href="/signup">Start monitoring — free</a>
+<section class="l-bottom-cta">
+    <h2>Start monitoring in 30 seconds.</h2>
+    <p>No credit card. No installation. 5 monitors free forever.</p>
+    <a href="/signup" class="l-btn-primary">Get started free</a>
 </section>
 
 {% endblock %}

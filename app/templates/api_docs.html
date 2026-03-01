@@ -8,7 +8,7 @@
 {% block content %}
 <div class="api-docs">
 
-<h1><span class="page-icon">🐓</span> API Reference</h1>
+<h1>API Reference</h1>
 <p class="subtitle">Programmatic access to your StatusRooster monitors and check data.</p>
 
 <!-- Auth Section -->
@@ -18,11 +18,11 @@
 
     {% if user %}
     <div class="key-callout">
-        <a href="/settings">Generate an API key</a> in your Settings page.
+        <a href="/settings" target="_blank">Generate an API key</a> in your Settings page.
     </div>
     {% else %}
     <div class="key-callout">
-        <a href="/signup">Sign up</a> to get an API key.
+        <a href="/signup" target="_blank">Sign up</a> to get an API key.
     </div>
     {% endif %}
 
@@ -397,13 +397,26 @@ console.log(data);</div>
 
 <!-- OpenAPI -->
 <div class="api-section">
-    <h2>Interactive Docs &amp; OpenAPI</h2>
-    <p>StatusRooster provides a full OpenAPI 3.1 spec and interactive documentation:</p>
-    <ul>
-        <li><a href="/docs" target="_blank"><strong>Swagger UI</strong></a> — interactive API explorer with "Try it out"</li>
-        <li><a href="/redoc" target="_blank"><strong>ReDoc</strong></a> — clean, readable API reference</li>
-        <li><a href="/openapi.json" target="_blank"><strong>openapi.json</strong></a> — import into Postman, Insomnia, or generate client SDKs</li>
-    </ul>
+    <h2>Ready to try it?</h2>
+    {% if user %}
+    <p>You're logged in. <a href="/settings"><strong>Grab your API key from Settings</strong></a>, then test endpoints live:</p>
+    {% else %}
+    <p><a href="/signup"><strong>Create a free account</strong></a> to get an API key, then test endpoints live:</p>
+    {% endif %}
+    <div class="tools-grid">
+        <a href="/docs" target="_blank" class="tool-card">
+            <strong>Interactive Playground</strong>
+            <span>Try every endpoint in your browser with "Try it out". Paste your API key once and go.</span>
+        </a>
+        <a href="/redoc" target="_blank" class="tool-card">
+            <strong>Full API Reference</strong>
+            <span>Clean, searchable, three-panel docs. Good for reading while you code.</span>
+        </a>
+        <a href="/openapi.json" target="_blank" class="tool-card">
+            <strong>OpenAPI Spec</strong>
+            <span>Import into Postman, Insomnia, or use to generate client SDKs in any language.</span>
+        </a>
+    </div>
 </div>
 
 </div>

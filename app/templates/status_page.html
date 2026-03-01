@@ -8,15 +8,15 @@
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             line-height: 1.6;
-            color: #1a1a2e;
-            background: #f8f9fa;
+            color: #111;
+            background: #fafafa;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
-        a { color: #e63946; text-decoration: none; }
+        a { color: #6366f1; text-decoration: none; }
         a:hover { text-decoration: underline; }
 
         /* Header */
@@ -38,8 +38,8 @@
             font-weight: 600;
             font-size: 1rem;
         }
-        .status-up { background: #d4edda; color: #155724; }
-        .status-down { background: #f8d7da; color: #721c24; }
+        .status-up { background: #dcfce7; color: #166534; }
+        .status-down { background: #fef2f2; color: #991b1b; }
         .status-pending { background: #e2e3e5; color: #383d41; }
         .status-dot {
             width: 10px;
@@ -47,8 +47,8 @@
             border-radius: 50%;
             display: inline-block;
         }
-        .status-dot.up { background: #28a745; }
-        .status-dot.down { background: #dc3545; }
+        .status-dot.up { background: #22c55e; }
+        .status-dot.down { background: #ef4444; }
         .status-dot.pending { background: #adb5bd; }
 
         /* Container */
@@ -90,9 +90,9 @@
         .uptime-bar .day:hover {
             opacity: 0.8;
         }
-        .uptime-bar .day.up { background: #2ecc71; height: 100%; }
-        .uptime-bar .day.down { background: #e74c3c; height: 100%; }
-        .uptime-bar .day.partial { background: #f39c12; height: 100%; }
+        .uptime-bar .day.up { background: #22c55e; height: 100%; }
+        .uptime-bar .day.down { background: #ef4444; height: 100%; }
+        .uptime-bar .day.partial { background: #f59e0b; height: 100%; }
         .uptime-bar .day.no-data { background: #e0e0e0; height: 60%; }
 
         .uptime-labels {
@@ -113,7 +113,7 @@
         .uptime-percent {
             font-size: 1.75rem;
             font-weight: 700;
-            color: #1a1a2e;
+            color: #111;
         }
         .uptime-legend {
             display: flex;
@@ -150,7 +150,7 @@
         .stat-card .stat-value {
             font-size: 1.25rem;
             font-weight: 700;
-            color: #1a1a2e;
+            color: #111;
         }
         .stat-card .stat-label {
             font-size: 0.75rem;
@@ -184,8 +184,8 @@
             font-weight: 600;
             font-size: 0.9rem;
         }
-        .incident-status.open { color: #dc3545; }
-        .incident-status.resolved { color: #28a745; }
+        .incident-status.open { color: #ef4444; }
+        .incident-status.resolved { color: #22c55e; }
         .incident-meta {
             font-size: 0.8rem;
             color: #888;
@@ -205,7 +205,7 @@
             bottom: calc(100% + 8px);
             left: 50%;
             transform: translateX(-50%);
-            background: #1a1a2e;
+            background: #0a0a0a;
             color: #fff;
             padding: 0.4rem 0.7rem;
             border-radius: 6px;
@@ -229,7 +229,7 @@
             color: #888;
             font-weight: 600;
         }
-        .status-footer a:hover { color: #e63946; }
+        .status-footer a:hover { color: #6366f1; }
 
         /* Responsive */
         @media (max-width: 600px) {
@@ -293,9 +293,9 @@
             <div class="uptime-summary">
                 <div class="uptime-percent">{{ "%.2f"|format(monitor.uptime_percent) }}%</div>
                 <div class="uptime-legend">
-                    <span><span class="legend-dot" style="background:#2ecc71;"></span> Up</span>
-                    <span><span class="legend-dot" style="background:#f39c12;"></span> Partial</span>
-                    <span><span class="legend-dot" style="background:#e74c3c;"></span> Down</span>
+                    <span><span class="legend-dot" style="background:#22c55e;"></span> Up</span>
+                    <span><span class="legend-dot" style="background:#f59e0b;"></span> Partial</span>
+                    <span><span class="legend-dot" style="background:#ef4444;"></span> Down</span>
                     <span><span class="legend-dot" style="background:#e0e0e0;"></span> No Data</span>
                 </div>
             </div>

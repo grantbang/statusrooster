@@ -11,13 +11,30 @@ app = FastAPI(
     version="1.0.0",
     description="Uptime monitoring API for developers. Monitor endpoints, get alerts, embed status badges.",
     docs_url="/docs",
-    redoc_url="/redoc",
+    redoc_url=None,  # We mount our own below with a working CDN URL
     openapi_url="/openapi.json",
     openapi_tags=[
         {"name": "monitors", "description": "CRUD operations for monitors (requires API key)"},
         {"name": "badge", "description": "Public SVG badge endpoints for embedding in READMEs"},
     ],
 )
+
+
+# Custom ReDoc page — FastAPI's default uses a stale @next CDN tag that 404s
+from fastapi.responses import HTMLResponse
+
+@app.get("/redoc", include_in_schema=False)
+async def custom_redoc():
+    return HTMLResponse("""<!DOCTYPE html>
+<html><head>
+<title>StatusRooster - API Reference</title>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700" rel="stylesheet">
+<style>body { margin: 0; padding: 0; }</style>
+</head><body>
+<redoc spec-url="/openapi.json"></redoc>
+<script src="https://cdn.jsdelivr.net/npm/redoc@2.1.5/bundles/redoc.standalone.js"></script>
+</body></html>""")
 
 # Routers — pages first so / doesn't conflict
 app.include_router(pages.router)
