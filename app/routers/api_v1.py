@@ -187,6 +187,67 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
     return ok(data=_serialize_monitor(monitor))
 
 
+# UPDATE MONITOR
+class ApiUpdateMonitor(BaseModel):
+    url: HttpUrl | None = None
+    name: str | None = None
+    alert_email: str | None = None
+    alert_slack_webhook: str | None = None
+    keyword: str | None = None
+    response_threshold_ms: int | None = None
+    webhook_url: str | None = None
+    public: bool | None = None
+    paused: bool | None = None
+
+
+@router.put("/monitors/{monitor_id}")
+async def api_update_monitor(
+    monitor_id: str,
+    req: ApiUpdateMonitor,
+    user: dict = Depends(get_api_user),
+):
+    db = get_db()
+    monitor = get_monitor(db, monitor_id)
+    if not monitor:
+        err("Monitor not found", 404)
+    if monitor["user_id"] != user["id"]:
+        err("Monitor not found", 404)
+
+    # Build update dict from non-None fields
+    updates = {}
+    if req.url is not None:
+        updates["url"] = str(req.url)
+    if req.name is not None:
+        updates["name"] = req.name
+    if req.alert_email is not None:
+        updates["alert_email"] = req.alert_email
+    if req.alert_slack_webhook is not None:
+        updates["alert_slack_webhook"] = req.alert_slack_webhook
+    if req.keyword is not None:
+        updates["keyword"] = req.keyword
+    if req.response_threshold_ms is not None:
+        updates["response_threshold_ms"] = req.response_threshold_ms
+    if req.webhook_url is not None:
+        # Gate webhooks to Pro
+        plan = user.get("plan", "free")
+        if plan == "free":
+            err("Webhook notifications require a Pro plan.", 403)
+        updates["webhook_url"] = req.webhook_url
+    if req.public is not None:
+        updates["public"] = req.public
+    if req.paused is not None:
+        updates["paused"] = req.paused
+
+    if not updates:
+        err("No fields to update. Send at least one field.", 422)
+
+    update_monitor(db, monitor_id, updates)
+
+    # Return the updated monitor
+    updated = get_monitor(db, monitor_id)
+    return ok(data=_serialize_monitor(updated))
+
+
 # DELETE MONITOR
 @router.delete("/monitors/{monitor_id}")
 async def api_delete_monitor(monitor_id: str, user: dict = Depends(get_api_user)):

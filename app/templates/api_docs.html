@@ -72,6 +72,7 @@ console.log(data);</div>
             <tr><td><code>401</code></td><td>Missing or invalid API key</td></tr>
             <tr><td><code>403</code></td><td>Plan limit exceeded</td></tr>
             <tr><td><code>404</code></td><td>Resource not found</td></tr>
+            <tr><td><code>422</code></td><td>Invalid or missing request body</td></tr>
         </tbody>
     </table>
 </div>
@@ -108,7 +109,7 @@ monitors = r.json()[<span class="code-string">"data"</span>]
 data.forEach(m => console.log(<span class="code-string">`${m.name}: ${m.status}`</span>));</div>
             </div>
 
-            <p><strong>Example response:</strong></p>
+            <p><strong>Example response</strong> (200 OK)<strong>:</strong></p>
             <div class="response-shape">{
   "data": [
     {
@@ -134,6 +135,7 @@ data.forEach(m => console.log(<span class="code-string">`${m.name}: ${m.status}`
       "ssl_expiry_alerted_days": null,
       "maintenance_window": null,
       "public": true,
+      "paused": false,
       "slug": "my-website-a3f8c1",
       "created_at": "2026-01-15T08:00:00+00:00"
     }
@@ -142,7 +144,7 @@ data.forEach(m => console.log(<span class="code-string">`${m.name}: ${m.status}`
   "meta": { "total": 1 }
 }</div>
             <details class="field-ref">
-                <summary>&#9432; Field reference (24 fields)</summary>
+                <summary>&#9432; Field reference (25 fields)</summary>
                 <table class="field-ref-table">
                     <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
                     <tbody>
@@ -168,6 +170,7 @@ data.forEach(m => console.log(<span class="code-string">`${m.name}: ${m.status}`
                         <tr><td><code>ssl_expiry_alerted_days</code></td><td class="field-type">int|null</td><td>Last SSL expiry alert threshold</td></tr>
                         <tr><td><code>maintenance_window</code></td><td class="field-type">object|null</td><td><code>{day, start_utc, end_utc}</code> (Pro)</td></tr>
                         <tr><td><code>public</code></td><td class="field-type">bool</td><td>Has a public status page</td></tr>
+                        <tr><td><code>paused</code></td><td class="field-type">bool</td><td>Whether monitoring is paused</td></tr>
                         <tr><td><code>slug</code></td><td class="field-type">string</td><td>Status page URL slug (<code>/s/{slug}</code>)</td></tr>
                         <tr><td><code>created_at</code></td><td class="field-type">datetime</td><td>When the monitor was created</td></tr>
                     </tbody>
@@ -204,22 +207,39 @@ print(monitor[<span class="code-string">"status"</span>], monitor[<span class="c
 console.log(data.status, data.uptime_percent);</div>
             </div>
 
-            <p><strong>Example response:</strong></p>
+            <p><strong>Example response</strong> (200 OK)<strong>:</strong></p>
             <div class="response-shape">{
   "data": {
     "id": "jkUVy3EYnvGx16jWT2v0",
     "url": "https://example.com",
     "name": "My Website",
     "status": "up",
+    "check_interval": 60,
     "uptime_percent": 99.8,
-    "last_response_ms": 245.3,
+    "checks_total": 4320,
+    "checks_failed": 9,
     "last_checked": "2026-02-28T12:30:00+00:00",
-    <em>... all 24 monitor fields</em>
+    "last_status_code": 200,
+    "last_response_ms": 245.3,
+    "alert_email": "me@example.com",
+    "alert_slack_webhook": "",
+    "alert_sms": "",
+    "keyword": "Welcome",
+    "response_threshold_ms": 2000,
+    "webhook_url": "",
+    "ssl_expiry": "2026-06-15T00:00:00+00:00",
+    "ssl_issuer": "Let's Encrypt",
+    "ssl_expiry_alerted_days": null,
+    "maintenance_window": null,
+    "public": true,
+    "paused": false,
+    "slug": "my-website-a3f8c1",
+    "created_at": "2026-01-15T08:00:00+00:00"
   },
   "error": null
 }</div>
             <details class="field-ref">
-                <summary>&#9432; Field reference (24 fields)</summary>
+                <summary>&#9432; Field reference (25 fields)</summary>
                 <table class="field-ref-table">
                     <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
                     <tbody>
@@ -245,6 +265,7 @@ console.log(data.status, data.uptime_percent);</div>
                         <tr><td><code>ssl_expiry_alerted_days</code></td><td class="field-type">int|null</td><td>Last SSL expiry alert threshold</td></tr>
                         <tr><td><code>maintenance_window</code></td><td class="field-type">object|null</td><td><code>{day, start_utc, end_utc}</code> (Pro)</td></tr>
                         <tr><td><code>public</code></td><td class="field-type">bool</td><td>Has a public status page</td></tr>
+                        <tr><td><code>paused</code></td><td class="field-type">bool</td><td>Whether monitoring is paused</td></tr>
                         <tr><td><code>slug</code></td><td class="field-type">string</td><td>Status page URL slug (<code>/s/{slug}</code>)</td></tr>
                         <tr><td><code>created_at</code></td><td class="field-type">datetime</td><td>When the monitor was created</td></tr>
                     </tbody>
@@ -301,7 +322,7 @@ checks = r.json()[<span class="code-string">"data"</span>]
 data.forEach(c => console.log(<span class="code-string">`${c.timestamp}: ${c.response_ms}ms`</span>));</div>
             </div>
 
-            <p><strong>Example response:</strong></p>
+            <p><strong>Example response</strong> (200 OK)<strong>:</strong></p>
             <div class="response-shape">{
   "data": [
     {
@@ -323,7 +344,7 @@ data.forEach(c => console.log(<span class="code-string">`${c.timestamp}: ${c.res
   "meta": { "monitor_id": "jkUVy3EYnvGx16jWT2v0", "total": 2, "limit": 5 }
 }</div>
             <details class="field-ref">
-                <summary>&#9432; Check object fields (5 fields)</summary>
+                <summary>&#9432; Field reference (5 fields)</summary>
                 <table class="field-ref-table">
                     <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
                     <tbody>
@@ -426,13 +447,14 @@ console.log(<span class="code-string">`Created: ${data.id}`</span>);</div>
     "ssl_expiry_alerted_days": null,
     "maintenance_window": null,
     "public": true,
+    "paused": false,
     "slug": "my-site-c9a2f4",
     "created_at": "2026-02-28T12:28:04+00:00"
   },
   "error": null
 }</div>
             <details class="field-ref">
-                <summary>&#9432; Field reference (24 fields)</summary>
+                <summary>&#9432; Field reference (25 fields)</summary>
                 <table class="field-ref-table">
                     <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
                     <tbody>
@@ -458,6 +480,140 @@ console.log(<span class="code-string">`Created: ${data.id}`</span>);</div>
                         <tr><td><code>ssl_expiry_alerted_days</code></td><td class="field-type">int|null</td><td>Last SSL expiry alert threshold</td></tr>
                         <tr><td><code>maintenance_window</code></td><td class="field-type">object|null</td><td><code>{day, start_utc, end_utc}</code> (Pro)</td></tr>
                         <tr><td><code>public</code></td><td class="field-type">bool</td><td>Has a public status page</td></tr>
+                        <tr><td><code>paused</code></td><td class="field-type">bool</td><td>Whether monitoring is paused</td></tr>
+                        <tr><td><code>slug</code></td><td class="field-type">string</td><td>Status page URL slug (<code>/s/{slug}</code>)</td></tr>
+                        <tr><td><code>created_at</code></td><td class="field-type">datetime</td><td>When the monitor was created</td></tr>
+                    </tbody>
+                </table>
+            </details>
+        </div>
+    </div>
+
+    <!-- UPDATE -->
+    <div class="endpoint" id="ep-update">
+        <div class="endpoint-header" onclick="toggleEndpoint('ep-update')">
+            <span class="method-badge method-put">PUT</span>
+            <span class="endpoint-path">/api/v1/monitors/{id}</span>
+            <span class="endpoint-desc">Update a monitor</span>
+            <span class="chevron">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>Update one or more fields on a monitor. Only include the fields you want to change — omitted fields stay as-is.</p>
+
+            <table class="param-table">
+                <thead><tr><th>Body field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><span class="param-name">url</span></td><td>string</td><td>no</td><td>New URL to monitor (include <code>https://</code>)</td></tr>
+                    <tr><td><span class="param-name">name</span></td><td>string</td><td>no</td><td>Display name</td></tr>
+                    <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>no</td><td>Email for alerts</td></tr>
+                    <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>no</td><td>Slack incoming webhook URL</td></tr>
+                    <tr><td><span class="param-name">keyword</span></td><td>string</td><td>no</td><td>Alert if missing from response body</td></tr>
+                    <tr><td><span class="param-name">response_threshold_ms</span></td><td>integer</td><td>no</td><td>Alert if response exceeds this (ms)</td></tr>
+                    <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>no</td><td>Status change webhook (Pro only)</td></tr>
+                    <tr><td><span class="param-name">public</span></td><td>boolean</td><td>no</td><td>Toggle public status page</td></tr>
+                    <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>no</td><td>Pause or resume monitoring</td></tr>
+                </tbody>
+            </table>
+
+            <div class="code-tabbed" data-tabs>
+                <div class="code-tab-bar">
+                    <button class="active" onclick="switchTab(this,'curl')">curl</button>
+                    <button onclick="switchTab(this,'python')">Python</button>
+                    <button onclick="switchTab(this,'js')">JavaScript</button>
+                </div>
+                <div class="code-panel active" data-lang="curl">curl -X PUT \
+  -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
+  -H <span class="code-string">"Content-Type: application/json"</span> \
+  -d <span class="code-string">'{"name":"New Name","keyword":"OK","paused":false}'</span> \
+  <span class="code-url">{{ app_url }}/api/v1/monitors/jkUVy3EYnvGx16jWT2v0</span></div>
+                <div class="code-panel" data-lang="python">monitor_id = <span class="code-string">"jkUVy3EYnvGx16jWT2v0"</span>
+r = requests.put(
+    f<span class="code-string">"{BASE}/monitors/{monitor_id}"</span>,
+    headers=headers,
+    json={
+        <span class="code-string">"name"</span>: <span class="code-string">"New Name"</span>,
+        <span class="code-string">"keyword"</span>: <span class="code-string">"OK"</span>,
+        <span class="code-string">"paused"</span>: False
+    }
+)
+updated = r.json()[<span class="code-string">"data"</span>]
+print(f<span class="code-string">"Updated: {updated['name']}"</span>)</div>
+                <div class="code-panel" data-lang="js"><span class="code-key">const</span> id = <span class="code-string">"jkUVy3EYnvGx16jWT2v0"</span>;
+<span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors/${id}`</span>, {
+  method: <span class="code-string">"PUT"</span>,
+  headers: {
+    ...headers,
+    <span class="code-string">"Content-Type"</span>: <span class="code-string">"application/json"</span>
+  },
+  body: JSON.stringify({
+    name: <span class="code-string">"New Name"</span>,
+    keyword: <span class="code-string">"OK"</span>,
+    paused: false
+  })
+});
+<span class="code-key">const</span> { data } = <span class="code-key">await</span> res.json();
+console.log(<span class="code-string">`Updated: ${data.name}`</span>);</div>
+            </div>
+
+            <p><strong>Example response</strong> (200 OK)<strong>:</strong></p>
+            <div class="response-shape">{
+  "data": {
+    "id": "jkUVy3EYnvGx16jWT2v0",
+    "url": "https://example.com",
+    "name": "New Name",
+    "status": "up",
+    "check_interval": 60,
+    "uptime_percent": 99.8,
+    "checks_total": 4320,
+    "checks_failed": 9,
+    "last_checked": "2026-02-28T12:30:00+00:00",
+    "last_status_code": 200,
+    "last_response_ms": 245.3,
+    "alert_email": "you@example.com",
+    "alert_slack_webhook": "",
+    "alert_sms": "",
+    "keyword": "OK",
+    "response_threshold_ms": null,
+    "webhook_url": "",
+    "ssl_expiry": "2026-06-15T00:00:00+00:00",
+    "ssl_issuer": "Let's Encrypt",
+    "ssl_expiry_alerted_days": null,
+    "maintenance_window": null,
+    "public": true,
+    "paused": false,
+    "slug": "my-website-a3f8c1",
+    "created_at": "2026-01-15T08:00:00+00:00"
+  },
+  "error": null
+}</div>
+            <details class="field-ref">
+                <summary>&#9432; Field reference (25 fields)</summary>
+                <table class="field-ref-table">
+                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>id</code></td><td class="field-type">string</td><td>Unique monitor ID</td></tr>
+                        <tr><td><code>url</code></td><td class="field-type">string</td><td>URL being monitored</td></tr>
+                        <tr><td><code>name</code></td><td class="field-type">string</td><td>Display name</td></tr>
+                        <tr><td><code>status</code></td><td class="field-type">string</td><td><code>"pending"</code> | <code>"up"</code> | <code>"down"</code></td></tr>
+                        <tr><td><code>check_interval</code></td><td class="field-type">int</td><td>Seconds between checks (default 60)</td></tr>
+                        <tr><td><code>uptime_percent</code></td><td class="field-type">float</td><td>Lifetime uptime %</td></tr>
+                        <tr><td><code>checks_total</code></td><td class="field-type">int</td><td>Total checks run</td></tr>
+                        <tr><td><code>checks_failed</code></td><td class="field-type">int</td><td>Total failed checks</td></tr>
+                        <tr><td><code>last_checked</code></td><td class="field-type">datetime|null</td><td>Last check timestamp (null if pending)</td></tr>
+                        <tr><td><code>last_status_code</code></td><td class="field-type">int|null</td><td>HTTP status from last check</td></tr>
+                        <tr><td><code>last_response_ms</code></td><td class="field-type">float|null</td><td>Response time in ms from last check</td></tr>
+                        <tr><td><code>alert_email</code></td><td class="field-type">string</td><td>Email for alerts</td></tr>
+                        <tr><td><code>alert_slack_webhook</code></td><td class="field-type">string</td><td>Slack webhook URL</td></tr>
+                        <tr><td><code>alert_sms</code></td><td class="field-type">string</td><td>SMS number (reserved, not yet active)</td></tr>
+                        <tr><td><code>keyword</code></td><td class="field-type">string</td><td>Expected keyword in response body</td></tr>
+                        <tr><td><code>response_threshold_ms</code></td><td class="field-type">int|null</td><td>Slow response alert threshold (ms)</td></tr>
+                        <tr><td><code>webhook_url</code></td><td class="field-type">string</td><td>Webhook for status changes (Pro)</td></tr>
+                        <tr><td><code>ssl_expiry</code></td><td class="field-type">datetime|null</td><td>SSL cert expiry (auto-detected)</td></tr>
+                        <tr><td><code>ssl_issuer</code></td><td class="field-type">string|null</td><td>SSL cert issuer (auto-detected)</td></tr>
+                        <tr><td><code>ssl_expiry_alerted_days</code></td><td class="field-type">int|null</td><td>Last SSL expiry alert threshold</td></tr>
+                        <tr><td><code>maintenance_window</code></td><td class="field-type">object|null</td><td><code>{day, start_utc, end_utc}</code> (Pro)</td></tr>
+                        <tr><td><code>public</code></td><td class="field-type">bool</td><td>Has a public status page</td></tr>
+                        <tr><td><code>paused</code></td><td class="field-type">bool</td><td>Whether monitoring is paused</td></tr>
                         <tr><td><code>slug</code></td><td class="field-type">string</td><td>Status page URL slug (<code>/s/{slug}</code>)</td></tr>
                         <tr><td><code>created_at</code></td><td class="field-type">datetime</td><td>When the monitor was created</td></tr>
                     </tbody>
@@ -497,7 +653,7 @@ print(r.json())</div>
 console.log(data);</div>
             </div>
 
-            <p><strong>Example response:</strong></p>
+            <p><strong>Example response</strong> (200 OK)<strong>:</strong></p>
             <div class="response-shape">{
   "data": {
     "deleted": true,
@@ -506,7 +662,7 @@ console.log(data);</div>
   "error": null
 }</div>
             <details class="field-ref">
-                <summary>&#9432; Delete response fields (2 fields)</summary>
+                <summary>&#9432; Field reference (2 fields)</summary>
                 <table class="field-ref-table">
                     <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
                     <tbody>

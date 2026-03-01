@@ -177,6 +177,7 @@ _Goal: Give developers programmatic access. API keys, docs, exports._
 - [x] `GET /api/v1/monitors/{id}` — single monitor detail
 - [x] `GET /api/v1/monitors/{id}/checks` — export checks as JSON (with pagination)
 - [x] `POST /api/v1/monitors` — create monitor via API
+- [x] `PUT /api/v1/monitors/{id}` — update monitor via API (partial update, Pro-gated webhooks)
 - [x] `DELETE /api/v1/monitors/{id}` — delete monitor via API
 - [x] All API responses follow consistent JSON shape `{data, error, meta}`
 

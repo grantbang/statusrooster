@@ -1407,6 +1407,7 @@ code {
 }
 .method-get { background: var(--success-bg); color: var(--success-text); }
 .method-post { background: #cce5ff; color: #004085; }
+.method-put { background: #fff3cd; color: #856404; }
 .method-delete { background: var(--danger-bg); color: var(--danger-text); }
 .endpoint-path {
     font-family: var(--font-mono);
