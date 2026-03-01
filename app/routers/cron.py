@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Request
 from app.config import settings
 from app.services.checker import run_checks
 
-router = APIRouter(prefix="/cron", tags=["cron"])
+router = APIRouter(prefix="/cron", tags=["cron"], include_in_schema=False)
 
 # Shared secret for cron auth (use JWT_SECRET as a simple approach)
 CRON_SECRET = settings.JWT_SECRET

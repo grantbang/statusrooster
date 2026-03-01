@@ -349,6 +349,63 @@ const { data } = await res.json();
 console.log(data);</div>
 </div>
 
+<!-- Uptime Badges -->
+<div class="api-section">
+    <h2>Uptime Badges</h2>
+    <p>Embed live uptime badges in your GitHub README, docs, or website. No auth required — badges are public for public monitors.</p>
+
+    <div class="endpoint open" id="ep-badge">
+        <div class="endpoint-header" onclick="toggleEndpoint('ep-badge')">
+            <span class="method-badge method-get">GET</span>
+            <span class="endpoint-path">/badge/{monitor_id}.svg</span>
+            <span class="endpoint-desc">Uptime percentage badge</span>
+        </div>
+        <div class="endpoint-body">
+            <p>Returns a shields.io-style SVG badge showing the monitor's uptime percentage. Color-coded: green (&ge;99.5%), yellow-green (&ge;99%), yellow (&ge;95%), red (&lt;95%).</p>
+            <div class="code-block"><span class="code-comment"># Markdown</span>
+![Uptime]({{ app_url }}/badge/YOUR_MONITOR_ID.svg)
+
+<span class="code-comment"># HTML</span>
+&lt;img src="{{ app_url }}/badge/YOUR_MONITOR_ID.svg" alt="Uptime" /&gt;</div>
+        </div>
+    </div>
+
+    <div class="endpoint" id="ep-badge-status">
+        <div class="endpoint-header" onclick="toggleEndpoint('ep-badge-status')">
+            <span class="method-badge method-get">GET</span>
+            <span class="endpoint-path">/badge/{monitor_id}/status.svg</span>
+            <span class="endpoint-desc">Up/down status badge</span>
+        </div>
+        <div class="endpoint-body">
+            <p>Shows current monitor status: <strong>up</strong> (green), <strong>down</strong> (red), or <strong>pending</strong> (gray).</p>
+        </div>
+    </div>
+
+    <div class="endpoint" id="ep-badge-response">
+        <div class="endpoint-header" onclick="toggleEndpoint('ep-badge-response')">
+            <span class="method-badge method-get">GET</span>
+            <span class="endpoint-path">/badge/{monitor_id}/response.svg</span>
+            <span class="endpoint-desc">Response time badge</span>
+        </div>
+        <div class="endpoint-body">
+            <p>Shows the most recent response time in milliseconds. Color-coded: green (&lt;500ms), yellow-green (&lt;1.5s), yellow (&lt;3s), red (&ge;3s).</p>
+        </div>
+    </div>
+
+    <p>Badges are cached for 5 minutes. Only available for monitors with <code>public: true</code>.</p>
+</div>
+
+<!-- OpenAPI -->
+<div class="api-section">
+    <h2>Interactive Docs &amp; OpenAPI</h2>
+    <p>StatusRooster provides a full OpenAPI 3.1 spec and interactive documentation:</p>
+    <ul>
+        <li><a href="/docs" target="_blank"><strong>Swagger UI</strong></a> — interactive API explorer with "Try it out"</li>
+        <li><a href="/redoc" target="_blank"><strong>ReDoc</strong></a> — clean, readable API reference</li>
+        <li><a href="/openapi.json" target="_blank"><strong>openapi.json</strong></a> — import into Postman, Insomnia, or generate client SDKs</li>
+    </ul>
+</div>
+
 </div>
 {% endblock %}
 

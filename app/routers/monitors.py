@@ -9,7 +9,7 @@ from app.models.monitor import (
 from app.models.user import update_user
 from app.services.alerts import send_test_alert
 
-router = APIRouter(prefix="/api/monitors", tags=["monitors"])
+router = APIRouter(prefix="/api/monitors", tags=["monitors-internal"], include_in_schema=False)
 
 FREE_MONITOR_LIMIT = 50
 

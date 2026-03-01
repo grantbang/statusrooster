@@ -1935,3 +1935,92 @@ code {
 .justify-between { justify-content: space-between; }
 .inline-block { display: inline-block; }
 .no-margin { margin: 0; }
+
+/* ===================== Badge Embed Section ===================== */
+.badge-intro {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin: 0 0 var(--space-md);
+}
+
+.badge-preview {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-lg);
+    padding: var(--space-md);
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+}
+
+.badge-preview img {
+    height: 20px;
+}
+
+.badge-snippet-group {
+    margin-bottom: var(--space-md);
+}
+
+.badge-snippet-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: var(--space-xs);
+}
+
+.badge-snippet {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-sm) var(--space-md);
+    overflow-x: auto;
+}
+
+.badge-snippet code {
+    font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
+    font-size: 0.82rem;
+    color: var(--text);
+    white-space: nowrap;
+    flex: 1;
+    user-select: all;
+}
+
+.btn-copy {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.3rem 0.5rem;
+    cursor: pointer;
+    color: var(--muted);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.btn-copy:hover {
+    color: var(--brand);
+    border-color: var(--brand);
+}
+
+.badge-extra {
+    margin-top: var(--space-md);
+}
+
+.badge-extra summary {
+    font-size: 0.85rem;
+    color: var(--muted);
+    cursor: pointer;
+    margin-bottom: var(--space-md);
+}
+
+.badge-extra summary:hover {
+    color: var(--text);
+}

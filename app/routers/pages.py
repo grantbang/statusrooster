@@ -16,7 +16,7 @@ from app.services.alerts import _format_duration, send_test_alert
 from app.models.user import get_user_by_id
 import os
 
-router = APIRouter(tags=["pages"])
+router = APIRouter(tags=["pages"], include_in_schema=False)
 
 # Templates setup
 from fastapi.templating import Jinja2Templates

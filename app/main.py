@@ -1,12 +1,23 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from app.routers import auth, monitors, cron, pages, billing, api_v1
+from app.routers import auth, monitors, cron, pages, billing, api_v1, badge
 from datetime import datetime
 import json
 import os
 
-app = FastAPI(title="StatusRooster", version="0.1.0")
+app = FastAPI(
+    title="StatusRooster",
+    version="1.0.0",
+    description="Uptime monitoring API for developers. Monitor endpoints, get alerts, embed status badges.",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+    openapi_tags=[
+        {"name": "monitors", "description": "CRUD operations for monitors (requires API key)"},
+        {"name": "badge", "description": "Public SVG badge endpoints for embedding in READMEs"},
+    ],
+)
 
 # Routers — pages first so / doesn't conflict
 app.include_router(pages.router)
@@ -14,6 +25,7 @@ app.include_router(auth.router)
 app.include_router(monitors.router)
 app.include_router(billing.router)
 app.include_router(api_v1.router)
+app.include_router(badge.router)
 app.include_router(cron.router)
 
 # Static files
@@ -46,6 +58,6 @@ from app.routers.pages import templates as page_templates
 page_templates.env.filters["tojson"] = tojson_filter
 
 
-@app.get("/health")
+@app.get("/health", include_in_schema=False)
 async def health_check():
     return {"status": "healthy", "service": "statusrooster"}

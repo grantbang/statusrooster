@@ -16,7 +16,7 @@ from app.models.check import get_recent_checks
 from app.models.user import update_user
 from datetime import datetime
 
-router = APIRouter(prefix="/api/v1", tags=["api-v1"])
+router = APIRouter(prefix="/api/v1", tags=["monitors"])
 
 FREE_MONITOR_LIMIT = 50
 

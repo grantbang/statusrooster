@@ -136,6 +136,75 @@
 </div>
 {% endif %}
 
+<!-- Uptime Badges -->
+{% if monitor.public %}
+<div class="settings-card">
+    <h2>Uptime Badges</h2>
+    <p class="badge-intro">Embed these in your GitHub README, docs, or website.</p>
+
+    <div class="badge-section">
+        <div class="badge-preview">
+            <img src="/badge/{{ monitor.id }}.svg" alt="Uptime badge" />
+            <img src="/badge/{{ monitor.id }}/status.svg" alt="Status badge" />
+            <img src="/badge/{{ monitor.id }}/response.svg" alt="Response time badge" />
+        </div>
+
+        <div class="badge-snippet-group">
+            <label class="badge-snippet-label">Markdown</label>
+            <div class="badge-snippet">
+                <code id="badge-md">![Uptime]({{ request.url.scheme }}://{{ request.url.hostname }}/badge/{{ monitor.id }}.svg)</code>
+                <button class="btn-copy" onclick="copyBadge('badge-md')" title="Copy">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="badge-snippet-group">
+            <label class="badge-snippet-label">HTML</label>
+            <div class="badge-snippet">
+                <code id="badge-html">&lt;img src="{{ request.url.scheme }}://{{ request.url.hostname }}/badge/{{ monitor.id }}.svg" alt="Uptime" /&gt;</code>
+                <button class="btn-copy" onclick="copyBadge('badge-html')" title="Copy">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="badge-snippet-group">
+            <label class="badge-snippet-label">reStructuredText</label>
+            <div class="badge-snippet">
+                <code id="badge-rst">.. image:: {{ request.url.scheme }}://{{ request.url.hostname }}/badge/{{ monitor.id }}.svg
+   :alt: Uptime</code>
+                <button class="btn-copy" onclick="copyBadge('badge-rst')" title="Copy">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <details class="badge-extra">
+            <summary>More badge variants</summary>
+            <div class="badge-snippet-group">
+                <label class="badge-snippet-label">Status badge (up/down)</label>
+                <div class="badge-snippet">
+                    <code id="badge-status-md">![Status]({{ request.url.scheme }}://{{ request.url.hostname }}/badge/{{ monitor.id }}/status.svg)</code>
+                    <button class="btn-copy" onclick="copyBadge('badge-status-md')" title="Copy">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="badge-snippet-group">
+                <label class="badge-snippet-label">Response time badge</label>
+                <div class="badge-snippet">
+                    <code id="badge-response-md">![Response Time]({{ request.url.scheme }}://{{ request.url.hostname }}/badge/{{ monitor.id }}/response.svg)</code>
+                    <button class="btn-copy" onclick="copyBadge('badge-response-md')" title="Copy">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                </div>
+            </div>
+        </details>
+    </div>
+</div>
+{% endif %}
+
 <!-- Alert Settings -->
 <div class="settings-card">
     <h2 style="display: flex; justify-content: space-between; align-items: center;">
@@ -275,5 +344,17 @@ new Chart(ctx, {
         }
     }
 });
+
+function copyBadge(id) {
+    const code = document.getElementById(id);
+    const text = code.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = code.parentElement.querySelector('.btn-copy');
+        btn.innerHTML = '✓';
+        setTimeout(() => {
+            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+        }, 2000);
+    });
+}
 </script>
 {% endblock %}

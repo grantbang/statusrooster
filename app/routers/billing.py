@@ -12,7 +12,7 @@ from app.services.auth import decode_access_token
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
-router = APIRouter(tags=["billing"])
+router = APIRouter(tags=["billing"], include_in_schema=False)
 
 
 # ---------------------------------------------------------------------------

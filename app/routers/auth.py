@@ -4,7 +4,7 @@ from app.database import get_db
 from app.models.user import create_user, get_user_by_email, verify_password
 from app.services.auth import create_access_token
 
-router = APIRouter(prefix="/api/auth", tags=["auth"])
+router = APIRouter(prefix="/api/auth", tags=["auth"], include_in_schema=False)
 
 
 class SignupRequest(BaseModel):
