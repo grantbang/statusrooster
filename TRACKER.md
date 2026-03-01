@@ -1,15 +1,29 @@
 # StatusRooster Build Tracker
 
 **Start:** Feb 25, 2026 · **Target Launch:** Mar 7, 2026
+**Positioning:** Developer-first uptime monitoring. Simple API, clean UI, fair pricing.
+**Target audience:** Indie devs, SaaS builders, freelancers, small teams.
 
 | Phase | Days | Status |
 |-------|------|--------|
 | 1. Core Engine | 1-4 | ✅ Complete |
-| 2. Feature Suite & Billing | 5-9 | 🔄 In Progress (Day 9) |
+| 2. Feature Suite & Billing | 5-9 | ✅ Complete |
 | 3. Testing & Launch | 10-12 | 🔲 Not started |
 | 4. Post-Launch | 13-14+ | 🔲 Not started |
 
-**Current Day: 9** · **Current Phase: 2**
+**Current Day: 9 (complete)** · **Next: Day 10 (Phase 3)**
+
+### Pricing
+| | Free | Pro $9/mo |
+|---|---|---|
+| Monitors | 5 | 250 |
+| Check interval | 5 min | 60s |
+| Alerts | Email | Email + Slack + SMS |
+| Status pages | 1 | 10 |
+| API access | ✅ | ✅ |
+| Webhooks | — | ✅ |
+| Maintenance windows | — | ✅ |
+| Uptime badges | ✅ | ✅ |
 
 ---
 
@@ -102,28 +116,9 @@
 - [x] Git commit Day 6 (`dbc0afb`)
 
 ### Day 7 — Monitoring Suite Features ✅
-_Goal: Build real monitoring features people actually need. Lean into simplicity — not trying to be UptimeRobot, just a great uptime tool for freelancers, indie devs, and small agencies._
+_Goal: Build real monitoring features people actually need._
 
-**Strategic Positioning (decided Day 7):**
-- ❌ NOT competing head-to-head with UptimeRobot
-- ✅ Positioning on simplicity: "No bloat. No confusion. Just uptime monitoring."
-- ✅ Honest feature stack — only claim what's actually built
-- ✅ Target audience: freelancers, indie devs, small agencies who want simple, not enterprise
-- ✅ Goal: $10-20K/mo niche SaaS, not a VC-backed UptimeRobot killer
-
-**What's Actually Built (Free tier):**
-```
-50 monitors, HTTP/HTTPS monitoring, SSL expiry monitoring + alerts,
-Keyword monitoring, Response time threshold alerts, Email alerts,
-Slack integration, Test alert button, 1 public status page
-```
-**What's Actually Built (Pro $9/mo):**
-```
-Everything in Free + Unlimited monitors, Webhook notifications,
-Maintenance windows, Aggregate status page, 10 status pages
-```
-
-**Tier 1 — Core Monitor Enhancements (ALL plans, including Free) ✅**
+**Tier 1 — Core Monitor Enhancements (all plans) ✅**
 - [x] SSL Expiry Monitoring: on each check, grab cert expiry → store on monitor doc
 - [x] SSL Expiry Alerts: alert at 14 days, 7 days, 3 days before cert expires
 - [x] SSL expiry visible on monitor detail page + dashboard card
@@ -149,22 +144,22 @@ Maintenance windows, Aggregate status page, 10 status pages
 - [x] Aggregate Status Page: shows ALL public monitors for a user
 - [x] Aggregate page: overall status badge + individual monitor rows + uptime bars
 
-**Plan Enforcement Updates (partial)**
+**Plan Enforcement**
 - [x] Webhook/maintenance fields hidden or show "Upgrade to Pro" for Free users
-- [x] Monitor limit enforcement: Free = 50, Pro = Unlimited
-- [ ] Check interval enforcement: Free = 5 min cron, Pro = 60 sec cron _(deferred — needs per-monitor scheduling)_
+- [x] Monitor limit enforcement: Free = 5, Pro = 250
+- [ ] Check interval enforcement: Free = 5 min, Pro = 60s _(needs per-monitor scheduling in cron)_
 - [ ] Status page limit enforcement: Free = 1, Pro = 10 _(not yet enforced in code)_
+- [ ] Slack/SMS gated to Pro only _(UI shows fields, backend doesn't gate yet)_
 
 **Pricing Page ✅**
-- [x] Rewrote pricing.html — simplicity positioning, accurate feature lists, FAQ section
-- [x] Removed UptimeRobot comparison table (was overclaiming features we don't have)
-- [x] Removed "Weekly uptime digest email" from Pro features (not built yet)
-- [x] Every feature listed on pricing page is actually built and working
+- [x] Rewrote pricing.html — developer-first, accurate feature lists, FAQ section
+- [x] Free: 5 monitors, 5-min checks, email alerts, 1 status page, API, badges
+- [x] Pro $9/mo: 250 monitors, 60s checks, Slack + SMS, webhooks, maintenance windows, 10 status pages
 
-**NOT built (removed from scope or deferred):**
-- 🔲 Weekly Uptime Digest Email — removed from pricing page claims, moved to Day 9 (competitive edge feature)
-- 🔲 Domain Expiry Monitoring — deferred to post-launch (needs WHOIS library)
-- 🔲 API access gating (Free vs Pro) — Day 8 scope
+**Deferred:**
+- 🔲 Weekly Uptime Digest Email — moved to post-launch backlog
+- 🔲 Domain Expiry Monitoring — needs WHOIS library, post-launch
+- 🔲 SMS/Twilio — listed on pricing as Pro, not wired up yet
 
 - [x] Deploy Day 7 to production (revision `statusrooster-00012-4xq`)
 - [x] Git commit Day 7 (`227ce35`)
@@ -196,75 +191,127 @@ _Goal: Give developers programmatic access. API keys, docs, exports._
 - [x] Deploy Day 8 to production (revision `statusrooster-00013-zld`)
 - [x] Git commit Day 8 (`8951176`)
 
-### Day 9 — UI Polish & Competitive Edge 🔄
-_Goal: Make everything look professional. Add differentiating features._
+### Day 9 — Developer-First Pivot & Polish ✅
+_Goal: Reposition as developer-first. Modern design. API docs excellence. New pricing._
+
+**Design System Overhaul ✅**
+- [x] New color palette: indigo brand (`#6366f1`), near-black dark (`#0a0a0a`), green success (`#22c55e`), red danger (`#ef4444`)
+- [x] Added Inter + JetBrains Mono via Google Fonts
+- [x] Updated all 12 templates + email templates to new palette
+- [x] Zero legacy hex values remaining (verified with grep)
+
+**Landing Page Rewrite ✅**
+- [x] Developer-first hero with terminal code block
+- [x] Feature sections: API-first, uptime badges, dashboard
+- [x] Pricing section inline (Free vs Pro $9/mo)
+- [x] `?preview` bypass for logged-in users to see landing page
+- [x] UptimeRobot-inspired clean layout
+
+**Pricing Restructure ✅**
+- [x] Free: 5 monitors, 5-min checks, email alerts
+- [x] Pro $9/mo: 250 monitors, 60s checks, Slack + SMS alerts
+- [x] Updated pricing page, landing page, dashboard upgrade banners
+
+**Dashboard Polish ✅**
+- [x] Fixed upgrade banner ("4 of 5 monitors" instead of "4 of 50")
+- [x] Interval hints based on plan
+- [x] Empty state for new users
+- [x] Card styling: border-based, no shadows
+- [x] Removed all decorative emojis (rooster in nav only)
+
+**Uptime Badges ✅**
+- [x] `GET /badge/{id}.svg` — uptime percentage badge (color-coded)
+- [x] `GET /badge/{id}/status.svg` — up/down/pending badge
+- [x] `GET /badge/{id}/response.svg` — response time badge
+- [x] Shields.io-style SVG, 5-min cache, public monitors only
+
+**API Documentation Overhaul ✅**
+- [x] Tabbed code blocks: curl / Python / JavaScript on all endpoints
+- [x] Copy-to-clipboard button on all code blocks + response shapes
+- [x] Field reference dropdowns on every endpoint (consistent)
+- [x] Badges moved into Endpoints section as sub-group
+- [x] Top CTA bar (signup/API key + playground + OpenAPI spec)
+- [x] Client Setup section with shared variable definitions
+- [x] Tab preference persists via localStorage
+- [x] Removed redundant bottom CTA section and ReDoc link
+
+**OpenAPI / Swagger ✅**
+- [x] APIKeyHeader security scheme on all endpoints
+- [x] Interactive playground at `/docs`
+- [x] Custom ReDoc at `/redoc` (pinned to 2.1.5)
 
 **CSS Unification ✅**
-- [x] Created `app/static/style.css` (1,930 lines) with CSS custom properties (design tokens)
-- [x] Replaced inline `<style>` in `base.html` with `<link rel="stylesheet" href="/static/style.css">`
-- [x] Added mobile hamburger nav in `base.html`
-- [x] Stripped inline CSS from all 9 child templates (dashboard, monitor_detail, edit_monitor, settings, landing, pricing, api_docs, login, signup)
-- [x] `status_page.html` and `aggregate_status.html` kept self-contained (standalone public pages)
+- [x] Unified `style.css` (~2,600 lines) with design tokens
+- [x] Mobile hamburger nav
+- [x] Stripped inline CSS from all child templates
+- [x] `status_page.html` and `aggregate_status.html` kept self-contained
 
-**UI Cleanup ✅**
-- [x] Removed all decorative emojis from headings, labels, buttons across all 12 templates
-- [x] Removed all `→` arrows from button/link text
-- [x] Replaced emoji status circles with CSS `.status-dot` elements (dashboard + monitor detail)
-- [x] Removed feature icon divs from landing page
-- [x] Professional text-only UI throughout
-
-**Competitive Edge Features** 🔲
-- [ ] Smart Onboarding — landing URL checker stores result, auto-creates first monitor on signup
-- [ ] Weekly Uptime Digest Email — Cloud Scheduler Monday 9am UTC, per-user summary
-- [ ] Uptime Badges — `GET /badge/{id}.svg`, public SVG for GitHub READMEs
-
-**Hardening** 🔲
-- [ ] Custom 404 page
-- [ ] Custom 500 page
-- [ ] Meta tags (title, description, OG image) on all public pages
-- [ ] Favicon
-
+**Still TODO (carry to Day 10+):**
+- [ ] Backend feature gating: Slack/SMS/webhooks/response_threshold as Pro-only
+- [ ] Check interval enforcement: 5min Free vs 60s Pro in cron
+- [ ] SMS/Twilio integration (listed on pricing, not wired)
 - [ ] Deploy Day 9 to production
-- [ ] Git commit Day 9
+- [x] Git commits: `50155fd`, `99f249a`, `de9bd73`, `0616228`
 
 ---
 
-## Phase 3: Testing & Launch — Days 10-12
+## Phase 3: Hardening & Launch — Days 10-12
 
-### Day 10 — Automated Test Suite 🔲
-_Goal: Comprehensive pytest suite that covers every route, edge case, and failure mode._
+### Day 10 — Backend Gating & Hardening 🔲
+_Goal: Make pricing real. Gate features properly. Harden the product._
+
+**Feature Gating (make pricing honest)**
+- [ ] Slack webhook alerts → Pro only (Free users see upgrade prompt)
+- [ ] SMS alerts → Pro only (needs Twilio integration)
+- [ ] Webhook notifications → Pro only (already partially gated)
+- [ ] Response threshold alerts → Pro only
+- [ ] Maintenance windows → Pro only (already gated in UI)
+- [ ] Check interval enforcement: Free = 5 min, Pro = 60s in cron job
+- [ ] Status page limit: Free = 1, Pro = 10
+
+**SMS/Twilio Integration**
+- [ ] Twilio account + phone number
+- [ ] SMS alert on monitor down/up (Pro only)
+- [ ] SMS field on edit monitor form (Pro only)
+- [ ] Test alert includes SMS
+
+**Hardening**
+- [ ] Custom 404 page
+- [ ] Custom 500 page
+- [ ] Meta tags (title, description, OG) on all public pages
+- [ ] Favicon
+- [ ] Input validation audit (all forms + API endpoints)
+
+- [ ] Deploy Day 10 to production
+- [ ] Git commit Day 10
+
+### Day 11 — Testing & Pre-Launch 🔲
+_Goal: Automated tests + manual smoke test. Deploy final build._
 
 - [ ] pytest + httpx async test client setup
 - [ ] Test fixtures: mock Firestore, test user, test monitor
-- [ ] Auth Tests (12): signup, login, session, logout edge cases
-- [ ] Monitor CRUD Tests (12): create, edit, delete, plan limits, user isolation
-- [ ] Check Engine Tests (12): cron auth, up/down detection, incidents, alerts, SSL
-- [ ] API Key & API Tests (10): generate, revoke, CRUD via API, user isolation
-- [ ] Webhook & Integration Tests (6): webhook payload, maintenance windows
-- [ ] Test Alert Tests (4): email, Slack, webhook test notifications
-- [ ] Billing Tests (6): Stripe checkout, webhooks, plan changes
-- [ ] Edge Cases & Security (8): injection, XSS, validation, rate limiting
-- [ ] **ALL TESTS PASSING** ✅
-- [ ] Git commit Day 10
-
-### Day 11 — End-to-End Testing & Pre-Launch 🔲
-_Goal: Manual smoke test the ENTIRE product. Deploy final build. Dogfood it._
-
-- [ ] Full manual E2E test of every user flow in production
+- [ ] Auth tests: signup, login, session, logout
+- [ ] Monitor CRUD tests: create, edit, delete, plan limits
+- [ ] Check engine tests: cron, up/down, incidents, alerts, SSL
+- [ ] API key + API endpoint tests
+- [ ] Billing tests: Stripe checkout, webhooks, plan changes
+- [ ] Full manual E2E test in production
 - [ ] Dogfooding: StatusRooster monitoring statusrooster.com
 - [ ] Mobile viewport testing
-- [ ] Final Cloud Run deploy with production env vars
 - [ ] Switch Stripe from test mode to live mode
-- [ ] Write Show HN post draft
-- [ ] Screenshots / demo GIF
 - [ ] Git commit Day 11
 
 ### Day 12 — Launch 🔲
+_Goal: Ship it. Tell people._
+
+- [ ] Final Cloud Run deploy with production env vars
+- [ ] Write Show HN post
+- [ ] Screenshots / demo GIF for README
 - [ ] Submit Show HN
 - [ ] Post to r/SideProject, r/webdev, r/SaaS
 - [ ] Post to IndieHackers
 - [ ] Monitor comments, respond to feedback
-- [ ] Hot-fix any bugs reported
+- [ ] Hot-fix any launch-day bugs
 - [ ] Track signups in Firestore
 
 ---
@@ -273,28 +320,41 @@ _Goal: Manual smoke test the ENTIRE product. Deploy final build. Dogfood it._
 
 ### Days 13-14 — Bug Fixes & Growth 🔲
 - [ ] Fix bugs from real user feedback
-- [ ] SEO blog posts ("Free Website Uptime Monitoring", "UptimeRobot Alternatives 2026")
+- [ ] SEO pages: "Free Uptime Monitoring API", "UptimeRobot Alternative for Developers"
 - [ ] Free SSL checker tool page (standalone, ranks on Google)
 - [ ] Submit to AlternativeTo, G2
 - [ ] Plan Product Hunt launch (week 3)
 
-### Future Features (Post-Launch Backlog) 🔲
-- [ ] **Team Plan ($29/mo)**: 200 monitors, 30s intervals, 5 login seats, unlimited status pages
-- [ ] SMS Alerts (Twilio integration)
-- [ ] TCP/Ping Checks (non-HTTP services)
-- [ ] Port / DNS Monitoring
-- [ ] Team / Multi-User accounts (login seats, roles)
-- [ ] API Response Validation (check JSON fields)
+### Future Features (Backlog) 🔲
+
+**High priority (developer value):**
+- [ ] Weekly Uptime Digest Email (Cloud Scheduler, per-user summary)
+- [ ] CLI tool (`npm install -g statusrooster` or `pip install statusrooster`)
+- [ ] GitHub Actions integration (check uptime in CI)
+- [ ] Smart Onboarding — landing URL checker auto-creates first monitor on signup
+- [ ] API rate limiting (per-key)
+
+**Medium priority:**
+- [ ] Team Plan ($29/mo): 500 monitors, 30s intervals, 5 seats, unlimited status pages
+- [ ] TCP/Ping checks (non-HTTP services)
 - [ ] Multiple check regions (US-East, EU, Asia)
-- [ ] PagerDuty / Opsgenie integration
-- [ ] Custom check intervals (30s, 5m, 15m)
-- [ ] Incident postmortem notes
-- [ ] Cron Job / Heartbeat monitoring
 - [ ] Custom HTTP headers per monitor
-- [ ] Password-protected status pages
+- [ ] Incident postmortem notes
 - [ ] Dashboard filtering / sorting / search
+- [ ] Domain expiry monitoring (WHOIS)
+- [ ] Cron job / heartbeat monitoring
+
+**Integrations:**
+- [ ] PagerDuty / Opsgenie
+- [ ] Discord webhooks
+- [ ] Telegram alerts
+- [ ] Zapier / Make integration
+
+**Infrastructure:**
 - [ ] CI/CD pipeline (GitHub Actions → Cloud Run)
 - [ ] Password reset flow
+- [ ] Password-protected status pages
+- [ ] Custom domains for status pages
 
 ---
 
@@ -303,11 +363,28 @@ _Goal: Manual smoke test the ENTIRE product. Deploy final build. Dogfood it._
 | Phase | Days | Status |
 |-------|------|--------|
 | 1. Core Engine | 1-4 | ✅ Complete |
-| 2. Feature Suite & Billing | 5-9 | 🔄 In Progress (Day 9) |
-| 3. Testing & Launch | 10-12 | 🔲 Not started |
+| 2. Feature Suite & Billing | 5-9 | ✅ Complete |
+| 3. Hardening & Launch | 10-12 | 🔲 Next up |
 | 4. Post-Launch | 13-14+ | 🔲 Not started |
 
-**Current Day: 9** · **Current Phase: 2**
+**Day 9 complete** · **Next: Day 10 — Backend Gating & Hardening**
+
+### What's actually live right now
+- ✅ Full monitoring engine: HTTP checks, SSL, keyword, response threshold
+- ✅ Alerts: email (SendGrid), Slack webhooks, webhook notifications
+- ✅ Public status pages + aggregate status page
+- ✅ Stripe billing (Free / Pro $9/mo)
+- ✅ Public API with key auth (5 endpoints, consistent JSON)
+- ✅ Uptime badges (3 SVG types, shields.io-style)
+- ✅ API docs with tabbed examples (curl/Python/JS), copy buttons
+- ✅ Interactive Swagger playground + OpenAPI spec
+- ✅ Modern developer-first design (indigo palette, Inter + JetBrains Mono)
+
+### What's NOT gated yet (pricing says Pro, backend allows Free)
+- ⚠️ Slack alerts — Free users can set webhook URL
+- ⚠️ Response threshold — Free users can set threshold
+- ⚠️ Check interval — all monitors run at same 60s interval
+- ⚠️ SMS — listed on pricing, not implemented
 
 ---
 
