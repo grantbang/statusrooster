@@ -1362,6 +1362,16 @@ code {
 .endpoint-body { padding: var(--space-md); display: none; }
 .endpoint.open .endpoint-body { display: block; }
 
+/* Endpoint group sub-heading (e.g. Badges within Endpoints) */
+.endpoint-group-heading {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin: 2rem 0 0.25rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+}
+
 /* Field reference */
 .field-ref { margin: 0.75rem 0; }
 .field-ref summary {
@@ -1426,6 +1436,85 @@ code {
     margin: 0.75rem 0;
     white-space: pre;
 }
+
+/* Language tabs */
+.code-tabbed {
+    margin: 0.75rem 0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid #222;
+}
+.code-tab-bar {
+    display: flex;
+    background: #141414;
+    border-bottom: 1px solid #222;
+    gap: 0;
+}
+.code-tab-bar button {
+    background: none;
+    border: none;
+    color: #777;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+}
+.code-tab-bar button:hover { color: #bbb; }
+.code-tab-bar button.active {
+    color: #e0e0e0;
+    border-bottom-color: var(--brand);
+}
+.code-panel {
+    display: none;
+    background: var(--dark);
+    padding: var(--space-md) 1.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #e0e0e0;
+    overflow-x: auto;
+    white-space: pre;
+}
+.code-panel.active { display: block; }
+
+/* Copy button */
+.code-block, .code-tabbed, .response-shape { position: relative; }
+.code-copy-btn {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #888;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    z-index: 2;
+    line-height: 1.4;
+}
+.code-copy-btn:hover { background: rgba(255,255,255,0.15); color: #ccc; }
+.code-copy-btn.copied { color: var(--success); border-color: var(--success); background: rgba(34,197,94,0.1); }
+/* Response shape copy — light theme positioning */
+.response-shape .code-copy-btn {
+    background: rgba(0,0,0,0.04);
+    border-color: var(--border);
+    color: #aaa;
+}
+.response-shape .code-copy-btn:hover { background: rgba(0,0,0,0.08); color: #666; }
+.response-shape .code-copy-btn.copied { color: var(--success); border-color: var(--success); background: rgba(34,197,94,0.06); }
+/* Tabbed blocks — put copy btn inside the tab bar */
+.code-tabbed .code-copy-btn {
+    position: absolute;
+    top: 0.35rem;
+    right: 0.5rem;
+}
+
 .code-comment { color: #6c757d; }
 .code-string { color: #98c379; }
 .code-key { color: #e5c07b; }
@@ -1486,6 +1575,42 @@ code {
     margin-bottom: var(--space-lg);
 }
 .key-callout a { font-weight: 600; }
+
+/* API docs top CTA bar */
+.api-cta-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: 2rem;
+    padding: 1rem 1.25rem;
+    background: var(--brand-light);
+    border: 1px solid rgba(99, 102, 241, 0.18);
+    border-radius: var(--radius-md);
+}
+.api-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: var(--brand);
+    color: #fff !important;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.5rem 1.1rem;
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    transition: background 0.15s;
+}
+.api-cta-btn:hover { background: var(--brand-hover); }
+.api-cta-link {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--brand);
+    text-decoration: none;
+    padding: 0.4rem 0;
+    border-bottom: 1px dashed rgba(99, 102, 241, 0.3);
+    transition: border-color 0.15s;
+}
+.api-cta-link:hover { border-bottom-color: var(--brand); }
 
 
 /* ============================================================
