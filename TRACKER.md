@@ -282,6 +282,8 @@ _Goal: Make pricing real. Add internal analytics. Harden the product._
 - [ ] Signup page: same OAuth buttons above the email/password form
 - [ ] Store OAuth tokens securely (or stateless — just use email from provider)
 - [ ] Handle edge case: GitHub user with private email (use primary verified email)
+- [ ] Google OAuth: publish consent screen from "Testing" → "Production" (removes 100-user cap)
+- [ ] Deploy OAuth env vars to Cloud Run (GOOGLE_CLIENT_ID/SECRET, GITHUB_CLIENT_ID/SECRET)
 
 **SMS/Twilio Integration**
 - [ ] Twilio account + phone number
