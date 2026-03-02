@@ -37,7 +37,7 @@
 - 🟢 Webhooks at $9/mo (UptimeRobot: $29/mo)
 - 🟢 Full public API with docs on Free tier
 - 🟢 Uptime badges (shields.io-style SVGs)
-- 🟢 Column-customizable data table dashboard
+- 🟢 Card-based dashboard with status strip, uptime bars, inline stats, bulk actions
 - 🟢 Keyword/content checking with AND/OR operators
 - 🟢 Status pages on Free tier
 
@@ -68,7 +68,7 @@
 | Billing | Stripe (Free + Pro $9/mo) |
 | Auth | JWT cookies + Google OAuth + GitHub OAuth (code done, needs env vars) |
 | Domain | `statusrooster.com` (Namecheap) |
-| Design | Dark theme, indigo `#6366f1`, Inter + JetBrains Mono |
+| Design | White theme (`#fff` bg), indigo brand `#6366f1`, Inter + JetBrains Mono |
 
 | Phase | Days | Status |
 |-------|------|--------|
@@ -332,6 +332,7 @@ _These are broken promises — pricing page says Pro, backend allows Free._
 - [x] Add `ssl_expiry_days` to API response serializer
 - [x] Add `slug` to API Update schema
 - [x] Fix internal monitors router FREE_MONITOR_LIMIT (was 50, now 5)
+- [x] Git commit 10A (`7178f84`)
 
 **10B. GitHub OAuth (~10 min)** _(from ACTION_PLAN.md — code is done, just env vars)_
 - [ ] Register GitHub OAuth App at github.com/settings/developers (callback: `https://statusrooster.com/auth/github/callback`)
@@ -339,22 +340,45 @@ _These are broken promises — pricing page says Pro, backend allows Free._
 - [ ] Set same env vars on Cloud Run: `gcloud run services update statusrooster --region us-east1 --set-env-vars ...`
 - [ ] Test: click "Continue with GitHub" on login page → authorize → dashboard
 
-**10C. Dashboard UX Gaps (~1.5 hrs)** _(from COMPETITIVE_AUDIT.md Sections 1-2)_
-_The data table is built. These are the visual polish items UptimeRobot does that we don't._
+**10C. Dashboard UX Gaps → Full Dashboard Redesign (~1.5 hrs planned, ~6 hrs actual)** _(from COMPETITIVE_AUDIT.md Sections 1-2)_
+_Went well beyond the original scope. Complete dashboard overhaul._
 
-- [x] **"Up for X" / "Down for X" duration text** — show below monitor name in table row (~20 min)
-  - Compute from `last_status_change` timestamp (or latest incident start/resolve)
+- [x] **"Up for X" / "Down for X" duration text** — show below monitor name in card row
+  - Computed from `last_status_change` timestamp with `created_at` fallback
   - Format: "Up for 2h 15m" / "Down for 38m"
-  - Same duration in monitor detail page status banner
-- [x] **Three-dot ⋯ context menu per row** — pause/resume, edit, delete, copy URL (~30 min)
+  - Backfilled `last_status_change` on all existing monitors
+- [x] **Three-dot ⋯ context menu per row** — pause/resume, edit, clone, delete, copy URL
   - Dropdown menu on ⋯ button at end of each row
   - Pause/Resume: instant AJAX toggle
+  - Clone: duplicates monitor with "(copy)" suffix
   - Copy URL: clipboard API
   - Delete: confirmation prompt → AJAX
   - Edit: navigate to edit page
-- [x] **Pause/Resume button in monitor detail header** (~15 min)
-  - Add toggle button next to Edit button
+- [x] **Pause/Resume button in monitor detail header**
+  - Toggle button next to Edit button
   - AJAX `POST /api/monitors/{id}/pause` endpoint
+- [x] **Left sidebar navigation** — persistent sidebar with Monitoring, Settings, Integrations & API links
+  - New `dashboard_base.html` layout template (200px dark sidebar + flex content area)
+- [x] **Uptime sparkline bar charts** — dual bars per monitor row (30-day daily + 24-hour hourly)
+  - 30d daily bars: green/red/gray blocks with hover tooltips showing date + %
+  - 24h hourly bars: same visualization at hourly granularity
+  - Toggle between 30d/24h views via toolbar buttons
+- [x] **Card-based monitor list** — replaced dense data table with clean card rows
+  - Each row: status dot, name, URL, duration text, interval badge, uptime bars, inline stats, ⋯ menu
+- [x] **Status strip** — horizontal bar at top replacing sidebar donut chart
+  - Status dot + headline ("All systems operational" / "X monitors down")
+  - 4 status count pills (Up/Down/Paused/Pending) — always shown, even at zero
+- [x] **Per-row inline stats** — Uptime %, Avg Response (ms), Incidents (24h) per monitor
+  - Reads from pre-computed monitor doc fields (zero extra queries)
+- [x] **Bulk actions** — select all, pause/resume/delete multiple monitors
+- [x] **Search, filter, sort** — search by name/URL, filter by status, sort by name/status/uptime
+- [x] **Performance optimization: pre-computed uptime bars**
+  - `daily_uptime_bars` stored on monitor doc, updated incrementally by checker (27s → 1.8s)
+  - `hourly_uptime_bars` stored on monitor doc, updated incrementally by checker (1.8s → 0.3s)
+  - Dashboard makes **zero queries to checks collection** — all data from monitor docs + incidents
+  - Backfill scripts: `scripts/backfill_daily_bars.py`, `scripts/backfill_hourly_bars.py`
+  - Checker prunes daily bars >30 days, hourly bars >24 hours
+- [x] Git commit 10C (`fcbdb9a`)
 
 **10D. Monitor Detail Enhancements (~1.5 hrs)** _(from COMPETITIVE_AUDIT.md Section 2)_
 
@@ -531,11 +555,11 @@ _Items identified during competitive audit + GPT strategy session. Build after l
 - [ ] Dashboard: heartbeat monitors show "Last ping: 2m ago" instead of response time
 - [ ] _Rationale: Dead Man's Snitch charges $5-50/mo for JUST this. We bundle it. Architecturally trivial (~2-3 hrs). Massive positioning value._
 
-**Uptime Sparkline Bar Chart**
-- [ ] Mini bar chart per dashboard row showing up/down history (last 24h or 7d)
-- [ ] Green bars = up, red bars = down, gray = no data
-- [ ] Requires aggregating check history into time buckets
-- [ ] _Rationale: UptimeRobot's most eye-catching visual element. ~1-2 hrs._
+**Uptime Sparkline Bar Chart** ✅ _(Done in Day 10C)_
+- [x] Mini bar chart per dashboard row showing up/down history (30d daily + 24h hourly)
+- [x] Green bars = up, red bars = down, gray = no data
+- [x] Pre-computed on monitor docs — zero extra queries
+- [x] Toggle between 30d / 24h views
 
 **Custom Request Headers**
 - [ ] Key/value input fields on edit form for custom HTTP headers
@@ -543,10 +567,10 @@ _Items identified during competitive audit + GPT strategy session. Build after l
 - [ ] Checker: include custom headers in request
 - [ ] _Rationale: Closes the "API monitoring" gap. Users can set Authorization, X-API-Key, etc. ~15 min._
 
-**Left Sidebar Navigation**
-- [ ] Persistent sidebar: Dashboard, Incidents, Status Pages, Settings, API Docs
-- [ ] Replaces top-bar nav links
-- [ ] _Rationale: Proper app navigation for multi-page SaaS. ~45 min._
+**Left Sidebar Navigation** ✅ _(Done in Day 10C)_
+- [x] Persistent sidebar: Monitoring, Settings, Integrations & API
+- [x] `dashboard_base.html` layout template (200px dark sidebar + flex content)
+- [x] Replaces top-bar nav links for app pages
 
 **Multi-Region Checks (Pro feature)**
 - [ ] Check from 3 regions: US-East, EU-West, Asia
@@ -617,8 +641,11 @@ _Nice-to-have. Don't build until there's user demand._
 - ✅ Uptime badges (3 SVG types, shields.io-style)
 - ✅ API docs with tabbed examples (curl/Python/JS), copy buttons
 - ✅ Interactive Swagger playground + OpenAPI spec
-- ✅ Modern developer-first design (indigo palette, Inter + JetBrains Mono)
-- ✅ Data table dashboard with sort, filter, search, column selector, bulk actions, export
+- ✅ Modern developer-first design (white theme, indigo brand, Inter + JetBrains Mono)
+- ✅ Card-based dashboard with sidebar nav, status strip, uptime bars, inline stats
+- ✅ Search, filter, sort, bulk actions, clone monitor, context menus
+- ✅ Pre-computed uptime bars on monitor docs (dashboard loads in ~0.3s)
+- ✅ Plan gating: Free (5 monitors, 5min, email) vs Pro (250, 60s, Slack + webhooks)
 
 ### What's broken / dishonest (Day 10 fixes)
 - ~~⚠️ Slack alerts — Free users can set webhook URL (pricing says Pro only)~~ ✅ Fixed
@@ -628,10 +655,10 @@ _Nice-to-have. Don't build until there's user demand._
 - ⚠️ SMS — listed on pricing, not implemented (remove from pricing or defer)
 
 ### What's missing (Day 10-11 adds)
-- 🔲 "Up for X" duration text on dashboard + detail
-- 🔲 Three-dot context menu per row
-- 🔲 Pause/Resume from dashboard + detail header
-- 🔲 Multi-period uptime (7d/30d/90d)
+- ~~🔲 "Up for X" duration text on dashboard + detail~~ ✅ Done (10C)
+- ~~🔲 Three-dot context menu per row~~ ✅ Done (10C)
+- ~~🔲 Pause/Resume from dashboard + detail header~~ ✅ Done (10C)
+- 🔲 Multi-period uptime (7d/30d/90d) on detail page
 - 🔲 Response chart time range picker
 - 🔲 Request timeout / Basic Auth / HTTP method fields
 - 🔲 Dedicated /incidents page
