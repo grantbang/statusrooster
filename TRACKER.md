@@ -202,9 +202,9 @@ _Goal: Build real monitoring features people actually need._
 **Plan Enforcement**
 - [x] Webhook/maintenance fields hidden or show "Upgrade to Pro" for Free users
 - [x] Monitor limit enforcement: Free = 5, Pro = 250
-- [ ] Check interval enforcement: Free = 5 min, Pro = 60s _(needs per-monitor scheduling in cron)_
-- [ ] Status page limit enforcement: Free = 1, Pro = 10 _(not yet enforced in code)_
-- [ ] Slack/SMS gated to Pro only _(UI shows fields, backend doesn't gate yet)_
+- [x] Check interval enforcement: Free = 5 min, Pro = 60s _(set at creation, enforced in checker)_
+- [x] Status page limit enforcement: Free = 1, Pro = 10
+- [x] Slack/SMS gated to Pro only _(Slack gated in all alert functions + API + UI; SMS not yet built)_
 
 **Pricing Page ✅**
 - [x] Rewrote pricing.html — developer-first, accurate feature lists, FAQ section
@@ -321,16 +321,17 @@ _Goal: Make pricing honest, close highest-ROI gaps from UptimeRobot audit, enabl
 **10A. Critical Backend Gating (~45 min)** _(from ACTION_PLAN.md reconciliation)_
 _These are broken promises — pricing page says Pro, backend allows Free._
 
-- [ ] `paused` field: add to Firestore model default + API Create schema
-- [ ] Checker: skip paused monitors entirely (`if paused: skip`)
-- [ ] Checker: enforce check interval per plan (Free = 5min, Pro = 60s) — skip check if `last_checked` < plan interval
-- [ ] Gate Slack webhook alerts to Pro only in alert service (Free users see upgrade prompt, backend blocks)
-- [ ] Gate response threshold alerts to Pro only
-- [ ] Status page limit enforcement: Free = 1, Pro = 10
-- [ ] Add `paused` toggle to Add Monitor modal + Edit form
-- [ ] Add `public` toggle to Add Monitor modal (currently only in Edit)
-- [ ] Add `ssl_expiry_days` to API response serializer
-- [ ] Add `slug` to API Update schema
+- [x] `paused` field: add to Firestore model default + API Create schema
+- [x] Checker: skip paused monitors entirely (`if paused: skip`)
+- [x] Checker: enforce check interval per plan (Free = 5min, Pro = 60s) — skip check if `last_checked` < plan interval
+- [x] Gate Slack webhook alerts to Pro only in alert service (Free users see upgrade prompt, backend blocks)
+- [x] Gate response threshold alerts to Pro only
+- [x] Status page limit enforcement: Free = 1, Pro = 10
+- [x] Add `paused` toggle to Add Monitor modal + Edit form
+- [x] Add `public` toggle to Add Monitor modal (currently only in Edit)
+- [x] Add `ssl_expiry_days` to API response serializer
+- [x] Add `slug` to API Update schema
+- [x] Fix internal monitors router FREE_MONITOR_LIMIT (was 50, now 5)
 
 **10B. GitHub OAuth (~10 min)** _(from ACTION_PLAN.md — code is done, just env vars)_
 - [ ] Register GitHub OAuth App at github.com/settings/developers (callback: `https://statusrooster.com/auth/github/callback`)
@@ -620,10 +621,10 @@ _Nice-to-have. Don't build until there's user demand._
 - ✅ Data table dashboard with sort, filter, search, column selector, bulk actions, export
 
 ### What's broken / dishonest (Day 10 fixes)
-- ⚠️ Slack alerts — Free users can set webhook URL (pricing says Pro only)
-- ⚠️ Response threshold — Free users can set threshold (should be Pro?)
-- ⚠️ Check interval — all monitors run at 60s regardless of plan (pricing says Free = 5min)
-- ⚠️ `paused` field — exists in API but not functional in checker or UI
+- ~~⚠️ Slack alerts — Free users can set webhook URL (pricing says Pro only)~~ ✅ Fixed
+- ~~⚠️ Response threshold — Free users can set threshold (should be Pro?)~~ ✅ Threshold is all-plan, Slack channel is Pro-gated
+- ~~⚠️ Check interval — all monitors run at 60s regardless of plan (pricing says Free = 5min)~~ ✅ Fixed (check_interval set at creation, enforced in checker)
+- ~~⚠️ `paused` field — exists in API but not functional in checker or UI~~ ✅ Fixed (checker skips paused, UI has toggle)
 - ⚠️ SMS — listed on pricing, not implemented (remove from pricing or defer)
 
 ### What's missing (Day 10-11 adds)

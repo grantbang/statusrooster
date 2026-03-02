@@ -398,6 +398,16 @@ async def add_monitor(
     public = form.get("public") == "true"
     paused = form.get("paused") == "true"
 
+    # Status page limit enforcement
+    if public:
+        public_count = sum(1 for m in existing if m.get("public", False))
+        public_limit = 10 if plan == "pro" else 1
+        if public_count >= public_limit:
+            return RedirectResponse(
+                url=f"/dashboard?msg={'Pro' if plan == 'pro' else 'Free'}+plan+limited+to+{public_limit}+public+status+page{'s' if public_limit > 1 else ''}.{'Contact+us+if+you+need+more.' if plan == 'pro' else '+Upgrade+to+Pro+for+up+to+10!'}&msg_type=error",
+                status_code=302,
+            )
+
     monitor = create_monitor(
         db,
         user_id=user["id"],
@@ -499,6 +509,18 @@ async def edit_monitor_submit(
         "keyword": keyword,
         "response_threshold_ms": response_threshold_ms.strip() if response_threshold_ms else None,
     }
+
+    # Status page limit enforcement (only if turning public ON)
+    if updates["public"] and not monitor.get("public", False):
+        all_monitors = list_monitors_by_user(db, user["id"])
+        public_count = sum(1 for m in all_monitors if m.get("public", False))
+        plan = user.get("plan", "free")
+        public_limit = 10 if plan == "pro" else 1
+        if public_count >= public_limit:
+            return RedirectResponse(
+                url=f"/dashboard?msg={'Pro' if plan == 'pro' else 'Free'}+plan+limited+to+{public_limit}+public+status+page{'s' if public_limit > 1 else ''}.+{'Contact+us.' if plan == 'pro' else 'Upgrade+to+Pro+for+up+to+10!'}&msg_type=error",
+                status_code=302,
+            )
 
     # Pro-only fields
     if user.get("plan", "free") != "free":

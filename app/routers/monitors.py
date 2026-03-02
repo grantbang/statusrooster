@@ -11,7 +11,8 @@ from app.services.alerts import send_test_alert
 
 router = APIRouter(prefix="/api/monitors", tags=["monitors-internal"], include_in_schema=False)
 
-FREE_MONITOR_LIMIT = 50
+FREE_MONITOR_LIMIT = 5
+PRO_MONITOR_LIMIT = 250
 
 
 class CreateMonitorRequest(BaseModel):
@@ -40,14 +41,15 @@ class UpdateMonitorRequest(BaseModel):
 async def create(req: CreateMonitorRequest, user: dict = Depends(get_current_user)):
     db = get_db()
 
-    # Plan enforcement: free users capped at 5 monitors
-    if user.get("plan", "free") == "free":
-        existing = list_monitors_by_user(db, user["id"])
-        if len(existing) >= FREE_MONITOR_LIMIT:
-            raise HTTPException(
-                status_code=403,
-                detail=f"Free plan is limited to {FREE_MONITOR_LIMIT} monitors. Upgrade to Pro for unlimited."
-            )
+    # Plan enforcement
+    plan = user.get("plan", "free")
+    existing = list_monitors_by_user(db, user["id"])
+    limit = PRO_MONITOR_LIMIT if plan == "pro" else FREE_MONITOR_LIMIT
+    if len(existing) >= limit:
+        raise HTTPException(
+            status_code=403,
+            detail=f"{'Pro' if plan == 'pro' else 'Free'} plan is limited to {limit} monitors. {'Contact us if you need more.' if plan == 'pro' else 'Upgrade to Pro for up to 250.'}"
+        )
 
     monitor = create_monitor(
         db,
