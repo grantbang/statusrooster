@@ -100,12 +100,12 @@
         <div class="toolbar-dropdown">
             <button class="btn btn-secondary btn-sm" onclick="toggleDropdown('colDropdown')">Columns ▾</button>
             <div class="dropdown-menu dropdown-menu-right" id="colDropdown">
-                <label class="dropdown-check"><input type="checkbox" data-col="col-interval" checked onchange="toggleCol(this)"> Check Interval</label>
-                <label class="dropdown-check"><input type="checkbox" data-col="col-url" checked onchange="toggleCol(this)"> URL</label>
                 <label class="dropdown-check"><input type="checkbox" data-col="col-status" checked onchange="toggleCol(this)"> Status</label>
+                <label class="dropdown-check"><input type="checkbox" data-col="col-url" checked onchange="toggleCol(this)"> URL</label>
                 <label class="dropdown-check"><input type="checkbox" data-col="col-uptime" checked onchange="toggleCol(this)"> Uptime (30d)</label>
                 <label class="dropdown-check"><input type="checkbox" data-col="col-response" checked onchange="toggleCol(this)"> Response Time</label>
                 <label class="dropdown-check"><input type="checkbox" data-col="col-checked" checked onchange="toggleCol(this)"> Last Checked</label>
+                <label class="dropdown-check"><input type="checkbox" data-col="col-interval" checked onchange="toggleCol(this)"> Check Interval</label>
                 <hr style="margin: 0.25rem 0; border-color: var(--border);">
                 <label class="dropdown-check"><input type="checkbox" data-col="col-code" onchange="toggleCol(this)"> HTTP Status</label>
                 <label class="dropdown-check"><input type="checkbox" data-col="col-checks" onchange="toggleCol(this)"> Total Checks</label>
@@ -152,13 +152,13 @@
     <thead>
         <tr>
             <th class="col-cb" style="width:36px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" title="Select monitors for bulk actions"></th>
-            <th class="col-interval sortable" data-sort="interval" onclick="sortTable('interval')">⏱ <span class="th-info" data-tip="How often this monitor is checked. Pro = 60s, Free = 5min.">ⓘ</span></th>
+            <th class="col-status sortable" data-sort="status" onclick="sortTable('status')">Status <span class="th-info" data-tip="Current state: Up (responding), Down (failing), Paused (checks suspended), or Pending (awaiting first check).">ⓘ</span></th>
             <th class="col-name sortable" data-sort="name" onclick="sortTable('name')">Name <span class="th-info" data-tip="The display name for this monitor. Click a row to view details.">ⓘ</span></th>
             <th class="col-url sortable" data-sort="url" onclick="sortTable('url')">URL <span class="th-info" data-tip="The URL being monitored. Hover a cell to see the full address.">ⓘ</span></th>
-            <th class="col-status sortable" data-sort="status" onclick="sortTable('status')">Status <span class="th-info" data-tip="Current state: Up (responding), Down (failing), Paused (checks suspended), or Pending (awaiting first check).">ⓘ</span></th>
             <th class="col-uptime sortable" data-sort="uptime" onclick="sortTable('uptime')">Uptime <span class="th-info" data-tip="Percentage of successful checks over the monitor's lifetime. Green ≥ 99.5%, Yellow ≥ 95%, Red < 95%.">ⓘ</span></th>
             <th class="col-response sortable" data-sort="response" onclick="sortTable('response')">Resp <span class="th-info" data-tip="Last response time in milliseconds. Lower is better.">ⓘ</span></th>
             <th class="col-checked sortable" data-sort="checked" onclick="sortTable('checked')">Checked <span class="th-info" data-tip="How long ago the last check ran. Updates every 30 seconds.">ⓘ</span></th>
+            <th class="col-interval sortable" data-sort="interval" onclick="sortTable('interval')">⏱ <span class="th-info" data-tip="How often this monitor is checked. Pro = 60s, Free = 5min.">ⓘ</span></th>
             <th class="col-code sortable" data-sort="code" onclick="sortTable('code')" style="display:none;">HTTP <span class="th-info" data-tip="The HTTP status code from the last check. 2xx = success, 3xx = redirect, 4xx/5xx = error.">ⓘ</span></th>
             <th class="col-checks sortable" data-sort="checks" onclick="sortTable('checks')" style="display:none;">Checks <span class="th-info" data-tip="Total number of checks performed since this monitor was created.">ⓘ</span></th>
             <th class="col-fails sortable" data-sort="fails" onclick="sortTable('fails')" style="display:none;">Fails <span class="th-info" data-tip="Number of checks that returned a non-2xx status or timed out.">ⓘ</span></th>
@@ -189,16 +189,6 @@
             data-fails="{{ m.get('checks_failed', 0) }}"
         >
             <td class="col-cb"><input type="checkbox" class="row-cb" value="{{ m.id }}" onchange="updateBulkBar()"></td>
-            <td class="col-interval">
-                {% set ci = m.get('check_interval', 300) %}
-                {% if ci <= 60 %}
-                    <span class="interval-badge interval-pro" title="Checked every 60 seconds">60s</span>
-                {% else %}
-                    <span class="interval-badge interval-free" title="Checked every 5 minutes">5m</span>
-                {% endif %}
-            </td>
-            <td class="col-name"><a href="/monitors/{{ m.id }}" class="monitor-link">{{ m.name }}</a></td>
-            <td class="col-url"><span class="url-cell" title="{{ m.url }}">{{ m.url | replace('https://', '') | replace('http://', '') | truncate(30) }}</span></td>
             <td class="col-status">
                 {% if m.get('paused') %}
                     <span class="status-pill status-paused">⏸ Paused</span>
@@ -210,6 +200,8 @@
                     <span class="status-pill status-pending">○ Pending</span>
                 {% endif %}
             </td>
+            <td class="col-name"><a href="/monitors/{{ m.id }}" class="monitor-link">{{ m.name }}</a></td>
+            <td class="col-url"><span class="url-cell" title="{{ m.url }}">{{ m.url | replace('https://', '') | replace('http://', '') | truncate(30) }}</span></td>
             <td class="col-uptime">
                 {% set up = m.uptime_percent|default(100)|float %}
                 <span class="{% if up >= 99.5 %}text-green{% elif up >= 95 %}text-yellow{% else %}text-red{% endif %}">{{ "%.1f"|format(up) }}%</span>
@@ -223,6 +215,14 @@
                 {% if m.get('paused') %}—
                 {% elif m.get('last_checked') %}<span class="relative-time" data-ts="{{ m.last_checked }}">{{ m.last_checked }}</span>
                 {% else %}—{% endif %}
+            </td>
+            <td class="col-interval">
+                {% set ci = m.get('check_interval', 300) %}
+                {% if ci <= 60 %}
+                    <span class="interval-badge interval-pro" title="Checked every 60 seconds">60s</span>
+                {% else %}
+                    <span class="interval-badge interval-free" title="Checked every 5 minutes">5m</span>
+                {% endif %}
             </td>
             <td class="col-code" style="display:none;">
                 {% set code = m.get('last_status_code', '') %}
