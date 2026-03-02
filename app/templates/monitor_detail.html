@@ -15,6 +15,12 @@
         <div class="detail-url">{{ monitor.url }}</div>
     </div>
     <div class="detail-actions">
+        <button class="btn {% if monitor.get('paused') %}btn-primary{% else %}btn-secondary{% endif %}"
+                id="pauseResumeBtn"
+                onclick="togglePause('{{ monitor.id }}')"
+                title="{{ 'Resume monitoring' if monitor.get('paused') else 'Pause monitoring' }}">
+            {{ '▶ Resume' if monitor.get('paused') else '⏸ Pause' }}
+        </button>
         <a href="/monitors/{{ monitor.id }}/edit" class="btn btn-secondary">Edit</a>
         <a href="/dashboard" class="btn btn-secondary">Back</a>
     </div>
@@ -27,7 +33,11 @@
 </div>
 {% endif %}
 
-<div class="status-banner status-{{ 'paused' if monitor.get('paused') else monitor.status }}">
+<div class="status-banner status-{{ 'paused' if monitor.get('paused') else monitor.status }}"
+     {% if monitor.get('last_status_change') and not monitor.get('paused') %}
+     data-status-since="{{ monitor.last_status_change.isoformat() if monitor.last_status_change.isoformat is defined else monitor.last_status_change }}"
+     data-status="{{ monitor.status }}"
+     {% endif %}>
     {% if monitor.get('paused') %}
         Paused — checks are suspended
     {% elif monitor.status == 'up' %}
@@ -36,6 +46,9 @@
         Currently down — alerting
     {% else %}
         Pending — waiting for first check
+    {% endif %}
+    {% if monitor.get('last_status_change') and not monitor.get('paused') %}
+    <span class="banner-duration"></span>
     {% endif %}
 </div>
 
@@ -317,6 +330,51 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 // @ts-nocheck
+
+/* ── Pause/Resume toggle ──────────────────────────────── */
+async function togglePause(monitorId) {
+    const btn = document.getElementById('pauseResumeBtn');
+    btn.disabled = true;
+    btn.textContent = '…';
+    try {
+        const resp = await fetch('/monitors/' + monitorId + '/toggle-pause', { method: 'POST' });
+        if (resp.ok) window.location.reload();
+        else { alert('Failed to toggle pause.'); btn.disabled = false; }
+    } catch(e) { alert('Network error.'); btn.disabled = false; }
+}
+
+/* ── Banner duration ("Up for X" / "Down for X") ──────── */
+function formatDuration(seconds) {
+    if (seconds < 60) return seconds + 's';
+    if (seconds < 3600) return Math.floor(seconds / 60) + 'm';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    if (h >= 24) {
+        const d = Math.floor(h / 24);
+        const rh = h % 24;
+        return rh > 0 ? d + 'd ' + rh + 'h' : d + 'd';
+    }
+    return m > 0 ? h + 'h ' + m + 'm' : h + 'h';
+}
+function updateBannerDuration() {
+    const banner = document.querySelector('.status-banner[data-status-since]');
+    if (!banner) return;
+    const since = banner.dataset.statusSince;
+    const status = banner.dataset.status;
+    const span = banner.querySelector('.banner-duration');
+    if (!since || !span) return;
+    try {
+        const d = new Date(since);
+        if (isNaN(d.getTime())) return;
+        const secs = Math.floor((Date.now() - d.getTime()) / 1000);
+        if (secs < 0) return;
+        const prefix = status === 'up' ? 'for ' : status === 'down' ? 'for ' : '';
+        span.textContent = '· ' + prefix + formatDuration(secs);
+    } catch(e) {}
+}
+updateBannerDuration();
+setInterval(updateBannerDuration, 30000);
+
 // Parse checks data passed from server
 const checks = {{ checks | tojson }};
 

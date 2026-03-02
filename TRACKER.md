@@ -342,17 +342,17 @@ _These are broken promises — pricing page says Pro, backend allows Free._
 **10C. Dashboard UX Gaps (~1.5 hrs)** _(from COMPETITIVE_AUDIT.md Sections 1-2)_
 _The data table is built. These are the visual polish items UptimeRobot does that we don't._
 
-- [ ] **"Up for X" / "Down for X" duration text** — show below monitor name in table row (~20 min)
+- [x] **"Up for X" / "Down for X" duration text** — show below monitor name in table row (~20 min)
   - Compute from `last_status_change` timestamp (or latest incident start/resolve)
   - Format: "Up for 2h 15m" / "Down for 38m"
   - Same duration in monitor detail page status banner
-- [ ] **Three-dot ⋯ context menu per row** — pause/resume, edit, delete, copy URL (~30 min)
+- [x] **Three-dot ⋯ context menu per row** — pause/resume, edit, delete, copy URL (~30 min)
   - Dropdown menu on ⋯ button at end of each row
   - Pause/Resume: instant AJAX toggle
   - Copy URL: clipboard API
   - Delete: confirmation prompt → AJAX
   - Edit: navigate to edit page
-- [ ] **Pause/Resume button in monitor detail header** (~15 min)
+- [x] **Pause/Resume button in monitor detail header** (~15 min)
   - Add toggle button next to Edit button
   - AJAX `POST /api/monitors/{id}/pause` endpoint
 

@@ -258,6 +258,9 @@ async def run_checks():
         checks_failed = monitor.get("checks_failed", 0) + (0 if result["is_up"] else 1)
         uptime_percent = round(((checks_total - checks_failed) / checks_total) * 100, 2)
 
+        # Track when the status last changed (for "Up for X" / "Down for X")
+        status_changed = previous_status != new_status
+
         monitor_updates = {
             "status": new_status,
             "last_checked": datetime.now(timezone.utc),
@@ -267,6 +270,39 @@ async def run_checks():
             "checks_total": checks_total,
             "checks_failed": checks_failed,
         }
+
+        if status_changed:
+            monitor_updates["last_status_change"] = datetime.now(timezone.utc)
+
+        # ----- Incrementally update daily_uptime_bars on monitor doc -----
+        today_key = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        bars = list(monitor.get("daily_uptime_bars") or [])
+        # Find or create today's entry
+        if bars and bars[-1].get("date") == today_key:
+            bars[-1]["total"] = bars[-1].get("total", 0) + 1
+            if result["is_up"]:
+                bars[-1]["up"] = bars[-1].get("up", 0) + 1
+        else:
+            bars.append({"date": today_key, "total": 1, "up": 1 if result["is_up"] else 0})
+        # Prune entries older than 30 days
+        cutoff_date = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d")
+        bars = [b for b in bars if b["date"] >= cutoff_date]
+        monitor_updates["daily_uptime_bars"] = bars
+
+        # ----- Incrementally update hourly_uptime_bars on monitor doc -----
+        hour_key = datetime.now(timezone.utc).strftime("%Y-%m-%d-%H")
+        hbars = list(monitor.get("hourly_uptime_bars") or [])
+        # Find or create this hour's entry
+        if hbars and hbars[-1].get("hour") == hour_key:
+            hbars[-1]["total"] = hbars[-1].get("total", 0) + 1
+            if result["is_up"]:
+                hbars[-1]["up"] = hbars[-1].get("up", 0) + 1
+        else:
+            hbars.append({"hour": hour_key, "total": 1, "up": 1 if result["is_up"] else 0})
+        # Prune entries older than 24 hours
+        cutoff_hour = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%d-%H")
+        hbars = [b for b in hbars if b["hour"] >= cutoff_hour]
+        monitor_updates["hourly_uptime_bars"] = hbars
 
         # ----- SSL Expiry Check -----
         ssl_info = grab_ssl_info(monitor["url"])
@@ -317,8 +353,6 @@ async def run_checks():
                     break
 
         # ----- Status change detection + Incidents + Alerts -----
-        status_changed = previous_status != new_status
-
         if status_changed and new_status == "down":
             # UP → DOWN: Check for existing open incident (deduplication)
             existing = get_open_incident(db, monitor["id"])

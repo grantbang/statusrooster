@@ -81,3 +81,120 @@ def get_daily_uptime(db, monitor_id: str, days: int = 90) -> list[dict]:
             result.append({"date": day_key, "total": 0, "up": 0, "down": 0, "uptime_percent": None})
 
     return result
+
+
+def get_daily_uptime_bulk(db, monitor_ids: list[str], days: int = 30) -> dict[str, list[dict]]:
+    """
+    Get daily uptime for multiple monitors in a single Firestore query.
+    Returns {monitor_id: [{date, uptime_percent}, ...]} — 30 segments for uptime bar.
+    """
+    if not monitor_ids:
+        return {}
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    # Single query for all monitors' checks in the period
+    docs = (
+        db.collection(COLLECTION)
+        .where("monitor_id", "in", monitor_ids[:30])  # Firestore 'in' limit = 30
+        .where("timestamp", ">=", cutoff)
+        .order_by("timestamp")
+        .get()
+    )
+
+    # Bucket by monitor_id + date
+    buckets: dict[str, dict[str, dict]] = {mid: {} for mid in monitor_ids}
+    for doc in docs:
+        c = doc.to_dict()
+        mid = c.get("monitor_id")
+        ts = c.get("timestamp")
+        if not mid or not ts or mid not in buckets:
+            continue
+        day_key = ts.strftime("%Y-%m-%d")
+        if day_key not in buckets[mid]:
+            buckets[mid][day_key] = {"total": 0, "up": 0}
+        buckets[mid][day_key]["total"] += 1
+        if c.get("is_up"):
+            buckets[mid][day_key]["up"] += 1
+
+    # Build result per monitor — each entry has date label + pct
+    today = datetime.now(timezone.utc).date()
+    result = {}
+    for mid in monitor_ids:
+        bars = []
+        for i in range(days - 1, -1, -1):
+            d = today - timedelta(days=i)
+            day_key = d.isoformat()
+            label = d.strftime("%b %-d, '%y")
+            b = buckets.get(mid, {}).get(day_key)
+            if b and b["total"] > 0:
+                pct = round((b["up"] / b["total"]) * 100, 3)
+                bars.append({"date": label, "pct": pct})
+            else:
+                bars.append({"date": label, "pct": None})
+        result[mid] = bars
+
+    # Handle overflow if >30 monitors — do additional queries
+    if len(monitor_ids) > 30:
+        extra = get_daily_uptime_bulk(db, monitor_ids[30:], days)
+        result.update(extra)
+
+    return result
+
+
+def get_hourly_uptime_bulk(db, monitor_ids: list[str], hours: int = 24) -> dict[str, list[dict]]:
+    """
+    Get hourly uptime for multiple monitors in a single Firestore query.
+    Returns {monitor_id: [{label, pct}, ...]} — 24 segments for hourly uptime bar.
+    """
+    if not monitor_ids:
+        return {}
+
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    docs = (
+        db.collection(COLLECTION)
+        .where("monitor_id", "in", monitor_ids[:30])
+        .where("timestamp", ">=", cutoff)
+        .order_by("timestamp")
+        .get()
+    )
+
+    # Bucket by monitor_id + hour
+    buckets: dict[str, dict[str, dict]] = {mid: {} for mid in monitor_ids}
+    for doc in docs:
+        c = doc.to_dict()
+        mid = c.get("monitor_id")
+        ts = c.get("timestamp")
+        if not mid or not ts or mid not in buckets:
+            continue
+        hour_key = ts.strftime("%Y-%m-%d-%H")
+        if hour_key not in buckets[mid]:
+            buckets[mid][hour_key] = {"total": 0, "up": 0}
+        buckets[mid][hour_key]["total"] += 1
+        if c.get("is_up"):
+            buckets[mid][hour_key]["up"] += 1
+
+    # Build result per monitor — each entry has label + pct
+    now = datetime.now(timezone.utc)
+    result = {}
+    for mid in monitor_ids:
+        bars = []
+        for i in range(hours - 1, -1, -1):
+            h = now - timedelta(hours=i)
+            hour_key = h.strftime("%Y-%m-%d-%H")
+            label = h.strftime("%-I%p").lower()  # e.g. "3pm"
+            if i == 0:
+                label = "now"
+            b = buckets.get(mid, {}).get(hour_key)
+            if b and b["total"] > 0:
+                pct = round((b["up"] / b["total"]) * 100, 3)
+                bars.append({"date": label, "pct": pct})
+            else:
+                bars.append({"date": label, "pct": None})
+        result[mid] = bars
+
+    # Handle overflow if >30 monitors
+    if len(monitor_ids) > 30:
+        extra = get_hourly_uptime_bulk(db, monitor_ids[30:], hours)
+        result.update(extra)
+
+    return result

@@ -273,61 +273,116 @@ async def dashboard(request: Request):
 
     # ---------- Incidents for the sidebar + incidents panel ----------
     monitor_ids = [m["id"] for m in monitors]
-    # Get recent incidents (last 24h default, but we fetch 7d so JS can filter)
-    recent_incidents = list_incidents_by_user(db, monitor_ids, hours=7*24, limit=100) if monitor_ids else []
+    # Get recent incidents (fetch 30d so JS can filter + sidebar can use any range)
+    recent_incidents = list_incidents_by_user(db, monitor_ids, hours=30*24, limit=200) if monitor_ids else []
 
-    # ---------- Last 24h summary stats ----------
+    # ---------- Summary stats for multiple time ranges ----------
     from datetime import datetime, timezone, timedelta
     now = datetime.now(timezone.utc)
-    cutoff_24h = now - timedelta(hours=24)
-
-    incidents_24h = [i for i in recent_incidents if i.get("started_at") and i["started_at"] >= cutoff_24h]
     active_monitors = [m for m in monitors if not m.get("paused")]
 
-    # Overall uptime: average uptime_percent of all active monitors
-    if active_monitors:
-        avg_uptime = sum(m.get("uptime_percent", 100) for m in active_monitors) / len(active_monitors)
-    else:
-        avg_uptime = 100.0
+    def compute_summary(hours_back):
+        cutoff = now - timedelta(hours=hours_back)
+        incidents_period = [i for i in recent_incidents if i.get("started_at") and i["started_at"] >= cutoff]
 
-    # Average response time across all active monitors
-    response_vals = [m.get("last_response_ms", 0) for m in active_monitors if m.get("last_response_ms")]
-    avg_response = round(sum(response_vals) / len(response_vals)) if response_vals else 0
-
-    # Time without incidents (since last resolved incident or since earliest monitor creation)
-    resolved_24h = [i for i in incidents_24h if i.get("status") == "resolved" and i.get("resolved_at")]
-    open_24h = [i for i in incidents_24h if i.get("status") == "open"]
-
-    if open_24h:
-        # There's an ongoing incident
-        time_without_incident = "0m"
-    elif resolved_24h:
-        last_resolved = max(resolved_24h, key=lambda x: x["resolved_at"])
-        delta = now - last_resolved["resolved_at"]
-        hours_clean = delta.total_seconds() / 3600
-        if hours_clean >= 1:
-            time_without_incident = f"{int(hours_clean)}h, {int((delta.total_seconds() % 3600) / 60)}m"
+        # Overall uptime: average uptime_percent of all active monitors
+        if active_monitors:
+            avg_uptime = sum(m.get("uptime_percent", 100) for m in active_monitors) / len(active_monitors)
         else:
-            time_without_incident = f"{int(delta.total_seconds() / 60)}m"
-    else:
-        time_without_incident = "24h+"
+            avg_uptime = 100.0
 
-    # Mean Time Between Failures (approx — based on incidents in 24h)
-    if len(incidents_24h) > 1:
-        mtbf_hours = 24.0 / len(incidents_24h)
-        mtbf = f"{mtbf_hours:.1f}h" if mtbf_hours >= 1 else f"{int(mtbf_hours * 60)}m"
-    elif len(incidents_24h) == 1:
-        mtbf = "24h"
-    else:
-        mtbf = "∞"
+        # Average response time across all active monitors
+        response_vals = [m.get("last_response_ms", 0) for m in active_monitors if m.get("last_response_ms")]
+        avg_response = round(sum(response_vals) / len(response_vals)) if response_vals else 0
 
-    summary_24h = {
-        "uptime": round(avg_uptime, 3),
-        "avg_response": avg_response,
-        "incidents": len(incidents_24h),
-        "time_without_incident": time_without_incident,
-        "mtbf": mtbf,
+        # Time without incidents
+        resolved = [i for i in incidents_period if i.get("status") == "resolved" and i.get("resolved_at")]
+        open_incs = [i for i in incidents_period if i.get("status") == "open"]
+
+        if open_incs:
+            time_without_incident = "0m"
+        elif resolved:
+            last_resolved = max(resolved, key=lambda x: x["resolved_at"])
+            delta = now - last_resolved["resolved_at"]
+            hrs = delta.total_seconds() / 3600
+            if hrs >= 24:
+                time_without_incident = f"{int(hrs // 24)}d, {int(hrs % 24)}h"
+            elif hrs >= 1:
+                time_without_incident = f"{int(hrs)}h, {int((delta.total_seconds() % 3600) / 60)}m"
+            else:
+                time_without_incident = f"{int(delta.total_seconds() / 60)}m"
+        else:
+            time_without_incident = f"{hours_back}h+"
+
+        # MTBF
+        if len(incidents_period) > 1:
+            mtbf_hours = hours_back / len(incidents_period)
+            if mtbf_hours >= 24:
+                mtbf = f"{mtbf_hours / 24:.1f}d"
+            elif mtbf_hours >= 1:
+                mtbf = f"{mtbf_hours:.1f}h"
+            else:
+                mtbf = f"{int(mtbf_hours * 60)}m"
+        elif len(incidents_period) == 1:
+            mtbf = f"{hours_back}h"
+        else:
+            mtbf = "∞"
+
+        return {
+            "uptime": round(avg_uptime, 3),
+            "avg_response": avg_response,
+            "incidents": len(incidents_period),
+            "time_without_incident": time_without_incident,
+            "mtbf": mtbf,
+        }
+
+    summary_stats = {
+        "24h": compute_summary(24),
+        "7d": compute_summary(7 * 24),
+        "30d": compute_summary(30 * 24),
     }
+
+    # ---------- Uptime bars (read pre-computed from monitor docs) ----------
+    uptime_bars = {}
+    uptime_bars_hourly = {}
+    if monitor_ids:
+        # Daily bars: read from monitor doc (updated incrementally by checker)
+        today = datetime.now(timezone.utc).date()
+        for m in monitors:
+            mid = m["id"]
+            raw_bars = m.get("daily_uptime_bars") or []
+            # Build 30-day array with labels, filling gaps
+            bar_map = {b["date"]: b for b in raw_bars}
+            filled = []
+            for i in range(29, -1, -1):
+                d = today - timedelta(days=i)
+                day_key = d.isoformat()
+                label = d.strftime("%b %-d, '%y")
+                b = bar_map.get(day_key)
+                if b and b.get("total", 0) > 0:
+                    pct = round((b["up"] / b["total"]) * 100, 3)
+                    filled.append({"date": label, "pct": pct})
+                else:
+                    filled.append({"date": label, "pct": None})
+            uptime_bars[mid] = filled
+
+        # Hourly bars: read from monitor doc (updated incrementally by checker)
+        for m in monitors:
+            mid = m["id"]
+            raw_hbars = m.get("hourly_uptime_bars") or []
+            hbar_map = {b["hour"]: b for b in raw_hbars}
+            filled_h = []
+            for i in range(23, -1, -1):
+                h = now - timedelta(hours=i)
+                hour_key = h.strftime("%Y-%m-%d-%H")
+                label = h.strftime("%-I%p").lower() if i > 0 else "now"
+                b = hbar_map.get(hour_key)
+                if b and b.get("total", 0) > 0:
+                    pct = round((b["up"] / b["total"]) * 100, 3)
+                    filled_h.append({"date": label, "pct": pct})
+                else:
+                    filled_h.append({"date": label, "pct": None})
+            uptime_bars_hourly[mid] = filled_h
 
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
@@ -336,7 +391,9 @@ async def dashboard(request: Request):
         "flash_message": flash_message,
         "flash_type": flash_type,
         "recent_incidents": recent_incidents,
-        "summary_24h": summary_24h,
+        "summary_stats": summary_stats,
+        "uptime_bars": uptime_bars,
+        "uptime_bars_hourly": uptime_bars_hourly,
     })
 
 
@@ -554,6 +611,56 @@ async def delete_monitor_submit(request: Request, monitor_id: str):
         url=f"/dashboard?msg=Monitor+'{monitor_name}'+deleted&msg_type=success",
         status_code=302,
     )
+
+
+# ---------------------------------------------------------------------------
+# Clone Monitor (AJAX)
+# ---------------------------------------------------------------------------
+
+@router.post("/monitors/{monitor_id}/clone")
+async def clone_monitor(request: Request, monitor_id: str):
+    from fastapi.responses import JSONResponse
+    user = get_user_from_cookie(request)
+    if not user:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+
+    db = get_db()
+    monitor = get_monitor(db, monitor_id)
+    if not monitor or monitor["user_id"] != user["id"]:
+        return JSONResponse({"error": "Not found"}, status_code=404)
+
+    # Plan enforcement
+    from app.models.monitor import list_monitors_by_user
+    existing = list_monitors_by_user(db, user["id"])
+    plan = user.get("plan", "free")
+    limit = 250 if plan == "pro" else 5
+    if len(existing) >= limit:
+        return JSONResponse({"error": "Monitor limit reached"}, status_code=403)
+
+    # Clone with the same settings
+    cloned = create_monitor(
+        db,
+        user_id=user["id"],
+        url=monitor.get("url", ""),
+        name=monitor.get("name", "Monitor") + " (copy)",
+        alert_email=monitor.get("alert_email", ""),
+        alert_slack_webhook=monitor.get("alert_slack_webhook", ""),
+        public=monitor.get("public", True),
+    )
+
+    # Copy extra fields
+    extra = {}
+    for field in ["keyword", "response_threshold_ms", "webhook_url", "check_interval",
+                   "maintenance_windows"]:
+        if monitor.get(field):
+            extra[field] = monitor[field]
+    if extra:
+        update_monitor(db, cloned["id"], extra)
+
+    from app.models.user import update_user
+    update_user(db, user["id"], {"monitors_count": len(existing) + 1})
+
+    return JSONResponse({"ok": True, "monitor_id": cloned["id"]})
 
 
 # ---------------------------------------------------------------------------
