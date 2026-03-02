@@ -207,9 +207,37 @@ async def run_checks():
     db = get_db()
     monitors = get_all_monitors(db)
 
-    results = {"total": len(monitors), "up": 0, "down": 0}
+    results = {"total": len(monitors), "up": 0, "down": 0, "skipped": 0}
+
+    now = datetime.now(timezone.utc)
 
     for monitor in monitors:
+        # Skip paused monitors entirely
+        if monitor.get("paused", False):
+            results["skipped"] += 1
+            continue
+
+        # Enforce check interval — skip if not due yet
+        check_interval = monitor.get("check_interval", 300)  # default 5min (Free)
+        last_checked = monitor.get("last_checked")
+        if last_checked:
+            # Handle Firestore DatetimeWithNanoseconds or string
+            if isinstance(last_checked, str):
+                try:
+                    last_checked_dt = datetime.fromisoformat(last_checked.replace("Z", "+00:00"))
+                except ValueError:
+                    last_checked_dt = None
+            elif hasattr(last_checked, 'timestamp'):
+                last_checked_dt = last_checked if last_checked.tzinfo else last_checked.replace(tzinfo=timezone.utc)
+            else:
+                last_checked_dt = None
+
+            if last_checked_dt:
+                elapsed = (now - last_checked_dt).total_seconds()
+                if elapsed < check_interval:
+                    results["skipped"] += 1
+                    continue
+
         # Perform the check with retry
         result = await check_url_with_retry(monitor["url"])
 

@@ -9,7 +9,7 @@ from app.database import get_db
 from app.models.user import create_user, get_user_by_email, verify_password
 from app.models.monitor import list_monitors_by_user, get_monitor, get_monitor_by_slug, create_monitor, update_monitor, delete_monitor
 from app.models.check import get_recent_checks, get_daily_uptime
-from app.models.incident import list_incidents_by_monitor
+from app.models.incident import list_incidents_by_monitor, list_incidents_by_user
 from app.models.api_key import generate_api_key, list_api_keys, revoke_api_key
 from app.services.auth import create_access_token, decode_access_token
 from app.services.alerts import _format_duration, send_test_alert
@@ -45,6 +45,7 @@ def get_user_from_cookie(request: Request) -> dict | None:
 # Landing Page
 # ---------------------------------------------------------------------------
 
+@router.head("/", response_class=HTMLResponse, include_in_schema=False)
 @router.get("/", response_class=HTMLResponse)
 async def landing_page(request: Request, preview: str = None):
     user = get_user_from_cookie(request)
@@ -270,12 +271,72 @@ async def dashboard(request: Request):
     flash_message = request.query_params.get("msg")
     flash_type = request.query_params.get("msg_type", "success")
 
+    # ---------- Incidents for the sidebar + incidents panel ----------
+    monitor_ids = [m["id"] for m in monitors]
+    # Get recent incidents (last 24h default, but we fetch 7d so JS can filter)
+    recent_incidents = list_incidents_by_user(db, monitor_ids, hours=7*24, limit=100) if monitor_ids else []
+
+    # ---------- Last 24h summary stats ----------
+    from datetime import datetime, timezone, timedelta
+    now = datetime.now(timezone.utc)
+    cutoff_24h = now - timedelta(hours=24)
+
+    incidents_24h = [i for i in recent_incidents if i.get("started_at") and i["started_at"] >= cutoff_24h]
+    active_monitors = [m for m in monitors if not m.get("paused")]
+
+    # Overall uptime: average uptime_percent of all active monitors
+    if active_monitors:
+        avg_uptime = sum(m.get("uptime_percent", 100) for m in active_monitors) / len(active_monitors)
+    else:
+        avg_uptime = 100.0
+
+    # Average response time across all active monitors
+    response_vals = [m.get("last_response_ms", 0) for m in active_monitors if m.get("last_response_ms")]
+    avg_response = round(sum(response_vals) / len(response_vals)) if response_vals else 0
+
+    # Time without incidents (since last resolved incident or since earliest monitor creation)
+    resolved_24h = [i for i in incidents_24h if i.get("status") == "resolved" and i.get("resolved_at")]
+    open_24h = [i for i in incidents_24h if i.get("status") == "open"]
+
+    if open_24h:
+        # There's an ongoing incident
+        time_without_incident = "0m"
+    elif resolved_24h:
+        last_resolved = max(resolved_24h, key=lambda x: x["resolved_at"])
+        delta = now - last_resolved["resolved_at"]
+        hours_clean = delta.total_seconds() / 3600
+        if hours_clean >= 1:
+            time_without_incident = f"{int(hours_clean)}h, {int((delta.total_seconds() % 3600) / 60)}m"
+        else:
+            time_without_incident = f"{int(delta.total_seconds() / 60)}m"
+    else:
+        time_without_incident = "24h+"
+
+    # Mean Time Between Failures (approx — based on incidents in 24h)
+    if len(incidents_24h) > 1:
+        mtbf_hours = 24.0 / len(incidents_24h)
+        mtbf = f"{mtbf_hours:.1f}h" if mtbf_hours >= 1 else f"{int(mtbf_hours * 60)}m"
+    elif len(incidents_24h) == 1:
+        mtbf = "24h"
+    else:
+        mtbf = "∞"
+
+    summary_24h = {
+        "uptime": round(avg_uptime, 3),
+        "avg_response": avg_response,
+        "incidents": len(incidents_24h),
+        "time_without_incident": time_without_incident,
+        "mtbf": mtbf,
+    }
+
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
         "user": user,
         "monitors": monitors,
         "flash_message": flash_message,
         "flash_type": flash_type,
+        "recent_incidents": recent_incidents,
+        "summary_24h": summary_24h,
     })
 
 
@@ -334,17 +395,22 @@ async def add_monitor(
                     "end_utc": e,
                 })
 
+    public = form.get("public") == "true"
+    paused = form.get("paused") == "true"
+
     monitor = create_monitor(
         db,
         user_id=user["id"],
         url=url,
         name=name,
         alert_email=alert_email or user.get("email", ""),
-        alert_slack_webhook=alert_slack_webhook,
+        alert_slack_webhook=alert_slack_webhook if user.get("plan", "free") != "free" else "",
         keyword=keyword,
         response_threshold_ms=response_threshold_ms.strip() if response_threshold_ms else None,
         webhook_url=webhook_url if user.get("plan", "free") != "free" else "",
         maintenance_windows=maintenance_windows,
+        public=public,
+        paused=paused,
     )
 
     return RedirectResponse(
@@ -426,9 +492,10 @@ async def edit_monitor_submit(
         "url": url,
         "name": name,
         "alert_email": alert_email,
-        "alert_slack_webhook": alert_slack_webhook,
+        "alert_slack_webhook": alert_slack_webhook if user.get("plan", "free") != "free" else monitor.get("alert_slack_webhook", ""),
         "slug": slug,
         "public": public == "true",
+        "paused": form.get("paused") == "true",
         "keyword": keyword,
         "response_threshold_ms": response_threshold_ms.strip() if response_threshold_ms else None,
     }
@@ -465,6 +532,62 @@ async def delete_monitor_submit(request: Request, monitor_id: str):
         url=f"/dashboard?msg=Monitor+'{monitor_name}'+deleted&msg_type=success",
         status_code=302,
     )
+
+
+# ---------------------------------------------------------------------------
+# Toggle Pause (AJAX)
+# ---------------------------------------------------------------------------
+
+@router.post("/monitors/{monitor_id}/toggle-pause")
+async def toggle_pause(request: Request, monitor_id: str):
+    from fastapi.responses import JSONResponse
+    user = get_user_from_cookie(request)
+    if not user:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+
+    db = get_db()
+    monitor = get_monitor(db, monitor_id)
+    if not monitor or monitor["user_id"] != user["id"]:
+        return JSONResponse({"error": "Not found"}, status_code=404)
+
+    new_paused = not monitor.get("paused", False)
+    update_monitor(db, monitor_id, {"paused": new_paused})
+    return JSONResponse({"ok": True, "paused": new_paused})
+
+
+# ---------------------------------------------------------------------------
+# Bulk Actions (AJAX)
+# ---------------------------------------------------------------------------
+
+@router.post("/monitors/bulk")
+async def bulk_action(request: Request):
+    from fastapi.responses import JSONResponse
+    user = get_user_from_cookie(request)
+    if not user:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+
+    body = await request.json()
+    action = body.get("action")
+    monitor_ids = body.get("monitor_ids", [])
+
+    if action not in ("pause", "resume", "delete") or not monitor_ids:
+        return JSONResponse({"error": "Invalid request"}, status_code=400)
+
+    db = get_db()
+    count = 0
+    for mid in monitor_ids:
+        monitor = get_monitor(db, mid)
+        if not monitor or monitor["user_id"] != user["id"]:
+            continue
+        if action == "pause":
+            update_monitor(db, mid, {"paused": True})
+        elif action == "resume":
+            update_monitor(db, mid, {"paused": False})
+        elif action == "delete":
+            delete_monitor(db, mid)
+        count += 1
+
+    return JSONResponse({"ok": True, "affected": count})
 
 
 # ---------------------------------------------------------------------------

@@ -168,6 +168,7 @@ class ApiCreateMonitor(BaseModel):
     response_threshold_ms: str | None = None
     webhook_url: str = ""
     public: bool = True
+    paused: bool = False
     maintenance_windows: list[MaintenanceWindow] | None = None
 
 
@@ -202,6 +203,7 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
         response_threshold_ms=req.response_threshold_ms,
         webhook_url=req.webhook_url if plan != "free" else "",
         maintenance_windows=mw_list,
+        paused=req.paused,
     )
 
     update_user(db, user["id"], {"monitors_count": (user.get("monitors_count", 0) + 1)})
@@ -219,6 +221,7 @@ class ApiUpdateMonitor(BaseModel):
     webhook_url: str | None = None
     public: bool | None = None
     paused: bool | None = None
+    slug: str | None = None
     maintenance_windows: list[MaintenanceWindow] | None = None
 
 
@@ -259,6 +262,9 @@ async def api_update_monitor(
         updates["public"] = req.public
     if req.paused is not None:
         updates["paused"] = req.paused
+    if req.slug is not None:
+        import re
+        updates["slug"] = re.sub(r"[^a-z0-9\-]", "", req.slug.lower().replace(" ", "-")).strip("-")
     if req.maintenance_windows is not None:
         plan = user.get("plan", "free")
         if plan == "free":

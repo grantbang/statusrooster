@@ -8,6 +8,21 @@ from datetime import datetime, timezone
 from app.config import settings
 
 
+def _get_user_plan(user_id: str) -> str:
+    """Look up a user's plan from Firestore. Returns 'free' or 'pro'."""
+    if not user_id:
+        return "free"
+    try:
+        from app.database import get_db
+        db = get_db()
+        user_ref = db.collection("users").document(user_id).get()
+        if user_ref.exists:
+            return user_ref.to_dict().get("plan", "free")
+    except Exception:
+        pass
+    return "free"
+
+
 # ---------------------------------------------------------------------------
 # SendGrid email alerts
 # ---------------------------------------------------------------------------
@@ -116,6 +131,8 @@ async def send_down_alert(monitor: dict, incident: dict) -> None:
     name = monitor.get("name", monitor.get("url", "Unknown"))
     url = monitor.get("url", "")
     monitor_id = monitor.get("id", "")
+    user_id = monitor.get("user_id", "")
+    user_plan = _get_user_plan(user_id)
     status_code = incident.get("status_code", "N/A")
     response_ms = monitor.get("last_response_ms")
     response_str = f"{response_ms:.0f}ms" if response_ms else "Timeout"
@@ -144,9 +161,9 @@ async def send_down_alert(monitor: dict, incident: dict) -> None:
         """
         await send_email(alert_email, subject, html)
 
-    # --- Slack ---
+    # --- Slack (Pro only) ---
     slack_webhook = monitor.get("alert_slack_webhook", "")
-    if slack_webhook:
+    if slack_webhook and user_plan == "pro":
         message = (
             f"🔴 *DOWN: {name}*\n"
             f"URL: {url}\n"
@@ -171,6 +188,8 @@ async def send_recovery_alert(monitor: dict, incident: dict) -> None:
     name = monitor.get("name", monitor.get("url", "Unknown"))
     url = monitor.get("url", "")
     monitor_id = monitor.get("id", "")
+    user_id = monitor.get("user_id", "")
+    user_plan = _get_user_plan(user_id)
     duration_sec = incident.get("duration_seconds", 0) or 0
     duration_str = _format_duration(duration_sec)
     response_ms = monitor.get("last_response_ms")
@@ -199,9 +218,9 @@ async def send_recovery_alert(monitor: dict, incident: dict) -> None:
         """
         await send_email(alert_email, subject, html)
 
-    # --- Slack ---
+    # --- Slack (Pro only) ---
     slack_webhook = monitor.get("alert_slack_webhook", "")
-    if slack_webhook:
+    if slack_webhook and user_plan == "pro":
         message = (
             f"🟢 *RECOVERED: {name}*\n"
             f"URL: {url}\n"
@@ -227,6 +246,8 @@ async def send_ssl_expiry_alert(monitor: dict, days_left: int, expiry_date) -> N
     name = monitor.get("name", monitor.get("url", "Unknown"))
     url = monitor.get("url", "")
     monitor_id = monitor.get("id", "")
+    user_id = monitor.get("user_id", "")
+    user_plan = _get_user_plan(user_id)
     app_url = settings.APP_URL or "https://statusrooster.com"
     detail_url = f"{app_url}/monitors/{monitor_id}"
     expiry_str = expiry_date.strftime("%b %d, %Y") if expiry_date else "Unknown"
@@ -254,9 +275,9 @@ async def send_ssl_expiry_alert(monitor: dict, days_left: int, expiry_date) -> N
         """
         await send_email(alert_email, subject, html)
 
-    # --- Slack ---
+    # --- Slack (Pro only) ---
     slack_webhook = monitor.get("alert_slack_webhook", "")
-    if slack_webhook:
+    if slack_webhook and user_plan == "pro":
         message = (
             f"{urgency} *SSL Certificate Expiring: {name}*\n"
             f"URL: {url}\n"
@@ -275,6 +296,8 @@ async def send_keyword_alert(monitor: dict, keyword: str) -> None:
     name = monitor.get("name", monitor.get("url", "Unknown"))
     url = monitor.get("url", "")
     monitor_id = monitor.get("id", "")
+    user_id = monitor.get("user_id", "")
+    user_plan = _get_user_plan(user_id)
     app_url = settings.APP_URL or "https://statusrooster.com"
     detail_url = f"{app_url}/monitors/{monitor_id}"
     time_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -300,9 +323,9 @@ async def send_keyword_alert(monitor: dict, keyword: str) -> None:
         """
         await send_email(alert_email, subject, html)
 
-    # --- Slack ---
+    # --- Slack (Pro only) ---
     slack_webhook = monitor.get("alert_slack_webhook", "")
-    if slack_webhook:
+    if slack_webhook and user_plan == "pro":
         message = (
             f"🔍 *Keyword Missing: {name}*\n"
             f"URL: {url}\n"
@@ -322,6 +345,8 @@ async def send_threshold_alert(monitor: dict, actual_ms: float, threshold_ms) ->
     name = monitor.get("name", monitor.get("url", "Unknown"))
     url = monitor.get("url", "")
     monitor_id = monitor.get("id", "")
+    user_id = monitor.get("user_id", "")
+    user_plan = _get_user_plan(user_id)
     app_url = settings.APP_URL or "https://statusrooster.com"
     detail_url = f"{app_url}/monitors/{monitor_id}"
     time_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -348,9 +373,9 @@ async def send_threshold_alert(monitor: dict, actual_ms: float, threshold_ms) ->
         """
         await send_email(alert_email, subject, html)
 
-    # --- Slack ---
+    # --- Slack (Pro only) ---
     slack_webhook = monitor.get("alert_slack_webhook", "")
-    if slack_webhook:
+    if slack_webhook and user_plan == "pro":
         message = (
             f"🐢 *Response Threshold Violated: {name}*\n"
             f"URL: {url}\n"

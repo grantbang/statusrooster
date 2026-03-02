@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 COLLECTION = "incidents"
 
@@ -93,3 +93,34 @@ def list_incidents_by_monitor(db, monitor_id: str, limit: int = 20) -> list[dict
         inc["id"] = doc.id
         incidents.append(inc)
     return incidents
+
+
+def list_incidents_by_user(db, monitor_ids: list[str], hours: int | None = 24, limit: int = 50) -> list[dict]:
+    """
+    List incidents across multiple monitors (by IDs), optionally filtered to the last N hours.
+    Returns newest first.
+    """
+    if not monitor_ids:
+        return []
+
+    all_incidents = []
+    # Firestore 'in' queries support max 30 items per batch
+    for i in range(0, len(monitor_ids), 30):
+        batch_ids = monitor_ids[i:i + 30]
+        query = db.collection(COLLECTION).where("monitor_id", "in", batch_ids)
+
+        if hours is not None:
+            cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+            query = query.where("started_at", ">=", cutoff)
+
+        query = query.order_by("started_at", direction="DESCENDING").limit(limit)
+        docs = query.get()
+
+        for doc in docs:
+            inc = doc.to_dict()
+            inc["id"] = doc.id
+            all_incidents.append(inc)
+
+    # Sort combined results newest first, then trim to limit
+    all_incidents.sort(key=lambda x: x.get("started_at", datetime.min.replace(tzinfo=timezone.utc)), reverse=True)
+    return all_incidents[:limit]

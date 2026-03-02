@@ -16,16 +16,24 @@ def generate_slug(name: str) -> str:
 def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
                    alert_slack_webhook: str = "", public: bool = False,
                    keyword: str = "", response_threshold_ms: str | None = None,
-                   webhook_url: str = "", maintenance_windows: list | None = None) -> dict:
+                   webhook_url: str = "", maintenance_windows: list | None = None,
+                   paused: bool = False) -> dict:
     """Create a new monitor. Returns monitor dict with id."""
+    # Determine check interval based on user plan
+    user_ref = db.collection("users").document(user_id).get()
+    user_data = user_ref.to_dict() if user_ref.exists else {}
+    plan = user_data.get("plan", "free")
+    check_interval = 60 if plan == "pro" else 300  # 60s Pro, 300s (5min) Free
+
     doc_ref = db.collection(COLLECTION).document()
     slug = generate_slug(name)
     monitor_data = {
         "user_id": user_id,
         "url": url,
         "name": name,
-        "check_interval": 60,
+        "check_interval": check_interval,
         "status": "pending",  # pending | up | down
+        "paused": paused,
         "last_checked": None,
         "last_status_code": None,
         "last_response_ms": None,

@@ -12,22 +12,17 @@
         <span class="monitor-count">({{ monitors | length }} monitor{{ 's' if monitors | length != 1 else '' }})</span>
         {% if user.get('plan', 'free') == 'pro' %}
             <span class="plan-badge plan-pro">Pro</span>
+            <form method="POST" action="/api/billing/portal" style="display:inline; margin:0;">
+                <button type="submit" class="plan-manage-link">Manage</button>
+            </form>
         {% else %}
             <span class="plan-badge plan-free">Free</span>
+            <form method="POST" action="/api/billing/checkout" style="display:inline; margin:0;">
+                <button type="submit" class="plan-manage-link" style="color: var(--brand);">Upgrade ↗</button>
+            </form>
         {% endif %}
     </h1>
-    <div style="display: flex; gap: 0.75rem; align-items: center;">
-        {% if user.get('plan', 'free') == 'pro' %}
-            <form method="POST" action="/api/billing/portal" style="margin:0;">
-                <button type="submit" class="btn btn-secondary" style="font-size: 0.85rem;">Manage Subscription</button>
-            </form>
-        {% else %}
-            <form method="POST" action="/api/billing/checkout" style="margin:0;">
-                <button type="submit" class="btn btn-secondary" style="font-size: 0.85rem; background: #0a0a0a;">Upgrade to Pro</button>
-            </form>
-        {% endif %}
-        <button class="btn btn-primary" onclick="openModal()">Add monitor</button>
-    </div>
+    <button class="btn btn-primary" onclick="openModal()">+ Add monitor</button>
 </div>
 
 {% if user.get('plan', 'free') == 'free' and monitors | length >= 4 %}
@@ -40,49 +35,371 @@
 {% endif %}
 
 {% if monitors %}
-<div class="monitors-grid">
-    {% for m in monitors %}
-    <div class="monitor-card" onclick="window.location='/monitors/{{ m.id }}'">
-        <div class="status-badge">
-            {% if m.status == 'up' %}<span class="status-dot dot-up"></span>
-            {% elif m.status == 'down' %}<span class="status-dot dot-down"></span>
-            {% else %}<span class="status-dot dot-pending"></span>{% endif %}
+<!-- Two-column Dashboard Layout -->
+<div class="dash-layout">
+<!-- ═══════════════ LEFT: Main Content ═══════════════ -->
+<div class="dash-main">
+
+<!-- Summary Metrics -->
+{% set ns = namespace(up=0, down=0, paused=0, pending=0) %}
+{% for m in monitors %}
+    {% if m.get('paused') %}{% set ns.paused = ns.paused + 1 %}
+    {% elif m.status == 'up' %}{% set ns.up = ns.up + 1 %}
+    {% elif m.status == 'down' %}{% set ns.down = ns.down + 1 %}
+    {% else %}{% set ns.pending = ns.pending + 1 %}{% endif %}
+{% endfor %}
+<div class="metrics-strip">
+    <button class="metric-pill" onclick="setFilter('all','All')" title="Show all monitors">
+        <span class="metric-value">{{ monitors | length }}</span>
+        <span class="metric-label">Total</span>
+    </button>
+    <button class="metric-pill metric-up" onclick="setFilter('up','Up')" title="Filter: Up only">
+        <span class="metric-value">{{ ns.up }}</span>
+        <span class="metric-label">Up</span>
+    </button>
+    <button class="metric-pill metric-down" onclick="setFilter('down','Down')" title="Filter: Down only">
+        <span class="metric-value">{{ ns.down }}</span>
+        <span class="metric-label">Down</span>
+    </button>
+    <button class="metric-pill metric-paused" onclick="setFilter('paused','Paused')" title="Filter: Paused only">
+        <span class="metric-value">{{ ns.paused }}</span>
+        <span class="metric-label">Paused</span>
+    </button>
+    <button class="metric-pill metric-pending" onclick="setFilter('pending','Pending')" title="Filter: Pending only">
+        <span class="metric-value">{{ ns.pending }}</span>
+        <span class="metric-label">Pending</span>
+    </button>
+    {% if ns.down > 0 %}
+    <span class="metric-divider"></span>
+    <button class="metric-pill metric-alert" onclick="setFilter('down','Down')" title="Monitors needing attention">
+        <span class="metric-value">{{ ns.down }}</span>
+        <span class="metric-label">⚠ Needs attention</span>
+    </button>
+    {% endif %}
+</div>
+
+<!-- Toolbar: Search, Filter, Columns, Export -->
+<div class="table-toolbar">
+    <div class="toolbar-left">
+        <input type="text" id="monitorSearch" class="toolbar-search" placeholder="Search monitors…" oninput="filterTable()">
+        <div class="toolbar-dropdown">
+            <button class="btn btn-secondary btn-sm" onclick="toggleDropdown('filterDropdown')">
+                <span id="filterLabel">All</span> ▾
+            </button>
+            <div class="dropdown-menu" id="filterDropdown">
+                <button class="dropdown-item active" data-filter="all" onclick="setFilter('all','All')">All</button>
+                <button class="dropdown-item" data-filter="up" onclick="setFilter('up','Up')">● Up</button>
+                <button class="dropdown-item" data-filter="down" onclick="setFilter('down','Down')">● Down</button>
+                <button class="dropdown-item" data-filter="paused" onclick="setFilter('paused','Paused')">⏸ Paused</button>
+                <button class="dropdown-item" data-filter="pending" onclick="setFilter('pending','Pending')">○ Pending</button>
+            </div>
         </div>
-        <div class="monitor-info">
-            <div class="monitor-name">{{ m.name }}</div>
-            <div class="monitor-url">
-                {{ m.url }}
-                {% if m.get('keyword') %}<span class="inline-badge inline-badge-info">Keyword</span>{% endif %}
-                {% if m.get('ssl_expiry') %}
-                    {% set days_left = m.get('ssl_expiry_days', 999) %}
-                    {% if days_left is number and days_left <= 14 %}
-                        <span class="inline-badge inline-badge-warning">SSL {{days_left}}d</span>
-                    {% else %}
-                        <span class="inline-badge inline-badge-success">SSL OK</span>
-                    {% endif %}
+    </div>
+    <div class="toolbar-right">
+        <button class="btn btn-secondary btn-sm" onclick="window.location.reload()" title="Refresh data">↻ Refresh</button>
+        <div class="toolbar-dropdown">
+            <button class="btn btn-secondary btn-sm" onclick="toggleDropdown('colDropdown')">Columns ▾</button>
+            <div class="dropdown-menu dropdown-menu-right" id="colDropdown">
+                <label class="dropdown-check"><input type="checkbox" data-col="col-interval" checked onchange="toggleCol(this)"> Check Interval</label>
+                <label class="dropdown-check"><input type="checkbox" data-col="col-url" checked onchange="toggleCol(this)"> URL</label>
+                <label class="dropdown-check"><input type="checkbox" data-col="col-status" checked onchange="toggleCol(this)"> Status</label>
+                <label class="dropdown-check"><input type="checkbox" data-col="col-uptime" checked onchange="toggleCol(this)"> Uptime (30d)</label>
+                <label class="dropdown-check"><input type="checkbox" data-col="col-response" checked onchange="toggleCol(this)"> Response Time</label>
+                <label class="dropdown-check"><input type="checkbox" data-col="col-checked" checked onchange="toggleCol(this)"> Last Checked</label>
+                <hr style="margin: 0.25rem 0; border-color: var(--border);">
+                <label class="dropdown-check"><input type="checkbox" data-col="col-code" onchange="toggleCol(this)"> HTTP Status</label>
+                <label class="dropdown-check"><input type="checkbox" data-col="col-checks" onchange="toggleCol(this)"> Total Checks</label>
+                <label class="dropdown-check"><input type="checkbox" data-col="col-fails" onchange="toggleCol(this)"> Failed Checks</label>
+                <label class="dropdown-check"><input type="checkbox" data-col="col-keyword" onchange="toggleCol(this)"> Keyword Rule</label>
+                <label class="dropdown-check"><input type="checkbox" data-col="col-threshold" onchange="toggleCol(this)"> Threshold Rule</label>
+                <label class="dropdown-check"><input type="checkbox" data-col="col-ssl" onchange="toggleCol(this)"> SSL Expiry</label>
+                <label class="dropdown-check"><input type="checkbox" data-col="col-public" onchange="toggleCol(this)"> Public Page</label>
+                <label class="dropdown-check"><input type="checkbox" data-col="col-created" onchange="toggleCol(this)"> Created Date</label>
+                {% if user.get('plan', 'free') == 'pro' %}
+                <label class="dropdown-check"><input type="checkbox" data-col="col-slack" onchange="toggleCol(this)"> Slack</label>
+                <label class="dropdown-check"><input type="checkbox" data-col="col-webhook" onchange="toggleCol(this)"> Webhook</label>
+                {% else %}
+                <label class="dropdown-check pro-locked" title="Pro only">🔒 Slack</label>
+                <label class="dropdown-check pro-locked" title="Pro only">🔒 Webhook</label>
                 {% endif %}
             </div>
         </div>
-        <div class="monitor-stats">
-            <div class="stat">
-                <div class="stat-value">{{ m.uptime_percent | default(100) }}%</div>
-                <div class="stat-label">Uptime</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value">{{ m.last_response_ms | default('—') }}{{ 'ms' if m.last_response_ms }}</div>
-                <div class="stat-label">Response</div>
+        {% if user.get('plan', 'free') == 'pro' %}
+        <div class="toolbar-dropdown">
+            <button class="btn btn-secondary btn-sm" onclick="toggleDropdown('exportDropdown')">⤓ Export</button>
+            <div class="dropdown-menu dropdown-menu-right" id="exportDropdown">
+                <button class="dropdown-item" onclick="exportData('csv')">Export CSV</button>
+                <button class="dropdown-item" onclick="exportData('json')">Export JSON</button>
             </div>
         </div>
-        <div class="monitor-actions" onclick="event.stopPropagation()">
-            <a href="/monitors/{{ m.id }}/edit" class="btn-icon" title="Edit">Edit</a>
-            <form method="POST" action="/monitors/{{ m.id }}/delete" class="delete-form"
-                  onsubmit="return confirm('Delete {{ m.name }}? This cannot be undone.')">
-                <button type="submit" class="btn-icon btn-icon-danger" title="Delete">Delete</button>
-            </form>
+        {% else %}
+        <button class="btn btn-secondary btn-sm" onclick="if(confirm('Export is a Pro feature. Upgrade now?')) window.location='/pricing'" style="opacity:0.6;">⤓ Export 🔒</button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Bulk Action Bar (hidden until selection) -->
+<div class="bulk-bar" id="bulkBar" style="display:none;">
+    <span id="bulkCount">0</span> selected:
+    <button class="btn btn-sm btn-secondary" onclick="bulkAction('pause')">Pause</button>
+    <button class="btn btn-sm btn-secondary" onclick="bulkAction('resume')">Resume</button>
+    <button class="btn btn-sm btn-danger" onclick="bulkAction('delete')">Delete</button>
+</div>
+
+<!-- Data Table -->
+<div class="table-wrap">
+<table class="data-table" id="monitorTable">
+    <thead>
+        <tr>
+            <th class="col-cb" style="width:36px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" title="Select monitors for bulk actions"></th>
+            <th class="col-interval sortable" data-sort="interval" onclick="sortTable('interval')">⏱ <span class="th-info" data-tip="How often this monitor is checked. Pro = 60s, Free = 5min.">ⓘ</span></th>
+            <th class="col-name sortable" data-sort="name" onclick="sortTable('name')">Name <span class="th-info" data-tip="The display name for this monitor. Click a row to view details.">ⓘ</span></th>
+            <th class="col-url sortable" data-sort="url" onclick="sortTable('url')">URL <span class="th-info" data-tip="The URL being monitored. Hover a cell to see the full address.">ⓘ</span></th>
+            <th class="col-status sortable" data-sort="status" onclick="sortTable('status')">Status <span class="th-info" data-tip="Current state: Up (responding), Down (failing), Paused (checks suspended), or Pending (awaiting first check).">ⓘ</span></th>
+            <th class="col-uptime sortable" data-sort="uptime" onclick="sortTable('uptime')">Uptime <span class="th-info" data-tip="Percentage of successful checks over the monitor's lifetime. Green ≥ 99.5%, Yellow ≥ 95%, Red < 95%.">ⓘ</span></th>
+            <th class="col-response sortable" data-sort="response" onclick="sortTable('response')">Resp <span class="th-info" data-tip="Last response time in milliseconds. Lower is better.">ⓘ</span></th>
+            <th class="col-checked sortable" data-sort="checked" onclick="sortTable('checked')">Checked <span class="th-info" data-tip="How long ago the last check ran. Updates every 30 seconds.">ⓘ</span></th>
+            <th class="col-code sortable" data-sort="code" onclick="sortTable('code')" style="display:none;">HTTP <span class="th-info" data-tip="The HTTP status code from the last check. 2xx = success, 3xx = redirect, 4xx/5xx = error.">ⓘ</span></th>
+            <th class="col-checks sortable" data-sort="checks" onclick="sortTable('checks')" style="display:none;">Checks <span class="th-info" data-tip="Total number of checks performed since this monitor was created.">ⓘ</span></th>
+            <th class="col-fails sortable" data-sort="fails" onclick="sortTable('fails')" style="display:none;">Fails <span class="th-info" data-tip="Number of checks that returned a non-2xx status or timed out.">ⓘ</span></th>
+            <th class="col-keyword" style="display:none;">Keyword <span class="th-info" data-tip="Alert if this keyword/expression is missing from the response body. Supports AND/OR operators.">ⓘ</span></th>
+            <th class="col-threshold" style="display:none;">Threshold <span class="th-info" data-tip="Alert when response time violates this condition. e.g. > 2000, < 200, or 200-3000 (range).">ⓘ</span></th>
+            <th class="col-ssl sortable" data-sort="ssl" onclick="sortTable('ssl')" style="display:none;">SSL <span class="th-info" data-tip="Days until the SSL certificate expires. Alerts at 14, 7, and 3 days.">ⓘ</span></th>
+            <th class="col-public" style="display:none;">Public <span class="th-info" data-tip="Whether this monitor has a public status page anyone can view.">ⓘ</span></th>
+            <th class="col-created sortable" data-sort="created" onclick="sortTable('created')" style="display:none;">Created <span class="th-info" data-tip="When this monitor was first created.">ⓘ</span></th>
+            <th class="col-slack" style="display:none;">Slack <span class="th-info" data-tip="Whether a Slack webhook is connected for alerts. Pro feature.">ⓘ</span></th>
+            <th class="col-webhook" style="display:none;">Webhook <span class="th-info" data-tip="Custom webhook URL that receives JSON POST on status changes. Pro feature.">ⓘ</span></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for m in monitors %}
+        <tr class="monitor-row" style="cursor: pointer;"
+            onclick="if(!event.target.closest('input[type=checkbox]')&&!event.target.closest('a')) window.location='/monitors/{{ m.id }}'"
+            data-id="{{ m.id }}"
+            data-name="{{ m.name }}"
+            data-url="{{ m.url }}"
+            data-status="{{ 'paused' if m.get('paused') else m.status|default('pending') }}"
+            data-uptime="{{ m.uptime_percent|default(100) }}"
+            data-response="{{ m.last_response_ms|default(0) }}"
+            data-interval="{{ m.get('check_interval', 300) }}"
+            data-checked="{{ m.get('last_checked', '') }}"
+            data-created="{{ m.get('created_at', '') }}"
+            data-code="{{ m.get('last_status_code', '') }}"
+            data-checks="{{ m.get('checks_total', 0) }}"
+            data-fails="{{ m.get('checks_failed', 0) }}"
+        >
+            <td class="col-cb"><input type="checkbox" class="row-cb" value="{{ m.id }}" onchange="updateBulkBar()"></td>
+            <td class="col-interval">
+                {% set ci = m.get('check_interval', 300) %}
+                {% if ci <= 60 %}
+                    <span class="interval-badge interval-pro" title="Checked every 60 seconds">60s</span>
+                {% else %}
+                    <span class="interval-badge interval-free" title="Checked every 5 minutes">5m</span>
+                {% endif %}
+            </td>
+            <td class="col-name"><a href="/monitors/{{ m.id }}" class="monitor-link">{{ m.name }}</a></td>
+            <td class="col-url"><span class="url-cell" title="{{ m.url }}">{{ m.url | replace('https://', '') | replace('http://', '') | truncate(30) }}</span></td>
+            <td class="col-status">
+                {% if m.get('paused') %}
+                    <span class="status-pill status-paused">⏸ Paused</span>
+                {% elif m.status == 'up' %}
+                    <span class="status-pill status-up">● Up</span>
+                {% elif m.status == 'down' %}
+                    <span class="status-pill status-down">● Down</span>
+                {% else %}
+                    <span class="status-pill status-pending">○ Pending</span>
+                {% endif %}
+            </td>
+            <td class="col-uptime">
+                {% set up = m.uptime_percent|default(100)|float %}
+                <span class="{% if up >= 99.5 %}text-green{% elif up >= 95 %}text-yellow{% else %}text-red{% endif %}">{{ "%.1f"|format(up) }}%</span>
+            </td>
+            <td class="col-response">
+                {% if m.last_response_ms %}
+                    {{ m.last_response_ms }}<span class="unit">ms</span>
+                {% else %}—{% endif %}
+            </td>
+            <td class="col-checked">
+                {% if m.get('paused') %}—
+                {% elif m.get('last_checked') %}<span class="relative-time" data-ts="{{ m.last_checked }}">{{ m.last_checked }}</span>
+                {% else %}—{% endif %}
+            </td>
+            <td class="col-code" style="display:none;">
+                {% set code = m.get('last_status_code', '') %}
+                {% if code %}
+                    <span class="{% if code >= 200 and code < 300 %}text-green{% elif code >= 300 and code < 400 %}text-muted{% else %}text-red{% endif %}">{{ code }}</span>
+                {% else %}—{% endif %}
+            </td>
+            <td class="col-checks" style="display:none;">{{ m.get('checks_total', 0) }}</td>
+            <td class="col-fails" style="display:none;">
+                {% set fails = m.get('checks_failed', 0) %}
+                {% if fails > 0 %}<span class="text-red">{{ fails }}</span>{% else %}0{% endif %}
+            </td>
+            <td class="col-keyword" style="display:none;">{{ m.get('keyword', '—') or '—' }}</td>
+            <td class="col-threshold" style="display:none;">{{ m.get('response_threshold_ms', '—') or '—' }}</td>
+            <td class="col-ssl" style="display:none;">
+                {% if m.get('ssl_expiry') %}
+                    {% set days_left = m.get('ssl_expiry_days', 999) %}
+                    {% if days_left is number and days_left <= 14 %}
+                        <span class="text-yellow">{{ days_left }}d</span>
+                    {% else %}
+                        <span class="text-green">OK</span>
+                    {% endif %}
+                {% else %}—{% endif %}
+            </td>
+            <td class="col-public" style="display:none;">{% if m.get('public') %}✅{% else %}—{% endif %}</td>
+            <td class="col-created" style="display:none;">
+                <span class="formatted-date" data-ts="{{ m.get('created_at', '') }}">{{ m.get('created_at', '—') }}</span>
+            </td>
+            <td class="col-slack" style="display:none;">{% if m.get('alert_slack_webhook') %}<span class="text-green">Connected</span>{% else %}—{% endif %}</td>
+            <td class="col-webhook" style="display:none;">{% if m.get('webhook_url') %}<span class="url-cell" title="{{ m.webhook_url }}">{{ m.webhook_url|truncate(20) }}</span>{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr class="add-monitor-row" onclick="openModal()" title="Add a new monitor" style="cursor: pointer;">
+            <td class="col-cb"></td>
+            <td colspan="17"><span class="add-monitor-plus">+</span> <span class="add-monitor-label">Add monitor</span></td>
+        </tr>
+    </tfoot>
+</table>
+</div>
+
+<!-- Incidents Panel (below table) -->
+<div class="incidents-panel">
+    <div class="incidents-header">
+        <h3>Recent Incidents</h3>
+        <div class="incidents-filters">
+            <button class="incident-filter active" data-hours="24" onclick="filterIncidents(24, this)">24h</button>
+            <button class="incident-filter" data-hours="72" onclick="filterIncidents(72, this)">3d</button>
+            <button class="incident-filter" data-hours="168" onclick="filterIncidents(168, this)">7d</button>
+            <button class="incident-filter" data-hours="0" onclick="filterIncidents(0, this)">All</button>
         </div>
     </div>
-    {% endfor %}
+    <div class="incidents-list" id="incidentsList">
+        {% if recent_incidents %}
+        {% for inc in recent_incidents %}
+        <div class="incident-row" data-started="{{ inc.started_at.isoformat() if inc.started_at else '' }}"
+             data-monitor-id="{{ inc.monitor_id }}">
+            <div class="incident-indicator {{ 'incident-open' if inc.status == 'open' else 'incident-resolved' }}"></div>
+            <div class="incident-details">
+                <div class="incident-title">
+                    <span class="incident-monitor">{{ inc.monitor_name }}</span>
+                    {% if inc.status == 'open' %}
+                    <span class="incident-status-badge incident-badge-open">Ongoing</span>
+                    {% else %}
+                    <span class="incident-status-badge incident-badge-resolved">Resolved</span>
+                    {% endif %}
+                </div>
+                <div class="incident-meta">
+                    {% if inc.status_code %}<span class="incident-code">{{ inc.status_code }}</span>{% endif %}
+                    <span class="incident-time relative-time" data-ts="{{ inc.started_at.isoformat() if inc.started_at else '' }}">{{ inc.started_at }}</span>
+                    {% if inc.duration_seconds %}
+                    <span class="incident-duration">↔ {{ inc.duration_seconds // 3600 }}h {{ (inc.duration_seconds % 3600) // 60 }}m {{ inc.duration_seconds % 60 }}s</span>
+                    {% elif inc.status == 'open' %}
+                    <span class="incident-duration incident-ongoing">⏱ Ongoing</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="incidents-empty">
+            <span class="incidents-empty-icon">✓</span>
+            No incidents in the selected period
+        </div>
+        {% endif %}
+    </div>
 </div>
+
+</div> <!-- /.dash-main -->
+
+<!-- ═══════════════ RIGHT: Sidebar ═══════════════ -->
+<aside class="dash-sidebar">
+    <!-- Current Status Card -->
+    <div class="sidebar-card">
+        <div class="sidebar-card-header">
+            <h3>Current status</h3>
+        </div>
+        <div class="sidebar-card-body">
+            <div class="status-donut-wrap">
+                <div class="status-donut {% if ns.down > 0 %}donut-down{% elif ns.pending > 0 %}donut-pending{% else %}donut-up{% endif %}">
+                    {% if ns.down > 0 %}
+                    <span class="donut-icon">⬇</span>
+                    {% elif ns.paused == monitors|length %}
+                    <span class="donut-icon">⏸</span>
+                    {% else %}
+                    <span class="donut-icon">✓</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="status-counts">
+                <div class="status-count {% if ns.down > 0 %}sc-down{% endif %}">
+                    <span class="sc-value">{{ ns.down }}</span>
+                    <span class="sc-label">Down</span>
+                </div>
+                <div class="status-count sc-up">
+                    <span class="sc-value">{{ ns.up }}</span>
+                    <span class="sc-label">Up</span>
+                </div>
+                <div class="status-count sc-paused">
+                    <span class="sc-value">{{ ns.paused }}</span>
+                    <span class="sc-label">Paused</span>
+                </div>
+            </div>
+            <div class="sidebar-usage">
+                Using {{ monitors | length }} of {% if user.get('plan', 'free') == 'pro' %}250{% else %}5{% endif %} monitors.
+            </div>
+        </div>
+    </div>
+
+    <!-- Last 24 Hours Card -->
+    <div class="sidebar-card">
+        <div class="sidebar-card-header">
+            <h3>Last 24 hours</h3>
+        </div>
+        <div class="sidebar-card-body">
+            <div class="stats-grid-24h">
+                <div class="stat-24h">
+                    <span class="stat-24h-value {% if summary_24h.uptime >= 99.5 %}text-green{% elif summary_24h.uptime >= 95 %}text-yellow{% else %}text-red{% endif %}">{{ "%.3f" | format(summary_24h.uptime) }}%</span>
+                    <span class="stat-24h-label">Overall uptime</span>
+                </div>
+                <div class="stat-24h">
+                    <span class="stat-24h-value">{{ summary_24h.mtbf }}</span>
+                    <span class="stat-24h-label">MTBF</span>
+                </div>
+                <div class="stat-24h">
+                    <span class="stat-24h-value">{{ summary_24h.time_without_incident }}</span>
+                    <span class="stat-24h-label">Without inc.</span>
+                </div>
+                <div class="stat-24h">
+                    <span class="stat-24h-value {% if summary_24h.incidents > 0 %}text-red{% endif %}">{{ summary_24h.incidents }}</span>
+                    <span class="stat-24h-label">Incidents</span>
+                </div>
+            </div>
+            {% if summary_24h.avg_response > 0 %}
+            <div class="stat-24h-row">
+                <span class="stat-24h-label">Avg response</span>
+                <span class="stat-24h-value">{{ summary_24h.avg_response }}<span class="unit">ms</span></span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions Card -->
+    <div class="sidebar-card">
+        <div class="sidebar-card-header">
+            <h3>Quick actions</h3>
+        </div>
+        <div class="sidebar-card-body sidebar-actions">
+            <button class="btn btn-primary btn-sm btn-block" onclick="openModal()">+ Add monitor</button>
+            <a href="/settings" class="btn btn-secondary btn-sm btn-block">⚙ Settings</a>
+            <a href="/docs/api" class="btn btn-secondary btn-sm btn-block">📄 API Docs</a>
+        </div>
+    </div>
+</aside>
+</div> <!-- /.dash-layout -->
+
 {% else %}
 <div class="empty-state">
     <h2>No monitors yet</h2>
@@ -116,8 +433,14 @@
                 <div class="hint">We'll email you when this site goes down</div>
             </div>
             <div class="form-group">
-                <label for="alert_slack_webhook">Slack Webhook URL <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                <label for="alert_slack_webhook">Slack Webhook URL <span style="color: #999; font-weight: normal;">(Pro)</span></label>
+                {% if user.get('plan', 'free') != 'free' %}
                 <input type="url" id="alert_slack_webhook" name="alert_slack_webhook" placeholder="https://hooks.slack.com/services/...">
+                {% else %}
+                <input type="url" id="alert_slack_webhook" name="alert_slack_webhook" placeholder="https://hooks.slack.com/services/..." disabled style="opacity: 0.5; cursor: not-allowed;">
+                <input type="hidden" name="alert_slack_webhook" value="">
+                <div class="hint" style="color: #6366f1;"><a href="/api/billing/checkout" onclick="event.preventDefault(); this.closest('form').action='/api/billing/checkout'; this.closest('form').submit();" style="color: #6366f1; text-decoration: underline;">Upgrade to Pro</a> for Slack alerts</div>
+                {% endif %}
             </div>
             <div class="form-group">
                 <label for="keyword">Keyword Check <span style="color: #999; font-weight: normal;">(optional)</span></label>
@@ -159,6 +482,16 @@
                 <div class="hint" style="color: #6366f1;"><a href="/api/billing/checkout" onclick="event.preventDefault(); this.closest('form').action='/api/billing/checkout'; this.closest('form').submit();" style="color: #6366f1; text-decoration: underline;">Upgrade to Pro</a> to suppress alerts during scheduled maintenance</div>
                 {% endif %}
             </div>
+            <div class="form-group" style="display: flex; gap: 2rem; align-items: center; flex-wrap: wrap;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" name="public" value="true" style="width: auto; accent-color: #6366f1;">
+                    Public status page
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" name="paused" value="true" style="width: auto; accent-color: #6366f1;">
+                    Start paused
+                </label>
+            </div>
             <button type="submit" class="modal-submit">Add monitor</button>
         </form>
     </div>
@@ -167,41 +500,323 @@
 
 {% block extra_js %}
 <script>
-function openModal() {
-    document.getElementById('addModal').classList.add('active');
-}
-function closeModal() {
-    document.getElementById('addModal').classList.remove('active');
-}
-// Close on overlay click
-document.getElementById('addModal').addEventListener('click', function(e) {
-    if (e.target === this) closeModal();
-});
-// Close on Escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeModal();
-});
+/* ── Modal ─────────────────────────────────────────────── */
+function openModal() { document.getElementById('addModal').classList.add('active'); }
+function closeModal() { document.getElementById('addModal').classList.remove('active'); }
+document.getElementById('addModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
-// Maintenance windows
+/* ── Prevent info tooltips from triggering sort ────────── */
+document.querySelectorAll('.th-info').forEach(el => el.addEventListener('click', e => e.stopPropagation()));
+
+/* ── Fixed-position tooltips (escape overflow containers) ── */
+(function() {
+    let tipEl = null, arrowEl = null;
+    function showTip(e) {
+        const info = e.currentTarget;
+        const text = info.dataset.tip;
+        if (!text) return;
+        if (tipEl) { tipEl.remove(); arrowEl.remove(); }
+        arrowEl = document.createElement('div');
+        arrowEl.className = 'th-tip-arrow';
+        document.body.appendChild(arrowEl);
+        tipEl = document.createElement('div');
+        tipEl.className = 'th-tip';
+        tipEl.textContent = text;
+        document.body.appendChild(tipEl);
+        const r = info.getBoundingClientRect();
+        const tw = tipEl.offsetWidth, th2 = tipEl.offsetHeight;
+        let left = r.left + r.width / 2 - tw / 2;
+        if (left < 8) left = 8;
+        if (left + tw > window.innerWidth - 8) left = window.innerWidth - 8 - tw;
+        tipEl.style.top = (r.bottom + 8) + 'px';
+        tipEl.style.left = left + 'px';
+        arrowEl.style.top = (r.bottom - 2) + 'px';
+        arrowEl.style.left = (r.left + r.width / 2 - 5) + 'px';
+    }
+    function hideTip() {
+        if (tipEl) { tipEl.remove(); tipEl = null; }
+        if (arrowEl) { arrowEl.remove(); arrowEl = null; }
+    }
+    document.querySelectorAll('.th-info').forEach(el => {
+        el.addEventListener('mouseenter', showTip);
+        el.addEventListener('mouseleave', hideTip);
+    });
+})();
+
+/* ── Maintenance windows ──────────────────────────────── */
 const MW_DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday','daily'];
 function addMaintenanceWindow(day, start, end) {
-    const container = document.getElementById('mw-container');
-    const row = document.createElement('div');
+    const c = document.getElementById('mw-container'), row = document.createElement('div');
     row.className = 'mw-row';
     row.style.cssText = 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;';
-    const options = MW_DAYS.map(d =>
-        `<option value="${d}" ${d === (day||'') ? 'selected' : ''}>${d.charAt(0).toUpperCase()+d.slice(1)}</option>`
-    ).join('');
     row.innerHTML = `
         <select name="maintenance_day[]" class="form-group" style="flex:0 0 auto;margin-bottom:0;">
-            <option value="">Day…</option>${options}
+            <option value="">Day…</option>${MW_DAYS.map(d => `<option value="${d}" ${d===(day||'')?'selected':''}>${d[0].toUpperCase()+d.slice(1)}</option>`).join('')}
         </select>
         <input type="time" name="maintenance_start[]" value="${start||''}" style="flex:0 0 auto;">
         <span class="text-muted">to</span>
         <input type="time" name="maintenance_end[]" value="${end||''}" style="flex:0 0 auto;">
-        <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>
-    `;
-    container.appendChild(row);
+        <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>`;
+    c.appendChild(row);
 }
+
+/* ── Dropdowns ─────────────────────────────────────────── */
+function toggleDropdown(id) {
+    document.querySelectorAll('.dropdown-menu').forEach(m => { if (m.id !== id) m.classList.remove('open'); });
+    document.getElementById(id).classList.toggle('open');
+}
+document.addEventListener('click', e => {
+    if (!e.target.closest('.toolbar-dropdown'))
+        document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('open'));
+});
+
+/* ── Filtering ─────────────────────────────────────────── */
+let currentFilter = 'all';
+function setFilter(f, label) {
+    currentFilter = f;
+    document.getElementById('filterLabel').textContent = label;
+    document.querySelectorAll('#filterDropdown .dropdown-item').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+    document.getElementById('filterDropdown').classList.remove('open');
+    filterTable();
+}
+function filterTable() {
+    const q = document.getElementById('monitorSearch').value.toLowerCase();
+    document.querySelectorAll('#monitorTable tbody .monitor-row').forEach(row => {
+        const name = row.dataset.name.toLowerCase(), url = row.dataset.url.toLowerCase(), status = row.dataset.status;
+        const matchSearch = !q || name.includes(q) || url.includes(q);
+        const matchFilter = currentFilter === 'all' || status === currentFilter;
+        row.style.display = matchSearch && matchFilter ? '' : 'none';
+    });
+}
+
+/* ── Sorting ───────────────────────────────────────────── */
+let sortCol = null, sortDir = 'asc';
+function sortTable(col) {
+    if (sortCol === col) { sortDir = sortDir === 'asc' ? 'desc' : sortDir === 'desc' ? null : 'asc'; }
+    else { sortCol = col; sortDir = 'asc'; }
+    if (!sortDir) { sortCol = null; }
+    document.querySelectorAll('.data-table th.sortable').forEach(th => {
+        th.classList.remove('sort-asc', 'sort-desc');
+        if (th.dataset.sort === sortCol) th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+    });
+    if (!sortCol) return;
+    const tbody = document.querySelector('#monitorTable tbody');
+    const rows = Array.from(tbody.querySelectorAll('.monitor-row'));
+    rows.sort((a, b) => {
+        let av, bv;
+        switch (col) {
+            case 'name': av = a.dataset.name.toLowerCase(); bv = b.dataset.name.toLowerCase(); break;
+            case 'url': av = a.dataset.url.toLowerCase(); bv = b.dataset.url.toLowerCase(); break;
+            case 'status': av = a.dataset.status; bv = b.dataset.status; break;
+            case 'uptime': av = parseFloat(a.dataset.uptime); bv = parseFloat(b.dataset.uptime); break;
+            case 'response': av = parseFloat(a.dataset.response)||0; bv = parseFloat(b.dataset.response)||0; break;
+            case 'interval': av = parseInt(a.dataset.interval); bv = parseInt(b.dataset.interval); break;
+            case 'checked': av = a.dataset.checked; bv = b.dataset.checked; break;
+            case 'created': av = a.dataset.created; bv = b.dataset.created; break;
+            case 'code': av = parseInt(a.dataset.code)||0; bv = parseInt(b.dataset.code)||0; break;
+            case 'checks': av = parseInt(a.dataset.checks)||0; bv = parseInt(b.dataset.checks)||0; break;
+            case 'fails': av = parseInt(a.dataset.fails)||0; bv = parseInt(b.dataset.fails)||0; break;
+            default: return 0;
+        }
+        if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+        return sortDir === 'asc' ? av - bv : bv - av;
+    });
+    rows.forEach(r => tbody.appendChild(r));
+}
+
+/* ── Column Visibility ─────────────────────────────────── */
+function toggleCol(cb) {
+    const cls = cb.dataset.col, show = cb.checked;
+    document.querySelectorAll('.' + cls).forEach(el => el.style.display = show ? '' : 'none');
+    saveColPrefs();
+}
+function saveColPrefs() {
+    const prefs = {};
+    document.querySelectorAll('#colDropdown input[type=checkbox]').forEach(cb => prefs[cb.dataset.col] = cb.checked);
+    localStorage.setItem('sr_cols', JSON.stringify(prefs));
+}
+function loadColPrefs() {
+    try {
+        const prefs = JSON.parse(localStorage.getItem('sr_cols'));
+        if (!prefs) return;
+        Object.entries(prefs).forEach(([cls, show]) => {
+            const cb = document.querySelector(`#colDropdown input[data-col="${cls}"]`);
+            if (cb) { cb.checked = show; document.querySelectorAll('.' + cls).forEach(el => el.style.display = show ? '' : 'none'); }
+        });
+    } catch(e) {}
+}
+loadColPrefs();
+
+/* ── Select All / Bulk Bar ─────────────────────────────── */
+function toggleSelectAll(cb) {
+    document.querySelectorAll('.row-cb').forEach(r => { if (r.closest('tr').style.display !== 'none') r.checked = cb.checked; });
+    updateBulkBar();
+}
+function updateBulkBar() {
+    const selected = document.querySelectorAll('.row-cb:checked').length;
+    const bar = document.getElementById('bulkBar');
+    bar.style.display = selected > 0 ? 'flex' : 'none';
+    document.getElementById('bulkCount').textContent = selected;
+}
+
+/* ── Bulk Actions ──────────────────────────────────────── */
+async function bulkAction(action) {
+    const ids = Array.from(document.querySelectorAll('.row-cb:checked')).map(cb => cb.value);
+    if (!ids.length) return;
+    if (action === 'delete' && !confirm(`Delete ${ids.length} monitor(s)? This cannot be undone.`)) return;
+    try {
+        const resp = await fetch('/monitors/bulk', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({action, monitor_ids: ids})
+        });
+        if (resp.ok) window.location.reload();
+        else alert('Action failed — please try again.');
+    } catch(e) { alert('Network error.'); }
+}
+
+/* ── Relative time ─────────────────────────────────────── */
+function updateRelativeTimes() {
+    document.querySelectorAll('.relative-time').forEach(el => {
+        const ts = el.dataset.ts;
+        if (!ts) return;
+        try {
+            let d;
+            if (typeof ts === 'string' && ts.match(/^\d{4}-/)) d = new Date(ts);
+            else d = new Date(parseFloat(ts) * 1000);
+            if (isNaN(d.getTime())) { el.textContent = ts; return; }
+            const secs = Math.floor((Date.now() - d.getTime()) / 1000);
+            if (secs < 60) el.textContent = secs + 's ago';
+            else if (secs < 3600) el.textContent = Math.floor(secs/60) + 'm ago';
+            else if (secs < 86400) el.textContent = Math.floor(secs/3600) + 'h ago';
+            else el.textContent = Math.floor(secs/86400) + 'd ago';
+        } catch(e) { el.textContent = ts; }
+    });
+}
+updateRelativeTimes();
+setInterval(updateRelativeTimes, 30000);
+
+/* ── Export ─────────────────────────────────────────────── */
+function exportData(fmt) {
+    const rows = Array.from(document.querySelectorAll('#monitorTable tbody .monitor-row')).filter(r => r.style.display !== 'none');
+    // Determine visible columns dynamically
+    const colMap = {
+        'col-interval': {key: 'interval', get: r => r.dataset.interval <= 60 ? '60s' : '5m'},
+        'col-name': {key: 'name', get: r => r.dataset.name},
+        'col-url': {key: 'url', get: r => r.dataset.url},
+        'col-status': {key: 'status', get: r => r.dataset.status},
+        'col-uptime': {key: 'uptime_pct', get: r => r.dataset.uptime},
+        'col-response': {key: 'response_ms', get: r => r.dataset.response},
+        'col-checked': {key: 'last_checked', get: r => r.dataset.checked},
+        'col-code': {key: 'http_status', get: r => r.dataset.code},
+        'col-checks': {key: 'total_checks', get: r => r.dataset.checks},
+        'col-fails': {key: 'failed_checks', get: r => r.dataset.fails},
+        'col-keyword': {key: 'keyword', get: r => r.querySelector('.col-keyword')?.textContent.trim() || ''},
+        'col-threshold': {key: 'threshold', get: r => r.querySelector('.col-threshold')?.textContent.trim() || ''},
+        'col-ssl': {key: 'ssl', get: r => r.querySelector('.col-ssl')?.textContent.trim() || ''},
+        'col-public': {key: 'public', get: r => r.querySelector('.col-public')?.textContent.trim() || ''},
+        'col-created': {key: 'created', get: r => r.dataset.created},
+        'col-slack': {key: 'slack', get: r => r.querySelector('.col-slack')?.textContent.trim() || ''},
+        'col-webhook': {key: 'webhook', get: r => r.querySelector('.col-webhook')?.textContent.trim() || ''},
+    };
+    // Always include name+url, then add visible columns
+    const visibleCols = [{key:'name', get: r => r.dataset.name}, {key:'url', get: r => r.dataset.url}];
+    document.querySelectorAll('#colDropdown input[type=checkbox]:checked').forEach(cb => {
+        const c = colMap[cb.dataset.col];
+        if (c && c.key !== 'name' && c.key !== 'url') visibleCols.push(c);
+    });
+    const data = rows.map(r => {
+        const obj = {};
+        visibleCols.forEach(c => obj[c.key] = c.get(r));
+        return obj;
+    });
+    const filterInfo = currentFilter !== 'all' ? `_${currentFilter}` : '';
+    const searchInfo = document.getElementById('monitorSearch').value ? '_filtered' : '';
+    let blob;
+    if (fmt === 'json') {
+        blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    } else {
+        const header = visibleCols.map(c => c.key).join(',') + '\n';
+        const csv = data.map(d => visibleCols.map(c => `"${(d[c.key]||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+        blob = new Blob([header + csv], {type: 'text/csv'});
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `monitors${filterInfo}${searchInfo}.${fmt}`;
+    a.click();
+    document.getElementById('exportDropdown')?.classList.remove('open');
+}
+
+/* ── Format dates ──────────────────────────────────────── */
+function formatDates() {
+    document.querySelectorAll('.formatted-date').forEach(el => {
+        const ts = el.dataset.ts;
+        if (!ts || ts === '—') return;
+        try {
+            let d;
+            if (typeof ts === 'string' && ts.match(/^\d{4}-/)) d = new Date(ts);
+            else return;
+            if (isNaN(d.getTime())) return;
+            el.textContent = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            el.title = d.toISOString();
+        } catch(e) {}
+    });
+}
+formatDates();
+
+/* ── Incident Filtering ────────────────────────────── */
+function filterIncidents(hours, btn) {
+    // Update active button
+    document.querySelectorAll('.incident-filter').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    const rows = document.querySelectorAll('.incident-row');
+    const emptyMsg = document.querySelector('.incidents-empty');
+    const now = new Date();
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        if (hours === 0) {
+            // "All" — show everything
+            row.style.display = '';
+            visibleCount++;
+            return;
+        }
+        const started = row.dataset.started;
+        if (!started) { row.style.display = 'none'; return; }
+        const d = new Date(started);
+        const diffHours = (now - d) / (1000 * 60 * 60);
+        if (diffHours <= hours) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    // Show/hide empty message
+    if (emptyMsg) {
+        emptyMsg.style.display = visibleCount === 0 ? '' : 'none';
+    }
+    // If no empty msg element but no visible rows, create one
+    if (visibleCount === 0 && !emptyMsg) {
+        const list = document.getElementById('incidentsList');
+        if (list) {
+            const existing = list.querySelector('.incidents-empty-dynamic');
+            if (!existing) {
+                const div = document.createElement('div');
+                div.className = 'incidents-empty incidents-empty-dynamic';
+                div.innerHTML = '<span class="incidents-empty-icon">✓</span> No incidents in the selected period';
+                list.appendChild(div);
+            }
+        }
+    } else {
+        const dyn = document.querySelector('.incidents-empty-dynamic');
+        if (dyn) dyn.remove();
+    }
+}
+// Run initial filter on load
+filterIncidents(24, document.querySelector('.incident-filter[data-hours="24"]'));
 </script>
 {% endblock %}
