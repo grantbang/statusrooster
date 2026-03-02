@@ -99,31 +99,103 @@ def grab_ssl_info(url: str) -> dict:
 
 
 def is_in_maintenance_window(monitor: dict) -> bool:
-    """Check if the current UTC time falls within the monitor's maintenance window."""
-    mw = monitor.get("maintenance_window")
-    if not mw:
+    """Check if the current UTC time falls within any of the monitor's maintenance windows."""
+    # Support both legacy single window and new array format
+    windows = monitor.get("maintenance_windows") or []
+    legacy = monitor.get("maintenance_window")
+    if legacy and isinstance(legacy, dict):
+        windows = [legacy]  # backwards compatibility
+    if not windows:
         return False
 
     now = datetime.now(timezone.utc)
     day_name = now.strftime("%A")  # Monday, Tuesday, etc.
+    now_minutes = now.hour * 60 + now.minute
 
-    mw_day = mw.get("day", "")
-    if mw_day and mw_day != "Every Day" and mw_day != day_name:
+    for mw in windows:
+        mw_day = mw.get("day", "")
+        if mw_day and mw_day.lower() != "daily" and mw_day.lower() != day_name.lower():
+            continue
+
+        try:
+            start_h, start_m = map(int, mw.get("start_utc", "00:00").split(":"))
+            end_h, end_m = map(int, mw.get("end_utc", "00:00").split(":"))
+            start_minutes = start_h * 60 + start_m
+            end_minutes = end_h * 60 + end_m
+
+            if start_minutes <= end_minutes:
+                if start_minutes <= now_minutes <= end_minutes:
+                    return True
+            else:
+                # Overnight window (e.g., 23:00 - 03:00)
+                if now_minutes >= start_minutes or now_minutes <= end_minutes:
+                    return True
+        except Exception:
+            continue
+
+    return False
+
+
+def _check_keyword_expression(expression: str, body: str) -> bool:
+    """
+    Evaluate a keyword expression against page body.
+    Supports:
+      - Simple:  "Welcome"          → body contains "welcome"
+      - AND:     "Welcome AND Login" → body contains both
+      - OR:      "error OR failure"  → body contains at least one
+    AND has higher precedence than OR (standard boolean logic).
+    """
+    expression = expression.strip()
+    if not expression:
+        return True
+
+    # Split by OR first (lower precedence)
+    or_groups = [g.strip() for g in expression.split(" OR ")]
+    for group in or_groups:
+        # Each OR group may contain ANDs
+        and_terms = [t.strip() for t in group.split(" AND ")]
+        all_match = all(term.lower() in body for term in and_terms if term)
+        if all_match:
+            return True
+    return False
+
+
+def _check_threshold_condition(condition_str: str, actual_ms: float) -> bool:
+    """
+    Evaluate a response threshold condition.
+    Supports:
+      - Simple number:  "2000"       → alert if response > 2000ms
+      - Greater than:   "> 2000"     → alert if response > 2000ms
+      - Less than:      "< 200"      → alert if response < 200ms
+      - Range:          "200-3000"   → alert if response outside range
+    Returns True if the condition is VIOLATED (should alert).
+    """
+    condition_str = condition_str.strip()
+    if not condition_str:
         return False
 
     try:
-        start_h, start_m = map(int, mw.get("start_utc", "00:00").split(":"))
-        end_h, end_m = map(int, mw.get("end_utc", "00:00").split(":"))
-        start_minutes = start_h * 60 + start_m
-        end_minutes = end_h * 60 + end_m
-        now_minutes = now.hour * 60 + now.minute
+        # Range: "200-3000" — alert if outside range
+        if "-" in condition_str and not condition_str.startswith(("-", "<", ">")):
+            parts = condition_str.split("-", 1)
+            low = float(parts[0].strip())
+            high = float(parts[1].strip())
+            return actual_ms < low or actual_ms > high
 
-        if start_minutes <= end_minutes:
-            return start_minutes <= now_minutes <= end_minutes
-        else:
-            # Overnight window (e.g., 23:00 - 03:00)
-            return now_minutes >= start_minutes or now_minutes <= end_minutes
-    except Exception:
+        # Less than: "< 200" — alert if too fast (possible empty response)
+        if condition_str.startswith("<"):
+            val = float(condition_str[1:].strip())
+            return actual_ms < val
+
+        # Greater than: "> 2000" or just "2000"
+        if condition_str.startswith(">"):
+            val = float(condition_str[1:].strip())
+            return actual_ms > val
+
+        # Plain number — treat as "> value"
+        val = float(condition_str)
+        return actual_ms > val
+    except (ValueError, IndexError):
         return False
 
 
@@ -185,23 +257,25 @@ async def run_checks():
         # ----- Check if in maintenance window (suppress alerts, not checks) -----
         in_maintenance = is_in_maintenance_window(monitor)
 
-        # ----- Keyword Check -----
+        # ----- Keyword Check (supports AND / OR operators) -----
         keyword = monitor.get("keyword", "")
         keyword_failed = False
         if keyword and result["is_up"]:
-            if keyword.lower() not in result.get("body", "").lower():
-                keyword_failed = True
+            body_lower = result.get("body", "").lower()
+            keyword_failed = not _check_keyword_expression(keyword, body_lower)
+            if keyword_failed:
                 if not in_maintenance:
                     await send_keyword_alert(monitor, keyword)
                     print(f"[checker] KEYWORD MISSING: '{keyword}' not found on {monitor['name']}")
 
-        # ----- Response Time Threshold -----
+        # ----- Response Time Threshold (supports >, <, range) -----
         threshold = monitor.get("response_threshold_ms")
         if threshold and result["response_ms"] and result["is_up"]:
-            if result["response_ms"] > threshold:
+            threshold_str = str(threshold)
+            if _check_threshold_condition(threshold_str, result["response_ms"]):
                 if not in_maintenance:
                     await send_threshold_alert(monitor, result["response_ms"], threshold)
-                    print(f"[checker] SLOW: {monitor['name']} took {result['response_ms']}ms (threshold: {threshold}ms)")
+                    print(f"[checker] THRESHOLD: {monitor['name']} {result['response_ms']}ms violated condition '{threshold_str}'")
 
         # ----- SSL Expiry Alerts (14, 7, 3 days) -----
         if ssl_info["ssl_expiry_days"] is not None:

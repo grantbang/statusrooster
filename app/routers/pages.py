@@ -286,17 +286,19 @@ async def dashboard(request: Request):
 @router.post("/monitors/add", response_class=HTMLResponse)
 async def add_monitor(
     request: Request,
-    url: str = Form(...),
-    name: str = Form(...),
-    alert_email: str = Form(""),
-    alert_slack_webhook: str = Form(""),
-    keyword: str = Form(""),
-    response_threshold_ms: str = Form(""),
-    webhook_url: str = Form(""),
 ):
     user = get_user_from_cookie(request)
     if not user:
         return RedirectResponse(url="/login", status_code=302)
+
+    form = await request.form()
+    url = form.get("url", "")
+    name = form.get("name", "")
+    alert_email = form.get("alert_email", "")
+    alert_slack_webhook = form.get("alert_slack_webhook", "")
+    keyword = form.get("keyword", "")
+    response_threshold_ms = form.get("response_threshold_ms", "")
+    webhook_url = form.get("webhook_url", "")
 
     db = get_db()
 
@@ -318,6 +320,20 @@ async def add_monitor(
     if not url.startswith(("http://", "https://")):
         url = f"https://{url}"
 
+    # Build maintenance windows list (Pro only)
+    maintenance_windows = []
+    if plan != "free":
+        days = form.getlist("maintenance_day[]")
+        starts = form.getlist("maintenance_start[]")
+        ends = form.getlist("maintenance_end[]")
+        for d, s, e in zip(days, starts, ends):
+            if d and s and e:
+                maintenance_windows.append({
+                    "day": d,
+                    "start_utc": s,
+                    "end_utc": e,
+                })
+
     monitor = create_monitor(
         db,
         user_id=user["id"],
@@ -326,8 +342,9 @@ async def add_monitor(
         alert_email=alert_email or user.get("email", ""),
         alert_slack_webhook=alert_slack_webhook,
         keyword=keyword,
-        response_threshold_ms=int(response_threshold_ms) if response_threshold_ms else None,
+        response_threshold_ms=response_threshold_ms.strip() if response_threshold_ms else None,
         webhook_url=webhook_url if user.get("plan", "free") != "free" else "",
+        maintenance_windows=maintenance_windows,
     )
 
     return RedirectResponse(
@@ -359,22 +376,21 @@ async def edit_monitor_page(request: Request, monitor_id: str):
 async def edit_monitor_submit(
     request: Request,
     monitor_id: str,
-    url: str = Form(...),
-    name: str = Form(...),
-    alert_email: str = Form(""),
-    alert_slack_webhook: str = Form(""),
-    slug: str = Form(""),
-    public: str = Form(""),
-    keyword: str = Form(""),
-    response_threshold_ms: str = Form(""),
-    webhook_url: str = Form(""),
-    maintenance_day: str = Form(""),
-    maintenance_start: str = Form(""),
-    maintenance_end: str = Form(""),
 ):
     user = get_user_from_cookie(request)
     if not user:
         return RedirectResponse(url="/login", status_code=302)
+
+    form = await request.form()
+    url = form.get("url", "")
+    name = form.get("name", "")
+    alert_email = form.get("alert_email", "")
+    alert_slack_webhook = form.get("alert_slack_webhook", "")
+    slug = form.get("slug", "")
+    public = form.get("public", "")
+    keyword = form.get("keyword", "")
+    response_threshold_ms = form.get("response_threshold_ms", "")
+    webhook_url = form.get("webhook_url", "")
 
     db = get_db()
     monitor = get_monitor(db, monitor_id)
@@ -392,14 +408,19 @@ async def edit_monitor_submit(
     else:
         slug = monitor.get("slug", "")
 
-    # Build maintenance window dict
-    maintenance_window = None
-    if maintenance_day and maintenance_start and maintenance_end and user.get("plan", "free") != "free":
-        maintenance_window = {
-            "day": maintenance_day,
-            "start_utc": maintenance_start,
-            "end_utc": maintenance_end,
-        }
+    # Build maintenance windows list (Pro only)
+    maintenance_windows = []
+    if user.get("plan", "free") != "free":
+        days = form.getlist("maintenance_day[]")
+        starts = form.getlist("maintenance_start[]")
+        ends = form.getlist("maintenance_end[]")
+        for d, s, e in zip(days, starts, ends):
+            if d and s and e:
+                maintenance_windows.append({
+                    "day": d,
+                    "start_utc": s,
+                    "end_utc": e,
+                })
 
     updates = {
         "url": url,
@@ -409,13 +430,13 @@ async def edit_monitor_submit(
         "slug": slug,
         "public": public == "true",
         "keyword": keyword,
-        "response_threshold_ms": int(response_threshold_ms) if response_threshold_ms else None,
+        "response_threshold_ms": response_threshold_ms.strip() if response_threshold_ms else None,
     }
 
     # Pro-only fields
     if user.get("plan", "free") != "free":
         updates["webhook_url"] = webhook_url
-        updates["maintenance_window"] = maintenance_window
+        updates["maintenance_windows"] = maintenance_windows
 
     update_monitor(db, monitor_id, updates)
 

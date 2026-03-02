@@ -121,23 +121,44 @@
             </div>
             <div class="form-group">
                 <label for="keyword">Keyword Check <span style="color: #999; font-weight: normal;">(optional)</span></label>
-                <input type="text" id="keyword" name="keyword" placeholder="e.g. Welcome">
-                <div class="hint">Alert if this text is NOT found on the page</div>
+                <input type="text" id="keyword" name="keyword" placeholder="e.g. Welcome AND Login">
+                <div class="hint">Supports <code>AND</code> / <code>OR</code> — e.g. <code>Welcome AND Login</code>, <code>error OR failure</code></div>
             </div>
             <div class="form-group">
                 <label for="response_threshold_ms">Response Threshold <span style="color: #999; font-weight: normal;">(optional)</span></label>
-                <input type="number" id="response_threshold_ms" name="response_threshold_ms" placeholder="e.g. 3000" min="100" step="100">
-                <div class="hint">Alert if response takes longer than this (ms)</div>
+                <input type="text" id="response_threshold_ms" name="response_threshold_ms" placeholder="e.g. > 2000 or 200-3000">
+                <div class="hint">Supports: <code>> 2000</code>, <code>< 200</code>, <code>200-3000</code> (range), or plain number (ms)</div>
             </div>
-            {% if user.get('plan', 'free') != 'free' %}
             <div class="form-group">
                 <label for="webhook_url">Webhook URL <span style="color: #999; font-weight: normal;">(Pro)</span></label>
+                {% if user.get('plan', 'free') != 'free' %}
                 <input type="url" id="webhook_url" name="webhook_url" placeholder="https://your-api.com/webhook">
+                {% else %}
+                <input type="url" id="webhook_url" name="webhook_url" placeholder="https://your-api.com/webhook" disabled style="opacity: 0.5; cursor: not-allowed;">
+                <input type="hidden" name="webhook_url" value="">
+                {% endif %}
                 <div class="hint">We'll POST JSON to this URL on status changes</div>
             </div>
-            {% else %}
-            <input type="hidden" name="webhook_url" value="">
-            {% endif %}
+            <div class="form-group">
+                <label>Maintenance Windows <span style="color: #999; font-weight: normal;">(Pro)</span></label>
+                <div id="mw-container">
+                    <!-- windows added dynamically -->
+                </div>
+                {% if user.get('plan', 'free') != 'free' %}
+                <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; margin-top: 0.5rem;" onclick="addMaintenanceWindow()">+ Add maintenance window</button>
+                <div class="hint">Suppress alerts during these windows (times in UTC)</div>
+                {% else %}
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; opacity: 0.5;">
+                    <select disabled style="cursor: not-allowed; flex: 0 0 auto; margin-bottom: 0;" class="form-group">
+                        <option>No maintenance window</option>
+                    </select>
+                    <input type="time" disabled style="cursor: not-allowed;">
+                    <span class="text-muted">to</span>
+                    <input type="time" disabled style="cursor: not-allowed;">
+                </div>
+                <div class="hint" style="color: #6366f1;"><a href="/api/billing/checkout" onclick="event.preventDefault(); this.closest('form').action='/api/billing/checkout'; this.closest('form').submit();" style="color: #6366f1; text-decoration: underline;">Upgrade to Pro</a> to suppress alerts during scheduled maintenance</div>
+                {% endif %}
+            </div>
             <button type="submit" class="modal-submit">Add monitor</button>
         </form>
     </div>
@@ -160,5 +181,27 @@ document.getElementById('addModal').addEventListener('click', function(e) {
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeModal();
 });
+
+// Maintenance windows
+const MW_DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday','daily'];
+function addMaintenanceWindow(day, start, end) {
+    const container = document.getElementById('mw-container');
+    const row = document.createElement('div');
+    row.className = 'mw-row';
+    row.style.cssText = 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;';
+    const options = MW_DAYS.map(d =>
+        `<option value="${d}" ${d === (day||'') ? 'selected' : ''}>${d.charAt(0).toUpperCase()+d.slice(1)}</option>`
+    ).join('');
+    row.innerHTML = `
+        <select name="maintenance_day[]" class="form-group" style="flex:0 0 auto;margin-bottom:0;">
+            <option value="">Day…</option>${options}
+        </select>
+        <input type="time" name="maintenance_start[]" value="${start||''}" style="flex:0 0 auto;">
+        <span class="text-muted">to</span>
+        <input type="time" name="maintenance_end[]" value="${end||''}" style="flex:0 0 auto;">
+        <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>
+    `;
+    container.appendChild(row);
+}
 </script>
 {% endblock %}

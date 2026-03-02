@@ -7,6 +7,7 @@ All responses follow: {data, error, meta}
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, HttpUrl
+from typing import Literal
 from app.database import get_db
 from app.models.api_key import get_user_by_api_key
 from app.models.monitor import (
@@ -95,6 +96,17 @@ def _serialize_check(c: dict) -> dict:
     return s
 
 
+# ─── Shared schemas ─────────────────────────────────────────────────
+
+VALID_DAYS = Literal["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "daily"]
+
+
+class MaintenanceWindow(BaseModel):
+    day: VALID_DAYS
+    start_utc: str  # "HH:MM" format
+    end_utc: str    # "HH:MM" format
+
+
 # ─── Endpoints ──────────────────────────────────────────────────────
 
 # LIST MONITORS
@@ -153,9 +165,10 @@ class ApiCreateMonitor(BaseModel):
     alert_email: str = ""
     alert_slack_webhook: str = ""
     keyword: str = ""
-    response_threshold_ms: int | None = None
+    response_threshold_ms: str | None = None
     webhook_url: str = ""
     public: bool = True
+    maintenance_windows: list[MaintenanceWindow] | None = None
 
 
 @router.post("/monitors", status_code=201)
@@ -170,6 +183,13 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
     if plan == "pro" and len(existing) >= PRO_MONITOR_LIMIT:
         err(f"Pro plan limited to {PRO_MONITOR_LIMIT} monitors. Contact us if you need more.", 403)
 
+    # Build maintenance windows (Pro only)
+    mw_list = None
+    if req.maintenance_windows:
+        if plan == "free":
+            err("Maintenance windows require a Pro plan.", 403)
+        mw_list = [w.model_dump() for w in req.maintenance_windows]
+
     monitor = create_monitor(
         db,
         user_id=user["id"],
@@ -180,7 +200,8 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
         public=req.public,
         keyword=req.keyword,
         response_threshold_ms=req.response_threshold_ms,
-        webhook_url=req.webhook_url if user.get("plan", "free") != "free" else "",
+        webhook_url=req.webhook_url if plan != "free" else "",
+        maintenance_windows=mw_list,
     )
 
     update_user(db, user["id"], {"monitors_count": (user.get("monitors_count", 0) + 1)})
@@ -194,10 +215,11 @@ class ApiUpdateMonitor(BaseModel):
     alert_email: str | None = None
     alert_slack_webhook: str | None = None
     keyword: str | None = None
-    response_threshold_ms: int | None = None
+    response_threshold_ms: str | None = None
     webhook_url: str | None = None
     public: bool | None = None
     paused: bool | None = None
+    maintenance_windows: list[MaintenanceWindow] | None = None
 
 
 @router.put("/monitors/{monitor_id}")
@@ -237,6 +259,11 @@ async def api_update_monitor(
         updates["public"] = req.public
     if req.paused is not None:
         updates["paused"] = req.paused
+    if req.maintenance_windows is not None:
+        plan = user.get("plan", "free")
+        if plan == "free":
+            err("Maintenance windows require a Pro plan.", 403)
+        updates["maintenance_windows"] = [w.model_dump() for w in req.maintenance_windows]
 
     if not updates:
         err("No fields to update. Send at least one field.", 422)

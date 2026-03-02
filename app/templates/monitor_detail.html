@@ -89,19 +89,19 @@
 {% endif %}
 
 <!-- Monitoring Features -->
-{% if monitor.get('keyword') or monitor.get('response_threshold_ms') or monitor.get('webhook_url') or monitor.get('maintenance_window') %}
+{% if monitor.get('keyword') or monitor.get('response_threshold_ms') or monitor.get('webhook_url') or monitor.get('maintenance_windows') or monitor.get('maintenance_window') %}
 <div class="settings-card">
     <h2>Advanced Monitoring</h2>
     {% if monitor.get('keyword') %}
     <div class="setting-row">
         <span class="setting-label">Keyword Check</span>
-        <span class="setting-value active">Looking for: "{{ monitor.keyword }}"</span>
+        <span class="setting-value active"><code>{{ monitor.keyword }}</code></span>
     </div>
     {% endif %}
     {% if monitor.get('response_threshold_ms') %}
     <div class="setting-row">
         <span class="setting-label">Response Threshold</span>
-        <span class="setting-value active">{{ monitor.response_threshold_ms }}ms</span>
+        <span class="setting-value active"><code>{{ monitor.response_threshold_ms }}{% if monitor.response_threshold_ms is number or (monitor.response_threshold_ms is string and monitor.response_threshold_ms.isdigit()) %}ms (alert if exceeded){% endif %}</code></span>
     </div>
     {% endif %}
     {% if monitor.get('webhook_url') %}
@@ -110,11 +110,17 @@
         <span class="setting-value active">{{ monitor.webhook_url }}</span>
     </div>
     {% endif %}
-    {% if monitor.get('maintenance_window') %}
+    {% set mw_list = monitor.get('maintenance_windows', []) %}
+    {% if not mw_list and monitor.get('maintenance_window') %}
+        {% set mw_list = [monitor.maintenance_window] %}
+    {% endif %}
+    {% if mw_list %}
     <div class="setting-row">
-        <span class="setting-label">Maintenance Window</span>
+        <span class="setting-label">Maintenance Windows</span>
         <span class="setting-value active">
-            {{ monitor.maintenance_window.day | capitalize }} {{ monitor.maintenance_window.start_utc }}–{{ monitor.maintenance_window.end_utc }} UTC
+            {% for mw in mw_list %}
+            {{ mw.day | capitalize }} {{ mw.start_utc }}–{{ mw.end_utc }} UTC{% if not loop.last %}<br>{% endif %}
+            {% endfor %}
         </span>
     </div>
     {% endif %}

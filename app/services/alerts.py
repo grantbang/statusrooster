@@ -317,27 +317,28 @@ async def send_keyword_alert(monitor: dict, keyword: str) -> None:
 # Response Time Threshold Alert
 # ---------------------------------------------------------------------------
 
-async def send_threshold_alert(monitor: dict, actual_ms: float, threshold_ms: int) -> None:
-    """Send alert when response time exceeds user-defined threshold."""
+async def send_threshold_alert(monitor: dict, actual_ms: float, threshold_ms) -> None:
+    """Send alert when response time violates user-defined threshold condition."""
     name = monitor.get("name", monitor.get("url", "Unknown"))
     url = monitor.get("url", "")
     monitor_id = monitor.get("id", "")
     app_url = settings.APP_URL or "https://statusrooster.com"
     detail_url = f"{app_url}/monitors/{monitor_id}"
     time_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    condition_str = str(threshold_ms)
 
     # --- Email ---
     alert_email = monitor.get("alert_email", "")
     if alert_email:
-        subject = f"🐢 Slow response on {name}: {actual_ms:.0f}ms"
+        subject = f"🐢 Response threshold violated on {name}: {actual_ms:.0f}ms"
         html = f"""
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto;">
-            <h2 style="color: #e76f51;">🐢 Slow Response Detected</h2>
+            <h2 style="color: #e76f51;">🐢 Response Threshold Violated</h2>
             <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
                 <tr><td style="padding: 8px 0; color: #666;">Monitor</td><td style="padding: 8px 0;"><strong>{name}</strong></td></tr>
                 <tr><td style="padding: 8px 0; color: #666;">URL</td><td style="padding: 8px 0;"><a href="{url}">{url}</a></td></tr>
                 <tr><td style="padding: 8px 0; color: #666;">Response Time</td><td style="padding: 8px 0;"><strong style="color: #ef4444;">{actual_ms:.0f}ms</strong></td></tr>
-                <tr><td style="padding: 8px 0; color: #666;">Threshold</td><td style="padding: 8px 0;">{threshold_ms}ms</td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">Condition</td><td style="padding: 8px 0;"><code>{condition_str}</code></td></tr>
                 <tr><td style="padding: 8px 0; color: #666;">Detected</td><td style="padding: 8px 0;">{time_str}</td></tr>
             </table>
             <p><a href="{detail_url}" style="display: inline-block; background: #e76f51; color: #fff; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">View Monitor →</a></p>
@@ -351,9 +352,9 @@ async def send_threshold_alert(monitor: dict, actual_ms: float, threshold_ms: in
     slack_webhook = monitor.get("alert_slack_webhook", "")
     if slack_webhook:
         message = (
-            f"🐢 *Slow Response: {name}*\n"
+            f"🐢 *Response Threshold Violated: {name}*\n"
             f"URL: {url}\n"
-            f"Response: {actual_ms:.0f}ms (threshold: {threshold_ms}ms)\n"
+            f"Response: {actual_ms:.0f}ms (condition: `{condition_str}`)\n"
             f"Detected: {time_str}\n"
             f"<{detail_url}|View on StatusRooster →>"
         )

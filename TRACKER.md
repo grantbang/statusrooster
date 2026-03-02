@@ -138,7 +138,10 @@ _Goal: Build real monitoring features people actually need._
 - [x] Webhook payload: `{event, monitor_name, monitor_url, status, status_code, response_ms, timestamp}`
 - [x] Scheduled Maintenance Windows: "Don't alert me [day] [start]-[end] UTC"
 - [x] Maintenance window fields on edit monitor form (Pro only)
+- [x] Maintenance window fields on add monitor modal (Pro only)
 - [x] Check engine skips alerting (still checks) during maintenance windows
+- [x] Maintenance window in API: CREATE and UPDATE endpoints (Pro-gated)
+- [x] Maintenance window day comparison bug fix (case-insensitive)
 
 **Tier 2 — Status Pages & Reporting (Pro only) ✅**
 - [x] Aggregate Status Page: shows ALL public monitors for a user
@@ -266,7 +269,7 @@ _Goal: Make pricing real. Add internal analytics. Harden the product._
 - [ ] SMS alerts → Pro only (needs Twilio integration)
 - [ ] Webhook notifications → Pro only (already partially gated)
 - [ ] Response threshold alerts → Pro only
-- [ ] Maintenance windows → Pro only (already gated in UI)
+- [x] Maintenance windows → Pro only (gated in UI + API)
 - [ ] Check interval enforcement: Free = 5 min, Pro = 60s in cron job
 - [ ] Status page limit: Free = 1, Pro = 10
 

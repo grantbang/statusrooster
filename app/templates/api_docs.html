@@ -133,7 +133,7 @@ data.forEach(m => console.log(<span class="code-string">`${m.name}: ${m.status}`
       "ssl_expiry": "2026-06-15T00:00:00+00:00",
       "ssl_issuer": "Let's Encrypt",
       "ssl_expiry_alerted_days": null,
-      "maintenance_window": null,
+      "maintenance_windows": [],
       "public": true,
       "paused": false,
       "slug": "my-website-a3f8c1",
@@ -162,13 +162,13 @@ data.forEach(m => console.log(<span class="code-string">`${m.name}: ${m.status}`
                         <tr><td><code>alert_email</code></td><td class="field-type">string</td><td>Email for alerts</td></tr>
                         <tr><td><code>alert_slack_webhook</code></td><td class="field-type">string</td><td>Slack webhook URL</td></tr>
                         <tr><td><code>alert_sms</code></td><td class="field-type">string</td><td>SMS number (reserved, not yet active)</td></tr>
-                        <tr><td><code>keyword</code></td><td class="field-type">string</td><td>Expected keyword in response body</td></tr>
-                        <tr><td><code>response_threshold_ms</code></td><td class="field-type">int|null</td><td>Slow response alert threshold (ms)</td></tr>
+                        <tr><td><code>keyword</code></td><td class="field-type">string</td><td>Keyword expression (supports <code>AND</code> / <code>OR</code>)</td></tr>
+                        <tr><td><code>response_threshold_ms</code></td><td class="field-type">string|null</td><td>Response condition (&gt; 2000, 200-3000, etc.)</td></tr>
                         <tr><td><code>webhook_url</code></td><td class="field-type">string</td><td>Webhook for status changes (Pro)</td></tr>
                         <tr><td><code>ssl_expiry</code></td><td class="field-type">datetime|null</td><td>SSL cert expiry (auto-detected)</td></tr>
                         <tr><td><code>ssl_issuer</code></td><td class="field-type">string|null</td><td>SSL cert issuer (auto-detected)</td></tr>
                         <tr><td><code>ssl_expiry_alerted_days</code></td><td class="field-type">int|null</td><td>Last SSL expiry alert threshold</td></tr>
-                        <tr><td><code>maintenance_window</code></td><td class="field-type">object|null</td><td><code>{day, start_utc, end_utc}</code> (Pro)</td></tr>
+                        <tr><td><code>maintenance_windows</code></td><td class="field-type">array</td><td>Array of <code>{day, start_utc, end_utc}</code> objects (Pro)</td></tr>
                         <tr><td><code>public</code></td><td class="field-type">bool</td><td>Has a public status page</td></tr>
                         <tr><td><code>paused</code></td><td class="field-type">bool</td><td>Whether monitoring is paused</td></tr>
                         <tr><td><code>slug</code></td><td class="field-type">string</td><td>Status page URL slug (<code>/s/{slug}</code>)</td></tr>
@@ -230,7 +230,7 @@ console.log(data.status, data.uptime_percent);</div>
     "ssl_expiry": "2026-06-15T00:00:00+00:00",
     "ssl_issuer": "Let's Encrypt",
     "ssl_expiry_alerted_days": null,
-    "maintenance_window": null,
+    "maintenance_windows": [],
     "public": true,
     "paused": false,
     "slug": "my-website-a3f8c1",
@@ -257,13 +257,13 @@ console.log(data.status, data.uptime_percent);</div>
                         <tr><td><code>alert_email</code></td><td class="field-type">string</td><td>Email for alerts</td></tr>
                         <tr><td><code>alert_slack_webhook</code></td><td class="field-type">string</td><td>Slack webhook URL</td></tr>
                         <tr><td><code>alert_sms</code></td><td class="field-type">string</td><td>SMS number (reserved, not yet active)</td></tr>
-                        <tr><td><code>keyword</code></td><td class="field-type">string</td><td>Expected keyword in response body</td></tr>
-                        <tr><td><code>response_threshold_ms</code></td><td class="field-type">int|null</td><td>Slow response alert threshold (ms)</td></tr>
+                        <tr><td><code>keyword</code></td><td class="field-type">string</td><td>Keyword expression (supports <code>AND</code> / <code>OR</code>)</td></tr>
+                        <tr><td><code>response_threshold_ms</code></td><td class="field-type">string|null</td><td>Response condition (&gt; 2000, 200-3000, etc.)</td></tr>
                         <tr><td><code>webhook_url</code></td><td class="field-type">string</td><td>Webhook for status changes (Pro)</td></tr>
                         <tr><td><code>ssl_expiry</code></td><td class="field-type">datetime|null</td><td>SSL cert expiry (auto-detected)</td></tr>
                         <tr><td><code>ssl_issuer</code></td><td class="field-type">string|null</td><td>SSL cert issuer (auto-detected)</td></tr>
                         <tr><td><code>ssl_expiry_alerted_days</code></td><td class="field-type">int|null</td><td>Last SSL expiry alert threshold</td></tr>
-                        <tr><td><code>maintenance_window</code></td><td class="field-type">object|null</td><td><code>{day, start_utc, end_utc}</code> (Pro)</td></tr>
+                        <tr><td><code>maintenance_windows</code></td><td class="field-type">array</td><td>Array of <code>{day, start_utc, end_utc}</code> objects (Pro)</td></tr>
                         <tr><td><code>public</code></td><td class="field-type">bool</td><td>Has a public status page</td></tr>
                         <tr><td><code>paused</code></td><td class="field-type">bool</td><td>Whether monitoring is paused</td></tr>
                         <tr><td><code>slug</code></td><td class="field-type">string</td><td>Status page URL slug (<code>/s/{slug}</code>)</td></tr>
@@ -377,10 +377,11 @@ data.forEach(c => console.log(<span class="code-string">`${c.timestamp}: ${c.res
                     <tr><td><span class="param-name">name</span></td><td>string</td><td><span class="param-required">yes</span></td><td>Display name</td></tr>
                     <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>no</td><td>Defaults to account email</td></tr>
                     <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>no</td><td>Slack incoming webhook URL</td></tr>
-                    <tr><td><span class="param-name">keyword</span></td><td>string</td><td>no</td><td>Alert if missing from response body</td></tr>
-                    <tr><td><span class="param-name">response_threshold_ms</span></td><td>integer</td><td>no</td><td>Alert if response exceeds this (ms)</td></tr>
+                    <tr><td><span class="param-name">keyword</span></td><td>string</td><td>no</td><td>Alert if missing from response body. Supports <code>AND</code> / <code>OR</code>: <code>"Welcome AND Login"</code></td></tr>
+                    <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>no</td><td>Response time condition. Supports: <code>> 2000</code>, <code>< 200</code>, <code>200-3000</code> (range), or plain number</td></tr>
                     <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>no</td><td>Status change webhook (Pro only)</td></tr>
                     <tr><td><span class="param-name">public</span></td><td>boolean</td><td>no</td><td>Create a status page (default: true)</td></tr>
+                    <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>no</td><td>Suppress alerts during windows (Pro only). Array of objects: <code>[{"day":"monday","start_utc":"02:00","end_utc":"04:00"}]</code>. Day: <code>monday</code>–<code>sunday</code> or <code>daily</code>.</td></tr>
                 </tbody>
             </table>
 
@@ -445,7 +446,7 @@ console.log(<span class="code-string">`Created: ${data.id}`</span>);</div>
     "ssl_expiry": null,
     "ssl_issuer": null,
     "ssl_expiry_alerted_days": null,
-    "maintenance_window": null,
+    "maintenance_windows": [],
     "public": true,
     "paused": false,
     "slug": "my-site-c9a2f4",
@@ -472,13 +473,13 @@ console.log(<span class="code-string">`Created: ${data.id}`</span>);</div>
                         <tr><td><code>alert_email</code></td><td class="field-type">string</td><td>Email for alerts</td></tr>
                         <tr><td><code>alert_slack_webhook</code></td><td class="field-type">string</td><td>Slack webhook URL</td></tr>
                         <tr><td><code>alert_sms</code></td><td class="field-type">string</td><td>SMS number (reserved, not yet active)</td></tr>
-                        <tr><td><code>keyword</code></td><td class="field-type">string</td><td>Expected keyword in response body</td></tr>
-                        <tr><td><code>response_threshold_ms</code></td><td class="field-type">int|null</td><td>Slow response alert threshold (ms)</td></tr>
+                        <tr><td><code>keyword</code></td><td class="field-type">string</td><td>Keyword expression (supports <code>AND</code> / <code>OR</code>)</td></tr>
+                        <tr><td><code>response_threshold_ms</code></td><td class="field-type">string|null</td><td>Response condition (&gt; 2000, 200-3000, etc.)</td></tr>
                         <tr><td><code>webhook_url</code></td><td class="field-type">string</td><td>Webhook for status changes (Pro)</td></tr>
                         <tr><td><code>ssl_expiry</code></td><td class="field-type">datetime|null</td><td>SSL cert expiry (auto-detected)</td></tr>
                         <tr><td><code>ssl_issuer</code></td><td class="field-type">string|null</td><td>SSL cert issuer (auto-detected)</td></tr>
                         <tr><td><code>ssl_expiry_alerted_days</code></td><td class="field-type">int|null</td><td>Last SSL expiry alert threshold</td></tr>
-                        <tr><td><code>maintenance_window</code></td><td class="field-type">object|null</td><td><code>{day, start_utc, end_utc}</code> (Pro)</td></tr>
+                        <tr><td><code>maintenance_windows</code></td><td class="field-type">array</td><td>Array of <code>{day, start_utc, end_utc}</code> objects (Pro)</td></tr>
                         <tr><td><code>public</code></td><td class="field-type">bool</td><td>Has a public status page</td></tr>
                         <tr><td><code>paused</code></td><td class="field-type">bool</td><td>Whether monitoring is paused</td></tr>
                         <tr><td><code>slug</code></td><td class="field-type">string</td><td>Status page URL slug (<code>/s/{slug}</code>)</td></tr>
@@ -507,11 +508,12 @@ console.log(<span class="code-string">`Created: ${data.id}`</span>);</div>
                     <tr><td><span class="param-name">name</span></td><td>string</td><td>no</td><td>Display name</td></tr>
                     <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>no</td><td>Email for alerts</td></tr>
                     <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>no</td><td>Slack incoming webhook URL</td></tr>
-                    <tr><td><span class="param-name">keyword</span></td><td>string</td><td>no</td><td>Alert if missing from response body</td></tr>
-                    <tr><td><span class="param-name">response_threshold_ms</span></td><td>integer</td><td>no</td><td>Alert if response exceeds this (ms)</td></tr>
+                    <tr><td><span class="param-name">keyword</span></td><td>string</td><td>no</td><td>Alert if missing from response body. Supports <code>AND</code> / <code>OR</code>: <code>"Welcome AND Login"</code></td></tr>
+                    <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>no</td><td>Response time condition. Supports: <code>> 2000</code>, <code>< 200</code>, <code>200-3000</code> (range), or plain number</td></tr>
                     <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>no</td><td>Status change webhook (Pro only)</td></tr>
                     <tr><td><span class="param-name">public</span></td><td>boolean</td><td>no</td><td>Toggle public status page</td></tr>
                     <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>no</td><td>Pause or resume monitoring</td></tr>
+                    <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>no</td><td>Suppress alerts during windows (Pro only). Array of objects: <code>[{"day":"monday","start_utc":"02:00","end_utc":"04:00"}]</code>. Day: <code>monday</code>–<code>sunday</code> or <code>daily</code>.</td></tr>
                 </tbody>
             </table>
 
@@ -578,7 +580,7 @@ console.log(<span class="code-string">`Updated: ${data.name}`</span>);</div>
     "ssl_expiry": "2026-06-15T00:00:00+00:00",
     "ssl_issuer": "Let's Encrypt",
     "ssl_expiry_alerted_days": null,
-    "maintenance_window": null,
+    "maintenance_windows": [],
     "public": true,
     "paused": false,
     "slug": "my-website-a3f8c1",
@@ -605,13 +607,13 @@ console.log(<span class="code-string">`Updated: ${data.name}`</span>);</div>
                         <tr><td><code>alert_email</code></td><td class="field-type">string</td><td>Email for alerts</td></tr>
                         <tr><td><code>alert_slack_webhook</code></td><td class="field-type">string</td><td>Slack webhook URL</td></tr>
                         <tr><td><code>alert_sms</code></td><td class="field-type">string</td><td>SMS number (reserved, not yet active)</td></tr>
-                        <tr><td><code>keyword</code></td><td class="field-type">string</td><td>Expected keyword in response body</td></tr>
-                        <tr><td><code>response_threshold_ms</code></td><td class="field-type">int|null</td><td>Slow response alert threshold (ms)</td></tr>
+                        <tr><td><code>keyword</code></td><td class="field-type">string</td><td>Keyword expression (supports <code>AND</code> / <code>OR</code>)</td></tr>
+                        <tr><td><code>response_threshold_ms</code></td><td class="field-type">string|null</td><td>Response condition (&gt; 2000, 200-3000, etc.)</td></tr>
                         <tr><td><code>webhook_url</code></td><td class="field-type">string</td><td>Webhook for status changes (Pro)</td></tr>
                         <tr><td><code>ssl_expiry</code></td><td class="field-type">datetime|null</td><td>SSL cert expiry (auto-detected)</td></tr>
                         <tr><td><code>ssl_issuer</code></td><td class="field-type">string|null</td><td>SSL cert issuer (auto-detected)</td></tr>
                         <tr><td><code>ssl_expiry_alerted_days</code></td><td class="field-type">int|null</td><td>Last SSL expiry alert threshold</td></tr>
-                        <tr><td><code>maintenance_window</code></td><td class="field-type">object|null</td><td><code>{day, start_utc, end_utc}</code> (Pro)</td></tr>
+                        <tr><td><code>maintenance_windows</code></td><td class="field-type">array</td><td>Array of <code>{day, start_utc, end_utc}</code> objects (Pro)</td></tr>
                         <tr><td><code>public</code></td><td class="field-type">bool</td><td>Has a public status page</td></tr>
                         <tr><td><code>paused</code></td><td class="field-type">bool</td><td>Whether monitoring is paused</td></tr>
                         <tr><td><code>slug</code></td><td class="field-type">string</td><td>Status page URL slug (<code>/s/{slug}</code>)</td></tr>
