@@ -1,17 +1,49 @@
 # StatusRooster Build Tracker
 
 **Start:** Feb 25, 2026 · **Target Launch:** Mar 7, 2026
-**Positioning:** Developer-first uptime monitoring. Simple API, clean UI, fair pricing.
-**Target audience:** Indie devs, SaaS builders, freelancers, small teams.
+**Current Day: 10 (in progress)** · **Phase 3: Hardening & Launch**
 
-| Phase | Days | Status |
-|-------|------|--------|
-| 1. Core Engine | 1-4 | ✅ Complete |
-| 2. Feature Suite & Billing | 5-9 | ✅ Complete |
-| 3. Testing & Launch | 10-12 | 🔲 Not started |
-| 4. Post-Launch | 13-14+ | 🔲 Not started |
+---
 
-**Current Day: 9 (complete)** · **Next: Day 10 (Phase 3)**
+## 🧭 Vision & Positioning
+
+**One-liner:** StatusRooster monitors your websites, APIs, and cron jobs — and alerts you instantly when something breaks. Built for indie developers and small SaaS teams.
+
+**Who we serve:** Solo developers, indie hackers, SaaS founders, freelancers, and small teams (1-5 people). NOT enterprises. NOT DevOps teams with Datadog budgets.
+
+**Why we win:**
+1. **Positioning** — "Monitoring for indie SaaS" resonate| 3. Hardening & Launch | 10-12 | 🟡 In progress |
+| 4. Post-Launch | 13+ | 🔲 Not started |
+
+**Day 10 in progress** · **Target launch: Day 12 (Mar 7)**otionally. Users identify with it. UptimeRobot is generic. Datadog is enterprise. Better Stack is VC-funded. We're for *them*.
+2. **Simplicity** — Sign up → add URL → done. No 15-tab settings page. No team hierarchy. No enterprise SSO. Every feature is inline, not buried.
+3. **Fair pricing** — Free tier that actually works (5 monitors, email alerts, status pages, API access, badges). Pro at $9/mo — not $29/mo for webhooks like UptimeRobot.
+4. **Three monitoring types** — Website uptime + API validation + cron/heartbeat monitoring, bundled in one product at indie prices. Competitors charge separately or don't offer all three.
+5. **Status pages as distribution** — Every public status page says "Powered by StatusRooster." Viral growth loop that competitors paywall.
+6. **Modern stack** — GCP Cloud Run, Firestore, serverless. No legacy infra. We move fast.
+
+**What we are NOT building:**
+- ❌ Mobile apps (months of work, zero ROI now)
+- ❌ Enterprise SSO / SAML
+- ❌ Team management / role-based access (until $10k+ MRR)
+- ❌ On-call rotation / PagerDuty clone
+- ❌ Full observability suite (logs, traces, metrics)
+- ❌ 15+ integrations — Email + Slack + Webhook covers 95% of indie needs
+
+**Revenue target:** $5k-$30k/mo within 12-18 months. ~400 Pro customers at $9-$19/mo.
+
+**Competitive advantages over UptimeRobot (validated by audit, March 2, 2026):**
+- 🟢 Integrations inline (not buried behind paywall tabs)
+- 🟢 Webhooks at $9/mo (UptimeRobot: $29/mo)
+- 🟢 Full public API with docs on Free tier
+- 🟢 Uptime badges (shields.io-style SVGs)
+- 🟢 Column-customizable data table dashboard
+- 🟢 Keyword/content checking with AND/OR operators
+- 🟢 Status pages on Free tier
+
+**See also:**
+- `COMPETITIVE_AUDIT.md` — full page-by-page UptimeRobot comparison with screenshots
+- `ACTION_PLAN.md` — original Day 10 workstream plan (superseded by this tracker)
 
 ### Pricing
 | | Free | Pro $9/mo |
@@ -24,6 +56,26 @@
 | Webhooks | — | ✅ |
 | Maintenance windows | — | ✅ |
 | Uptime badges | ✅ | ✅ |
+
+### Tech Stack
+| Layer | Technology |
+|-------|-----------|
+| Backend | Python / FastAPI, Jinja2 templates (SSR) |
+| Database | Google Firestore |
+| Hosting | Google Cloud Run (us-east1) |
+| Scheduler | Google Cloud Scheduler (60s cron) |
+| Email | SendGrid (`alerts@statusrooster.com`) |
+| Billing | Stripe (Free + Pro $9/mo) |
+| Auth | JWT cookies + Google OAuth + GitHub OAuth (code done, needs env vars) |
+| Domain | `statusrooster.com` (Namecheap) |
+| Design | Dark theme, indigo `#6366f1`, Inter + JetBrains Mono |
+
+| Phase | Days | Status |
+|-------|------|--------|
+| 1. Core Engine | 1-4 | ✅ Complete |
+| 2. Feature Suite & Billing | 5-9 | ✅ Complete |
+| 3. Hardening & Launch | 10-12 | 🟡 In progress |
+| 4. Post-Launch | 13-14+ | 🔲 Not started |
 
 ---
 
@@ -261,110 +313,204 @@ _Goal: Reposition as developer-first. Modern design. API docs excellence. New pr
 
 ## Phase 3: Hardening & Launch — Days 10-12
 
-### Day 10 — Backend Gating, Telemetry & Hardening 🔲
-_Goal: Make pricing real. Add internal analytics. Harden the product._
+> **Source:** Reconciled from ACTION_PLAN.md workstreams + COMPETITIVE_AUDIT.md punch list + GPT strategy session. This is the single source of truth.
 
-**Feature Gating (make pricing honest)**
-- [ ] Slack webhook alerts → Pro only (Free users see upgrade prompt)
-- [ ] SMS alerts → Pro only (needs Twilio integration)
-- [ ] Webhook notifications → Pro only (already partially gated)
-- [ ] Response threshold alerts → Pro only
-- [x] Maintenance windows → Pro only (gated in UI + API)
-- [ ] Check interval enforcement: Free = 5 min, Pro = 60s in cron job
-- [ ] Status page limit: Free = 1, Pro = 10
+### Day 10 — Feature Gating + Competitive Gap Fixes �
+_Goal: Make pricing honest, close highest-ROI gaps from UptimeRobot audit, enable OAuth._
 
-**OAuth Login (Google + GitHub)**
-- [ ] Google OAuth: register app in Google Cloud Console, get client ID/secret
-- [ ] GitHub OAuth: register app in GitHub Developer Settings, get client ID/secret
-- [ ] `GET /auth/google` — redirect to Google consent screen
-- [ ] `GET /auth/google/callback` — exchange code for token, get email/name, create or find user
-- [ ] `GET /auth/github` — redirect to GitHub authorize URL
-- [ ] `GET /auth/github/callback` — exchange code for token, get email/name, create or find user
-- [ ] User model: add `auth_provider` field (email / google / github)
-- [ ] Link accounts: if email already exists with password, link OAuth to same account
-- [ ] Login page: "Continue with Google" + "Continue with GitHub" buttons
-- [ ] Signup page: same OAuth buttons above the email/password form
-- [ ] Store OAuth tokens securely (or stateless — just use email from provider)
-- [ ] Handle edge case: GitHub user with private email (use primary verified email)
-- [ ] Google OAuth: publish consent screen from "Testing" → "Production" (removes 100-user cap)
-- [ ] Deploy OAuth env vars to Cloud Run (GOOGLE_CLIENT_ID/SECRET, GITHUB_CLIENT_ID/SECRET)
+**10A. Critical Backend Gating (~45 min)** _(from ACTION_PLAN.md reconciliation)_
+_These are broken promises — pricing page says Pro, backend allows Free._
 
-**SMS/Twilio Integration**
-- [ ] Twilio account + phone number
-- [ ] SMS alert on monitor down/up (Pro only)
-- [ ] SMS field on edit monitor form (Pro only)
-- [ ] Test alert includes SMS
+- [ ] `paused` field: add to Firestore model default + API Create schema
+- [ ] Checker: skip paused monitors entirely (`if paused: skip`)
+- [ ] Checker: enforce check interval per plan (Free = 5min, Pro = 60s) — skip check if `last_checked` < plan interval
+- [ ] Gate Slack webhook alerts to Pro only in alert service (Free users see upgrade prompt, backend blocks)
+- [ ] Gate response threshold alerts to Pro only
+- [ ] Status page limit enforcement: Free = 1, Pro = 10
+- [ ] Add `paused` toggle to Add Monitor modal + Edit form
+- [ ] Add `public` toggle to Add Monitor modal (currently only in Edit)
+- [ ] Add `ssl_expiry_days` to API response serializer
+- [ ] Add `slug` to API Update schema
 
-**Site Telemetry & Event Tracking**
-- [ ] Event logging service: write structured events to Firestore `events` collection
-- [ ] Track: signups, logins, monitor_created, monitor_deleted, upgrade, downgrade, api_key_created, alert_sent, check_run
-- [ ] Each event: `{type, user_id, timestamp, metadata}` (lightweight, append-only)
-- [ ] Middleware: track page views (path, user_id or anonymous, timestamp, referrer, user_agent)
-- [ ] Track API usage: endpoint, api_key_id, timestamp, response_ms
-- [ ] Cron stats: log per-run totals (monitors_checked, alerts_fired, avg_response_ms, errors) to `cron_stats` collection
+**10B. GitHub OAuth (~10 min)** _(from ACTION_PLAN.md — code is done, just env vars)_
+- [ ] Register GitHub OAuth App at github.com/settings/developers (callback: `https://statusrooster.com/auth/github/callback`)
+- [ ] Set `GITHUB_CLIENT_ID` + `GITHUB_CLIENT_SECRET` in `.env`
+- [ ] Set same env vars on Cloud Run: `gcloud run services update statusrooster --region us-east1 --set-env-vars ...`
+- [ ] Test: click "Continue with GitHub" on login page → authorize → dashboard
 
-**Hardening**
-- [ ] Custom 404 page
-- [ ] Custom 500 page
-- [ ] Meta tags (title, description, OG) on all public pages
-- [ ] Favicon
-- [ ] Input validation audit (all forms + API endpoints)
+**10C. Dashboard UX Gaps (~1.5 hrs)** _(from COMPETITIVE_AUDIT.md Sections 1-2)_
+_The data table is built. These are the visual polish items UptimeRobot does that we don't._
 
+- [ ] **"Up for X" / "Down for X" duration text** — show below monitor name in table row (~20 min)
+  - Compute from `last_status_change` timestamp (or latest incident start/resolve)
+  - Format: "Up for 2h 15m" / "Down for 38m"
+  - Same duration in monitor detail page status banner
+- [ ] **Three-dot ⋯ context menu per row** — pause/resume, edit, delete, copy URL (~30 min)
+  - Dropdown menu on ⋯ button at end of each row
+  - Pause/Resume: instant AJAX toggle
+  - Copy URL: clipboard API
+  - Delete: confirmation prompt → AJAX
+  - Edit: navigate to edit page
+- [ ] **Pause/Resume button in monitor detail header** (~15 min)
+  - Add toggle button next to Edit button
+  - AJAX `POST /api/monitors/{id}/pause` endpoint
+
+**10D. Monitor Detail Enhancements (~1.5 hrs)** _(from COMPETITIVE_AUDIT.md Section 2)_
+
+- [ ] **Multi-period uptime row** — show 7d / 30d / 90d uptime % + incident count (~1 hr)
+  - Query check history from Firestore for each period
+  - Display as stat cards or horizontal row below the status banner
+  - Color-coded: green ≥99.5%, yellow ≥95%, red <95%
+- [ ] **Response chart time range picker** — Last hour / 6h / 24h / 7d / 30d (~20 min)
+  - Radio buttons or tab bar above existing Chart.js chart
+  - AJAX fetch checks for selected range, re-render chart
+  - Show Avg / Min / Max response time stats below chart
+- [ ] **Pro upsell on check interval** — "Checking every 5 min · Get 60s checks →" for Free users (~10 min)
+  - Conditional text below the interval stat card
+  - Links directly to Stripe checkout
+
+**10E. Add/Edit Form — API Monitoring Fields (~50 min)** _(from COMPETITIVE_AUDIT.md Section 3)_
+_These close the "API monitoring" gap. Not a separate product — just 3 form fields._
+
+- [ ] **Request timeout field** — number input, default 30s, stored on monitor doc (~15 min)
+  - Add `timeout_seconds` to Firestore model (default 30)
+  - Add to API Create/Update schemas
+  - Add to Add modal + Edit form
+  - Checker: use `timeout_seconds` instead of hardcoded value
+- [ ] **Basic Auth fields** — username + password inputs, Pro gated (~20 min)
+  - Add `basic_auth_user` + `basic_auth_pass` to monitor model (encrypted at rest)
+  - Add to API schemas (Pro-gated)
+  - Add to Edit form (greyed for Free with upgrade CTA)
+  - Checker: include `Authorization: Basic ...` header when set
+- [ ] **HTTP method selector** — dropdown: GET / HEAD / POST (~15 min)
+  - Add `http_method` to monitor model (default "GET")
+  - Add to API schemas
+  - Add to Add modal + Edit form
+  - Checker: use selected method instead of hardcoded GET
+
+**10F. Pro Upsell Polish (~20 min)** _(from ACTION_PLAN.md workstream 3)_
+
+- [ ] Check interval badge on dashboard rows: "⏱ 5min" for Free with tooltip "Upgrade for 60s →"
+- [ ] Greyed Pro-only columns in column selector with lock 🔒 icon
+- [ ] Alert email footer for Free users: "Upgrade to Pro for 60s checks, Slack alerts, and webhooks →"
+- [ ] Gate Slack input in Add modal for Free users (grey out + upgrade link)
+
+**10G. Deploy + Commit**
 - [ ] Deploy Day 10 to production
 - [ ] Git commit Day 10
 
-### Day 11 — Admin Dashboard, Testing & Pre-Launch 🔲
-_Goal: Internal metrics dashboard. Automated tests. Final smoke test._
+**Day 10 total estimate: ~4.5 hrs**
 
-**Admin Dashboard (`/admin` — owner-only)**
-- [ ] Auth guard: only your email can access `/admin`
-- [ ] KPI cards: total users, Pro users, Free users, MRR ($), monitors total, checks today
-- [ ] Signup chart: signups per day (last 30 days, Chart.js)
-- [ ] Revenue tracking: MRR, total Stripe revenue, upgrades/downgrades over time
-- [ ] Active monitors breakdown: by plan, by status (up/down/pending)
-- [ ] Alert volume: alerts sent per day (email, Slack, SMS, webhook)
-- [ ] API usage: API calls per day, top users by call volume
-- [ ] Cron health: last run time, avg checks/run, error rate, avg response_ms
-- [ ] Page views: top pages, unique visitors (from telemetry middleware)
-- [ ] Cloud costs: link to GCP billing dashboard + manual monthly log
-- [ ] Funnel: landing page visits → signups → monitor created → Pro upgrade
+---
 
-**Cost Tracking (manual + automated)**
-- [ ] `costs` Firestore collection: `{month, cloud_run, firestore, sendgrid, twilio, stripe_fees, domain, total}`
-- [ ] Admin page: log monthly costs, see burn rate vs MRR
-- [ ] Cloud Run: pull from GCP billing API or log manually
-- [ ] SendGrid/Twilio/Stripe: note monthly usage
+### Day 11 — Incidents, Activity Log, Hardening & Admin 🔲
+_Goal: Build the incidents experience (our differentiator), harden for real users, basic admin._
 
-**Testing**
-- [ ] pytest + httpx async test client setup
-- [ ] Test fixtures: mock Firestore, test user, test monitor
-- [ ] Auth tests: signup, login, session, logout
-- [ ] Monitor CRUD tests: create, edit, delete, plan limits
-- [ ] Check engine tests: cron, up/down, incidents, alerts, SSL
-- [ ] API key + API endpoint tests
-- [ ] Billing tests: Stripe checkout, webhooks, plan changes
-- [ ] Full manual E2E test in production
-- [ ] Dogfooding: StatusRooster monitoring statusrooster.com
-- [ ] Mobile viewport testing
-- [ ] Switch Stripe from test mode to live mode
+**11A. Incidents Pages (~1.5 hrs)** _(from COMPETITIVE_AUDIT.md Sections 4-5 — user said "LEAN IN HERE")_
+
+- [ ] **Dedicated /incidents page** — full table with all incidents across monitors (~45 min)
+  - Route: `GET /incidents` in `pages.py`
+  - Template: `incidents.html` — reuse data table pattern from dashboard
+  - Columns: Status (resolved/ongoing), Monitor name, Root Cause (HTTP code badge), Started, Resolved, Duration
+  - Data: `list_incidents_by_user()` already exists
+  - Search by monitor name/URL
+  - Sort: newest/oldest, longest/shortest
+  - Filter: Resolved / Ongoing / by status code range
+- [ ] **Incident detail page** — `/incidents/{id}` (~30 min)
+  - Route: `GET /incidents/{id}` in `pages.py`
+  - Template: `incident_detail.html`
+  - Root cause card: prominent HTTP status code + human-readable text (e.g. "503 Service Unavailable")
+  - Status + timestamps: started_at, resolved_at, duration
+  - "Go to monitor" link
+  - Request URL + method shown
+
+**11B. Activity Log / Event Timeline (~1.5 hrs)** _(COMPETITIVE_AUDIT.md — rated "Very High ROI")_
+_This is the post-mortem feature that makes us feel professional. UptimeRobot's strongest page._
+
+- [ ] **Incident events sub-collection** in Firestore (~20 min)
+  - `incidents/{id}/events/{auto_id}` → `{type, timestamp, metadata}`
+  - Event types: `detected`, `alert_email_sent`, `alert_slack_sent`, `alert_webhook_sent`, `resolved`, `recovery_email_sent`, `recovery_slack_sent`
+- [ ] **Log events in checker + alert service** (~20 min)
+  - On detection: write `detected` event with status code, response time
+  - On each alert sent: write event with channel (email/slack/webhook) + success/fail status
+  - On resolve: write `resolved` event with duration
+  - On recovery alert: write event per channel
+- [ ] **Activity log timeline on incident detail page** (~30 min)
+  - Chronological vertical timeline (newest at bottom)
+  - Each event: icon + text + timestamp
+  - Alert events show delivery status badge (✅ Success / ❌ Failed)
+- [ ] **Alert delivery logging** — store success/fail result from SendGrid/Slack/webhook calls (~20 min)
+  - Wrap alert functions in try/catch, record result
+  - Show on incident timeline: "Email sent to user@example.com ✅" or "Slack webhook failed ❌"
+
+**11C. Hardening (~45 min)**
+
+- [ ] Custom 404 page (dark theme, "Page not found", link to dashboard)
+- [ ] Custom 500 page (dark theme, "Something went wrong", link to dashboard)
+- [ ] Meta tags (title, description, OG image) on all public pages: landing, pricing, status pages, API docs
+- [ ] Favicon (rooster icon, 32x32 + 180x180 apple-touch)
+- [ ] Input validation audit: all form fields + all API endpoints
+- [ ] Mobile viewport testing: dashboard, detail, edit, landing, pricing, status page
+
+**11D. Admin Dashboard — Lightweight (~45 min)**
+_Minimal admin to know if the business is working. NOT a full analytics suite._
+
+- [ ] Route: `GET /admin` — guard: only your email can access
+- [ ] KPI cards: total users, Pro users, Free users, MRR ($), total monitors, checks today
+- [ ] Signup list: last 20 signups with email + date + plan
+- [ ] Cron health: last run time, monitors checked, alerts fired, errors
+- [ ] Link to Stripe Dashboard, GCP Console, SendGrid dashboard
+
+**11E. Deploy + Commit**
+- [ ] Deploy Day 11 to production
 - [ ] Git commit Day 11
 
-### Day 12 — Launch 🔲
-_Goal: Ship it. Tell people._
+**Day 11 total estimate: ~4.5 hrs**
+
+---
+
+### Day 12 — Testing & Launch 🔲
+_Goal: Make sure nothing is broken. Ship it. Tell people._
+
+**12A. Testing (~1.5 hrs)**
+
+- [ ] Full manual E2E test in production:
+  - Signup (email + GitHub OAuth)
+  - Add monitor → see first check → see status update
+  - Trigger downtime → receive email alert → see incident created
+  - Recover → receive recovery alert → incident resolved
+  - View incident detail + activity log
+  - Edit monitor (timeout, auth, HTTP method, keyword, threshold)
+  - Pause/resume from dashboard context menu + detail header
+  - Export CSV (Pro)
+  - Status page works publicly
+  - Uptime badges render
+  - API: create, list, update, delete via curl
+  - Stripe: upgrade to Pro, verify features unlock, downgrade
+- [ ] Dogfooding: StatusRooster monitoring statusrooster.com (add as first real monitor)
+- [ ] Mobile viewport spot-check: dashboard, detail, landing
+- [ ] Switch Stripe from test mode to live mode
+- [ ] Verify all env vars on Cloud Run are production values
+
+**12B. Launch Prep (~30 min)**
 
 - [ ] Final Cloud Run deploy with production env vars
-- [ ] Write Show HN post
+- [ ] Write Show HN post (title: "Show HN: StatusRooster — uptime, API, and cron monitoring for indie devs")
 - [ ] Screenshots / demo GIF for README
+- [ ] Update README.md with positioning, feature list, screenshots
+
+**12C. Launch (~1 hr, then ongoing)**
+
 - [ ] Submit Show HN
 - [ ] Post to r/SideProject, r/webdev, r/SaaS
 - [ ] Post to IndieHackers
 - [ ] Monitor comments, respond to feedback
 - [ ] Hot-fix any launch-day bugs
-- [ ] Monitor admin dashboard for signups, conversions, errors
+- [ ] Check admin dashboard for signups, conversions, errors
 
 ---
 
-## Phase 4: Post-Launch — Days 13-14+
+## Phase 4: Post-Launch — Days 13+
 
 ### Days 13-14 — Bug Fixes & Growth 🔲
 - [ ] Fix bugs from real user feedback
@@ -373,36 +519,80 @@ _Goal: Ship it. Tell people._
 - [ ] Submit to AlternativeTo, G2
 - [ ] Plan Product Hunt launch (week 3)
 
-### Future Features (Backlog) 🔲
+### v1.1 — High-Value Feature Additions 🔲
+_Items identified during competitive audit + GPT strategy session. Build after launch, based on user feedback._
 
-**High priority (developer value):**
-- [ ] Weekly Uptime Digest Email (Cloud Scheduler, per-user summary)
-- [ ] CLI tool (`npm install -g statusrooster` or `pip install statusrooster`)
+**Cron / Heartbeat Monitoring (NEW — strategic differentiator) ⭐**
+- [ ] New monitor type: "Heartbeat" — expects a ping within X minutes
+- [ ] Endpoint: `POST /api/ping/{monitor_id}` — records heartbeat
+- [ ] Checker: if no heartbeat received within expected window → alert
+- [ ] UI: new "Heartbeat" option in Add Monitor dropdown
+- [ ] Dashboard: heartbeat monitors show "Last ping: 2m ago" instead of response time
+- [ ] _Rationale: Dead Man's Snitch charges $5-50/mo for JUST this. We bundle it. Architecturally trivial (~2-3 hrs). Massive positioning value._
+
+**Uptime Sparkline Bar Chart**
+- [ ] Mini bar chart per dashboard row showing up/down history (last 24h or 7d)
+- [ ] Green bars = up, red bars = down, gray = no data
+- [ ] Requires aggregating check history into time buckets
+- [ ] _Rationale: UptimeRobot's most eye-catching visual element. ~1-2 hrs._
+
+**Custom Request Headers**
+- [ ] Key/value input fields on edit form for custom HTTP headers
+- [ ] Store as JSON array on monitor doc
+- [ ] Checker: include custom headers in request
+- [ ] _Rationale: Closes the "API monitoring" gap. Users can set Authorization, X-API-Key, etc. ~15 min._
+
+**Left Sidebar Navigation**
+- [ ] Persistent sidebar: Dashboard, Incidents, Status Pages, Settings, API Docs
+- [ ] Replaces top-bar nav links
+- [ ] _Rationale: Proper app navigation for multi-page SaaS. ~45 min._
+
+**Multi-Region Checks (Pro feature)**
+- [ ] Check from 3 regions: US-East, EU-West, Asia
+- [ ] Confirm outage from 2+ regions before alerting (reduces false positives)
+- [ ] _Rationale: Requires deploying checkers to multiple Cloud Run regions. Multi-day project. High value for Pro._
+
+**Discord Webhook**
+- [ ] Add `alert_discord_webhook` field to monitor model
+- [ ] Same POST-to-URL pattern as Slack
+- [ ] _Rationale: Trivial (~15 min) but adds "we support 3 channels" to marketing. Post-launch._
+
+**SMS / Twilio**
+- [ ] Twilio account + phone number
+- [ ] SMS alert on down/up (Pro only)
+- [ ] SMS field on edit form
+- [ ] _Rationale: Listed on pricing page but not built. Need to wire up or remove from pricing._
+
+### Future Backlog 🔲
+_Nice-to-have. Don't build until there's user demand._
+
+**Developer tools:**
+- [ ] CLI tool (`pip install statusrooster`)
 - [ ] GitHub Actions integration (check uptime in CI)
-- [ ] Smart Onboarding — landing URL checker auto-creates first monitor on signup
-- [ ] API rate limiting (per-key)
+- [ ] Public API v2 improvements + rate limiting
+- [ ] Weekly Uptime Digest Email
 
-**Medium priority:**
-- [ ] Team Plan ($29/mo): 500 monitors, 30s intervals, 5 seats, unlimited status pages
+**Product:**
+- [ ] Alert confirmation threshold ("wait N fails before alerting") — reduces false positives
+- [ ] Team Plan ($29/mo): 500 monitors, 30s intervals, 5 seats
 - [ ] TCP/Ping checks (non-HTTP services)
-- [ ] Multiple check regions (US-East, EU, Asia)
-- [ ] Custom HTTP headers per monitor
 - [ ] Incident postmortem notes
-- [ ] Dashboard filtering / sorting / search
 - [ ] Domain expiry monitoring (WHOIS)
-- [ ] Cron job / heartbeat monitoring
-
-**Integrations:**
-- [ ] PagerDuty / Opsgenie
-- [ ] Discord webhooks
-- [ ] Telegram alerts
-- [ ] Zapier / Make integration
-
-**Infrastructure:**
-- [ ] CI/CD pipeline (GitHub Actions → Cloud Run)
 - [ ] Password reset flow
 - [ ] Password-protected status pages
 - [ ] Custom domains for status pages
+
+**Telemetry & Analytics (build when needed, not before):**
+- [ ] Event logging service (signups, upgrades, alert volume)
+- [ ] Page view tracking middleware
+- [ ] Cron health stats collection
+- [ ] Cost tracking vs revenue (admin dashboard)
+- [ ] Conversion funnel analytics
+
+**Infrastructure:**
+- [ ] CI/CD pipeline (GitHub Actions → Cloud Run)
+- [ ] Automated tests (pytest + httpx)
+- [ ] Google OAuth consent screen: Testing → Production
 
 ---
 
@@ -412,34 +602,40 @@ _Goal: Ship it. Tell people._
 |-------|------|--------|
 | 1. Core Engine | 1-4 | ✅ Complete |
 | 2. Feature Suite & Billing | 5-9 | ✅ Complete |
-| 3. Hardening & Launch | 10-12 | 🔲 Next up |
-| 4. Post-Launch | 13-14+ | 🔲 Not started |
+| 3. Hardening & Launch | 10-12 | � In progress |
+| 4. Post-Launch | 13+ | 🔲 Not started |
 
-**Day 9 complete** · **Next: Day 10 — Backend Gating & Hardening**
+**Day 10 in progress** · **Target launch: Day 12 (Mar 7)**
 
 ### What's actually live right now
 - ✅ Full monitoring engine: HTTP checks, SSL, keyword, response threshold
 - ✅ Alerts: email (SendGrid), Slack webhooks, webhook notifications
 - ✅ Public status pages + aggregate status page
 - ✅ Stripe billing (Free / Pro $9/mo)
-- ✅ Public API with key auth (5 endpoints, consistent JSON)
+- ✅ Public API with key auth (6 endpoints, consistent JSON)
 - ✅ Uptime badges (3 SVG types, shields.io-style)
 - ✅ API docs with tabbed examples (curl/Python/JS), copy buttons
 - ✅ Interactive Swagger playground + OpenAPI spec
 - ✅ Modern developer-first design (indigo palette, Inter + JetBrains Mono)
+- ✅ Data table dashboard with sort, filter, search, column selector, bulk actions, export
 
-### What's NOT gated yet (pricing says Pro, backend allows Free)
-- ⚠️ Slack alerts — Free users can set webhook URL
-- ⚠️ Response threshold — Free users can set threshold
-- ⚠️ Check interval — all monitors run at same 60s interval
-- ⚠️ SMS — listed on pricing, not implemented
+### What's broken / dishonest (Day 10 fixes)
+- ⚠️ Slack alerts — Free users can set webhook URL (pricing says Pro only)
+- ⚠️ Response threshold — Free users can set threshold (should be Pro?)
+- ⚠️ Check interval — all monitors run at 60s regardless of plan (pricing says Free = 5min)
+- ⚠️ `paused` field — exists in API but not functional in checker or UI
+- ⚠️ SMS — listed on pricing, not implemented (remove from pricing or defer)
 
-### What's NOT tracked yet (Day 10-11)
-- ⚠️ No event logging (signups, upgrades, alert volume)
-- ⚠️ No page view tracking
-- ⚠️ No admin dashboard
-- ⚠️ No cost tracking vs revenue
-- ⚠️ No cron health stats
+### What's missing (Day 10-11 adds)
+- 🔲 "Up for X" duration text on dashboard + detail
+- 🔲 Three-dot context menu per row
+- 🔲 Pause/Resume from dashboard + detail header
+- 🔲 Multi-period uptime (7d/30d/90d)
+- 🔲 Response chart time range picker
+- 🔲 Request timeout / Basic Auth / HTTP method fields
+- 🔲 Dedicated /incidents page
+- 🔲 Incident detail page + activity log timeline
+- 🔲 Custom 404/500 pages, meta tags, favicon
 
 ---
 
@@ -457,54 +653,4 @@ _Goal: Ship it. Tell people._
 
 ## Internal Metrics & Telemetry
 
-_Everything we need to know if the business is working._
-
-### Business Metrics (admin dashboard)
-| Metric | Source | Frequency |
-|--------|--------|-----------|
-| Total users (Free / Pro) | Firestore `users` collection | Real-time |
-| MRR | Stripe API or `users` where plan=pro × $9 | Real-time |
-| Total revenue (all-time) | Stripe Dashboard / API | Daily |
-| Signups per day | `events` collection (type=signup) | Real-time |
-| Upgrades / Downgrades | `events` collection (type=upgrade/downgrade) | Real-time |
-| Churn rate | Downgrades / total Pro users per month | Monthly |
-
-### Product Metrics (admin dashboard)
-| Metric | Source | Frequency |
-|--------|--------|-----------|
-| Total monitors (by plan, by status) | Firestore `monitors` collection | Real-time |
-| Checks per day | `cron_stats` collection | Per cron run |
-| Alerts sent (email/Slack/SMS/webhook) | `events` (type=alert_sent) | Real-time |
-| API calls per day | `events` (type=api_call) | Real-time |
-| Top API users by volume | `events` grouped by api_key_id | Daily |
-| Avg response time across all monitors | `cron_stats` avg_response_ms | Per cron run |
-| Error rate (failed checks) | `cron_stats` error_count | Per cron run |
-
-### Site Analytics (admin dashboard)
-| Metric | Source | Frequency |
-|--------|--------|-----------|
-| Page views (by path) | Telemetry middleware → `page_views` | Real-time |
-| Unique visitors | Dedupe by session/IP in `page_views` | Daily |
-| Top referrers | `page_views` referrer field | Daily |
-| Conversion funnel | Landing → Signup → Monitor Created → Pro | Daily |
-| Bounce rate (landing only visits) | `page_views` session analysis | Daily |
-
-### Infrastructure & Costs (admin dashboard + manual)
-| Metric | Source | Frequency |
-|--------|--------|-----------|
-| Cloud Run cost | GCP Billing (manual or API) | Monthly |
-| Firestore reads/writes | GCP Console | Monthly |
-| SendGrid usage | SendGrid dashboard | Monthly |
-| Twilio SMS cost | Twilio dashboard | Monthly |
-| Stripe fees | Stripe dashboard (2.9% + 30¢) | Monthly |
-| Domain renewal | Namecheap | Yearly |
-| Total burn rate | `costs` collection | Monthly |
-| Profit/loss | MRR − total costs | Monthly |
-
-### Firestore Collections for Telemetry
-```
-events/{auto_id}        → {type, user_id, timestamp, metadata}
-page_views/{auto_id}    → {path, user_id, session_id, timestamp, referrer, user_agent, ip_hash}
-cron_stats/{auto_id}    → {timestamp, monitors_checked, alerts_fired, avg_response_ms, errors, duration_ms}
-costs/{YYYY-MM}         → {month, cloud_run, firestore, sendgrid, twilio, stripe_fees, domain, total, mrr, profit}
-```
+> **Deferred to post-launch.** Building a full analytics suite before having users is premature optimization. For launch, the lightweight admin dashboard (Day 11D) + Stripe Dashboard + GCP Console is sufficient. Build event tracking when we need it, not before.

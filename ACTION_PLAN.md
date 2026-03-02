@@ -1,5 +1,7 @@
 # StatusRooster — Day 10 Action Plan
 
+> **⚠️ SUPERSEDED:** This document has been reconciled into `TRACKER.md` (Phase 3, Days 10-12). The tracker is the single source of truth for what to build and in what order. This file is kept for historical context and the detailed feature reconciliation matrix below.
+
 **Date:** March 1, 2026  
 **Goal:** Full feature reconciliation, Pro upsell strategy, dashboard rebuild, inline editing, keyword builder, GitHub OAuth.
 
