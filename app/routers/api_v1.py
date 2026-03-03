@@ -160,7 +160,7 @@ async def api_get_checks(
 
 # CREATE MONITOR
 class ApiCreateMonitor(BaseModel):
-    url: HttpUrl
+    url: HttpUrl | None = None
     name: str
     alert_email: str = ""
     alert_slack_webhook: str = ""
@@ -171,6 +171,8 @@ class ApiCreateMonitor(BaseModel):
     paused: bool = False
     check_interval: int | None = None
     maintenance_windows: list[MaintenanceWindow] | None = None
+    monitor_type: str = "http"          # "http" or "heartbeat"
+    heartbeat_interval: int | None = None  # seconds (heartbeat only)
 
 
 @router.post("/monitors", status_code=201)
@@ -202,7 +204,7 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
     monitor = create_monitor(
         db,
         user_id=user["id"],
-        url=str(req.url),
+        url=str(req.url) if req.url else "",
         name=req.name,
         alert_email=req.alert_email or user.get("email", ""),
         alert_slack_webhook=req.alert_slack_webhook if plan != "free" else "",
@@ -213,7 +215,17 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
         maintenance_windows=mw_list,
         paused=req.paused,
         check_interval=req.check_interval,
+        monitor_type=req.monitor_type,
+        heartbeat_interval=req.heartbeat_interval,
     )
+
+    # For heartbeat monitors, set the ping URL
+    if req.monitor_type == "heartbeat":
+        from app.config import settings
+        ping_url = f"{settings.APP_URL}/api/ping/{monitor['id']}"
+        update_monitor(db, monitor["id"], {"url": ping_url, "ping_url": ping_url})
+        monitor["url"] = ping_url
+        monitor["ping_url"] = ping_url
 
     update_user(db, user["id"], {"monitors_count": (user.get("monitors_count", 0) + 1)})
     return ok(data=_serialize_monitor(monitor))
@@ -233,6 +245,7 @@ class ApiUpdateMonitor(BaseModel):
     slug: str | None = None
     check_interval: int | None = None
     maintenance_windows: list[MaintenanceWindow] | None = None
+    heartbeat_interval: int | None = None
 
 
 @router.put("/monitors/{monitor_id}")
@@ -297,6 +310,8 @@ async def api_update_monitor(
         if plan == "free":
             err("Custom check intervals require a Pro plan. Free plan is fixed at 300s (5 minutes).", 403)
         updates["check_interval"] = max(60, min(300, req.check_interval))
+    if req.heartbeat_interval is not None:
+        updates["heartbeat_interval"] = max(60, min(86400, req.heartbeat_interval))
 
     if not updates:
         err("No fields to update. Send at least one field.", 422)

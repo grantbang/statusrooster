@@ -164,7 +164,7 @@
         <div class="monitor-info">
             <div class="monitor-name">{{ m.name }}</div>
             <div class="monitor-meta">
-                <span class="monitor-type">HTTP</span>
+                <span class="monitor-type{% if m.get('monitor_type') == 'heartbeat' %} monitor-type-heartbeat{% endif %}">{{ '♥ Heartbeat' if m.get('monitor_type') == 'heartbeat' else 'HTTP' }}</span>
                 <span class="monitor-url-text">{{ m.url | replace('https://', '') | replace('http://', '') | truncate(35, True, '…') }}</span>
                 {% set sc = m.get('last_status_change') or m.get('created_at') or '' %}
                 {% if m.get('paused') %}
@@ -227,8 +227,14 @@
                     <span class="row-stat-label">Uptime</span>
                 </div>
                 <div class="row-stat">
-                    <span class="row-stat-value">{{ m.get('last_response_ms', 0)|int }}<span class="row-stat-unit">ms</span></span>
-                    <span class="row-stat-label">Response</span>
+                    {% if m.get('monitor_type') == 'heartbeat' %}
+                        {% set lhb = m.get('last_heartbeat') %}
+                        <span class="row-stat-value">{{ 'Never' if not lhb else '✓' }}</span>
+                        <span class="row-stat-label">Last ping</span>
+                    {% else %}
+                        <span class="row-stat-value">{{ m.get('last_response_ms', 0)|int }}<span class="row-stat-unit">ms</span></span>
+                        <span class="row-stat-label">Response</span>
+                    {% endif %}
                 </div>
                 {% set m_incidents = recent_incidents|selectattr('monitor_id', 'equalto', m.id)|list|length %}
                 <div class="row-stat">
@@ -353,11 +359,53 @@
         <h2>Add monitor</h2>
         <form method="POST" action="/monitors/add">
             <div class="form-group">
+                <label>Monitor Type</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="button" class="type-btn type-btn-active" data-type="http" onclick="setMonitorType('http', this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        HTTP / Website
+                    </button>
+                    <button type="button" class="type-btn" data-type="heartbeat" onclick="setMonitorType('heartbeat', this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        Heartbeat / Cron
+                    </button>
+                </div>
+                <input type="hidden" id="monitor_type" name="monitor_type" value="http">
+            </div>
+            <div class="form-group" id="urlGroup">
                 <label for="url">URL to Monitor</label>
                 <input type="url" id="url" name="url" placeholder="https://example.com" required>
                 <div class="hint">We'll check this URL at the interval you choose below</div>
             </div>
-            <div class="form-group">
+            <div id="heartbeatGroup" style="display: none;">
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 1rem 1.15rem; margin-bottom: 1rem;">
+                    <div style="font-weight: 600; font-size: 0.9rem; color: #15803d; margin-bottom: 0.4rem;">How heartbeat monitoring works</div>
+                    <ol style="margin: 0; padding-left: 1.2rem; font-size: 0.82rem; color: #166534; line-height: 1.7;">
+                        <li>Create this monitor — we'll generate a unique <strong>ping URL</strong></li>
+                        <li>Add the URL to your cron job, scheduler, or deploy script</li>
+                        <li>If we don't receive a ping in time, we alert you instantly</li>
+                    </ol>
+                    <div style="margin-top: 0.5rem; font-size: 0.78rem; color: #166534; opacity: 0.8;">
+                        <code style="background: #dcfce7; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.78rem;">curl https://statusrooster.com/api/ping/&lt;id&gt;</code>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="heartbeat_interval">Expected Ping Interval</label>
+                    <select id="heartbeat_interval" name="heartbeat_interval" style="width: 100%;">
+                        <option value="60">Every 1 minute</option>
+                        <option value="300" selected>Every 5 minutes</option>
+                        <option value="600">Every 10 minutes</option>
+                        <option value="900">Every 15 minutes</option>
+                        <option value="1800">Every 30 minutes</option>
+                        <option value="3600">Every 1 hour</option>
+                        <option value="21600">Every 6 hours</option>
+                        <option value="43200">Every 12 hours</option>
+                        <option value="86400">Every 24 hours</option>
+                    </select>
+                    <div class="hint">We'll alert you if no ping arrives within this interval (+ 30s grace period)</div>
+                </div>
+            </div>
+            <div class="form-group http-only-field">
                 <label for="check_interval">Check Interval <span style="color: #999; font-weight: normal;">(Pro)</span></label>
                 {% if user.get('plan', 'free') != 'free' %}
                 <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -383,7 +431,7 @@
             <div class="form-group">
                 <label for="alert_email">Alert Email</label>
                 <input type="email" id="alert_email" name="alert_email" value="{{ user.email }}" placeholder="you@example.com">
-                <div class="hint">We'll email you when this site goes down</div>
+                <div class="hint" id="emailHint">We'll email you when this site goes down</div>
             </div>
             <div class="form-group">
                 <label for="alert_slack_webhook">Slack Webhook URL <span style="color: #999; font-weight: normal;">(Pro)</span></label>
@@ -395,17 +443,17 @@
                 <div class="hint" style="color: #6366f1;"><a href="/api/billing/checkout" onclick="event.preventDefault(); this.closest('form').action='/api/billing/checkout'; this.closest('form').submit();" style="color: #6366f1; text-decoration: underline;">Upgrade to Pro</a> for Slack alerts</div>
                 {% endif %}
             </div>
-            <div class="form-group">
+            <div class="form-group http-only-field">
                 <label for="keyword">Keyword Check <span style="color: #999; font-weight: normal;">(optional)</span></label>
                 <input type="text" id="keyword" name="keyword" placeholder="e.g. Welcome AND Login">
                 <div class="hint">Supports <code>AND</code> / <code>OR</code> — e.g. <code>Welcome AND Login</code>, <code>error OR failure</code></div>
             </div>
-            <div class="form-group">
+            <div class="form-group http-only-field">
                 <label for="response_threshold_ms">Response Threshold <span style="color: #999; font-weight: normal;">(optional)</span></label>
                 <input type="text" id="response_threshold_ms" name="response_threshold_ms" placeholder="e.g. > 2000 or 200-3000">
                 <div class="hint">Supports: <code>> 2000</code>, <code>< 200</code>, <code>200-3000</code> (range), or plain number (ms)</div>
             </div>
-            <div class="form-group">
+            <div class="form-group http-only-field">
                 <label for="webhook_url">Webhook URL <span style="color: #999; font-weight: normal;">(Pro)</span></label>
                 {% if user.get('plan', 'free') != 'free' %}
                 <input type="url" id="webhook_url" name="webhook_url" placeholder="https://your-api.com/webhook">
@@ -415,7 +463,7 @@
                 {% endif %}
                 <div class="hint">We'll POST JSON to this URL on status changes</div>
             </div>
-            <div class="form-group">
+            <div class="form-group http-only-field">
                 <label>Maintenance Windows <span style="color: #999; font-weight: normal;">(Pro)</span></label>
                 <div id="mw-container">
                     <!-- windows added dynamically -->
@@ -449,6 +497,56 @@
         </form>
     </div>
 </div>
+
+<!-- Heartbeat Created Modal — shows ping URL + snippets after creation -->
+<div class="modal-overlay" id="heartbeatCreatedModal">
+    <div class="modal" style="max-width: 540px;">
+        <button class="modal-close" onclick="closeHeartbeatModal()">✕</button>
+        <h2 style="margin-bottom: 0.25rem;">Heartbeat monitor created</h2>
+        <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 1.25rem;" id="hbCreatedName"></p>
+
+        <label style="font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 0.4rem;">Ping URL</label>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem;">
+            <code id="hbPingUrl" style="flex: 1; padding: 0.55rem 0.75rem; background: var(--bg-secondary, #f8f9fa); border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 0.82rem; word-break: break-all; font-family: 'JetBrains Mono', monospace; color: var(--text);"></code>
+            <button type="button" class="btn-copy" onclick="copyHbUrl()" id="hbCopyBtn" title="Copy URL">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+        </div>
+
+        <label style="font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 0.5rem;">Quick setup</label>
+        <div style="display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.25rem;">
+            <div class="hb-snippet">
+                <span class="hb-snippet-label">Crontab (every 5 min)</span>
+                <div class="hb-snippet-code">
+                    <code id="hbSnippetCron"></code>
+                    <button type="button" class="btn-copy" onclick="copySnippet('hbSnippetCron', this)" title="Copy">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="hb-snippet">
+                <span class="hb-snippet-label">curl</span>
+                <div class="hb-snippet-code">
+                    <code id="hbSnippetCurl"></code>
+                    <button type="button" class="btn-copy" onclick="copySnippet('hbSnippetCurl', this)" title="Copy">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="hb-snippet">
+                <span class="hb-snippet-label">wget</span>
+                <div class="hb-snippet-code">
+                    <code id="hbSnippetWget"></code>
+                    <button type="button" class="btn-copy" onclick="copySnippet('hbSnippetWget', this)" title="Copy">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <button type="button" class="modal-submit" onclick="closeHeartbeatModal()">Done</button>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -457,7 +555,72 @@
 function openModal() { document.getElementById('addModal').classList.add('active'); }
 function closeModal() { document.getElementById('addModal').classList.remove('active'); }
 document.getElementById('addModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeHeartbeatModal(); } });
+
+/* ── Heartbeat Created Modal ───────────────────────────── */
+function closeHeartbeatModal() { document.getElementById('heartbeatCreatedModal').classList.remove('active'); }
+document.getElementById('heartbeatCreatedModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeHeartbeatModal(); });
+function copyHbUrl() {
+    const url = document.getElementById('hbPingUrl').textContent;
+    navigator.clipboard.writeText(url).then(() => {
+        const btn = document.getElementById('hbCopyBtn');
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>';
+        setTimeout(() => { btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'; }, 2000);
+    });
+}
+function copySnippet(id, btn) {
+    navigator.clipboard.writeText(document.getElementById(id).textContent).then(() => {
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>';
+        setTimeout(() => { btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'; }, 2000);
+    });
+}
+(function checkHeartbeatCreated() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('heartbeat_created') === '1') {
+        const pingUrl = params.get('ping_url') || '';
+        const name = params.get('monitor_name') || 'Heartbeat monitor';
+        document.getElementById('hbCreatedName').textContent = name;
+        document.getElementById('hbPingUrl').textContent = pingUrl;
+        document.getElementById('hbSnippetCron').textContent = '*/5 * * * * curl -fsS --retry 3 ' + pingUrl;
+        document.getElementById('hbSnippetCurl').textContent = 'curl ' + pingUrl;
+        document.getElementById('hbSnippetWget').textContent = 'wget -q -O /dev/null ' + pingUrl;
+        document.getElementById('heartbeatCreatedModal').classList.add('active');
+        // Clean URL
+        const clean = new URL(window.location);
+        clean.searchParams.delete('heartbeat_created');
+        clean.searchParams.delete('ping_url');
+        clean.searchParams.delete('monitor_name');
+        window.history.replaceState({}, '', clean);
+    }
+})();
+
+/* ── Monitor Type Switcher ─────────────────────────────── */
+function setMonitorType(type, btn) {
+    document.getElementById('monitor_type').value = type;
+    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('type-btn-active'));
+    btn.classList.add('type-btn-active');
+    const urlGroup = document.getElementById('urlGroup');
+    const hbGroup = document.getElementById('heartbeatGroup');
+    const urlInput = document.getElementById('url');
+    const nameInput = document.getElementById('name');
+    const emailHint = document.getElementById('emailHint');
+    const httpFields = document.querySelectorAll('.http-only-field');
+    if (type === 'heartbeat') {
+        urlGroup.style.display = 'none';
+        urlInput.removeAttribute('required');
+        hbGroup.style.display = 'block';
+        httpFields.forEach(f => f.style.display = 'none');
+        nameInput.placeholder = 'e.g. Nightly DB Backup, Invoice Cron';
+        if (emailHint) emailHint.textContent = "We'll email you if a ping is missed";
+    } else {
+        urlGroup.style.display = 'block';
+        urlInput.setAttribute('required', '');
+        hbGroup.style.display = 'none';
+        httpFields.forEach(f => f.style.display = 'block');
+        nameInput.placeholder = 'My Website';
+        if (emailHint) emailHint.textContent = "We'll email you when this site goes down";
+    }
+}
 
 /* ── Prevent info tooltips from triggering sort ────────── */
 document.querySelectorAll('.th-info').forEach(el => el.addEventListener('click', e => e.stopPropagation()));

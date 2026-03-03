@@ -14,8 +14,16 @@
             <h1 class="md-name">{{ monitor.name }}</h1>
         </div>
         <div class="md-subtitle">
+            {% if monitor.get('monitor_type') == 'heartbeat' %}
+            <span class="md-type">♥ Heartbeat monitor</span>
+            <span class="md-url" style="cursor:default;">Expected every
+                {% set hbi = monitor.get('heartbeat_interval', 300) %}
+                {% if hbi < 120 %}{{ hbi }}s{% elif hbi < 3600 %}{{ (hbi / 60)|int }}m{% elif hbi < 86400 %}{{ (hbi / 3600)|int }}h{% else %}24h{% endif %}
+            </span>
+            {% else %}
             <span class="md-type">HTTP{{ 'S' if monitor.url.startswith('https') else '' }} monitor for</span>
             <a href="{{ monitor.url }}" target="_blank" class="md-url">{{ monitor.url }}</a>
+            {% endif %}
         </div>
     </div>
     <div class="md-header-actions">
@@ -33,6 +41,17 @@
         <a href="/monitors/{{ monitor.id }}/edit" class="btn btn-secondary btn-sm">✎ Edit</a>
     </div>
 </div>
+
+{% if monitor.get('monitor_type') == 'heartbeat' and monitor.get('ping_url') %}
+<!-- ── Ping URL bar ── -->
+<div class="md-section" style="padding: 1rem 1.25rem; margin-bottom: 0.5rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+        <span style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);">Ping URL</span>
+        <code style="flex: 1; padding: 0.5rem 0.75rem; background: var(--bg-secondary, #f8f9fa); border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.82rem; word-break: break-all; font-family: 'JetBrains Mono', monospace;">{{ monitor.ping_url }}</code>
+        <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('{{ monitor.ping_url }}').then(() => { this.textContent='✓ Copied'; setTimeout(() => this.textContent='📋 Copy', 2000); })">📋 Copy</button>
+    </div>
+</div>
+{% endif %}
 
 <!-- ── Top stat cards ── -->
 <div class="md-top-cards">
@@ -57,7 +76,7 @@
         </div>
     </div>
     <div class="md-card">
-        <div class="md-card-label">Last check</div>
+        <div class="md-card-label">{{ 'Last ping' if monitor.get('monitor_type') == 'heartbeat' else 'Last check' }}</div>
         <div class="md-card-value" id="lastCheckValue"
              {% if monitor.get('last_checked') %}
              data-last-checked="{{ monitor.last_checked.isoformat() if monitor.last_checked.isoformat is defined else monitor.last_checked }}"
@@ -147,6 +166,7 @@
 </div>
 
 <!-- ── Response time chart ── -->
+{% if monitor.get('monitor_type', 'http') != 'heartbeat' %}
 <div class="md-section">
     <div class="md-section-header">
         <h2>Response time</h2>
@@ -186,6 +206,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 <!-- ── Latest incidents ── -->
 <div class="md-section md-incidents-section">
@@ -216,7 +237,10 @@
                 {% endif %}
             </span>
             <span class="md-inc-cause">
-                {% if inc.get('status_code') %}
+                {% if monitor.get('monitor_type') == 'heartbeat' %}
+                    <span class="md-http-badge" style="background: #fef3c7; color: #92400e;">♥</span>
+                    <span class="md-http-text">Missed ping</span>
+                {% elif inc.get('status_code') %}
                     <span class="md-http-badge">{{ inc.status_code }}</span>
                     <span class="md-http-text">
                         {% if inc.status_code == 0 or inc.status_code is none %}Connection Failed
@@ -266,7 +290,7 @@
     <div class="md-empty">No incidents recorded yet. That's a good thing! 🎉</div>
     {% endif %}
 </div>
-{% if monitor.get('ssl_expiry') or monitor.get('ssl_issuer') or monitor.get('keyword') or monitor.get('response_threshold_ms') or monitor.get('webhook_url') or monitor.get('maintenance_windows') or monitor.get('maintenance_window') %}
+{% if monitor.get('monitor_type', 'http') != 'heartbeat' and (monitor.get('ssl_expiry') or monitor.get('ssl_issuer') or monitor.get('keyword') or monitor.get('response_threshold_ms') or monitor.get('webhook_url') or monitor.get('maintenance_windows') or monitor.get('maintenance_window')) %}
 <div class="md-section md-config-section">
     <div class="md-config-grid">
         {% if monitor.get('ssl_expiry') or monitor.get('ssl_issuer') %}
@@ -342,10 +366,10 @@
             <span class="md-ch-name">Slack</span>
             <span class="md-ch-status">{{ 'Connected' if monitor.get('alert_slack_webhook') else 'Not configured' }}</span>
         </div>
-        <div class="md-alert-ch">
+        <div class="md-alert-ch {% if user.get('phone') and user.get('plan', 'free') == 'pro' %}md-ch-active{% endif %}">
             <span class="md-ch-icon">📱</span>
             <span class="md-ch-name">SMS</span>
-            <span class="md-ch-status">Coming soon</span>
+            <span class="md-ch-status">{% if user.get('phone') and user.get('plan', 'free') == 'pro' %}{{ user.phone }}{% elif user.get('plan', 'free') != 'pro' %}Pro only{% else %}Not configured{% endif %}</span>
         </div>
     </div>
 </div>
@@ -360,7 +384,9 @@
         <div class="md-badge-preview">
             <img src="/badge/{{ monitor.id }}.svg" alt="Uptime badge" />
             <img src="/badge/{{ monitor.id }}/status.svg" alt="Status badge" />
+            {% if monitor.get('monitor_type', 'http') != 'heartbeat' %}
             <img src="/badge/{{ monitor.id }}/response.svg" alt="Response time badge" />
+            {% endif %}
         </div>
         <div class="md-badge-snippets">
             <div class="badge-snippet-group">
@@ -396,7 +422,9 @@
 {% endblock %}
 
 {% block extra_js %}
+{% if monitor.get('monitor_type', 'http') != 'heartbeat' %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endif %}
 <script>
 // @ts-nocheck
 const MONITOR_ID = '{{ monitor.id }}';
@@ -530,6 +558,7 @@ function switchUptimePeriod(period, btn) {
 })();
 
 /* ── Response chart ────────────────────────────── */
+{% if monitor.get('monitor_type', 'http') != 'heartbeat' %}
 const initialChecks = {{ checks | tojson | safe }};
 let chart = null;
 
@@ -602,8 +631,10 @@ function buildChart(checks) {
 }
 
 buildChart(initialChecks);
+{% endif %}
 
 /* ── Chart time range switching ──────────────── */
+{% if monitor.get('monitor_type', 'http') != 'heartbeat' %}
 async function loadChartRange(hours, btn) {
     document.querySelectorAll('.md-range-toggle .range-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
@@ -621,6 +652,7 @@ async function loadChartRange(hours, btn) {
         console.error('Failed to load chart data:', e);
     }
 }
+{% endif %}
 
 /* ── Copy badge ──────────────────────────────── */
 function copyBadge(id) {

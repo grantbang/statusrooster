@@ -4,6 +4,7 @@ Easy to extend: just add a new function and call it from send_down_alert / send_
 """
 
 import httpx
+import asyncio
 from datetime import datetime, timezone
 from app.config import settings
 
@@ -24,16 +25,28 @@ def _get_user_plan(user_id: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# SendGrid email alerts
+# SendGrid email alerts — with retry + rate-limit resilience
 # ---------------------------------------------------------------------------
 
-async def send_email(to: str, subject: str, html_body: str) -> bool:
-    """Send an email via SendGrid API. Returns True on success."""
+_email_fail_count = 0  # Track consecutive failures for circuit-breaker
+
+async def send_email(to: str, subject: str, html_body: str, max_retries: int = 3) -> bool:
+    """
+    Send an email via SendGrid API with retry and exponential backoff.
+    Handles 429 rate limits, 5xx server errors, and network failures.
+    Returns True on success.
+    """
+    global _email_fail_count
     api_key = settings.SENDGRID_API_KEY
     from_email = settings.SENDGRID_FROM_EMAIL
 
     if not api_key or not from_email:
         print("[alert] SendGrid not configured — skipping email")
+        return False
+
+    # Circuit breaker: if we've failed 10+ times in a row, back off
+    if _email_fail_count >= 10:
+        print(f"[alert] Email circuit breaker open ({_email_fail_count} consecutive failures) — skipping")
         return False
 
     payload = {
@@ -43,26 +56,52 @@ async def send_email(to: str, subject: str, html_body: str) -> bool:
         "content": [{"type": "text/html", "value": html_body}],
     }
 
-    try:
-        async with httpx.AsyncClient() as client:
-            resp = await client.post(
-                "https://api.sendgrid.com/v3/mail/send",
-                json=payload,
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                },
-                timeout=10.0,
-            )
-            if resp.status_code in (200, 202):
-                print(f"[alert] Email sent to {to}: {subject}")
-                return True
-            else:
-                print(f"[alert] SendGrid error {resp.status_code}: {resp.text}")
-                return False
-    except Exception as e:
-        print(f"[alert] SendGrid exception: {e}")
-        return False
+    for attempt in range(max_retries):
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(
+                    "https://api.sendgrid.com/v3/mail/send",
+                    json=payload,
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    timeout=15.0,
+                )
+                if resp.status_code in (200, 202):
+                    _email_fail_count = 0  # Reset circuit breaker on success
+                    print(f"[alert] Email sent to {to}: {subject}")
+                    return True
+                elif resp.status_code == 429:
+                    # Rate limited — back off and retry
+                    wait = min(2 ** attempt * 5, 30)  # 5s, 10s, 20s
+                    print(f"[alert] SendGrid rate limited (429) — retrying in {wait}s (attempt {attempt+1}/{max_retries})")
+                    await asyncio.sleep(wait)
+                    continue
+                elif resp.status_code >= 500:
+                    # Server error — retry with backoff
+                    wait = 2 ** attempt * 2  # 2s, 4s, 8s
+                    print(f"[alert] SendGrid server error {resp.status_code} — retrying in {wait}s (attempt {attempt+1}/{max_retries})")
+                    await asyncio.sleep(wait)
+                    continue
+                else:
+                    # 4xx client error (bad request, invalid email, etc.) — don't retry
+                    _email_fail_count += 1
+                    print(f"[alert] SendGrid error {resp.status_code}: {resp.text[:200]}")
+                    return False
+        except httpx.TimeoutException:
+            wait = 2 ** attempt * 2
+            print(f"[alert] SendGrid timeout — retrying in {wait}s (attempt {attempt+1}/{max_retries})")
+            await asyncio.sleep(wait)
+            continue
+        except Exception as e:
+            _email_fail_count += 1
+            print(f"[alert] SendGrid exception: {e}")
+            return False
+
+    _email_fail_count += 1
+    print(f"[alert] SendGrid failed after {max_retries} retries for {to}: {subject}")
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -93,16 +132,50 @@ async def send_slack(webhook_url: str, message: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# SMS alerts (placeholder — ready for Twilio integration)
+# SMS alerts via Twilio
 # ---------------------------------------------------------------------------
 
 async def send_sms(phone: str, message: str) -> bool:
-    """Send an SMS alert. Placeholder for Twilio integration."""
+    """Send an SMS alert via Twilio REST API. Returns True on success."""
     if not phone:
         return False
-    # TODO: Implement Twilio SMS
-    print(f"[alert] SMS not yet implemented — would send to {phone}")
-    return False
+
+    account_sid = settings.TWILIO_ACCOUNT_SID
+    auth_token = settings.TWILIO_AUTH_TOKEN
+    from_number = settings.TWILIO_FROM_NUMBER
+
+    if not account_sid or not auth_token or not from_number:
+        print(f"[alert] Twilio not configured — skipping SMS to {phone}")
+        return False
+
+    # Clean phone number (ensure E.164 format)
+    clean_phone = phone.strip()
+    if not clean_phone.startswith("+"):
+        clean_phone = f"+1{clean_phone}"  # Default to US
+
+    url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json"
+
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                url,
+                data={
+                    "To": clean_phone,
+                    "From": from_number,
+                    "Body": message[:1600],  # Twilio max
+                },
+                auth=(account_sid, auth_token),
+                timeout=15.0,
+            )
+            if resp.status_code in (200, 201):
+                print(f"[alert] SMS sent to {phone}: {message[:50]}...")
+                return True
+            else:
+                print(f"[alert] Twilio error {resp.status_code}: {resp.text[:200]}")
+                return False
+    except Exception as e:
+        print(f"[alert] Twilio exception: {e}")
+        return False
 
 
 # ---------------------------------------------------------------------------
@@ -174,9 +247,9 @@ async def send_down_alert(monitor: dict, incident: dict) -> None:
         )
         await send_slack(slack_webhook, message)
 
-    # --- SMS ---
+    # --- SMS (Pro only) ---
     sms_number = monitor.get("alert_sms", "")
-    if sms_number:
+    if sms_number and user_plan == "pro":
         await send_sms(sms_number, f"DOWN: {name} ({url}) — Status {status_code}")
 
 
@@ -231,9 +304,9 @@ async def send_recovery_alert(monitor: dict, incident: dict) -> None:
         )
         await send_slack(slack_webhook, message)
 
-    # --- SMS ---
+    # --- SMS (Pro only) ---
     sms_number = monitor.get("alert_sms", "")
-    if sms_number:
+    if sms_number and user_plan == "pro":
         await send_sms(sms_number, f"UP: {name} ({url}) — back up after {duration_str}")
 
 
@@ -441,7 +514,7 @@ async def send_test_alert(monitor: dict, user_plan: str = "free") -> dict:
     detail_url = f"{app_url}/monitors/{monitor_id}"
     time_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
-    results = {"email": False, "slack": False, "webhook": False}
+    results = {"email": False, "slack": False, "sms": False, "webhook": False}
 
     # --- Email ---
     alert_email = monitor.get("alert_email", "")
@@ -474,6 +547,11 @@ async def send_test_alert(monitor: dict, user_plan: str = "free") -> dict:
             f"<{detail_url}|View on StatusRooster →>"
         )
         results["slack"] = await send_slack(slack_webhook, message)
+
+    # --- SMS (Pro only) ---
+    sms_number = monitor.get("alert_sms", "")
+    if sms_number and user_plan == "pro":
+        results["sms"] = await send_sms(sms_number, f"Test alert from StatusRooster: {name} — your SMS alerts are working!")
 
     # --- Webhook (Pro only) ---
     webhook_url = monitor.get("webhook_url", "")

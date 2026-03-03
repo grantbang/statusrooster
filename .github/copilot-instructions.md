@@ -2,7 +2,7 @@
 
 ## What Is This Project?
 StatusRooster is a **SaaS uptime monitoring product** for indie developers and small teams.
-It monitors websites, APIs, and (soon) cron jobs, and alerts users when things break.
+It monitors websites, APIs, and cron jobs (heartbeat monitoring), and alerts users when things break.
 **Target launch: Day 12 (Mar 7, 2026).**
 
 ## Tech Stack
@@ -13,7 +13,8 @@ It monitors websites, APIs, and (soon) cron jobs, and alerts users when things b
 | Database | Google Firestore (collections: `users`, `monitors`, `checks`, `incidents`) |
 | Hosting | Google Cloud Run (us-east1) |
 | Scheduler | Google Cloud Scheduler (60s cron → `POST /cron/check`) |
-| Email | SendGrid (`alerts@statusrooster.com`) |
+| Email | SendGrid (`alerts@statusrooster.com`) — retry + backoff + circuit breaker |
+| SMS | Twilio (Pro only) |
 | Billing | Stripe (Free + Pro $9/mo) |
 | Auth | JWT cookies + Google OAuth + GitHub OAuth |
 | Charts | Chart.js 4.4.0 |
@@ -48,10 +49,11 @@ app/
 │   ├── oauth.py         # Google + GitHub OAuth
 │   ├── billing.py       # Stripe checkout + webhooks
 │   ├── cron.py          # Cloud Scheduler cron endpoint
+│   ├── heartbeat.py     # Public heartbeat ping endpoint (/api/ping/{id})
 │   └── badge.py         # SVG uptime badges
 ├── services/
-│   ├── checker.py       # HTTP check engine (retry, SSL, keyword, threshold)
-│   ├── alerts.py        # Email + Slack + webhook alert dispatch
+│   ├── checker.py       # HTTP + heartbeat check engine (retry, SSL, keyword, threshold)
+│   ├── alerts.py        # Email (SendGrid) + Slack + SMS (Twilio) + webhook alert dispatch
 │   └── auth.py          # JWT + password hashing
 ├── templates/           # Jinja2 HTML templates
 │   ├── base.html        # Public page base (nav + footer)
@@ -89,7 +91,7 @@ The dashboard reads **only monitor docs** — zero queries to the `checks` colle
 |---|---|---|
 | Monitors | 5 | 250 |
 | Check interval | 300s (5 min) | 60–300s (custom) |
-| Alerts | Email only | Email + Slack + Webhooks |
+| Alerts | Email only | Email + Slack + SMS + Webhooks |
 | Status pages | 1 | 10 |
 | Features | — | Maintenance windows, Basic Auth, CSV export |
 

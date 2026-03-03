@@ -3,7 +3,7 @@ import asyncio
 import time
 import ssl
 import socket
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from app.database import get_db
 from app.models.monitor import get_all_monitors, update_monitor
 from app.models.check import create_check
@@ -238,17 +238,66 @@ async def run_checks():
                     results["skipped"] += 1
                     continue
 
-        # Perform the check with retry
-        result = await check_url_with_retry(monitor["url"])
+        # ----- Heartbeat monitors: check if ping is overdue -----
+        if monitor.get("monitor_type") == "heartbeat":
+            heartbeat_interval = monitor.get("heartbeat_interval", 300)
+            last_hb = monitor.get("last_heartbeat")
 
-        # Record check in Firestore
-        create_check(
-            db,
-            monitor_id=monitor["id"],
-            status_code=result["status_code"],
-            response_ms=result["response_ms"],
-            is_up=result["is_up"],
-        )
+            # Parse last_heartbeat timestamp
+            last_hb_dt = None
+            if last_hb:
+                if isinstance(last_hb, str):
+                    try:
+                        last_hb_dt = datetime.fromisoformat(last_hb.replace("Z", "+00:00"))
+                    except ValueError:
+                        pass
+                elif hasattr(last_hb, 'timestamp'):
+                    last_hb_dt = last_hb if last_hb.tzinfo else last_hb.replace(tzinfo=timezone.utc)
+
+            # Determine if heartbeat is overdue (with 30s grace period)
+            if last_hb_dt is None:
+                # Never received a ping — if monitor is older than the interval, mark down
+                created = monitor.get("created_at")
+                if created:
+                    created_dt = created if hasattr(created, 'timestamp') else now
+                    if hasattr(created_dt, 'tzinfo') and created_dt.tzinfo is None:
+                        created_dt = created_dt.replace(tzinfo=timezone.utc)
+                    age = (now - created_dt).total_seconds()
+                    is_up = age < heartbeat_interval + 30  # grace for initial setup
+                else:
+                    is_up = True  # brand new, give benefit of the doubt
+            else:
+                overdue = (now - last_hb_dt).total_seconds()
+                is_up = overdue <= heartbeat_interval + 30  # 30s grace period
+
+            # Record as a "check"
+            create_check(
+                db,
+                monitor_id=monitor["id"],
+                status_code=200 if is_up else None,
+                response_ms=0,
+                is_up=is_up,
+            )
+
+            # Build result dict so the rest of the loop works
+            result = {
+                "status_code": 200 if is_up else None,
+                "response_ms": 0,
+                "is_up": is_up,
+                "body": "",
+            }
+        else:
+            # ----- HTTP monitors: perform the check with retry -----
+            result = await check_url_with_retry(monitor["url"])
+
+            # Record check in Firestore
+            create_check(
+                db,
+                monitor_id=monitor["id"],
+                status_code=result["status_code"],
+                response_ms=result["response_ms"],
+                is_up=result["is_up"],
+            )
 
         # Update monitor stats
         previous_status = monitor.get("status", "pending")
@@ -304,12 +353,14 @@ async def run_checks():
         hbars = [b for b in hbars if b["hour"] >= cutoff_hour]
         monitor_updates["hourly_uptime_bars"] = hbars
 
-        # ----- SSL Expiry Check -----
-        ssl_info = grab_ssl_info(monitor["url"])
-        if ssl_info["ssl_expiry"]:
-            monitor_updates["ssl_expiry"] = ssl_info["ssl_expiry"]
-            monitor_updates["ssl_issuer"] = ssl_info["ssl_issuer"]
-            monitor_updates["ssl_expiry_days"] = ssl_info["ssl_expiry_days"]
+        # ----- SSL Expiry Check (HTTP monitors only) -----
+        ssl_info = {}
+        if monitor.get("monitor_type", "http") == "http":
+            ssl_info = grab_ssl_info(monitor["url"])
+            if ssl_info["ssl_expiry"]:
+                monitor_updates["ssl_expiry"] = ssl_info["ssl_expiry"]
+                monitor_updates["ssl_issuer"] = ssl_info["ssl_issuer"]
+                monitor_updates["ssl_expiry_days"] = ssl_info["ssl_expiry_days"]
 
         update_monitor(db, monitor["id"], monitor_updates)
 
@@ -321,10 +372,11 @@ async def run_checks():
         # ----- Check if in maintenance window (suppress alerts, not checks) -----
         in_maintenance = is_in_maintenance_window(monitor)
 
-        # ----- Keyword Check (supports AND / OR operators) -----
+        # ----- Keyword Check — HTTP monitors only -----
+        is_http = monitor.get("monitor_type", "http") == "http"
         keyword = monitor.get("keyword", "")
         keyword_failed = False
-        if keyword and result["is_up"]:
+        if is_http and keyword and result["is_up"]:
             body_lower = result.get("body", "").lower()
             keyword_failed = not _check_keyword_expression(keyword, body_lower)
             if keyword_failed:
@@ -332,17 +384,17 @@ async def run_checks():
                     await send_keyword_alert(monitor, keyword)
                     print(f"[checker] KEYWORD MISSING: '{keyword}' not found on {monitor['name']}")
 
-        # ----- Response Time Threshold (supports >, <, range) -----
+        # ----- Response Time Threshold — HTTP monitors only -----
         threshold = monitor.get("response_threshold_ms")
-        if threshold and result["response_ms"] and result["is_up"]:
+        if is_http and threshold and result["response_ms"] and result["is_up"]:
             threshold_str = str(threshold)
             if _check_threshold_condition(threshold_str, result["response_ms"]):
                 if not in_maintenance:
                     await send_threshold_alert(monitor, result["response_ms"], threshold)
                     print(f"[checker] THRESHOLD: {monitor['name']} {result['response_ms']}ms violated condition '{threshold_str}'")
 
-        # ----- SSL Expiry Alerts (14, 7, 3 days) -----
-        if ssl_info["ssl_expiry_days"] is not None:
+        # ----- SSL Expiry Alerts (14, 7, 3 days) — HTTP monitors only -----
+        if is_http and ssl_info.get("ssl_expiry_days") is not None:
             days_left = ssl_info["ssl_expiry_days"]
             last_alerted = monitor.get("ssl_expiry_alerted_days")
             for threshold_days in [14, 7, 3]:

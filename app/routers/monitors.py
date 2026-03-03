@@ -16,7 +16,7 @@ PRO_MONITOR_LIMIT = 250
 
 
 class CreateMonitorRequest(BaseModel):
-    url: HttpUrl
+    url: HttpUrl | None = None
     name: str
     alert_email: str = ""
     alert_slack_webhook: str = ""
@@ -25,6 +25,8 @@ class CreateMonitorRequest(BaseModel):
     webhook_url: str = ""
     public: bool = True
     check_interval: int | None = None
+    monitor_type: str = "http"          # "http" or "heartbeat"
+    heartbeat_interval: int | None = None  # seconds (heartbeat only)
 
 
 class UpdateMonitorRequest(BaseModel):
@@ -37,6 +39,8 @@ class UpdateMonitorRequest(BaseModel):
     webhook_url: str | None = None
     public: bool | None = None
     check_interval: int | None = None
+    monitor_type: str | None = None
+    heartbeat_interval: int | None = None
 
 
 @router.post("")
@@ -56,12 +60,14 @@ async def create(req: CreateMonitorRequest, user: dict = Depends(get_current_use
     monitor = create_monitor(
         db,
         user_id=user["id"],
-        url=str(req.url),
+        url=str(req.url) if req.url else "",
         name=req.name,
         alert_email=req.alert_email or user.get("email", ""),
-        alert_slack_webhook=req.alert_slack_webhook,
+        alert_slack_webhook=req.alert_slack_webhook if user.get("plan", "free") != "free" else "",
         public=req.public,
         check_interval=req.check_interval,
+        monitor_type=req.monitor_type,
+        heartbeat_interval=req.heartbeat_interval,
     )
 
     # Set Day 7 fields that aren't in create_monitor params
@@ -125,6 +131,8 @@ async def update(monitor_id: str, req: UpdateMonitorRequest, user: dict = Depend
             del updates["check_interval"]
         else:
             updates["check_interval"] = max(60, min(300, updates["check_interval"]))
+    if "heartbeat_interval" in updates and updates["heartbeat_interval"] is not None:
+        updates["heartbeat_interval"] = max(60, min(86400, updates["heartbeat_interval"]))
 
     if updates:
         update_monitor(db, monitor_id, updates)

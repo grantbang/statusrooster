@@ -418,6 +418,8 @@ async def add_monitor(
     response_threshold_ms = form.get("response_threshold_ms", "")
     webhook_url = form.get("webhook_url", "")
     check_interval_raw = form.get("check_interval", "")
+    monitor_type = form.get("monitor_type", "http")
+    heartbeat_interval_raw = form.get("heartbeat_interval", "")
 
     db = get_db()
 
@@ -474,6 +476,18 @@ async def add_monitor(
         except (ValueError, TypeError):
             pass
 
+    # Parse heartbeat interval
+    heartbeat_interval = None
+    if heartbeat_interval_raw:
+        try:
+            heartbeat_interval = int(heartbeat_interval_raw)
+        except (ValueError, TypeError):
+            pass
+
+    # For heartbeat monitors, URL is optional (auto-generate ping URL)
+    if monitor_type == "heartbeat" and not url:
+        url = ""  # Will be set after creation
+
     monitor = create_monitor(
         db,
         user_id=user["id"],
@@ -488,7 +502,21 @@ async def add_monitor(
         public=public,
         paused=paused,
         check_interval=check_interval,
+        monitor_type=monitor_type,
+        heartbeat_interval=heartbeat_interval,
     )
+
+    # For heartbeat monitors, set the ping URL on the monitor doc
+    if monitor_type == "heartbeat":
+        from app.config import settings
+        ping_url = f"{settings.APP_URL}/api/ping/{monitor['id']}"
+        update_monitor(db, monitor["id"], {"url": ping_url, "ping_url": ping_url})
+        # Redirect with ping URL so the dashboard can show the setup modal
+        from urllib.parse import quote
+        return RedirectResponse(
+            url=f"/dashboard?msg=Monitor+'{name}'+added!&msg_type=success&heartbeat_created=1&ping_url={quote(ping_url)}&monitor_name={quote(name)}",
+            status_code=302,
+        )
 
     return RedirectResponse(
         url=f"/dashboard?msg=Monitor+'{name}'+added!&msg_type=success",
@@ -577,6 +605,14 @@ async def edit_monitor_submit(
         "keyword": keyword,
         "response_threshold_ms": response_threshold_ms.strip() if response_threshold_ms else None,
     }
+
+    # Handle heartbeat interval
+    hb_interval_raw = form.get("heartbeat_interval", "")
+    if hb_interval_raw:
+        try:
+            updates["heartbeat_interval"] = max(60, min(86400, int(hb_interval_raw)))
+        except (ValueError, TypeError):
+            pass
 
     # Status page limit enforcement (only if turning public ON)
     if updates["public"] and not monitor.get("public", False):

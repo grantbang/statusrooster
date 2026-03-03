@@ -781,6 +781,66 @@ code {
 }
 .modal-submit:hover { background: var(--brand-hover); }
 
+/* Monitor type selector buttons */
+.type-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text-label);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.type-btn:hover { border-color: var(--brand); color: var(--brand); }
+.type-btn-active {
+    border-color: var(--brand);
+    background: #eef2ff;
+    color: var(--brand);
+    font-weight: 600;
+}
+
+/* Heartbeat snippet blocks */
+.hb-snippet {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+.hb-snippet-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 0.4rem 0.75rem 0;
+}
+.hb-snippet-code {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.5rem 0.5rem 0.75rem;
+}
+.hb-snippet-code code {
+    flex: 1;
+    font-size: 0.8rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text);
+    word-break: break-all;
+    line-height: 1.5;
+    background: none;
+    padding: 0;
+}
+.hb-snippet-code .btn-copy {
+    flex-shrink: 0;
+    border: none;
+    padding: 0.25rem;
+}
+
 
 /* ============================================================
    11. DASHBOARD
@@ -1078,6 +1138,9 @@ code {
     color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+.monitor-type.monitor-type-heartbeat {
+    color: #16a34a;
 }
 .monitor-duration {
     font-size: 0.75rem;

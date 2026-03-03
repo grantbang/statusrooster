@@ -17,8 +17,14 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
                    alert_slack_webhook: str = "", public: bool = False,
                    keyword: str = "", response_threshold_ms: str | None = None,
                    webhook_url: str = "", maintenance_windows: list | None = None,
-                   paused: bool = False, check_interval: int | None = None) -> dict:
-    """Create a new monitor. Returns monitor dict with id."""
+                   paused: bool = False, check_interval: int | None = None,
+                   monitor_type: str = "http", heartbeat_interval: int | None = None) -> dict:
+    """Create a new monitor. Returns monitor dict with id.
+
+    monitor_type: "http" (default) or "heartbeat" (cron/dead-man's-switch).
+    heartbeat_interval: For heartbeat monitors, the expected ping interval in seconds.
+                        If no ping arrives within this window, the monitor is marked DOWN.
+    """
     # Determine check interval based on user plan
     user_ref = db.collection("users").document(user_id).get()
     user_data = user_ref.to_dict() if user_ref.exists else {}
@@ -34,12 +40,19 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
         # Free: locked at 300s (5 minutes)
         check_interval = 300
 
+    # Heartbeat defaults
+    if monitor_type == "heartbeat":
+        if heartbeat_interval is None:
+            heartbeat_interval = 300  # default: expect ping every 5 min
+        heartbeat_interval = max(60, min(86400, int(heartbeat_interval)))  # 1min - 24h
+
     doc_ref = db.collection(COLLECTION).document()
     slug = generate_slug(name)
     monitor_data = {
         "user_id": user_id,
         "url": url,
         "name": name,
+        "monitor_type": monitor_type,            # "http" or "heartbeat"
         "check_interval": check_interval,
         "status": "pending",  # pending | up | down
         "paused": paused,
@@ -52,6 +65,9 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
         "alert_email": alert_email,
         "alert_slack_webhook": alert_slack_webhook,
         "alert_sms": "",
+        # Heartbeat fields
+        "heartbeat_interval": heartbeat_interval,  # Expected ping interval in seconds (heartbeat only)
+        "last_heartbeat": None,                    # Last ping timestamp (heartbeat only)
         # Day 7: Monitoring suite fields
         "keyword": keyword,                      # Expected keyword in response body
         "response_threshold_ms": response_threshold_ms,  # Alert if response > this many ms
@@ -98,6 +114,27 @@ def get_monitor(db, monitor_id: str) -> dict | None:
 def update_monitor(db, monitor_id: str, updates: dict) -> None:
     """Update fields on a monitor document."""
     db.collection(COLLECTION).document(monitor_id).update(updates)
+
+
+def record_heartbeat(db, monitor_id: str) -> dict | None:
+    """Record an incoming heartbeat ping. Returns the updated monitor or None."""
+    doc = db.collection(COLLECTION).document(monitor_id).get()
+    if not doc.exists:
+        return None
+    m = doc.to_dict()
+    m["id"] = doc.id
+    if m.get("monitor_type") != "heartbeat":
+        return None
+    now = datetime.now(timezone.utc)
+    db.collection(COLLECTION).document(monitor_id).update({
+        "last_heartbeat": now,
+        "last_checked": now,
+        "status": "up",
+        "last_status_change": now if m.get("status") != "up" else m.get("last_status_change", now),
+    }, merge=True)
+    m["last_heartbeat"] = now
+    m["status"] = "up"
+    return m
 
 
 def delete_monitor(db, monitor_id: str) -> None:

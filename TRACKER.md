@@ -50,7 +50,7 @@
 |---|---|---|
 | Monitors | 5 | 250 |
 | Check interval | 5 min | 60–300s (custom) |
-| Alerts | Email | Email + Slack + SMS |
+| Alerts | Email | Email + Slack + SMS (Twilio) |
 | Status pages | 1 | 10 |
 | API access | ✅ | ✅ |
 | Webhooks | — | ✅ |
@@ -214,7 +214,7 @@ _Goal: Build real monitoring features people actually need._
 **Deferred:**
 - 🔲 Weekly Uptime Digest Email — moved to post-launch backlog
 - 🔲 Domain Expiry Monitoring — needs WHOIS library, post-launch
-- 🔲 SMS/Twilio — listed on pricing as Pro, not wired up yet
+- ~~🔲 SMS/Twilio — listed on pricing as Pro, not wired up yet~~ ✅ Done (Day 10G)
 
 - [x] Deploy Day 7 to production (revision `statusrooster-00012-4xq`)
 - [x] Git commit Day 7 (`227ce35`)
@@ -430,11 +430,40 @@ _These close the "API monitoring" gap. Not a separate product — just 3 form fi
 - [ ] Alert email footer for Free users: "Upgrade to Pro for 60s checks, Slack alerts, and webhooks →"
 - [ ] Gate Slack input in Add modal for Free users (grey out + upgrade link)
 
-**10G. Deploy + Commit**
-- [ ] Deploy Day 10 to production
-- [ ] Git commit Day 10
+**10G. Heartbeat/Cron Monitoring + Email Resilience + SMS ✅** _(pulled from v1.1 backlog — strategic differentiator)_
+_Goal: Add cron/heartbeat monitor type, harden email delivery for scale, wire real SMS._
 
-**Day 10 total estimate: ~4.5 hrs**
+**Heartbeat / Cron Monitoring ✅**
+- [x] New monitor type: `heartbeat` — expects a ping within configurable interval (60s–24h)
+- [x] `monitor_type` + `heartbeat_interval` + `last_heartbeat` fields on monitor model
+- [x] `record_heartbeat()` function in monitor model
+- [x] Public ping endpoint: `GET/POST/HEAD /api/ping/{monitor_id}` (no auth — monitor ID is the secret)
+- [x] Checker: heartbeat branch checks if `last_heartbeat` is overdue (interval + 30s grace)
+- [x] SSL/keyword/threshold checks gated to HTTP monitors only
+- [x] Dashboard Add Modal: HTTP / Heartbeat type selector with animated toggle
+- [x] Heartbeat form: "How it works" explainer, interval dropdown, contextual placeholder/hints
+- [x] Post-creation modal: ping URL + copy-ready snippets (crontab, curl, wget) with SVG copy icons
+- [x] Dashboard cards: "♥ Heartbeat" green type badge, "Last ping" stat instead of response time
+- [x] Edit form: heartbeat-specific view (type badge, read-only ping URL with copy, interval dropdown, HTTP fields hidden)
+- [x] Monitor detail: heartbeat subtitle with interval, ping URL bar, "Last ping" label, response chart hidden, "Missed ping" root cause, response badge hidden, Chart.js conditionally loaded
+- [x] API v1: `monitor_type` + `heartbeat_interval` on Create/Update schemas, auto-generated `ping_url`
+- [x] Internal monitors API: `monitor_type` + `heartbeat_interval` on Create/Update schemas
+- [x] CSS: `.type-btn` / `.type-btn-active` toggle buttons, `.monitor-type-heartbeat` green variant, `.hb-snippet` blocks
+
+**Email Resilience ✅**
+- [x] `send_email()` rewritten with retry (3 attempts), exponential backoff (429: 5/10/20s; 5xx: 2/4/8s)
+- [x] Circuit breaker: 10 consecutive failures → skip emails until next success
+- [x] 15s timeout (up from 10s)
+- [x] 4xx client errors: don't retry (bad request, invalid email)
+
+**Real SMS via Twilio ✅**
+- [x] `send_sms()` now uses real Twilio REST API via httpx (was placeholder/TODO)
+- [x] E.164 phone formatting, 1600 char limit
+- [x] SMS Pro-gated in `send_down_alert()`, `send_recovery_alert()`, `send_test_alert()`
+- [x] Twilio config: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` in config.py
+- [x] SMS channel on monitor detail shows real status instead of "Coming soon"
+
+- [x] Git commit 10G
 
 ---
 
@@ -557,13 +586,14 @@ _Goal: Make sure nothing is broken. Ship it. Tell people._
 ### v1.1 — High-Value Feature Additions 🔲
 _Items identified during competitive audit + GPT strategy session. Build after launch, based on user feedback._
 
-**Cron / Heartbeat Monitoring (NEW — strategic differentiator) ⭐**
-- [ ] New monitor type: "Heartbeat" — expects a ping within X minutes
-- [ ] Endpoint: `POST /api/ping/{monitor_id}` — records heartbeat
-- [ ] Checker: if no heartbeat received within expected window → alert
-- [ ] UI: new "Heartbeat" option in Add Monitor dropdown
-- [ ] Dashboard: heartbeat monitors show "Last ping: 2m ago" instead of response time
-- [ ] _Rationale: Dead Man's Snitch charges $5-50/mo for JUST this. We bundle it. Architecturally trivial (~2-3 hrs). Massive positioning value._
+**Cron / Heartbeat Monitoring ✅** _(Done in Day 10G)_
+- [x] New monitor type: "Heartbeat" — expects a ping within X minutes
+- [x] Endpoint: `GET/POST/HEAD /api/ping/{monitor_id}` — records heartbeat
+- [x] Checker: if no heartbeat received within expected window → alert
+- [x] UI: new "Heartbeat" option in Add Monitor modal with type toggle
+- [x] Dashboard: heartbeat monitors show "Last ping" instead of response time
+- [x] Post-creation modal with ping URL + copy-ready snippets
+- [x] _Rationale: Dead Man's Snitch charges $5-50/mo for JUST this. We bundle it._
 
 **Uptime Sparkline Bar Chart** ✅ _(Done in Day 10C)_
 - [x] Mini bar chart per dashboard row showing up/down history (30d daily + 24h hourly)
@@ -592,11 +622,11 @@ _Items identified during competitive audit + GPT strategy session. Build after l
 - [ ] Same POST-to-URL pattern as Slack
 - [ ] _Rationale: Trivial (~15 min) but adds "we support 3 channels" to marketing. Post-launch._
 
-**SMS / Twilio**
-- [ ] Twilio account + phone number
-- [ ] SMS alert on down/up (Pro only)
-- [ ] SMS field on edit form
-- [ ] _Rationale: Listed on pricing page but not built. Need to wire up or remove from pricing._
+**SMS / Twilio** ✅ _(Done in Day 10G)_
+- [x] Twilio account + phone number
+- [x] SMS alert on down/up (Pro only)
+- [x] SMS field on edit form
+- [x] _Real Twilio REST API via httpx. Pro-gated in all alert dispatchers._
 
 ### Future Backlog 🔲
 _Nice-to-have. Don't build until there's user demand._
@@ -643,8 +673,8 @@ _Nice-to-have. Don't build until there's user demand._
 **Day 10 in progress** · **Target launch: Day 12 (Mar 7)**
 
 ### What's actually live right now
-- ✅ Full monitoring engine: HTTP checks, SSL, keyword, response threshold
-- ✅ Alerts: email (SendGrid), Slack webhooks, webhook notifications
+- ✅ Full monitoring engine: HTTP checks, SSL, keyword, response threshold, **heartbeat/cron**
+- ✅ Alerts: email (SendGrid w/ retry + circuit breaker), Slack webhooks, webhook notifications, **SMS (Twilio)**
 - ✅ Public status pages + aggregate status page
 - ✅ Stripe billing (Free / Pro $9/mo)
 - ✅ Public API with key auth (6 endpoints, consistent JSON)
@@ -659,13 +689,14 @@ _Nice-to-have. Don't build until there's user demand._
 - ✅ Monitor detail: unified uptime slicer (24h/7d/30d), response chart with time picker, incidents table, CSV export
 - ✅ Custom check interval for Pro users (60–300s slider)
 - ✅ Live-ticking last check counter with polling
+- ✅ Heartbeat/cron monitoring: type toggle, ping URL, post-creation snippets modal, overdue detection
 
 ### What's broken / dishonest (Day 10 fixes)
 - ~~⚠️ Slack alerts — Free users can set webhook URL (pricing says Pro only)~~ ✅ Fixed
 - ~~⚠️ Response threshold — Free users can set threshold (should be Pro?)~~ ✅ Threshold is all-plan, Slack channel is Pro-gated
 - ~~⚠️ Check interval — all monitors run at 60s regardless of plan (pricing says Free = 5min)~~ ✅ Fixed (check_interval set at creation, enforced in checker)
 - ~~⚠️ `paused` field — exists in API but not functional in checker or UI~~ ✅ Fixed (checker skips paused, UI has toggle)
-- ⚠️ SMS — listed on pricing, not implemented (remove from pricing or defer)
+- ~~⚠️ SMS — listed on pricing, not implemented (remove from pricing or defer)~~ ✅ Fixed (Day 10G — real Twilio SMS, Pro-gated)
 
 ### What's missing (Day 10-11 adds)
 - ~~🔲 "Up for X" duration text on dashboard + detail~~ ✅ Done (10C)
