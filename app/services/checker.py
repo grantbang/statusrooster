@@ -3,6 +3,7 @@ import asyncio
 import time
 import ssl
 import socket
+import json as json_lib
 from datetime import datetime, timezone, timedelta
 from app.database import get_db
 from app.models.monitor import get_all_monitors, update_monitor
@@ -11,7 +12,7 @@ from app.models.incident import create_incident, resolve_incident, get_open_inci
 from app.services.alerts import send_down_alert, send_recovery_alert, send_ssl_expiry_alert, send_keyword_alert, send_threshold_alert, send_webhook_notification
 
 
-async def check_url(url: str, timeout: float = 10.0) -> dict:
+async def check_url(url: str, timeout: float = 10.0, expected_status_code: int | None = None) -> dict:
     """
     Perform an HTTP GET to the target URL.
     Returns dict with status_code, response_ms, is_up, body (first 10KB).
@@ -22,12 +23,15 @@ async def check_url(url: str, timeout: float = 10.0) -> dict:
             response = await client.get(url, timeout=timeout, follow_redirects=True)
             elapsed_ms = round((time.monotonic() - start) * 1000, 2)
 
-            is_up = 200 <= response.status_code < 400
+            if expected_status_code:
+                is_up = response.status_code == expected_status_code
+            else:
+                is_up = 200 <= response.status_code < 400
             return {
                 "status_code": response.status_code,
                 "response_ms": elapsed_ms,
                 "is_up": is_up,
-                "body": response.text[:10240] if is_up else "",
+                "body": response.text[:10240] if is_up else response.text[:10240],
             }
     except (httpx.TimeoutException, httpx.ConnectError, httpx.RequestError):
         return {
@@ -38,17 +42,209 @@ async def check_url(url: str, timeout: float = 10.0) -> dict:
         }
 
 
-async def check_url_with_retry(url: str, timeout: float = 10.0) -> dict:
+async def check_url_with_retry(url: str, timeout: float = 10.0, expected_status_code: int | None = None) -> dict:
     """
     Check a URL with false positive prevention.
     If the first check fails, wait 5 seconds and retry once.
     """
-    result = await check_url(url, timeout)
+    result = await check_url(url, timeout, expected_status_code)
     if not result["is_up"]:
         # Retry once after 5 seconds to prevent false positives
         await asyncio.sleep(5)
-        result = await check_url(url, timeout)
+        result = await check_url(url, timeout, expected_status_code)
     return result
+
+
+async def check_json_api(url: str, timeout: float = 10.0, expected_status_code: int | None = None,
+                         auth_header: str = "", assertions: list | None = None) -> dict:
+    """
+    Check a JSON API endpoint. Validates:
+    - HTTP response status
+    - JSON validity
+    - Field assertions (key path + operator + expected value)
+    Returns dict with status_code, response_ms, is_up, body, assertion_results.
+    """
+    assertions = assertions or []
+    try:
+        headers = {}
+        if auth_header:
+            headers["Authorization"] = auth_header
+        async with httpx.AsyncClient() as client:
+            start = time.monotonic()
+            response = await client.get(url, timeout=timeout, follow_redirects=True, headers=headers)
+            elapsed_ms = round((time.monotonic() - start) * 1000, 2)
+
+            # Check status code
+            if expected_status_code:
+                status_ok = response.status_code == expected_status_code
+            else:
+                status_ok = 200 <= response.status_code < 400
+
+            body_text = response.text[:10240]
+
+            # Try parsing JSON
+            json_data = None
+            json_valid = False
+            try:
+                json_data = response.json()
+                json_valid = True
+            except Exception:
+                pass
+
+            # Run assertions
+            assertion_results = []
+            assertions_passed = True
+            if json_valid and json_data is not None and assertions:
+                for assertion in assertions:
+                    path = assertion.get("path", "")
+                    operator = assertion.get("operator", "equals")
+                    expected = assertion.get("value", "")
+                    actual = _resolve_json_path(json_data, path)
+                    passed = _evaluate_assertion(actual, operator, expected)
+                    assertion_results.append({
+                        "path": path,
+                        "operator": operator,
+                        "expected": expected,
+                        "actual": str(actual) if actual is not None else None,
+                        "passed": passed,
+                    })
+                    if not passed:
+                        assertions_passed = False
+            elif assertions and not json_valid:
+                assertions_passed = False
+                assertion_results.append({
+                    "path": "*",
+                    "operator": "json_valid",
+                    "expected": "valid JSON",
+                    "actual": "invalid",
+                    "passed": False,
+                })
+
+            is_up = status_ok and json_valid and assertions_passed
+
+            return {
+                "status_code": response.status_code,
+                "response_ms": elapsed_ms,
+                "is_up": is_up,
+                "body": body_text,
+                "json_valid": json_valid,
+                "assertion_results": assertion_results,
+            }
+    except (httpx.TimeoutException, httpx.ConnectError, httpx.RequestError):
+        return {
+            "status_code": None,
+            "response_ms": None,
+            "is_up": False,
+            "body": "",
+            "json_valid": False,
+            "assertion_results": [],
+        }
+
+
+def _resolve_json_path(data, path: str):
+    """Resolve a dot-notation JSON path like 'data.user.name' or 'items[0].id'."""
+    if not path:
+        return data
+    parts = path.replace("[", ".[").split(".")
+    current = data
+    for part in parts:
+        if not part:
+            continue
+        if part.startswith("[") and part.endswith("]"):
+            try:
+                idx = int(part[1:-1])
+                current = current[idx]
+            except (IndexError, TypeError, ValueError):
+                return None
+        elif isinstance(current, dict):
+            current = current.get(part)
+        else:
+            return None
+        if current is None:
+            return None
+    return current
+
+
+def _evaluate_assertion(actual, operator: str, expected: str) -> bool:
+    """Evaluate a single JSON assertion."""
+    if actual is None and operator != "not_exists":
+        return False
+    try:
+        if operator == "equals":
+            return str(actual) == str(expected)
+        elif operator == "not_equals":
+            return str(actual) != str(expected)
+        elif operator == "contains":
+            return str(expected) in str(actual)
+        elif operator == "not_contains":
+            return str(expected) not in str(actual)
+        elif operator == "exists":
+            return actual is not None
+        elif operator == "not_exists":
+            return actual is None
+        elif operator == "greater_than":
+            return float(actual) > float(expected)
+        elif operator == "less_than":
+            return float(actual) < float(expected)
+        else:
+            return str(actual) == str(expected)
+    except (ValueError, TypeError):
+        return False
+
+
+def check_ssl_certificate(domain: str) -> dict:
+    """
+    Check SSL certificate for a domain.
+    Returns {ssl_expiry, ssl_issuer, ssl_expiry_days, is_valid, error}.
+    """
+    info = {
+        "ssl_expiry": None,
+        "ssl_issuer": None,
+        "ssl_expiry_days": None,
+        "is_valid": False,
+        "error": None,
+    }
+    try:
+        from cryptography import x509
+        from cryptography.hazmat.backends import default_backend
+
+        # Clean domain (strip protocol, path, port)
+        domain = domain.strip()
+        if domain.startswith(("http://", "https://")):
+            from urllib.parse import urlparse
+            parsed = urlparse(domain)
+            domain = parsed.hostname or domain
+        domain = domain.split("/")[0].split(":")[0]
+
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        with socket.create_connection((domain, 443), timeout=10) as sock:
+            with ctx.wrap_socket(sock, server_hostname=domain) as ssock:
+                der = ssock.getpeercert(binary_form=True)
+                if der:
+                    cert = x509.load_der_x509_certificate(der, default_backend())
+                    # Issuer
+                    try:
+                        org = cert.issuer.get_attributes_for_oid(x509.oid.NameOID.ORGANIZATION_NAME)
+                        info["ssl_issuer"] = org[0].value if org else None
+                    except Exception:
+                        pass
+                    if not info["ssl_issuer"]:
+                        try:
+                            cn = cert.issuer.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)
+                            info["ssl_issuer"] = cn[0].value if cn else "Unknown"
+                        except Exception:
+                            info["ssl_issuer"] = "Unknown"
+                    # Expiry
+                    exp = cert.not_valid_after_utc
+                    info["ssl_expiry"] = exp
+                    info["ssl_expiry_days"] = (exp - datetime.now(timezone.utc)).days
+                    info["is_valid"] = info["ssl_expiry_days"] > 0
+    except Exception as e:
+        info["error"] = str(e)
+        print(f"[checker] SSL check failed for {domain}: {e}")
+    return info
 
 
 def grab_ssl_info(url: str) -> dict:
@@ -241,6 +437,7 @@ async def run_checks():
         # ----- Heartbeat monitors: check if ping is overdue -----
         if monitor.get("monitor_type") == "heartbeat":
             heartbeat_interval = monitor.get("heartbeat_interval", 300)
+            grace_period = monitor.get("heartbeat_grace_period", 30)
             last_hb = monitor.get("last_heartbeat")
 
             # Parse last_heartbeat timestamp
@@ -254,7 +451,7 @@ async def run_checks():
                 elif hasattr(last_hb, 'timestamp'):
                     last_hb_dt = last_hb if last_hb.tzinfo else last_hb.replace(tzinfo=timezone.utc)
 
-            # Determine if heartbeat is overdue (with 30s grace period)
+            # Determine if heartbeat is overdue
             if last_hb_dt is None:
                 # Never received a ping — if monitor is older than the interval, mark down
                 created = monitor.get("created_at")
@@ -263,12 +460,12 @@ async def run_checks():
                     if hasattr(created_dt, 'tzinfo') and created_dt.tzinfo is None:
                         created_dt = created_dt.replace(tzinfo=timezone.utc)
                     age = (now - created_dt).total_seconds()
-                    is_up = age < heartbeat_interval + 30  # grace for initial setup
+                    is_up = age < heartbeat_interval + grace_period
                 else:
                     is_up = True  # brand new, give benefit of the doubt
             else:
                 overdue = (now - last_hb_dt).total_seconds()
-                is_up = overdue <= heartbeat_interval + 30  # 30s grace period
+                is_up = overdue <= heartbeat_interval + grace_period
 
             # Record as a "check"
             create_check(
@@ -286,9 +483,89 @@ async def run_checks():
                 "is_up": is_up,
                 "body": "",
             }
+
+        # ----- SSL monitors: check certificate expiry -----
+        elif monitor.get("monitor_type") == "ssl":
+            ssl_domain = monitor.get("ssl_domain", "")
+            threshold_days = monitor.get("ssl_expiry_threshold_days", 14)
+
+            if not ssl_domain:
+                results["skipped"] += 1
+                continue
+
+            ssl_result = check_ssl_certificate(ssl_domain)
+
+            # Determine status based on expiry
+            if ssl_result.get("error"):
+                is_up = False
+                new_monitor_status = "down"
+            elif ssl_result["ssl_expiry_days"] is not None:
+                if ssl_result["ssl_expiry_days"] <= 0:
+                    is_up = False
+                    new_monitor_status = "down"
+                elif ssl_result["ssl_expiry_days"] <= threshold_days:
+                    is_up = True  # Not down, but warning
+                    new_monitor_status = "warn"
+                else:
+                    is_up = True
+                    new_monitor_status = "up"
+            else:
+                is_up = False
+                new_monitor_status = "down"
+
+            create_check(
+                db,
+                monitor_id=monitor["id"],
+                status_code=200 if is_up else None,
+                response_ms=0,
+                is_up=is_up,
+            )
+
+            result = {
+                "status_code": 200 if is_up else None,
+                "response_ms": 0,
+                "is_up": is_up,
+                "body": "",
+            }
+
+            # Update SSL fields on the monitor doc
+            ssl_updates = {}
+            if ssl_result["ssl_expiry"]:
+                ssl_updates["ssl_expiry"] = ssl_result["ssl_expiry"]
+                ssl_updates["ssl_issuer"] = ssl_result["ssl_issuer"]
+                ssl_updates["ssl_expiry_days"] = ssl_result["ssl_expiry_days"]
+            if ssl_updates:
+                update_monitor(db, monitor["id"], ssl_updates)
+
+        # ----- JSON/API monitors: validate JSON response + assertions -----
+        elif monitor.get("monitor_type") == "json_api":
+            timeout_val = monitor.get("timeout", 10)
+            expected_code = monitor.get("expected_status_code")
+            auth_header = monitor.get("auth_header", "")
+            assertions = monitor.get("json_assertions") or []
+
+            result = await check_json_api(
+                monitor["url"],
+                timeout=timeout_val,
+                expected_status_code=expected_code,
+                auth_header=auth_header,
+                assertions=assertions,
+            )
+
+            create_check(
+                db,
+                monitor_id=monitor["id"],
+                status_code=result["status_code"],
+                response_ms=result["response_ms"],
+                is_up=result["is_up"],
+            )
+
         else:
             # ----- HTTP monitors: perform the check with retry -----
-            result = await check_url_with_retry(monitor["url"])
+            timeout_val = monitor.get("timeout", 10)
+            expected_code = monitor.get("expected_status_code")
+
+            result = await check_url_with_retry(monitor["url"], timeout=timeout_val, expected_status_code=expected_code)
 
             # Record check in Firestore
             create_check(
@@ -301,7 +578,15 @@ async def run_checks():
 
         # Update monitor stats
         previous_status = monitor.get("status", "pending")
-        new_status = "up" if result["is_up"] else "down"
+        # SSL monitors can have "warn" status
+        if monitor.get("monitor_type") == "ssl" and 'new_monitor_status' in dir():
+            pass  # new_monitor_status already set above
+        else:
+            new_status = "up" if result["is_up"] else "down"
+
+        # For SSL monitors, use the pre-determined status
+        if monitor.get("monitor_type") == "ssl":
+            new_status = new_monitor_status
 
         checks_total = monitor.get("checks_total", 0) + 1
         checks_failed = monitor.get("checks_failed", 0) + (0 if result["is_up"] else 1)
@@ -353,9 +638,17 @@ async def run_checks():
         hbars = [b for b in hbars if b["hour"] >= cutoff_hour]
         monitor_updates["hourly_uptime_bars"] = hbars
 
-        # ----- SSL Expiry Check (HTTP monitors only) -----
+        # ----- SSL Expiry Check (HTTP monitors only — auto-detect) -----
         ssl_info = {}
-        if monitor.get("monitor_type", "http") == "http":
+        if monitor.get("monitor_type") == "http":
+            ssl_info = grab_ssl_info(monitor["url"])
+            if ssl_info["ssl_expiry"]:
+                monitor_updates["ssl_expiry"] = ssl_info["ssl_expiry"]
+                monitor_updates["ssl_issuer"] = ssl_info["ssl_issuer"]
+                monitor_updates["ssl_expiry_days"] = ssl_info["ssl_expiry_days"]
+
+        # ----- SSL Expiry Check (JSON/API monitors — auto-detect) -----
+        if monitor.get("monitor_type") == "json_api" and monitor.get("url", "").startswith("https"):
             ssl_info = grab_ssl_info(monitor["url"])
             if ssl_info["ssl_expiry"]:
                 monitor_updates["ssl_expiry"] = ssl_info["ssl_expiry"]
@@ -384,17 +677,18 @@ async def run_checks():
                     await send_keyword_alert(monitor, keyword)
                     print(f"[checker] KEYWORD MISSING: '{keyword}' not found on {monitor['name']}")
 
-        # ----- Response Time Threshold — HTTP monitors only -----
+        # ----- Response Time Threshold — HTTP + JSON/API monitors -----
+        has_response = monitor.get("monitor_type") in ("http", "json_api")
         threshold = monitor.get("response_threshold_ms")
-        if is_http and threshold and result["response_ms"] and result["is_up"]:
+        if has_response and threshold and result["response_ms"] and result["is_up"]:
             threshold_str = str(threshold)
             if _check_threshold_condition(threshold_str, result["response_ms"]):
                 if not in_maintenance:
                     await send_threshold_alert(monitor, result["response_ms"], threshold)
                     print(f"[checker] THRESHOLD: {monitor['name']} {result['response_ms']}ms violated condition '{threshold_str}'")
 
-        # ----- SSL Expiry Alerts (14, 7, 3 days) — HTTP monitors only -----
-        if is_http and ssl_info.get("ssl_expiry_days") is not None:
+        # ----- SSL Expiry Alerts (14, 7, 3 days) — HTTP + JSON/API monitors (auto-detect) -----
+        if monitor.get("monitor_type") in ("http", "json_api") and ssl_info.get("ssl_expiry_days") is not None:
             days_left = ssl_info["ssl_expiry_days"]
             last_alerted = monitor.get("ssl_expiry_alerted_days")
             for threshold_days in [14, 7, 3]:
@@ -403,6 +697,18 @@ async def run_checks():
                         await send_ssl_expiry_alert(monitor, days_left, ssl_info["ssl_expiry"])
                         update_monitor(db, monitor["id"], {"ssl_expiry_alerted_days": threshold_days})
                     break
+
+        # ----- SSL Monitor — Expiry alerts based on configured threshold -----
+        if monitor.get("monitor_type") == "ssl":
+            threshold_days = monitor.get("ssl_expiry_threshold_days", 14)
+            ssl_days = monitor.get("ssl_expiry_days") or (ssl_result.get("ssl_expiry_days") if 'ssl_result' in dir() else None)
+            if ssl_days is not None:
+                last_alerted = monitor.get("ssl_expiry_alerted_days")
+                if ssl_days <= threshold_days and last_alerted != threshold_days:
+                    if not in_maintenance:
+                        ssl_exp = monitor.get("ssl_expiry") or (ssl_result.get("ssl_expiry") if 'ssl_result' in dir() else None)
+                        await send_ssl_expiry_alert(monitor, ssl_days, ssl_exp)
+                        update_monitor(db, monitor["id"], {"ssl_expiry_alerted_days": threshold_days})
 
         # ----- Status change detection + Incidents + Alerts -----
         if status_changed and new_status == "down":

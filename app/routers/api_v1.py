@@ -171,8 +171,15 @@ class ApiCreateMonitor(BaseModel):
     paused: bool = False
     check_interval: int | None = None
     maintenance_windows: list[MaintenanceWindow] | None = None
-    monitor_type: str = "http"          # "http" or "heartbeat"
-    heartbeat_interval: int | None = None  # seconds (heartbeat only)
+    monitor_type: str = "http"          # "http" | "heartbeat" | "json_api" | "ssl"
+    heartbeat_interval: int | None = None
+    heartbeat_grace_period: int | None = None
+    expected_status_code: int | None = None
+    timeout: int | None = None
+    json_assertions: list | None = None  # [{path, operator, value}]
+    auth_header: str = ""
+    ssl_domain: str = ""
+    ssl_expiry_threshold_days: int | None = None
 
 
 @router.post("/monitors", status_code=201)
@@ -217,6 +224,13 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
         check_interval=req.check_interval,
         monitor_type=req.monitor_type,
         heartbeat_interval=req.heartbeat_interval,
+        heartbeat_grace_period=req.heartbeat_grace_period,
+        expected_status_code=req.expected_status_code,
+        timeout=req.timeout,
+        json_assertions=req.json_assertions,
+        auth_header=req.auth_header,
+        ssl_domain=req.ssl_domain,
+        ssl_expiry_threshold_days=req.ssl_expiry_threshold_days,
     )
 
     # For heartbeat monitors, set the ping URL
@@ -246,6 +260,13 @@ class ApiUpdateMonitor(BaseModel):
     check_interval: int | None = None
     maintenance_windows: list[MaintenanceWindow] | None = None
     heartbeat_interval: int | None = None
+    heartbeat_grace_period: int | None = None
+    expected_status_code: int | None = None
+    timeout: int | None = None
+    json_assertions: list | None = None
+    auth_header: str | None = None
+    ssl_domain: str | None = None
+    ssl_expiry_threshold_days: int | None = None
 
 
 @router.put("/monitors/{monitor_id}")
@@ -312,6 +333,20 @@ async def api_update_monitor(
         updates["check_interval"] = max(60, min(300, req.check_interval))
     if req.heartbeat_interval is not None:
         updates["heartbeat_interval"] = max(60, min(86400, req.heartbeat_interval))
+    if req.heartbeat_grace_period is not None:
+        updates["heartbeat_grace_period"] = max(0, min(3600, req.heartbeat_grace_period))
+    if req.expected_status_code is not None:
+        updates["expected_status_code"] = req.expected_status_code
+    if req.timeout is not None:
+        updates["timeout"] = max(1, min(60, req.timeout))
+    if req.json_assertions is not None:
+        updates["json_assertions"] = req.json_assertions
+    if req.auth_header is not None:
+        updates["auth_header"] = req.auth_header
+    if req.ssl_domain is not None:
+        updates["ssl_domain"] = req.ssl_domain
+    if req.ssl_expiry_threshold_days is not None:
+        updates["ssl_expiry_threshold_days"] = max(1, min(90, req.ssl_expiry_threshold_days))
 
     if not updates:
         err("No fields to update. Send at least one field.", 422)

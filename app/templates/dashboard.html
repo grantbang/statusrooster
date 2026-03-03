@@ -22,10 +22,11 @@
 <div class="dash-single">
 
 <!-- Summary Metrics -->
-{% set ns = namespace(up=0, down=0, paused=0, pending=0) %}
+{% set ns = namespace(up=0, down=0, paused=0, pending=0, warn=0) %}
 {% for m in monitors %}
     {% if m.get('paused') %}{% set ns.paused = ns.paused + 1 %}
     {% elif m.status == 'up' %}{% set ns.up = ns.up + 1 %}
+    {% elif m.status == 'warn' %}{% set ns.warn = ns.warn + 1 %}
     {% elif m.status == 'down' %}{% set ns.down = ns.down + 1 %}
     {% else %}{% set ns.pending = ns.pending + 1 %}{% endif %}
 {% endfor %}
@@ -33,10 +34,12 @@
 <!-- ═══════════════ Hero Status Strip ═══════════════ -->
 <div class="status-strip">
     <div class="strip-left">
-        <div class="strip-status-dot {% if ns.down > 0 %}strip-dot-down{% else %}strip-dot-up{% endif %}"></div>
+        <div class="strip-status-dot {% if ns.down > 0 %}strip-dot-down{% elif ns.warn > 0 %}strip-dot-warn{% else %}strip-dot-up{% endif %}"></div>
         <div class="strip-status-text">
             {% if ns.down > 0 %}
                 <span class="strip-headline strip-headline-down">{{ ns.down }} monitor{{ 's' if ns.down != 1 }} down</span>
+            {% elif ns.warn > 0 %}
+                <span class="strip-headline strip-headline-warn">{{ ns.warn }} monitor{{ 's' if ns.warn != 1 }} warning</span>
             {% else %}
                 <span class="strip-headline strip-headline-up">All systems operational</span>
             {% endif %}
@@ -53,6 +56,13 @@
             <span class="strip-count-value">{{ ns.down }}</span>
             <span class="strip-count-label">Down</span>
         </div>
+        {% if ns.warn > 0 %}
+        <div class="strip-count-pill strip-count-warn">
+            <span class="strip-count-dot dot-warn"></span>
+            <span class="strip-count-value">{{ ns.warn }}</span>
+            <span class="strip-count-label">Warn</span>
+        </div>
+        {% endif %}
         <div class="strip-count-pill strip-count-paused">
             <span class="strip-count-dot dot-paused"></span>
             <span class="strip-count-value">{{ ns.paused }}</span>
@@ -153,6 +163,8 @@
                 <span class="dot dot-paused">⏸</span>
             {% elif m.status == 'up' %}
                 <span class="dot dot-up"></span>
+            {% elif m.status == 'warn' %}
+                <span class="dot dot-warn"></span>
             {% elif m.status == 'down' %}
                 <span class="dot dot-down"></span>
             {% else %}
@@ -164,7 +176,7 @@
         <div class="monitor-info">
             <div class="monitor-name">{{ m.name }}</div>
             <div class="monitor-meta">
-                <span class="monitor-type{% if m.get('monitor_type') == 'heartbeat' %} monitor-type-heartbeat{% endif %}">{{ '♥ Heartbeat' if m.get('monitor_type') == 'heartbeat' else 'HTTP' }}</span>
+                <span class="monitor-type{% if m.get('monitor_type') == 'heartbeat' %} monitor-type-heartbeat{% elif m.get('monitor_type') == 'json_api' %} monitor-type-json{% elif m.get('monitor_type') == 'ssl' %} monitor-type-ssl{% endif %}">{% if m.get('monitor_type') == 'heartbeat' %}♥ Heartbeat{% elif m.get('monitor_type') == 'json_api' %}{ } JSON/API{% elif m.get('monitor_type') == 'ssl' %}🔒 SSL{% else %}HTTP{% endif %}</span>
                 <span class="monitor-url-text">{{ m.url | replace('https://', '') | replace('http://', '') | truncate(35, True, '…') }}</span>
                 {% set sc = m.get('last_status_change') or m.get('created_at') or '' %}
                 {% if m.get('paused') %}
@@ -360,23 +372,87 @@
         <form method="POST" action="/monitors/add">
             <div class="form-group">
                 <label>Monitor Type</label>
-                <div style="display: flex; gap: 0.5rem;">
+                <div class="monitor-type-grid">
                     <button type="button" class="type-btn type-btn-active" data-type="http" onclick="setMonitorType('http', this)">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                        HTTP / Website
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        HTTP / HTTPS
+                    </button>
+                    <button type="button" class="type-btn" data-type="json_api" onclick="setMonitorType('json_api', this)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M10 13l-2 2 2 2"/><path d="M14 13l2 2-2 2"/></svg>
+                        JSON / API
                     </button>
                     <button type="button" class="type-btn" data-type="heartbeat" onclick="setMonitorType('heartbeat', this)">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
                         Heartbeat / Cron
+                    </button>
+                    <button type="button" class="type-btn" data-type="ssl" onclick="setMonitorType('ssl', this)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        SSL Certificate
                     </button>
                 </div>
                 <input type="hidden" id="monitor_type" name="monitor_type" value="http">
             </div>
-            <div class="form-group" id="urlGroup">
-                <label for="url">URL to Monitor</label>
-                <input type="url" id="url" name="url" placeholder="https://example.com" required>
-                <div class="hint">We'll check this URL at the interval you choose below</div>
+
+            <!-- ═══ HTTP fields ═══ -->
+            <div id="httpFields">
+                <div class="form-group" id="urlGroup">
+                    <label for="url">URL to Monitor</label>
+                    <input type="url" id="url" name="url" placeholder="https://example.com" required>
+                    <div class="hint" id="urlHint">We'll check this URL at the interval you choose below</div>
+                </div>
+                <div class="form-group">
+                    <label for="expected_status_code">Expected Status Code <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                    <input type="number" id="expected_status_code" name="expected_status_code" placeholder="200" min="100" max="599" style="max-width: 120px;">
+                    <div class="hint">Leave blank to accept any 2xx/3xx response</div>
+                </div>
+                <div class="form-group">
+                    <label for="timeout">Request Timeout <span style="color: #999; font-weight: normal;">(seconds)</span></label>
+                    <input type="number" id="timeout" name="timeout" placeholder="10" min="1" max="60" value="10" style="max-width: 120px;">
+                </div>
+                <div class="form-group">
+                    <label for="keyword">Keyword Check <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                    <input type="text" id="keyword" name="keyword" placeholder="e.g. Welcome AND Login">
+                    <div class="hint">Supports <code>AND</code> / <code>OR</code> — e.g. <code>Welcome AND Login</code>, <code>error OR failure</code></div>
+                </div>
+                <div class="form-group">
+                    <label for="response_threshold_ms">Response Threshold <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                    <input type="text" id="response_threshold_ms" name="response_threshold_ms" placeholder="e.g. > 2000 or 200-3000">
+                    <div class="hint">Supports: <code>> 2000</code>, <code>< 200</code>, <code>200-3000</code> (range), or plain number (ms)</div>
+                </div>
             </div>
+
+            <!-- ═══ JSON/API fields ═══ -->
+            <div id="jsonApiFields" style="display: none;">
+                <div class="form-group">
+                    <label for="json_url">API Endpoint URL</label>
+                    <input type="url" id="json_url" name="url" placeholder="https://api.example.com/v1/health" disabled>
+                    <div class="hint">We'll send a GET request and validate the JSON response</div>
+                </div>
+                <div class="form-group">
+                    <label for="json_expected_status">Expected Status Code <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                    <input type="number" id="json_expected_status" name="expected_status_code" placeholder="200" min="100" max="599" style="max-width: 120px;" disabled>
+                    <div class="hint">Leave blank to accept any 2xx/3xx response</div>
+                </div>
+                <div class="form-group">
+                    <label for="json_timeout">Request Timeout <span style="color: #999; font-weight: normal;">(seconds)</span></label>
+                    <input type="number" id="json_timeout" name="timeout" placeholder="10" min="1" max="60" value="10" style="max-width: 120px;" disabled>
+                </div>
+                <div class="form-group">
+                    <label for="auth_header">Authorization Header <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                    <input type="text" id="auth_header" name="auth_header" placeholder="Bearer eyJhbGci..." disabled>
+                    <div class="hint">Sent as the <code>Authorization</code> header</div>
+                </div>
+                <div class="form-group">
+                    <label>JSON Assertions <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                    <div id="assertions-container">
+                        <!-- assertions added dynamically -->
+                    </div>
+                    <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; margin-top: 0.5rem;" onclick="addAssertion()" id="addAssertionBtn" disabled>+ Add assertion</button>
+                    <div class="hint">Validate specific fields in the JSON response — e.g. <code>status</code> equals <code>ok</code></div>
+                </div>
+            </div>
+
+            <!-- ═══ Heartbeat fields ═══ -->
             <div id="heartbeatGroup" style="display: none;">
                 <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 1rem 1.15rem; margin-bottom: 1rem;">
                     <div style="font-weight: 600; font-size: 0.9rem; color: #15803d; margin-bottom: 0.4rem;">How heartbeat monitoring works</div>
@@ -402,10 +478,38 @@
                         <option value="43200">Every 12 hours</option>
                         <option value="86400">Every 24 hours</option>
                     </select>
-                    <div class="hint">We'll alert you if no ping arrives within this interval (+ 30s grace period)</div>
+                    <div class="hint">We'll alert you if no ping arrives within this interval</div>
+                </div>
+                <div class="form-group">
+                    <label for="heartbeat_grace_period">Grace Period <span style="color: #999; font-weight: normal;">(seconds)</span></label>
+                    <input type="number" id="heartbeat_grace_period" name="heartbeat_grace_period" value="30" min="0" max="3600" style="max-width: 120px;">
+                    <div class="hint">Extra time allowed after the interval before marking as down (default: 30s)</div>
                 </div>
             </div>
-            <div class="form-group http-only-field">
+
+            <!-- ═══ SSL fields ═══ -->
+            <div id="sslFields" style="display: none;">
+                <div style="background: #fefce8; border: 1px solid #fde68a; border-radius: 10px; padding: 1rem 1.15rem; margin-bottom: 1rem;">
+                    <div style="font-weight: 600; font-size: 0.9rem; color: #854d0e; margin-bottom: 0.4rem;">SSL Certificate Monitoring</div>
+                    <p style="margin: 0; font-size: 0.82rem; color: #713f12; line-height: 1.7;">
+                        We'll check your domain's SSL certificate on every check cycle and alert you when it's approaching expiration.
+                        The monitor enters a <strong>warning</strong> state when within threshold, and <strong>down</strong> when expired.
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label for="ssl_domain">Domain</label>
+                    <input type="text" id="ssl_domain" name="ssl_domain" placeholder="example.com" disabled>
+                    <div class="hint">Enter the domain name — no protocol or path needed</div>
+                </div>
+                <div class="form-group">
+                    <label for="ssl_expiry_threshold_days">Warning Threshold <span style="color: #999; font-weight: normal;">(days)</span></label>
+                    <input type="number" id="ssl_expiry_threshold_days" name="ssl_expiry_threshold_days" value="14" min="1" max="90" style="max-width: 120px;" disabled>
+                    <div class="hint">Alert when certificate expires within this many days</div>
+                </div>
+            </div>
+
+            <!-- ═══ Shared fields ═══ -->
+            <div class="form-group" id="checkIntervalGroup">
                 <label for="check_interval">Check Interval <span style="color: #999; font-weight: normal;">(Pro)</span></label>
                 {% if user.get('plan', 'free') != 'free' %}
                 <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -414,7 +518,7 @@
                            oninput="document.getElementById('intervalDisplay').textContent = this.value < 60 ? '60s' : this.value < 120 ? this.value + 's' : (this.value / 60).toFixed(0) + 'm'">
                     <span id="intervalDisplay" style="min-width: 3rem; font-weight: 600; font-size: 0.95rem; color: var(--brand);">60s</span>
                 </div>
-                <div class="hint">How often we check this URL (60s – 5m). Lower = faster incident detection.</div>
+                <div class="hint">How often we check (60s – 5m). Lower = faster incident detection.</div>
                 {% else %}
                 <div style="display: flex; align-items: center; gap: 0.75rem; opacity: 0.5;">
                     <input type="range" disabled min="60" max="300" value="300" style="flex: 1; cursor: not-allowed;">
@@ -443,17 +547,7 @@
                 <div class="hint" style="color: #6366f1;"><a href="/api/billing/checkout" onclick="event.preventDefault(); this.closest('form').action='/api/billing/checkout'; this.closest('form').submit();" style="color: #6366f1; text-decoration: underline;">Upgrade to Pro</a> for Slack alerts</div>
                 {% endif %}
             </div>
-            <div class="form-group http-only-field">
-                <label for="keyword">Keyword Check <span style="color: #999; font-weight: normal;">(optional)</span></label>
-                <input type="text" id="keyword" name="keyword" placeholder="e.g. Welcome AND Login">
-                <div class="hint">Supports <code>AND</code> / <code>OR</code> — e.g. <code>Welcome AND Login</code>, <code>error OR failure</code></div>
-            </div>
-            <div class="form-group http-only-field">
-                <label for="response_threshold_ms">Response Threshold <span style="color: #999; font-weight: normal;">(optional)</span></label>
-                <input type="text" id="response_threshold_ms" name="response_threshold_ms" placeholder="e.g. > 2000 or 200-3000">
-                <div class="hint">Supports: <code>> 2000</code>, <code>< 200</code>, <code>200-3000</code> (range), or plain number (ms)</div>
-            </div>
-            <div class="form-group http-only-field">
+            <div class="form-group" id="webhookGroup">
                 <label for="webhook_url">Webhook URL <span style="color: #999; font-weight: normal;">(Pro)</span></label>
                 {% if user.get('plan', 'free') != 'free' %}
                 <input type="url" id="webhook_url" name="webhook_url" placeholder="https://your-api.com/webhook">
@@ -463,7 +557,7 @@
                 {% endif %}
                 <div class="hint">We'll POST JSON to this URL on status changes</div>
             </div>
-            <div class="form-group http-only-field">
+            <div class="form-group" id="maintenanceGroup">
                 <label>Maintenance Windows <span style="color: #999; font-weight: normal;">(Pro)</span></label>
                 <div id="mw-container">
                     <!-- windows added dynamically -->
@@ -599,27 +693,89 @@ function setMonitorType(type, btn) {
     document.getElementById('monitor_type').value = type;
     document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('type-btn-active'));
     btn.classList.add('type-btn-active');
-    const urlGroup = document.getElementById('urlGroup');
-    const hbGroup = document.getElementById('heartbeatGroup');
-    const urlInput = document.getElementById('url');
+
     const nameInput = document.getElementById('name');
     const emailHint = document.getElementById('emailHint');
-    const httpFields = document.querySelectorAll('.http-only-field');
-    if (type === 'heartbeat') {
-        urlGroup.style.display = 'none';
-        urlInput.removeAttribute('required');
-        hbGroup.style.display = 'block';
-        httpFields.forEach(f => f.style.display = 'none');
-        nameInput.placeholder = 'e.g. Nightly DB Backup, Invoice Cron';
-        if (emailHint) emailHint.textContent = "We'll email you if a ping is missed";
-    } else {
-        urlGroup.style.display = 'block';
-        urlInput.setAttribute('required', '');
-        hbGroup.style.display = 'none';
-        httpFields.forEach(f => f.style.display = 'block');
+
+    // Hide all type-specific sections
+    ['httpFields', 'jsonApiFields', 'heartbeatGroup', 'sslFields'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
+    });
+
+    // Disable/enable form fields to prevent name collisions
+    document.querySelectorAll('#httpFields input, #httpFields select').forEach(el => { el.disabled = true; });
+    document.querySelectorAll('#jsonApiFields input, #jsonApiFields select, #jsonApiFields button').forEach(el => { el.disabled = true; });
+    document.querySelectorAll('#heartbeatGroup input, #heartbeatGroup select').forEach(el => { el.disabled = true; });
+    document.querySelectorAll('#sslFields input, #sslFields select').forEach(el => { el.disabled = true; });
+
+    // Show/hide shared fields
+    const checkIntervalGroup = document.getElementById('checkIntervalGroup');
+    const webhookGroup = document.getElementById('webhookGroup');
+    const maintenanceGroup = document.getElementById('maintenanceGroup');
+
+    if (type === 'http') {
+        document.getElementById('httpFields').style.display = 'block';
+        document.querySelectorAll('#httpFields input:not([type=hidden]), #httpFields select').forEach(el => { el.disabled = false; });
+        document.getElementById('url').setAttribute('required', '');
+        checkIntervalGroup.style.display = 'block';
+        webhookGroup.style.display = 'block';
+        maintenanceGroup.style.display = 'block';
         nameInput.placeholder = 'My Website';
         if (emailHint) emailHint.textContent = "We'll email you when this site goes down";
+    } else if (type === 'json_api') {
+        document.getElementById('jsonApiFields').style.display = 'block';
+        document.querySelectorAll('#jsonApiFields input:not([type=hidden]), #jsonApiFields select, #jsonApiFields button').forEach(el => { el.disabled = false; });
+        document.getElementById('json_url').setAttribute('required', '');
+        checkIntervalGroup.style.display = 'block';
+        webhookGroup.style.display = 'block';
+        maintenanceGroup.style.display = 'block';
+        nameInput.placeholder = 'e.g. Payment API, User Service';
+        if (emailHint) emailHint.textContent = "We'll email you when this API fails validation";
+    } else if (type === 'heartbeat') {
+        document.getElementById('heartbeatGroup').style.display = 'block';
+        document.querySelectorAll('#heartbeatGroup input:not([type=hidden]), #heartbeatGroup select').forEach(el => { el.disabled = false; });
+        checkIntervalGroup.style.display = 'none';
+        webhookGroup.style.display = 'block';
+        maintenanceGroup.style.display = 'none';
+        nameInput.placeholder = 'e.g. Nightly DB Backup, Invoice Cron';
+        if (emailHint) emailHint.textContent = "We'll email you if a ping is missed";
+    } else if (type === 'ssl') {
+        document.getElementById('sslFields').style.display = 'block';
+        document.querySelectorAll('#sslFields input:not([type=hidden]), #sslFields select').forEach(el => { el.disabled = false; });
+        document.getElementById('ssl_domain').setAttribute('required', '');
+        checkIntervalGroup.style.display = 'block';
+        webhookGroup.style.display = 'block';
+        maintenanceGroup.style.display = 'none';
+        nameInput.placeholder = 'e.g. example.com SSL';
+        if (emailHint) emailHint.textContent = "We'll email you when your SSL certificate is expiring";
     }
+}
+
+/* ── JSON Assertion Builder ───────────────────────────── */
+const ASSERTION_OPS = [
+    ['equals', 'Equals'],
+    ['not_equals', 'Not equals'],
+    ['contains', 'Contains'],
+    ['not_contains', 'Not contains'],
+    ['exists', 'Exists'],
+    ['not_exists', 'Not exists'],
+    ['greater_than', 'Greater than'],
+    ['less_than', 'Less than'],
+];
+function addAssertion(path, operator, value) {
+    const c = document.getElementById('assertions-container');
+    const row = document.createElement('div');
+    row.className = 'assertion-row';
+    row.style.cssText = 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;';
+    const options = ASSERTION_OPS.map(([val, label]) =>
+        `<option value="${val}" ${val === (operator || 'equals') ? 'selected' : ''}>${label}</option>`
+    ).join('');
+    row.innerHTML = `
+        <input type="text" name="assertion_path[]" value="${path || ''}" placeholder="data.status" style="flex:1;min-width:100px;">
+        <select name="assertion_operator[]" style="flex:0 0 auto;">${options}</select>
+        <input type="text" name="assertion_value[]" value="${value || ''}" placeholder="ok" style="flex:1;min-width:80px;">
+        <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>`;
+    c.appendChild(row);
 }
 
 /* ── Prevent info tooltips from triggering sort ────────── */

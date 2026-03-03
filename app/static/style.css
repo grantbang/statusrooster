@@ -1106,6 +1106,7 @@ code {
 }
 .dot-up { background: var(--success); box-shadow: 0 0 6px rgba(34, 197, 94, 0.4); }
 .dot-down { background: var(--danger); box-shadow: 0 0 6px rgba(239, 68, 68, 0.4); animation: pulse-dot 2s infinite; }
+.dot-warn { background: #f59e0b; box-shadow: 0 0 6px rgba(245, 158, 11, 0.4); }
 .dot-pending { background: #d1d5db; }
 .dot-paused { font-size: 0.7rem; color: var(--text-faint); }
 @keyframes pulse-dot {
@@ -1141,6 +1142,12 @@ code {
 }
 .monitor-type.monitor-type-heartbeat {
     color: #16a34a;
+}
+.monitor-type.monitor-type-json {
+    color: #2563eb;
+}
+.monitor-type.monitor-type-ssl {
+    color: #b45309;
 }
 .monitor-duration {
     font-size: 0.75rem;
@@ -1532,6 +1539,10 @@ code {
     box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
     animation: pulse-dot 2s infinite;
 }
+.strip-dot-warn {
+    background: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
 @keyframes pulse-dot {
     0%, 100% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15); }
     50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.08); }
@@ -1548,6 +1559,7 @@ code {
 }
 .strip-headline-up { color: var(--success); }
 .strip-headline-down { color: var(--danger); }
+.strip-headline-warn { color: #b45309; }
 .strip-sub {
     font-size: 0.72rem;
     color: var(--text-muted);
@@ -1575,6 +1587,7 @@ code {
 }
 .strip-count-dot.dot-up { background: var(--success); }
 .strip-count-dot.dot-down { background: var(--danger); }
+.strip-count-dot.dot-warn { background: #f59e0b; }
 .strip-count-dot.dot-paused { background: #9ca3af; }
 .strip-count-dot.dot-pending { background: #d1d5db; }
 .strip-count-value {
@@ -1914,6 +1927,7 @@ code {
 }
 .md-status-up { color: var(--success); }
 .md-status-down { color: var(--danger); }
+.md-status-warn { color: #b45309; }
 .md-status-pending { color: var(--text-muted); }
 .md-status-paused { color: var(--text-muted); }
 .md-card-sub {
@@ -4042,4 +4056,99 @@ code {
 
 .badge-extra summary:hover {
     color: var(--text);
+}
+
+/* ============================================================
+   MONITOR TYPE SELECTOR GRID (Add Monitor Modal)
+   ============================================================ */
+.monitor-type-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+.monitor-type-grid .type-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.75rem 0.5rem;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: center;
+}
+.monitor-type-grid .type-btn:hover {
+    border-color: var(--brand);
+    background: var(--brand-light);
+}
+.monitor-type-grid .type-btn.active {
+    border-color: var(--brand);
+    background: var(--brand-light);
+    color: var(--brand);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+.monitor-type-grid .type-btn svg {
+    width: 24px;
+    height: 24px;
+    opacity: 0.6;
+}
+.monitor-type-grid .type-btn.active svg {
+    opacity: 1;
+}
+
+/* ============================================================
+   EDIT PAGE TYPE BADGE
+   ============================================================ */
+.edit-type-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+/* ============================================================
+   JSON ASSERTION ROWS
+   ============================================================ */
+.assertion-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.4rem;
+    flex-wrap: wrap;
+}
+.assertion-row input,
+.assertion-row select {
+    font-size: 0.85rem;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border-input);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+}
+.assertion-row input {
+    flex: 1;
+    min-width: 80px;
+}
+.assertion-row select {
+    min-width: 100px;
+}
+.assertion-row .btn-remove-assertion {
+    background: none;
+    border: 1px solid var(--danger-border);
+    color: var(--danger);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    padding: 0.35rem 0.5rem;
+    font-size: 0.8rem;
+    transition: background 0.15s;
+}
+.assertion-row .btn-remove-assertion:hover {
+    background: var(--danger-bg);
 }

@@ -18,12 +18,14 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
                    keyword: str = "", response_threshold_ms: str | None = None,
                    webhook_url: str = "", maintenance_windows: list | None = None,
                    paused: bool = False, check_interval: int | None = None,
-                   monitor_type: str = "http", heartbeat_interval: int | None = None) -> dict:
+                   monitor_type: str = "http", heartbeat_interval: int | None = None,
+                   expected_status_code: int | None = None, timeout: int | None = None,
+                   json_assertions: list | None = None, auth_header: str = "",
+                   ssl_domain: str = "", ssl_expiry_threshold_days: int | None = None,
+                   heartbeat_grace_period: int | None = None) -> dict:
     """Create a new monitor. Returns monitor dict with id.
 
-    monitor_type: "http" (default) or "heartbeat" (cron/dead-man's-switch).
-    heartbeat_interval: For heartbeat monitors, the expected ping interval in seconds.
-                        If no ping arrives within this window, the monitor is marked DOWN.
+    monitor_type: "http" | "heartbeat" | "json_api" | "ssl"
     """
     # Determine check interval based on user plan
     user_ref = db.collection("users").document(user_id).get()
@@ -45,6 +47,21 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
         if heartbeat_interval is None:
             heartbeat_interval = 300  # default: expect ping every 5 min
         heartbeat_interval = max(60, min(86400, int(heartbeat_interval)))  # 1min - 24h
+        if heartbeat_grace_period is None:
+            heartbeat_grace_period = 30  # default 30s grace
+        heartbeat_grace_period = max(0, min(3600, int(heartbeat_grace_period)))
+
+    # SSL monitor defaults
+    if monitor_type == "ssl":
+        if ssl_expiry_threshold_days is None:
+            ssl_expiry_threshold_days = 14  # default: warn 14 days before expiry
+        ssl_expiry_threshold_days = max(1, min(90, int(ssl_expiry_threshold_days)))
+
+    # Timeout defaults (all types that make HTTP requests)
+    if monitor_type in ("http", "json_api"):
+        if timeout is None:
+            timeout = 10
+        timeout = max(1, min(60, int(timeout)))
 
     doc_ref = db.collection(COLLECTION).document()
     slug = generate_slug(name)
@@ -52,9 +69,9 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
         "user_id": user_id,
         "url": url,
         "name": name,
-        "monitor_type": monitor_type,            # "http" or "heartbeat"
+        "monitor_type": monitor_type,            # "http" | "heartbeat" | "json_api" | "ssl"
         "check_interval": check_interval,
-        "status": "pending",  # pending | up | down
+        "status": "pending",  # pending | up | down | warn
         "paused": paused,
         "last_checked": None,
         "last_status_code": None,
@@ -65,15 +82,25 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
         "alert_email": alert_email,
         "alert_slack_webhook": alert_slack_webhook,
         "alert_sms": "",
-        # Heartbeat fields
-        "heartbeat_interval": heartbeat_interval,  # Expected ping interval in seconds (heartbeat only)
-        "last_heartbeat": None,                    # Last ping timestamp (heartbeat only)
-        # Day 7: Monitoring suite fields
-        "keyword": keyword,                      # Expected keyword in response body
+        # HTTP-specific fields
+        "timeout": timeout,                          # Request timeout in seconds
+        "expected_status_code": expected_status_code,  # Expected HTTP status code (optional)
+        "keyword": keyword,                          # Expected keyword in response body
         "response_threshold_ms": response_threshold_ms,  # Alert if response > this many ms
-        "webhook_url": webhook_url,              # POST JSON on status change (Pro only)
-        "ssl_expiry": None,            # SSL cert expiry date (auto-detected)
-        "ssl_issuer": None,            # SSL cert issuer (auto-detected)
+        # JSON/API assertion fields
+        "json_assertions": json_assertions or [],    # List of {path, operator, value}
+        "auth_header": auth_header,                  # Authorization header value
+        # Heartbeat fields
+        "heartbeat_interval": heartbeat_interval,    # Expected ping interval in seconds
+        "heartbeat_grace_period": heartbeat_grace_period if monitor_type == "heartbeat" else None,
+        "last_heartbeat": None,                      # Last ping timestamp
+        # SSL monitor fields
+        "ssl_domain": ssl_domain,                    # Domain to check SSL for (ssl type only)
+        "ssl_expiry_threshold_days": ssl_expiry_threshold_days,  # Days before expiry to warn
+        # Shared monitoring fields
+        "webhook_url": webhook_url,                  # POST JSON on status change (Pro only)
+        "ssl_expiry": None,            # SSL cert expiry date (auto-detected on http, primary on ssl)
+        "ssl_issuer": None,            # SSL cert issuer
         "ssl_expiry_alerted_days": None,  # Track which threshold we last alerted at
         "maintenance_windows": maintenance_windows or [],  # List of {day, start_utc, end_utc} (Pro only)
         "public": public,

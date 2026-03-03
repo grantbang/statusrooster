@@ -10,14 +10,28 @@
         <h1>Edit Monitor</h1>
         <form method="POST" action="/monitors/{{ monitor.id }}/edit">
             {% set is_heartbeat = monitor.get('monitor_type') == 'heartbeat' %}
+            {% set is_json_api = monitor.get('monitor_type') == 'json_api' %}
+            {% set is_ssl = monitor.get('monitor_type') == 'ssl' %}
+            {% set is_http = monitor.get('monitor_type', 'http') == 'http' %}
 
-            {% if is_heartbeat %}
+            <!-- Monitor Type Badge -->
             <div class="form-group">
                 <label>Monitor Type</label>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span style="background: #f0fdf4; color: #16a34a; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600;">♥ Heartbeat</span>
+                    {% if is_heartbeat %}
+                    <span class="edit-type-badge" style="background: #f0fdf4; color: #16a34a;">♥ Heartbeat / Cron</span>
+                    {% elif is_json_api %}
+                    <span class="edit-type-badge" style="background: #eff6ff; color: #2563eb;">{ } JSON / API</span>
+                    {% elif is_ssl %}
+                    <span class="edit-type-badge" style="background: #fefce8; color: #854d0e;">🔒 SSL Certificate</span>
+                    {% else %}
+                    <span class="edit-type-badge" style="background: #f5f3ff; color: #6366f1;">HTTP / HTTPS</span>
+                    {% endif %}
                 </div>
             </div>
+
+            <!-- ═══ Heartbeat-specific fields ═══ -->
+            {% if is_heartbeat %}
             <div class="form-group">
                 <label>Ping URL</label>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -40,15 +54,99 @@
                     <option value="43200" {% if hbi == 43200 %}selected{% endif %}>Every 12 hours</option>
                     <option value="86400" {% if hbi == 86400 %}selected{% endif %}>Every 24 hours</option>
                 </select>
-                <div class="hint">We'll alert you if we don't receive a ping within this interval (+ 30s grace period)</div>
+                <div class="hint">We'll alert you if we don't receive a ping within this interval</div>
+            </div>
+            <div class="form-group">
+                <label for="heartbeat_grace_period">Grace Period <span style="color: #999; font-weight: normal;">(seconds)</span></label>
+                <input type="number" id="heartbeat_grace_period" name="heartbeat_grace_period"
+                       value="{{ monitor.get('heartbeat_grace_period', 30) }}" min="0" max="3600" style="max-width: 120px;">
+                <div class="hint">Extra time after the interval before marking as down</div>
             </div>
             <input type="hidden" name="url" value="{{ monitor.get('url', '') }}">
-            {% else %}
+            {% endif %}
+
+            <!-- ═══ HTTP-specific fields ═══ -->
+            {% if is_http %}
             <div class="form-group">
                 <label for="url">URL</label>
                 <input type="url" id="url" name="url" value="{{ monitor.url }}" required>
             </div>
+            <div class="form-group">
+                <label for="expected_status_code">Expected Status Code <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                <input type="number" id="expected_status_code" name="expected_status_code"
+                       value="{{ monitor.get('expected_status_code', '') or '' }}"
+                       placeholder="200" min="100" max="599" style="max-width: 120px;">
+                <div class="hint">Leave blank to accept any 2xx/3xx response</div>
+            </div>
+            <div class="form-group">
+                <label for="timeout">Request Timeout <span style="color: #999; font-weight: normal;">(seconds)</span></label>
+                <input type="number" id="timeout" name="timeout" value="{{ monitor.get('timeout', 10) }}"
+                       min="1" max="60" style="max-width: 120px;">
+            </div>
             {% endif %}
+
+            <!-- ═══ JSON/API-specific fields ═══ -->
+            {% if is_json_api %}
+            <div class="form-group">
+                <label for="url">API Endpoint URL</label>
+                <input type="url" id="url" name="url" value="{{ monitor.url }}" required>
+            </div>
+            <div class="form-group">
+                <label for="expected_status_code">Expected Status Code <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                <input type="number" id="expected_status_code" name="expected_status_code"
+                       value="{{ monitor.get('expected_status_code', '') or '' }}"
+                       placeholder="200" min="100" max="599" style="max-width: 120px;">
+                <div class="hint">Leave blank to accept any 2xx/3xx response</div>
+            </div>
+            <div class="form-group">
+                <label for="timeout">Request Timeout <span style="color: #999; font-weight: normal;">(seconds)</span></label>
+                <input type="number" id="timeout" name="timeout" value="{{ monitor.get('timeout', 10) }}"
+                       min="1" max="60" style="max-width: 120px;">
+            </div>
+            <div class="form-group">
+                <label for="auth_header">Authorization Header <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                <input type="text" id="auth_header" name="auth_header" value="{{ monitor.get('auth_header', '') }}"
+                       placeholder="Bearer eyJhbGci...">
+                <div class="hint">Sent as the <code>Authorization</code> header</div>
+            </div>
+            <div class="form-group">
+                <label>JSON Assertions</label>
+                <div id="edit-assertions-container">
+                    {% for assertion in monitor.get('json_assertions', []) %}
+                    <div class="assertion-row" style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;">
+                        <input type="text" name="assertion_path[]" value="{{ assertion.get('path', '') }}" placeholder="data.status" style="flex:1;min-width:100px;">
+                        <select name="assertion_operator[]" style="flex:0 0 auto;">
+                            {% for val, label in [('equals','Equals'),('not_equals','Not equals'),('contains','Contains'),('not_contains','Not contains'),('exists','Exists'),('not_exists','Not exists'),('greater_than','Greater than'),('less_than','Less than')] %}
+                            <option value="{{ val }}" {% if assertion.get('operator') == val %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="text" name="assertion_value[]" value="{{ assertion.get('value', '') }}" placeholder="ok" style="flex:1;min-width:80px;">
+                        <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; margin-top: 0.5rem;" onclick="addEditAssertion()">+ Add assertion</button>
+                <div class="hint">Validate specific fields in the JSON response — e.g. <code>data.status</code> equals <code>ok</code></div>
+            </div>
+            {% endif %}
+
+            <!-- ═══ SSL-specific fields ═══ -->
+            {% if is_ssl %}
+            <div class="form-group">
+                <label for="ssl_domain">Domain</label>
+                <input type="text" id="ssl_domain" name="ssl_domain" value="{{ monitor.get('ssl_domain', '') }}" required>
+                <div class="hint">The domain to check for SSL certificate validity</div>
+            </div>
+            <div class="form-group">
+                <label for="ssl_expiry_threshold_days">Warning Threshold <span style="color: #999; font-weight: normal;">(days)</span></label>
+                <input type="number" id="ssl_expiry_threshold_days" name="ssl_expiry_threshold_days"
+                       value="{{ monitor.get('ssl_expiry_threshold_days', 14) }}" min="1" max="90" style="max-width: 120px;">
+                <div class="hint">Alert when certificate expires within this many days</div>
+            </div>
+            <input type="hidden" name="url" value="{{ monitor.get('url', '') }}">
+            {% endif %}
+
+            <!-- ═══ Shared fields ═══ -->
             <div class="form-group">
                 <label for="name">Display Name</label>
                 <input type="text" id="name" name="name" value="{{ monitor.name }}" required>
@@ -58,7 +156,7 @@
                 <input type="email" id="alert_email" name="alert_email" value="{{ monitor.alert_email }}">
                 <div class="hint">Receives down/recovery notifications</div>
             </div>
-            <div class="form-group"{% if is_heartbeat %} style="display:none;"{% endif %}>
+            <div class="form-group"{% if is_heartbeat or is_ssl %} style="display:none;"{% endif %}>
                 <label for="check_interval">Check Interval <span style="color: #999; font-weight: normal;">(Pro)</span></label>
                 {% if user.get('plan', 'free') != 'free' %}
                 {% set ci = monitor.get('check_interval', 60) %}
@@ -90,7 +188,7 @@
                 {% endif %}
             </div>
 
-            {% if not is_heartbeat %}
+            {% if is_http %}
             <hr class="form-divider">
             <h3 class="form-section-title">Advanced Monitoring</h3>
 
@@ -99,6 +197,18 @@
                 <input type="text" id="keyword" name="keyword" value="{{ monitor.get('keyword', '') }}">
                 <div class="hint">Supports <code>AND</code> / <code>OR</code> — e.g. <code>Welcome AND Login</code>, <code>error OR failure</code></div>
             </div>
+            <div class="form-group">
+                <label for="response_threshold_ms">Response Threshold</label>
+                <input type="text" id="response_threshold_ms" name="response_threshold_ms"
+                       value="{{ monitor.get('response_threshold_ms', '') or '' }}"
+                       placeholder="e.g. > 2000 or 200-3000">
+                <div class="hint">Supports: <code>> 2000</code>, <code>< 200</code>, <code>200-3000</code> (range), or plain number (ms)</div>
+            </div>
+            {% endif %}
+
+            {% if is_json_api %}
+            <hr class="form-divider">
+            <h3 class="form-section-title">Response Threshold</h3>
             <div class="form-group">
                 <label for="response_threshold_ms">Response Threshold</label>
                 <input type="text" id="response_threshold_ms" name="response_threshold_ms"
@@ -233,6 +343,34 @@
             <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>
         `;
         container.appendChild(row);
+    }
+
+    /* ── JSON Assertion Builder (edit page) ── */
+    const EDIT_ASSERTION_OPS = [
+        ['equals', 'Equals'],
+        ['not_equals', 'Not equals'],
+        ['contains', 'Contains'],
+        ['not_contains', 'Not contains'],
+        ['exists', 'Exists'],
+        ['not_exists', 'Not exists'],
+        ['greater_than', 'Greater than'],
+        ['less_than', 'Less than'],
+    ];
+    function addEditAssertion(path, operator, value) {
+        const c = document.getElementById('edit-assertions-container');
+        if (!c) return;
+        const row = document.createElement('div');
+        row.className = 'assertion-row';
+        row.style.cssText = 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;';
+        const options = EDIT_ASSERTION_OPS.map(([val, label]) =>
+            `<option value="${val}" ${val === (operator || 'equals') ? 'selected' : ''}>${label}</option>`
+        ).join('');
+        row.innerHTML = `
+            <input type="text" name="assertion_path[]" value="${path || ''}" placeholder="data.status" style="flex:1;min-width:100px;">
+            <select name="assertion_operator[]" style="flex:0 0 auto;">${options}</select>
+            <input type="text" name="assertion_value[]" value="${value || ''}" placeholder="ok" style="flex:1;min-width:80px;">
+            <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>`;
+        c.appendChild(row);
     }
 </script>
 {% endblock %}

@@ -105,6 +105,18 @@ Gate features **server-side** (never trust the client). Show upgrade CTAs for Fr
 - **Auth**: `get_current_user()` dependency returns user dict or redirects to login
 - **API responses**: `{"data": ..., "error": ..., "meta": ...}` shape on all API v1 endpoints
 
+## Monitor Types
+StatusRooster has **4 distinct, first-class monitor types**:
+
+| Type | `monitor_type` | Key Fields | Status Values |
+|------|----------------|------------|---------------|
+| HTTP/HTTPS | `"http"` | `url`, `expected_status_code`, `timeout`, `keyword`, `response_threshold_ms` | up, down, pending |
+| JSON/API | `"json_api"` | `url`, `expected_status_code`, `timeout`, `auth_header`, `json_assertions[]` | up, down, pending |
+| Heartbeat/Cron | `"heartbeat"` | `ping_url`, `heartbeat_interval`, `heartbeat_grace_period` | up, down, pending |
+| SSL Certificate | `"ssl"` | `ssl_domain`, `ssl_expiry_threshold_days` | up, warn, down, pending |
+
+Each type has its own form section (create + edit), execution branch in `checker.py`, and display in templates.
+
 ## Current Priorities (What To Work On)
 See `TRACKER.md` for the full plan. The remaining work before launch:
 

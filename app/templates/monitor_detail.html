@@ -19,7 +19,14 @@
             <span class="md-url" style="cursor:default;">Expected every
                 {% set hbi = monitor.get('heartbeat_interval', 300) %}
                 {% if hbi < 120 %}{{ hbi }}s{% elif hbi < 3600 %}{{ (hbi / 60)|int }}m{% elif hbi < 86400 %}{{ (hbi / 3600)|int }}h{% else %}24h{% endif %}
+                ({{ monitor.get('heartbeat_grace_period', 30) }}s grace)
             </span>
+            {% elif monitor.get('monitor_type') == 'json_api' %}
+            <span class="md-type">{ } JSON/API monitor for</span>
+            <a href="{{ monitor.url }}" target="_blank" class="md-url">{{ monitor.url }}</a>
+            {% elif monitor.get('monitor_type') == 'ssl' %}
+            <span class="md-type">🔒 SSL certificate monitor for</span>
+            <span class="md-url" style="cursor:default;">{{ monitor.get('ssl_domain', monitor.url) }}</span>
             {% else %}
             <span class="md-type">HTTP{{ 'S' if monitor.url.startswith('https') else '' }} monitor for</span>
             <a href="{{ monitor.url }}" target="_blank" class="md-url">{{ monitor.url }}</a>
@@ -60,6 +67,7 @@
         <div class="md-card-value md-status-{{ 'paused' if monitor.get('paused') else monitor.status }}">
             {% if monitor.get('paused') %}Paused
             {% elif monitor.status == 'up' %}Up
+            {% elif monitor.status == 'warn' %}Warning
             {% elif monitor.status == 'down' %}Down
             {% else %}Pending{% endif %}
         </div>
@@ -166,7 +174,7 @@
 </div>
 
 <!-- ── Response time chart ── -->
-{% if monitor.get('monitor_type', 'http') != 'heartbeat' %}
+{% if monitor.get('monitor_type', 'http') in ('http', 'json_api') %}
 <div class="md-section">
     <div class="md-section-header">
         <h2>Response time</h2>
@@ -290,7 +298,64 @@
     <div class="md-empty">No incidents recorded yet. That's a good thing! 🎉</div>
     {% endif %}
 </div>
-{% if monitor.get('monitor_type', 'http') != 'heartbeat' and (monitor.get('ssl_expiry') or monitor.get('ssl_issuer') or monitor.get('keyword') or monitor.get('response_threshold_ms') or monitor.get('webhook_url') or monitor.get('maintenance_windows') or monitor.get('maintenance_window')) %}
+{% if monitor.get('monitor_type') == 'ssl' %}
+<!-- ── SSL Certificate Status (SSL monitor type) ── -->
+<div class="md-section md-config-section">
+    <div class="md-section-header">
+        <h2>SSL Certificate</h2>
+    </div>
+    <div class="md-config-grid">
+        <div class="md-config-card">
+            <div class="md-config-title">🔒 Certificate Details</div>
+            <div class="md-config-row">
+                <span>Domain</span>
+                <span>{{ monitor.get('ssl_domain', '—') }}</span>
+            </div>
+            <div class="md-config-row">
+                <span>Issuer</span>
+                <span>{{ monitor.get('ssl_issuer', '—') }}</span>
+            </div>
+            <div class="md-config-row">
+                <span>Expires</span>
+                <span class="{% if (monitor.get('ssl_expiry_days', 999) or 999) <= monitor.get('ssl_expiry_threshold_days', 14) %}text-danger{% else %}text-success{% endif %}">
+                    {% if monitor.get('ssl_expiry') %}
+                        {{ monitor.ssl_expiry.strftime('%b %d, %Y') if monitor.ssl_expiry.strftime is defined else monitor.ssl_expiry }}
+                        {% if monitor.get('ssl_expiry_days') is not none %}
+                            ({{ monitor.ssl_expiry_days }}d remaining)
+                        {% endif %}
+                    {% else %}—{% endif %}
+                </span>
+            </div>
+            <div class="md-config-row">
+                <span>Warning Threshold</span>
+                <span>{{ monitor.get('ssl_expiry_threshold_days', 14) }} days</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if monitor.get('monitor_type') == 'json_api' and monitor.get('json_assertions') %}
+<!-- ── JSON Assertions (JSON/API monitor type) ── -->
+<div class="md-section md-config-section">
+    <div class="md-section-header">
+        <h2>JSON Assertions</h2>
+    </div>
+    <div class="md-config-grid">
+        <div class="md-config-card" style="grid-column: 1 / -1;">
+            <div class="md-config-title">{ } Assertion Rules</div>
+            {% for assertion in monitor.json_assertions %}
+            <div class="md-config-row">
+                <span><code>{{ assertion.path }}</code></span>
+                <span>{{ assertion.operator }} <strong>{{ assertion.value }}</strong></span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if monitor.get('monitor_type', 'http') not in ('heartbeat', 'ssl') and (monitor.get('ssl_expiry') or monitor.get('ssl_issuer') or monitor.get('keyword') or monitor.get('response_threshold_ms') or monitor.get('webhook_url') or monitor.get('maintenance_windows') or monitor.get('maintenance_window')) %}
 <div class="md-section md-config-section">
     <div class="md-config-grid">
         {% if monitor.get('ssl_expiry') or monitor.get('ssl_issuer') %}
@@ -384,7 +449,7 @@
         <div class="md-badge-preview">
             <img src="/badge/{{ monitor.id }}.svg" alt="Uptime badge" />
             <img src="/badge/{{ monitor.id }}/status.svg" alt="Status badge" />
-            {% if monitor.get('monitor_type', 'http') != 'heartbeat' %}
+            {% if monitor.get('monitor_type', 'http') in ('http', 'json_api') %}
             <img src="/badge/{{ monitor.id }}/response.svg" alt="Response time badge" />
             {% endif %}
         </div>
@@ -422,7 +487,7 @@
 {% endblock %}
 
 {% block extra_js %}
-{% if monitor.get('monitor_type', 'http') != 'heartbeat' %}
+{% if monitor.get('monitor_type', 'http') in ('http', 'json_api') %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 {% endif %}
 <script>
@@ -558,7 +623,7 @@ function switchUptimePeriod(period, btn) {
 })();
 
 /* ── Response chart ────────────────────────────── */
-{% if monitor.get('monitor_type', 'http') != 'heartbeat' %}
+{% if monitor.get('monitor_type', 'http') in ('http', 'json_api') %}
 const initialChecks = {{ checks | tojson | safe }};
 let chart = null;
 
@@ -634,7 +699,7 @@ buildChart(initialChecks);
 {% endif %}
 
 /* ── Chart time range switching ──────────────── */
-{% if monitor.get('monitor_type', 'http') != 'heartbeat' %}
+{% if monitor.get('monitor_type', 'http') in ('http', 'json_api') %}
 async function loadChartRange(hours, btn) {
     document.querySelectorAll('.md-range-toggle .range-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');

@@ -25,8 +25,15 @@ class CreateMonitorRequest(BaseModel):
     webhook_url: str = ""
     public: bool = True
     check_interval: int | None = None
-    monitor_type: str = "http"          # "http" or "heartbeat"
+    monitor_type: str = "http"          # "http" | "heartbeat" | "json_api" | "ssl"
     heartbeat_interval: int | None = None  # seconds (heartbeat only)
+    heartbeat_grace_period: int | None = None  # seconds (heartbeat only)
+    expected_status_code: int | None = None
+    timeout: int | None = None
+    json_assertions: list | None = None  # [{path, operator, value}]
+    auth_header: str = ""
+    ssl_domain: str = ""
+    ssl_expiry_threshold_days: int | None = None
 
 
 class UpdateMonitorRequest(BaseModel):
@@ -41,6 +48,13 @@ class UpdateMonitorRequest(BaseModel):
     check_interval: int | None = None
     monitor_type: str | None = None
     heartbeat_interval: int | None = None
+    heartbeat_grace_period: int | None = None
+    expected_status_code: int | None = None
+    timeout: int | None = None
+    json_assertions: list | None = None
+    auth_header: str | None = None
+    ssl_domain: str | None = None
+    ssl_expiry_threshold_days: int | None = None
 
 
 @router.post("")
@@ -68,6 +82,13 @@ async def create(req: CreateMonitorRequest, user: dict = Depends(get_current_use
         check_interval=req.check_interval,
         monitor_type=req.monitor_type,
         heartbeat_interval=req.heartbeat_interval,
+        heartbeat_grace_period=req.heartbeat_grace_period,
+        expected_status_code=req.expected_status_code,
+        timeout=req.timeout,
+        json_assertions=req.json_assertions,
+        auth_header=req.auth_header,
+        ssl_domain=req.ssl_domain,
+        ssl_expiry_threshold_days=req.ssl_expiry_threshold_days,
     )
 
     # Set Day 7 fields that aren't in create_monitor params
@@ -133,6 +154,12 @@ async def update(monitor_id: str, req: UpdateMonitorRequest, user: dict = Depend
             updates["check_interval"] = max(60, min(300, updates["check_interval"]))
     if "heartbeat_interval" in updates and updates["heartbeat_interval"] is not None:
         updates["heartbeat_interval"] = max(60, min(86400, updates["heartbeat_interval"]))
+    if "heartbeat_grace_period" in updates and updates["heartbeat_grace_period"] is not None:
+        updates["heartbeat_grace_period"] = max(0, min(3600, updates["heartbeat_grace_period"]))
+    if "timeout" in updates and updates["timeout"] is not None:
+        updates["timeout"] = max(1, min(60, updates["timeout"]))
+    if "ssl_expiry_threshold_days" in updates and updates["ssl_expiry_threshold_days"] is not None:
+        updates["ssl_expiry_threshold_days"] = max(1, min(90, updates["ssl_expiry_threshold_days"]))
 
     if updates:
         update_monitor(db, monitor_id, updates)

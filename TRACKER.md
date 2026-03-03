@@ -18,7 +18,7 @@
 **Day 10 in progress** · **Target launch: Day 12 (Mar 7)**otionally. Users identify with it. UptimeRobot is generic. Datadog is enterprise. Better Stack is VC-funded. We're for *them*.
 2. **Simplicity** — Sign up → add URL → done. No 15-tab settings page. No team hierarchy. No enterprise SSO. Every feature is inline, not buried.
 3. **Fair pricing** — Free tier that actually works (5 monitors, email alerts, status pages, API access, badges). Pro at $9/mo — not $29/mo for webhooks like UptimeRobot.
-4. **Three monitoring types** — Website uptime + API validation + cron/heartbeat monitoring, bundled in one product at indie prices. Competitors charge separately or don't offer all three.
+4. **Four monitoring types** — Website uptime + JSON/API validation + cron/heartbeat + SSL certificate monitoring, bundled in one product at indie prices. Competitors charge separately or don't offer all four.
 5. **Status pages as distribution** — Every public status page says "Powered by StatusRooster." Viral growth loop that competitors paywall.
 6. **Modern stack** — GCP Cloud Run, Firestore, serverless. No legacy infra. We move fast.
 
@@ -628,6 +628,23 @@ _Items identified during competitive audit + GPT strategy session. Build after l
 - [x] SMS field on edit form
 - [x] _Real Twilio REST API via httpx. Pro-gated in all alert dispatchers._
 
+**4 Distinct Monitor Types** ✅ _(Done in Day 10H)_
+- [x] **HTTP/HTTPS monitors**: URL, expected status code (optional), request timeout, keyword check, response threshold
+- [x] **JSON/API monitors**: API endpoint URL, expected status code, timeout, Authorization header, JSON assertion builder (8 operators: equals, not_equals, contains, not_contains, exists, not_exists, greater_than, less_than), dot-notation path resolver with array index support
+- [x] **Heartbeat/Cron monitors**: Expected interval, configurable grace period (0-3600s), ping URL auto-generation
+- [x] **SSL Certificate monitors**: Domain input, expiry threshold (1-90 days), warning status ("warn"), dedicated SSL checker with issuer/expiry/days-remaining
+- [x] 4-button type grid selector in Add Monitor modal (each with SVG icon, active state)
+- [x] Type-specific form sections per monitor type (show/hide/disable to prevent field conflicts)
+- [x] Type badge on dashboard monitor list (HTTP=indigo, Heartbeat=green, JSON/API=blue, SSL=amber)
+- [x] Type badge on edit page + type-specific edit forms for all 4 types
+- [x] Monitor detail: type-specific subtitles, SSL certificate section (ssl type), JSON assertions section (json_api type)
+- [x] Response chart conditionals: only show for HTTP + JSON/API (not heartbeat or ssl)
+- [x] "warn" status support: dot-warn (amber), strip-dot-warn, md-status-warn, dashboard counters
+- [x] Backend: `check_json_api()`, `check_ssl_certificate()`, `_resolve_json_path()`, `_evaluate_assertion()` in checker.py
+- [x] 4 distinct execution branches in `run_checks()` (heartbeat, ssl, json_api, http)
+- [x] All routers updated: monitors.py, api_v1.py, pages.py (create + edit for all new fields)
+- [x] CSS: `.monitor-type-json`, `.monitor-type-ssl`, `.monitor-type-grid`, `.edit-type-badge`, `.assertion-row`, `.dot-warn`, `.strip-dot-warn`, `.md-status-warn`
+
 ### Future Backlog 🔲
 _Nice-to-have. Don't build until there's user demand._
 
@@ -673,7 +690,8 @@ _Nice-to-have. Don't build until there's user demand._
 **Day 10 in progress** · **Target launch: Day 12 (Mar 7)**
 
 ### What's actually live right now
-- ✅ Full monitoring engine: HTTP checks, SSL, keyword, response threshold, **heartbeat/cron**
+- ✅ Full monitoring engine: HTTP checks, SSL, keyword, response threshold, **heartbeat/cron**, **JSON/API assertions**, **SSL certificate monitoring**
+- ✅ **4 distinct monitor types**: HTTP/HTTPS, JSON/API, Heartbeat/Cron, SSL Certificate
 - ✅ Alerts: email (SendGrid w/ retry + circuit breaker), Slack webhooks, webhook notifications, **SMS (Twilio)**
 - ✅ Public status pages + aggregate status page
 - ✅ Stripe billing (Free / Pro $9/mo)

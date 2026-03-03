@@ -420,6 +420,12 @@ async def add_monitor(
     check_interval_raw = form.get("check_interval", "")
     monitor_type = form.get("monitor_type", "http")
     heartbeat_interval_raw = form.get("heartbeat_interval", "")
+    heartbeat_grace_period_raw = form.get("heartbeat_grace_period", "")
+    expected_status_code_raw = form.get("expected_status_code", "")
+    timeout_raw = form.get("timeout", "")
+    auth_header = form.get("auth_header", "")
+    ssl_domain = form.get("ssl_domain", "")
+    ssl_expiry_threshold_days_raw = form.get("ssl_expiry_threshold_days", "")
 
     db = get_db()
 
@@ -484,6 +490,51 @@ async def add_monitor(
         except (ValueError, TypeError):
             pass
 
+    # Parse heartbeat grace period
+    heartbeat_grace_period = None
+    if heartbeat_grace_period_raw:
+        try:
+            heartbeat_grace_period = int(heartbeat_grace_period_raw)
+        except (ValueError, TypeError):
+            pass
+
+    # Parse expected status code
+    expected_status_code = None
+    if expected_status_code_raw:
+        try:
+            expected_status_code = int(expected_status_code_raw)
+        except (ValueError, TypeError):
+            pass
+
+    # Parse timeout
+    timeout = None
+    if timeout_raw:
+        try:
+            timeout = int(timeout_raw)
+        except (ValueError, TypeError):
+            pass
+
+    # Parse SSL expiry threshold
+    ssl_expiry_threshold_days = None
+    if ssl_expiry_threshold_days_raw:
+        try:
+            ssl_expiry_threshold_days = int(ssl_expiry_threshold_days_raw)
+        except (ValueError, TypeError):
+            pass
+
+    # Parse JSON assertions
+    json_assertions = []
+    assertion_paths = form.getlist("assertion_path[]")
+    assertion_operators = form.getlist("assertion_operator[]")
+    assertion_values = form.getlist("assertion_value[]")
+    for p, o, v in zip(assertion_paths, assertion_operators, assertion_values):
+        if p.strip():
+            json_assertions.append({
+                "path": p.strip(),
+                "operator": o.strip() if o else "equals",
+                "value": v.strip() if v else "",
+            })
+
     # For heartbeat monitors, URL is optional (auto-generate ping URL)
     if monitor_type == "heartbeat" and not url:
         url = ""  # Will be set after creation
@@ -504,6 +555,13 @@ async def add_monitor(
         check_interval=check_interval,
         monitor_type=monitor_type,
         heartbeat_interval=heartbeat_interval,
+        heartbeat_grace_period=heartbeat_grace_period,
+        expected_status_code=expected_status_code,
+        timeout=timeout,
+        json_assertions=json_assertions if json_assertions else None,
+        auth_header=auth_header,
+        ssl_domain=ssl_domain,
+        ssl_expiry_threshold_days=ssl_expiry_threshold_days,
     )
 
     # For heartbeat monitors, set the ping URL on the monitor doc
@@ -517,6 +575,10 @@ async def add_monitor(
             url=f"/dashboard?msg=Monitor+'{name}'+added!&msg_type=success&heartbeat_created=1&ping_url={quote(ping_url)}&monitor_name={quote(name)}",
             status_code=302,
         )
+
+    # For SSL monitors, store the domain as the URL for display purposes
+    if monitor_type == "ssl" and ssl_domain:
+        update_monitor(db, monitor["id"], {"url": f"https://{ssl_domain}" if not ssl_domain.startswith("http") else ssl_domain})
 
     return RedirectResponse(
         url=f"/dashboard?msg=Monitor+'{name}'+added!&msg_type=success",
@@ -563,6 +625,11 @@ async def edit_monitor_submit(
     response_threshold_ms = form.get("response_threshold_ms", "")
     webhook_url = form.get("webhook_url", "")
     check_interval_raw = form.get("check_interval", "")
+    expected_status_code_raw = form.get("expected_status_code", "")
+    timeout_raw = form.get("timeout", "")
+    auth_header = form.get("auth_header", "")
+    ssl_domain = form.get("ssl_domain", "")
+    ssl_expiry_threshold_days_raw = form.get("ssl_expiry_threshold_days", "")
 
     db = get_db()
     monitor = get_monitor(db, monitor_id)
@@ -606,11 +673,63 @@ async def edit_monitor_submit(
         "response_threshold_ms": response_threshold_ms.strip() if response_threshold_ms else None,
     }
 
+    # Handle expected status code
+    if expected_status_code_raw:
+        try:
+            updates["expected_status_code"] = int(expected_status_code_raw)
+        except (ValueError, TypeError):
+            pass
+    else:
+        updates["expected_status_code"] = None
+
+    # Handle timeout
+    if timeout_raw:
+        try:
+            updates["timeout"] = max(1, min(60, int(timeout_raw)))
+        except (ValueError, TypeError):
+            pass
+
+    # Handle auth header
+    if monitor.get("monitor_type") == "json_api":
+        updates["auth_header"] = auth_header
+
+    # Handle SSL domain and threshold
+    if monitor.get("monitor_type") == "ssl":
+        updates["ssl_domain"] = ssl_domain
+        if ssl_expiry_threshold_days_raw:
+            try:
+                updates["ssl_expiry_threshold_days"] = max(1, min(90, int(ssl_expiry_threshold_days_raw)))
+            except (ValueError, TypeError):
+                pass
+
+    # Handle JSON assertions
+    if monitor.get("monitor_type") == "json_api":
+        json_assertions = []
+        assertion_paths = form.getlist("assertion_path[]")
+        assertion_operators = form.getlist("assertion_operator[]")
+        assertion_values = form.getlist("assertion_value[]")
+        for p, o, v in zip(assertion_paths, assertion_operators, assertion_values):
+            if p.strip():
+                json_assertions.append({
+                    "path": p.strip(),
+                    "operator": o.strip() if o else "equals",
+                    "value": v.strip() if v else "",
+                })
+        updates["json_assertions"] = json_assertions
+
     # Handle heartbeat interval
     hb_interval_raw = form.get("heartbeat_interval", "")
     if hb_interval_raw:
         try:
             updates["heartbeat_interval"] = max(60, min(86400, int(hb_interval_raw)))
+        except (ValueError, TypeError):
+            pass
+
+    # Handle heartbeat grace period
+    hb_grace_raw = form.get("heartbeat_grace_period", "")
+    if monitor.get("monitor_type") == "heartbeat" and hb_grace_raw:
+        try:
+            updates["heartbeat_grace_period"] = max(0, min(3600, int(hb_grace_raw)))
         except (ValueError, TypeError):
             pass
 
