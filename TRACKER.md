@@ -49,7 +49,7 @@
 | | Free | Pro $9/mo |
 |---|---|---|
 | Monitors | 5 | 250 |
-| Check interval | 5 min | 60s |
+| Check interval | 5 min | 60–300s (custom) |
 | Alerts | Email | Email + Slack + SMS |
 | Status pages | 1 | 10 |
 | API access | ✅ | ✅ |
@@ -380,19 +380,29 @@ _Went well beyond the original scope. Complete dashboard overhaul._
   - Checker prunes daily bars >30 days, hourly bars >24 hours
 - [x] Git commit 10C (`fcbdb9a`)
 
-**10D. Monitor Detail Enhancements (~1.5 hrs)** _(from COMPETITIVE_AUDIT.md Section 2)_
+**10D. Monitor Detail Enhancements — Complete Redesign ✅** _(from COMPETITIVE_AUDIT.md Section 2)_
 
-- [ ] **Multi-period uptime row** — show 7d / 30d / 90d uptime % + incident count (~1 hr)
-  - Query check history from Firestore for each period
-  - Display as stat cards or horizontal row below the status banner
+- [x] **Unified uptime slicer** — 24h / 7d / 30d toggle with uptime %, incident count, uptime bars
+  - Replaced 4 separate uptime displays with single tabbed section
+  - 24h uses `hourly_uptime_bars`, 7d/30d use `daily_uptime_bars` (pre-computed, zero queries)
+  - Instant client-side switching via `switchUptimePeriod()` JS
   - Color-coded: green ≥99.5%, yellow ≥95%, red <95%
-- [ ] **Response chart time range picker** — Last hour / 6h / 24h / 7d / 30d (~20 min)
-  - Radio buttons or tab bar above existing Chart.js chart
-  - AJAX fetch checks for selected range, re-render chart
-  - Show Avg / Min / Max response time stats below chart
-- [ ] **Pro upsell on check interval** — "Checking every 5 min · Get 60s checks →" for Free users (~10 min)
-  - Conditional text below the interval stat card
-  - Links directly to Stripe checkout
+- [x] **Response chart time range picker** — 1h / 6h / 24h / 7d / 30d
+  - Tab bar above Chart.js chart, AJAX fetch via `/api/monitors/{id}/checks?range=X`
+  - Avg / Min / Max response time stats below chart
+- [x] **Top stat cards** — simplified to 3 equal cards: Status | Last check | MTBF
+  - Live-ticking last check counter with `updateLastCheck()` (1s) + `pollLastChecked()` (15s)
+- [x] **Incidents table** — root cause badges (HTTP status code), duration, timestamps, export CSV
+- [x] **Config grid** — URL, check interval, keyword, threshold, SSL expiry, maintenance window
+- [x] **Alert channels** — email/Slack/webhook display with masked URLs
+- [x] **Uptime badges** — copy-to-clipboard Markdown/HTML/URL for 3 badge types
+- [x] **Pro upsell on check interval** — "Upgrade to 60s checks →" for Free users
+- [x] **Custom check interval (Pro feature)** — 60–300s slider on add/edit forms
+  - `check_interval` stored per monitor, clamped server-side (Pro: 60-300s, Free: locked 300s)
+  - Displayed in config grid on detail page
+  - Parsed in `add_monitor`, `edit_monitor_submit`, API Create/Update
+- [x] **Polling endpoint** — `GET /api/monitors/{id}/status` returns last_checked + status for live counter
+- [x] Git commit 10D (`00670d5`)
 
 **10E. Add/Edit Form — API Monitoring Fields (~50 min)** _(from COMPETITIVE_AUDIT.md Section 3)_
 _These close the "API monitoring" gap. Not a separate product — just 3 form fields._
@@ -646,6 +656,9 @@ _Nice-to-have. Don't build until there's user demand._
 - ✅ Search, filter, sort, bulk actions, clone monitor, context menus
 - ✅ Pre-computed uptime bars on monitor docs (dashboard loads in ~0.3s)
 - ✅ Plan gating: Free (5 monitors, 5min, email) vs Pro (250, 60s, Slack + webhooks)
+- ✅ Monitor detail: unified uptime slicer (24h/7d/30d), response chart with time picker, incidents table, CSV export
+- ✅ Custom check interval for Pro users (60–300s slider)
+- ✅ Live-ticking last check counter with polling
 
 ### What's broken / dishonest (Day 10 fixes)
 - ~~⚠️ Slack alerts — Free users can set webhook URL (pricing says Pro only)~~ ✅ Fixed
@@ -658,12 +671,12 @@ _Nice-to-have. Don't build until there's user demand._
 - ~~🔲 "Up for X" duration text on dashboard + detail~~ ✅ Done (10C)
 - ~~🔲 Three-dot context menu per row~~ ✅ Done (10C)
 - ~~🔲 Pause/Resume from dashboard + detail header~~ ✅ Done (10C)
-- 🔲 Multi-period uptime (7d/30d/90d) on detail page
-- 🔲 Response chart time range picker
-- 🔲 Request timeout / Basic Auth / HTTP method fields
-- 🔲 Dedicated /incidents page
-- 🔲 Incident detail page + activity log timeline
-- 🔲 Custom 404/500 pages, meta tags, favicon
+- ~~🔲 Multi-period uptime (7d/30d/90d) on detail page~~ ✅ Done (10D — unified uptime slicer)
+- ~~🔲 Response chart time range picker~~ ✅ Done (10D)
+- 🔲 Request timeout / Basic Auth / HTTP method fields (10E)
+- 🔲 Dedicated /incidents page (11A)
+- 🔲 Incident detail page + activity log timeline (11A + 11B)
+- 🔲 Custom 404/500 pages, meta tags, favicon (11C)
 
 ---
 
