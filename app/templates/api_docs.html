@@ -380,6 +380,7 @@ data.forEach(c => console.log(<span class="code-string">`${c.timestamp}: ${c.res
                     <tr><td><span class="param-name">keyword</span></td><td>string</td><td>no</td><td>Alert if missing from response body. Supports <code>AND</code> / <code>OR</code>: <code>"Welcome AND Login"</code></td></tr>
                     <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>no</td><td>Response time condition. Supports: <code>> 2000</code>, <code>< 200</code>, <code>200-3000</code> (range), or plain number</td></tr>
                     <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>no</td><td>Status change webhook (Pro only)</td></tr>
+                    <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>no</td><td>Seconds between checks, 60–300 (Pro only, default: 60). Free plan is fixed at 300.</td></tr>
                     <tr><td><span class="param-name">public</span></td><td>boolean</td><td>no</td><td>Create a status page (default: true)</td></tr>
                     <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>no</td><td>Suppress alerts during windows (Pro only). Array of objects: <code>[{"day":"monday","start_utc":"02:00","end_utc":"04:00"}]</code>. Day: <code>monday</code>–<code>sunday</code> or <code>daily</code>.</td></tr>
                 </tbody>
@@ -511,6 +512,7 @@ console.log(<span class="code-string">`Created: ${data.id}`</span>);</div>
                     <tr><td><span class="param-name">keyword</span></td><td>string</td><td>no</td><td>Alert if missing from response body. Supports <code>AND</code> / <code>OR</code>: <code>"Welcome AND Login"</code></td></tr>
                     <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>no</td><td>Response time condition. Supports: <code>> 2000</code>, <code>< 200</code>, <code>200-3000</code> (range), or plain number</td></tr>
                     <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>no</td><td>Status change webhook (Pro only)</td></tr>
+                    <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>no</td><td>Seconds between checks, 60–300 (Pro only). Free plan is fixed at 300.</td></tr>
                     <tr><td><span class="param-name">public</span></td><td>boolean</td><td>no</td><td>Toggle public status page</td></tr>
                     <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>no</td><td>Pause or resume monitoring</td></tr>
                     <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>no</td><td>Suppress alerts during windows (Pro only). Array of objects: <code>[{"day":"monday","start_utc":"02:00","end_utc":"04:00"}]</code>. Day: <code>monday</code>–<code>sunday</code> or <code>daily</code>.</td></tr>

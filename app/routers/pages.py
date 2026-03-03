@@ -417,6 +417,7 @@ async def add_monitor(
     keyword = form.get("keyword", "")
     response_threshold_ms = form.get("response_threshold_ms", "")
     webhook_url = form.get("webhook_url", "")
+    check_interval_raw = form.get("check_interval", "")
 
     db = get_db()
 
@@ -465,6 +466,14 @@ async def add_monitor(
                 status_code=302,
             )
 
+    # Parse check interval (Pro only, 60-300s)
+    check_interval = None
+    if check_interval_raw:
+        try:
+            check_interval = int(check_interval_raw)
+        except (ValueError, TypeError):
+            pass
+
     monitor = create_monitor(
         db,
         user_id=user["id"],
@@ -478,6 +487,7 @@ async def add_monitor(
         maintenance_windows=maintenance_windows,
         public=public,
         paused=paused,
+        check_interval=check_interval,
     )
 
     return RedirectResponse(
@@ -524,6 +534,7 @@ async def edit_monitor_submit(
     keyword = form.get("keyword", "")
     response_threshold_ms = form.get("response_threshold_ms", "")
     webhook_url = form.get("webhook_url", "")
+    check_interval_raw = form.get("check_interval", "")
 
     db = get_db()
     monitor = get_monitor(db, monitor_id)
@@ -583,6 +594,13 @@ async def edit_monitor_submit(
     if user.get("plan", "free") != "free":
         updates["webhook_url"] = webhook_url
         updates["maintenance_windows"] = maintenance_windows
+        # Custom check interval (Pro: 60-300s)
+        if check_interval_raw:
+            try:
+                ci = max(60, min(300, int(check_interval_raw)))
+                updates["check_interval"] = ci
+            except (ValueError, TypeError):
+                pass
 
     update_monitor(db, monitor_id, updates)
 
@@ -735,11 +753,140 @@ async def monitor_detail(request: Request, monitor_id: str):
     if not monitor or monitor["user_id"] != user["id"]:
         return RedirectResponse(url="/dashboard?msg=Monitor+not+found&msg_type=error", status_code=302)
 
+    from datetime import datetime, timezone, timedelta
+    now = datetime.now(timezone.utc)
+
     # Get recent checks for chart (last 24h worth, max 1440 = 24*60)
     checks = get_recent_checks(db, monitor_id, limit=1440)
 
-    # Get incidents
-    incidents = list_incidents_by_monitor(db, monitor_id, limit=10)
+    # Get incidents (more for the detail page)
+    incidents = list_incidents_by_monitor(db, monitor_id, limit=50)
+
+    # ---------- Multi-period uptime stats from daily_uptime_bars ----------
+    raw_bars = monitor.get("daily_uptime_bars") or []
+    bar_map = {b["date"]: b for b in raw_bars}
+
+    def compute_period_uptime(days_back):
+        total_checks = 0
+        up_checks = 0
+        for i in range(days_back):
+            d = (now - timedelta(days=i)).strftime("%Y-%m-%d")
+            b = bar_map.get(d)
+            if b:
+                total_checks += b.get("total", 0)
+                up_checks += b.get("up", 0)
+        pct = round((up_checks / total_checks) * 100, 3) if total_checks > 0 else None
+        # Count incidents in this period
+        cutoff = now - timedelta(days=days_back)
+        period_incidents = [inc for inc in incidents if inc.get("started_at") and inc["started_at"] >= cutoff]
+        # Total downtime from incidents
+        total_down_secs = sum(inc.get("duration_seconds", 0) or 0 for inc in period_incidents)
+        if total_down_secs >= 86400:
+            down_str = f"{total_down_secs // 86400}d {(total_down_secs % 86400) // 3600}h"
+        elif total_down_secs >= 3600:
+            down_str = f"{total_down_secs // 3600}h {(total_down_secs % 3600) // 60}m"
+        elif total_down_secs >= 60:
+            down_str = f"{total_down_secs // 60}m {total_down_secs % 60}s"
+        elif total_down_secs > 0:
+            down_str = f"{total_down_secs}s"
+        else:
+            down_str = None
+        return {
+            "pct": pct,
+            "incidents": len(period_incidents),
+            "downtime": down_str,
+        }
+
+    period_stats = {
+        "24h": compute_period_uptime(1),
+        "7d": compute_period_uptime(7),
+        "30d": compute_period_uptime(30),
+    }
+
+    # ---------- Uptime bars for detail page (30d daily + 24h hourly) ----------
+    today = now.date()
+    daily_bars = []
+    for i in range(29, -1, -1):
+        d = today - timedelta(days=i)
+        day_key = d.isoformat()
+        label = d.strftime("%b %-d, '%y")
+        b = bar_map.get(day_key)
+        if b and b.get("total", 0) > 0:
+            pct = round((b["up"] / b["total"]) * 100, 3)
+            daily_bars.append({"date": label, "pct": pct})
+        else:
+            daily_bars.append({"date": label, "pct": None})
+
+    raw_hbars = monitor.get("hourly_uptime_bars") or []
+    hbar_map = {b["hour"]: b for b in raw_hbars}
+    hourly_bars = []
+    for i in range(23, -1, -1):
+        h = now - timedelta(hours=i)
+        hour_key = h.strftime("%Y-%m-%d-%H")
+        label = h.strftime("%-I%p").lower() if i > 0 else "now"
+        b = hbar_map.get(hour_key)
+        if b and b.get("total", 0) > 0:
+            pct = round((b["up"] / b["total"]) * 100, 3)
+            hourly_bars.append({"date": label, "pct": pct})
+        else:
+            hourly_bars.append({"date": label, "pct": None})
+
+    # ---------- Response time stats (avg / min / max) from checks ----------
+    response_vals = [c.get("response_ms") for c in checks if c.get("response_ms")]
+    response_stats = {
+        "avg": round(sum(response_vals) / len(response_vals)) if response_vals else None,
+        "min": round(min(response_vals)) if response_vals else None,
+        "max": round(max(response_vals)) if response_vals else None,
+    }
+
+    # ---------- MTBF (Mean Time Between Failures) ----------
+    # Computed from incidents in the last 30 days
+    resolved_incidents = [
+        inc for inc in incidents
+        if inc.get("started_at") and inc.get("status") == "resolved"
+        and inc["started_at"] >= now - timedelta(days=30)
+    ]
+    if len(resolved_incidents) >= 1:
+        # MTBF = (total monitored time - total downtime) / number of failures
+        monitoring_hours = 30 * 24  # 30 days in hours
+        total_down_hours = sum(
+            (inc.get("duration_seconds", 0) or 0) / 3600
+            for inc in resolved_incidents
+        )
+        uptime_hours = max(monitoring_hours - total_down_hours, 0)
+        mtbf_hours = round(uptime_hours / len(resolved_incidents), 2)
+        if mtbf_hours >= 24:
+            mtbf_str = f"{mtbf_hours / 24:.1f} days"
+        else:
+            mtbf_str = f"{mtbf_hours:.1f} hours"
+        mtbf = {"value": mtbf_str, "hours": mtbf_hours, "failures": len(resolved_incidents)}
+    else:
+        mtbf = None
+
+    # ---------- Last check "ago" text (server-rendered) ----------
+    last_checked = monitor.get("last_checked")
+    if last_checked:
+        if hasattr(last_checked, 'timestamp'):
+            lc_dt = last_checked if last_checked.tzinfo else last_checked.replace(tzinfo=timezone.utc)
+        elif isinstance(last_checked, str):
+            try:
+                lc_dt = datetime.fromisoformat(last_checked.replace("Z", "+00:00"))
+            except ValueError:
+                lc_dt = None
+        else:
+            lc_dt = None
+        if lc_dt:
+            elapsed = (now - lc_dt).total_seconds()
+            if elapsed < 60:
+                last_check_ago = f"{int(elapsed)}s ago"
+            elif elapsed < 3600:
+                last_check_ago = f"{int(elapsed // 60)}m, {int(elapsed % 60)}s ago"
+            else:
+                last_check_ago = f"{int(elapsed // 3600)}h, {int((elapsed % 3600) // 60)}m ago"
+        else:
+            last_check_ago = None
+    else:
+        last_check_ago = None
 
     # Get flash message from query params
     flash_message = request.query_params.get("msg")
@@ -751,8 +898,98 @@ async def monitor_detail(request: Request, monitor_id: str):
         "monitor": monitor,
         "checks": checks,
         "incidents": incidents,
+        "period_stats": period_stats,
+        "daily_bars": daily_bars,
+        "hourly_bars": hourly_bars,
+        "response_stats": response_stats,
+        "mtbf": mtbf,
+        "last_check_ago": last_check_ago,
         "flash_message": flash_message,
         "flash_type": flash_type,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Monitor Detail — AJAX chart data by time range
+# ---------------------------------------------------------------------------
+
+@router.get("/api/monitors/{monitor_id}/checks")
+async def monitor_checks_api(request: Request, monitor_id: str, hours: int = 24):
+    """Return checks as JSON for chart time range switching."""
+    from fastapi.responses import JSONResponse
+    user = get_user_from_cookie(request)
+    if not user:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+
+    db = get_db()
+    monitor = get_monitor(db, monitor_id)
+    if not monitor or monitor["user_id"] != user["id"]:
+        return JSONResponse({"error": "Not found"}, status_code=404)
+
+    # Cap to reasonable limits
+    hours = min(hours, 720)  # max 30 days
+    limit = min(hours * 60, 43200)
+
+    from datetime import datetime, timezone, timedelta
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    docs = (
+        db.collection("checks")
+        .where("monitor_id", "==", monitor_id)
+        .where("timestamp", ">=", cutoff)
+        .order_by("timestamp", direction="DESCENDING")
+        .limit(limit)
+        .get()
+    )
+    checks = []
+    for doc in docs:
+        c = doc.to_dict()
+        checks.append({
+            "timestamp": c["timestamp"].isoformat() if hasattr(c.get("timestamp"), 'isoformat') else str(c.get("timestamp", "")),
+            "response_ms": c.get("response_ms"),
+            "is_up": c.get("is_up"),
+            "status_code": c.get("status_code"),
+        })
+
+    # Response stats
+    vals = [c["response_ms"] for c in checks if c.get("response_ms")]
+    stats = {
+        "avg": round(sum(vals) / len(vals)) if vals else None,
+        "min": round(min(vals)) if vals else None,
+        "max": round(max(vals)) if vals else None,
+    }
+
+    return JSONResponse({"checks": checks, "stats": stats})
+
+
+# ---------------------------------------------------------------------------
+# Monitor Detail — lightweight poll for last_checked (live-tick reset)
+# ---------------------------------------------------------------------------
+
+@router.get("/api/monitors/{monitor_id}/status")
+async def monitor_status_api(request: Request, monitor_id: str):
+    """Return monitor's last_checked timestamp for live-tick polling."""
+    from fastapi.responses import JSONResponse
+    user = get_user_from_cookie(request)
+    if not user:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+
+    db = get_db()
+    monitor = get_monitor(db, monitor_id)
+    if not monitor or monitor["user_id"] != user["id"]:
+        return JSONResponse({"error": "Not found"}, status_code=404)
+
+    lc = monitor.get("last_checked")
+    last_checked_iso = None
+    if lc:
+        if hasattr(lc, "isoformat"):
+            last_checked_iso = lc.isoformat()
+        else:
+            last_checked_iso = str(lc)
+
+    return JSONResponse({
+        "last_checked": last_checked_iso,
+        "status": monitor.get("status", "pending"),
+        "last_response_ms": monitor.get("last_response_ms"),
     })
 
 

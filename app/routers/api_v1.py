@@ -169,6 +169,7 @@ class ApiCreateMonitor(BaseModel):
     webhook_url: str = ""
     public: bool = True
     paused: bool = False
+    check_interval: int | None = None
     maintenance_windows: list[MaintenanceWindow] | None = None
 
 
@@ -211,6 +212,7 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
         webhook_url=req.webhook_url if plan != "free" else "",
         maintenance_windows=mw_list,
         paused=req.paused,
+        check_interval=req.check_interval,
     )
 
     update_user(db, user["id"], {"monitors_count": (user.get("monitors_count", 0) + 1)})
@@ -229,6 +231,7 @@ class ApiUpdateMonitor(BaseModel):
     public: bool | None = None
     paused: bool | None = None
     slug: str | None = None
+    check_interval: int | None = None
     maintenance_windows: list[MaintenanceWindow] | None = None
 
 
@@ -289,6 +292,11 @@ async def api_update_monitor(
         if plan == "free":
             err("Maintenance windows require a Pro plan.", 403)
         updates["maintenance_windows"] = [w.model_dump() for w in req.maintenance_windows]
+    if req.check_interval is not None:
+        plan = user.get("plan", "free")
+        if plan == "free":
+            err("Custom check intervals require a Pro plan. Free plan is fixed at 300s (5 minutes).", 403)
+        updates["check_interval"] = max(60, min(300, req.check_interval))
 
     if not updates:
         err("No fields to update. Send at least one field.", 422)

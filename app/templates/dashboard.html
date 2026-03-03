@@ -182,7 +182,7 @@
             <div class="monitor-interval">
                 {% set ci = m.get('check_interval', 300) %}
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                {% if ci <= 60 %}60s{% else %}5 min{% endif %}
+                {% if ci <= 60 %}60s{% elif ci < 120 %}{{ ci }}s{% elif ci < 300 %}{{ (ci / 60)|int }}m{% else %}5 min{% endif %}
             </div>
 
             <div class="uptime-bar uptime-bar-daily">
@@ -355,7 +355,26 @@
             <div class="form-group">
                 <label for="url">URL to Monitor</label>
                 <input type="url" id="url" name="url" placeholder="https://example.com" required>
-                <div class="hint">We'll check this URL every {% if user.get('plan', 'free') == 'pro' %}60 seconds{% else %}5 minutes{% endif %}</div>
+                <div class="hint">We'll check this URL at the interval you choose below</div>
+            </div>
+            <div class="form-group">
+                <label for="check_interval">Check Interval <span style="color: #999; font-weight: normal;">(Pro)</span></label>
+                {% if user.get('plan', 'free') != 'free' %}
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <input type="range" id="check_interval" name="check_interval" min="60" max="300" step="10" value="60"
+                           style="flex: 1; accent-color: #6366f1;"
+                           oninput="document.getElementById('intervalDisplay').textContent = this.value < 60 ? '60s' : this.value < 120 ? this.value + 's' : (this.value / 60).toFixed(0) + 'm'">
+                    <span id="intervalDisplay" style="min-width: 3rem; font-weight: 600; font-size: 0.95rem; color: var(--brand);">60s</span>
+                </div>
+                <div class="hint">How often we check this URL (60s – 5m). Lower = faster incident detection.</div>
+                {% else %}
+                <div style="display: flex; align-items: center; gap: 0.75rem; opacity: 0.5;">
+                    <input type="range" disabled min="60" max="300" value="300" style="flex: 1; cursor: not-allowed;">
+                    <span style="min-width: 3rem; font-weight: 600; font-size: 0.95rem;">5m</span>
+                </div>
+                <input type="hidden" name="check_interval" value="300">
+                <div class="hint" style="color: #6366f1;"><a href="/api/billing/checkout" onclick="event.preventDefault(); this.closest('form').action='/api/billing/checkout'; this.closest('form').submit();" style="color: #6366f1; text-decoration: underline;">Upgrade to Pro</a> for custom intervals (down to 60s)</div>
+                {% endif %}
             </div>
             <div class="form-group">
                 <label for="name">Display Name</label>

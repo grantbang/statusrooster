@@ -17,13 +17,22 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
                    alert_slack_webhook: str = "", public: bool = False,
                    keyword: str = "", response_threshold_ms: str | None = None,
                    webhook_url: str = "", maintenance_windows: list | None = None,
-                   paused: bool = False) -> dict:
+                   paused: bool = False, check_interval: int | None = None) -> dict:
     """Create a new monitor. Returns monitor dict with id."""
     # Determine check interval based on user plan
     user_ref = db.collection("users").document(user_id).get()
     user_data = user_ref.to_dict() if user_ref.exists else {}
     plan = user_data.get("plan", "free")
-    check_interval = 60 if plan == "pro" else 300  # 60s Pro, 300s (5min) Free
+
+    if plan == "pro":
+        # Pro: custom interval 60-300s, default 60
+        if check_interval is not None:
+            check_interval = max(60, min(300, int(check_interval)))
+        else:
+            check_interval = 60
+    else:
+        # Free: locked at 300s (5 minutes)
+        check_interval = 300
 
     doc_ref = db.collection(COLLECTION).document()
     slug = generate_slug(name)

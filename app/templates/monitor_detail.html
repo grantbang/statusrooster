@@ -1,82 +1,70 @@
-{% extends "base.html" %}
+{% extends "dashboard_base.html" %}
 
-{% block title %}{{ monitor.name }}{% endblock %}
+{% block title %}{{ monitor.name }} — StatusRooster{% endblock %}
 
-{% block extra_css %}
-{% endblock %}
+{% block extra_css %}{% endblock %}
 
 {% block content %}
-<div class="detail-header">
-    <div>
-        <div class="detail-title">
-            <span class="status-dot-lg {% if monitor.status == 'up' %}dot-up{% elif monitor.status == 'down' %}dot-down{% else %}dot-pending{% endif %}"></span>
-            <h1>{{ monitor.name }}</h1>
+<!-- ── Header ── -->
+<div class="md-header">
+    <div class="md-header-left">
+        <a href="/dashboard" class="md-back">← Monitoring</a>
+        <div class="md-title-row">
+            <span class="status-dot-lg {% if monitor.get('paused') %}dot-paused{% elif monitor.status == 'up' %}dot-up{% elif monitor.status == 'down' %}dot-down{% else %}dot-pending{% endif %}"></span>
+            <h1 class="md-name">{{ monitor.name }}</h1>
         </div>
-        <div class="detail-url">{{ monitor.url }}</div>
+        <div class="md-subtitle">
+            <span class="md-type">HTTP{{ 'S' if monitor.url.startswith('https') else '' }} monitor for</span>
+            <a href="{{ monitor.url }}" target="_blank" class="md-url">{{ monitor.url }}</a>
+        </div>
     </div>
-    <div class="detail-actions">
-        <button class="btn {% if monitor.get('paused') %}btn-primary{% else %}btn-secondary{% endif %}"
+    <div class="md-header-actions">
+        <form method="POST" action="/monitors/{{ monitor.id }}/test-alert" style="margin:0; display:inline;">
+            <button type="submit" class="btn btn-secondary btn-sm"
+                    onclick="this.textContent='Sending...'; this.disabled=true; this.form.submit();">
+                Test Notification
+            </button>
+        </form>
+        <button class="btn btn-sm {% if monitor.get('paused') %}btn-primary{% else %}btn-secondary{% endif %}"
                 id="pauseResumeBtn"
-                onclick="togglePause('{{ monitor.id }}')"
-                title="{{ 'Resume monitoring' if monitor.get('paused') else 'Pause monitoring' }}">
+                onclick="togglePause('{{ monitor.id }}')">
             {{ '▶ Resume' if monitor.get('paused') else '⏸ Pause' }}
         </button>
-        <a href="/monitors/{{ monitor.id }}/edit" class="btn btn-secondary">Edit</a>
-        <a href="/dashboard" class="btn btn-secondary">Back</a>
+        <a href="/monitors/{{ monitor.id }}/edit" class="btn btn-secondary btn-sm">✎ Edit</a>
     </div>
 </div>
 
-<!-- Status Banner -->
-{% if flash_message %}
-<div class="status-banner" style="background: {{ '#d4edda' if flash_type == 'success' else '#f8d7da' }}; color: {{ '#155724' if flash_type == 'success' else '#721c24' }}; border: 1px solid {{ '#c3e6cb' if flash_type == 'success' else '#f5c6cb' }}; margin-bottom: 1rem;">
-    {{ flash_message }}
-</div>
-{% endif %}
-
-<div class="status-banner status-{{ 'paused' if monitor.get('paused') else monitor.status }}"
-     {% if monitor.get('last_status_change') and not monitor.get('paused') %}
-     data-status-since="{{ monitor.last_status_change.isoformat() if monitor.last_status_change.isoformat is defined else monitor.last_status_change }}"
-     data-status="{{ monitor.status }}"
-     {% endif %}>
-    {% if monitor.get('paused') %}
-        Paused — checks are suspended
-    {% elif monitor.status == 'up' %}
-        Currently up
-    {% elif monitor.status == 'down' %}
-        Currently down — alerting
-    {% else %}
-        Pending — waiting for first check
-    {% endif %}
-    {% if monitor.get('last_status_change') and not monitor.get('paused') %}
-    <span class="banner-duration"></span>
-    {% endif %}
-</div>
-
-<!-- Stats Grid -->
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="value">{{ monitor.uptime_percent | default(100) }}%</div>
-        <div class="label">Uptime</div>
+<!-- ── Top stat cards ── -->
+<div class="md-top-cards">
+    <div class="md-card md-card-status">
+        <div class="md-card-label">Current status</div>
+        <div class="md-card-value md-status-{{ 'paused' if monitor.get('paused') else monitor.status }}">
+            {% if monitor.get('paused') %}Paused
+            {% elif monitor.status == 'up' %}Up
+            {% elif monitor.status == 'down' %}Down
+            {% else %}Pending{% endif %}
+        </div>
+        <div class="md-card-sub"
+             {% if monitor.get('last_status_change') and not monitor.get('paused') %}
+             data-status-since="{{ monitor.get('last_status_change').isoformat() if monitor.get('last_status_change').isoformat is defined else monitor.get('last_status_change') }}"
+             data-status="{{ monitor.status }}"
+             {% endif %}>
+            {% if monitor.get('paused') %}
+                Checks suspended
+            {% else %}
+                <span class="md-duration-text"></span>
+            {% endif %}
+        </div>
     </div>
-    <div class="stat-card">
-        <div class="value">{{ monitor.last_response_ms | default('—') }}{{ 'ms' if monitor.last_response_ms }}</div>
-        <div class="label">Last Response</div>
-    </div>
-    <div class="stat-card">
-        <div class="value">{{ monitor.checks_total | default(0) }}</div>
-        <div class="label">Total Checks</div>
-    </div>
-    <div class="stat-card">
-        <div class="value">{{ monitor.checks_failed | default(0) }}</div>
-        <div class="label">Failed Checks</div>
-    </div>
-    <div class="stat-card">
-        <div class="value">{{ monitor.last_status_code | default('—') }}</div>
-        <div class="label">Status Code</div>
-    </div>
-    <div class="stat-card">
-        <div class="value">
-            {% if monitor.get('last_checked') %}
+    <div class="md-card">
+        <div class="md-card-label">Last check</div>
+        <div class="md-card-value" id="lastCheckValue"
+             {% if monitor.get('last_checked') %}
+             data-last-checked="{{ monitor.last_checked.isoformat() if monitor.last_checked.isoformat is defined else monitor.last_checked }}"
+             {% endif %}>
+            {% if last_check_ago %}
+                {{ last_check_ago }}
+            {% elif monitor.get('last_checked') %}
                 {% if monitor.last_checked.strftime is defined %}
                     {{ monitor.last_checked.strftime('%H:%M UTC') }}
                 {% else %}
@@ -86,252 +74,334 @@
                 —
             {% endif %}
         </div>
-        <div class="label">Last Checked</div>
-    </div>
-    <div class="stat-card">
-        <div class="value">{{ monitor.get('check_interval', 300) }}s</div>
-        <div class="label">Check Interval</div>
-    </div>
-    <div class="stat-card">
-        <div class="value">
-            {% if monitor.get('created_at') %}
-                {% if monitor.created_at.strftime is defined %}
-                    {{ monitor.created_at.strftime('%b %d, %Y') }}
-                {% else %}
-                    {{ monitor.created_at }}
-                {% endif %}
-            {% else %}
-                —
+        <div class="md-card-sub">
+            {% set ci = monitor.get('check_interval', 300) %}
+            Checked every {% if ci < 120 %}{{ ci }}s{% elif ci < 300 %}{{ (ci / 60)|int }}m{% else %}5m{% endif %}
+            {% if user.get('plan', 'free') == 'free' and ci >= 300 %}
+            · <a href="/pricing" class="md-upsell">Get custom intervals →</a>
             {% endif %}
         </div>
-        <div class="label">Created</div>
+    </div>
+    <div class="md-card">
+        <div class="md-card-label">MTBF</div>
+        <div class="md-card-value" style="color: var(--brand);">
+            {% if mtbf %}{{ mtbf.value }}{% else %}—{% endif %}
+        </div>
+        <div class="md-card-sub">
+            {% if mtbf %}{{ mtbf.failures }} failure{{ 's' if mtbf.failures != 1 else '' }} · 30 days{% else %}No failures recorded{% endif %}
+        </div>
     </div>
 </div>
 
-<!-- Response Time Chart -->
-<div class="chart-card">
-    <h2>Response Time (Last 24h)</h2>
-    <canvas id="responseChart" height="100"></canvas>
-</div>
-
-<!-- SSL Certificate Info -->
-{% if monitor.get('ssl_expiry') or monitor.get('ssl_issuer') %}
-<div class="settings-card">
-    <h2>SSL Certificate</h2>
-    <div class="setting-row">
-        <span class="setting-label">Issuer</span>
-        <span class="setting-value active">{{ monitor.get('ssl_issuer', '—') }}</span>
+<!-- ── Uptime (unified slicer) ── -->
+<div class="md-section md-uptime-section">
+    <div class="md-section-header">
+        <h2>Uptime</h2>
+        <div class="md-range-toggle">
+            <button class="range-btn active" onclick="switchUptimePeriod('24h', this)">24 hours</button>
+            <button class="range-btn" onclick="switchUptimePeriod('7d', this)">7 days</button>
+            <button class="range-btn" onclick="switchUptimePeriod('30d', this)">30 days</button>
+        </div>
     </div>
-    <div class="setting-row">
-        <span class="setting-label">Expires</span>
-        <span class="setting-value {{ 'active' if (monitor.get('ssl_expiry_days', 999) or 999) > 14 else '' }}"
-              style="{% if (monitor.get('ssl_expiry_days', 999) or 999) <= 14 %}color: #ef4444; font-weight: 700;{% endif %}">
-            {% if monitor.get('ssl_expiry') %}
-                {{ monitor.ssl_expiry.strftime('%b %d, %Y') if monitor.ssl_expiry.strftime is defined else monitor.ssl_expiry }}
-                {% if monitor.get('ssl_expiry_days') is not none %}
-                    ({{ monitor.ssl_expiry_days }} days left)
-                {% endif %}
+    <div class="md-uptime-hero">
+        <span class="md-uptime-pct" id="uptimePct"
+              data-pct24h="{{ '%.3f'|format(period_stats['24h'].pct) if period_stats['24h'].pct is not none else '' }}"
+              data-pct7d="{{ '%.3f'|format(period_stats['7d'].pct) if period_stats['7d'].pct is not none else '' }}"
+              data-pct30d="{{ '%.3f'|format(period_stats['30d'].pct) if period_stats['30d'].pct is not none else '' }}">
+            {{ '%.3f'|format(period_stats['24h'].pct) if period_stats['24h'].pct is not none else '—' }}%
+        </span>
+        <span class="md-uptime-detail" id="uptimeDetail"
+              data-detail24h="{% if period_stats['24h'].incidents > 0 %}{{ period_stats['24h'].incidents }} incident{{ 's' if period_stats['24h'].incidents != 1 else '' }}{% if period_stats['24h'].downtime %} · {{ period_stats['24h'].downtime }} down{% endif %}{% else %}No incidents{% endif %}"
+              data-detail7d="{% if period_stats['7d'].incidents > 0 %}{{ period_stats['7d'].incidents }} incident{{ 's' if period_stats['7d'].incidents != 1 else '' }}{% if period_stats['7d'].downtime %} · {{ period_stats['7d'].downtime }} down{% endif %}{% else %}No incidents{% endif %}"
+              data-detail30d="{% if period_stats['30d'].incidents > 0 %}{{ period_stats['30d'].incidents }} incident{{ 's' if period_stats['30d'].incidents != 1 else '' }}{% if period_stats['30d'].downtime %} · {{ period_stats['30d'].downtime }} down{% endif %}{% else %}No incidents{% endif %}">
+            {% if period_stats['24h'].incidents > 0 %}
+                {{ period_stats['24h'].incidents }} incident{{ 's' if period_stats['24h'].incidents != 1 else '' }}{% if period_stats['24h'].downtime %} · {{ period_stats['24h'].downtime }} down{% endif %}
             {% else %}
-                —
+                No incidents
             {% endif %}
         </span>
     </div>
-</div>
-{% endif %}
-
-<!-- Monitoring Features -->
-{% if monitor.get('keyword') or monitor.get('response_threshold_ms') or monitor.get('webhook_url') or monitor.get('maintenance_windows') or monitor.get('maintenance_window') %}
-<div class="settings-card">
-    <h2>Advanced Monitoring</h2>
-    {% if monitor.get('keyword') %}
-    <div class="setting-row">
-        <span class="setting-label">Keyword Check</span>
-        <span class="setting-value active"><code>{{ monitor.keyword }}</code></span>
-    </div>
-    {% endif %}
-    {% if monitor.get('response_threshold_ms') %}
-    <div class="setting-row">
-        <span class="setting-label">Response Threshold</span>
-        <span class="setting-value active"><code>{{ monitor.response_threshold_ms }}{% if monitor.response_threshold_ms is number or (monitor.response_threshold_ms is string and monitor.response_threshold_ms.isdigit()) %}ms (alert if exceeded){% endif %}</code></span>
-    </div>
-    {% endif %}
-    {% if monitor.get('webhook_url') %}
-    <div class="setting-row">
-        <span class="setting-label">Webhook</span>
-        <span class="setting-value active">{{ monitor.webhook_url }}</span>
-    </div>
-    {% endif %}
-    {% set mw_list = monitor.get('maintenance_windows', []) %}
-    {% if not mw_list and monitor.get('maintenance_window') %}
-        {% set mw_list = [monitor.maintenance_window] %}
-    {% endif %}
-    {% if mw_list %}
-    <div class="setting-row">
-        <span class="setting-label">Maintenance Windows</span>
-        <span class="setting-value active">
-            {% for mw in mw_list %}
-            {{ mw.day | capitalize }} {{ mw.start_utc }}–{{ mw.end_utc }} UTC{% if not loop.last %}<br>{% endif %}
+    <div class="md-uptime-bars-wrap">
+        <!-- 24h hourly bars -->
+        <div class="md-uptime-bars" id="uptimeBars24h">
+            {% for bar in hourly_bars %}
+            <div class="md-bar {% if bar.pct is none %}bar-nodata{% elif bar.pct >= 99.5 %}bar-up{% elif bar.pct >= 50 %}bar-degraded{% else %}bar-down{% endif %}"
+                 title="{{ bar.date }}: {{ bar.pct }}%"></div>
             {% endfor %}
-        </span>
+        </div>
+        <!-- 7d daily bars (last 7) -->
+        <div class="md-uptime-bars" id="uptimeBars7d" style="display:none;">
+            {% for bar in daily_bars[-7:] %}
+            <div class="md-bar {% if bar.pct is none %}bar-nodata{% elif bar.pct >= 99.5 %}bar-up{% elif bar.pct >= 50 %}bar-degraded{% else %}bar-down{% endif %}"
+                 title="{{ bar.date }}: {{ bar.pct }}%"></div>
+            {% endfor %}
+        </div>
+        <!-- 30d daily bars -->
+        <div class="md-uptime-bars" id="uptimeBars30d" style="display:none;">
+            {% for bar in daily_bars %}
+            <div class="md-bar {% if bar.pct is none %}bar-nodata{% elif bar.pct >= 99.5 %}bar-up{% elif bar.pct >= 50 %}bar-degraded{% else %}bar-down{% endif %}"
+                 title="{{ bar.date }}: {{ bar.pct }}%"></div>
+            {% endfor %}
+        </div>
     </div>
+</div>
+
+<!-- ── Response time chart ── -->
+<div class="md-section">
+    <div class="md-section-header">
+        <h2>Response time</h2>
+        <div class="md-chart-controls">
+            {% if monitor.get('response_threshold_ms') %}
+            <span class="md-threshold-badge">Threshold: {{ monitor.response_threshold_ms }}ms</span>
+            {% else %}
+            <a href="/monitors/{{ monitor.id }}/edit" class="md-threshold-cta">⚠ Setup alerts for slow response times</a>
+            {% endif %}
+            <div class="md-range-toggle">
+                <button class="range-btn active" onclick="loadChartRange(1, this)">1h</button>
+                <button class="range-btn" onclick="loadChartRange(6, this)">6h</button>
+                <button class="range-btn" onclick="loadChartRange(24, this)">24h</button>
+                <button class="range-btn" onclick="loadChartRange(168, this)">7d</button>
+                <button class="range-btn" onclick="loadChartRange(720, this)">30d</button>
+            </div>
+        </div>
+    </div>
+    <div class="md-chart-wrap">
+        <canvas id="responseChart" height="80"></canvas>
+    </div>
+    <div class="md-response-stats">
+        <div class="md-resp-stat">
+            <span class="md-resp-icon" style="color: var(--brand);">⌀</span>
+            <span class="md-resp-value" id="statAvg">{{ response_stats.avg or '—' }} ms</span>
+            <span class="md-resp-label">Average</span>
+        </div>
+        <div class="md-resp-stat">
+            <span class="md-resp-icon" style="color: var(--success);">↓</span>
+            <span class="md-resp-value" id="statMin">{{ response_stats.min or '—' }} ms</span>
+            <span class="md-resp-label">Minimum</span>
+        </div>
+        <div class="md-resp-stat">
+            <span class="md-resp-icon" style="color: var(--danger);">↑</span>
+            <span class="md-resp-value" id="statMax">{{ response_stats.max or '—' }} ms</span>
+            <span class="md-resp-label">Maximum</span>
+        </div>
+    </div>
+</div>
+
+<!-- ── Latest incidents ── -->
+<div class="md-section md-incidents-section">
+    <div class="md-section-header">
+        <h2>Latest incidents</h2>
+        <div class="md-inc-header-right">
+            <span class="md-inc-count">{{ incidents|length }} total</span>
+            {% if incidents %}
+            <button class="btn btn-secondary btn-sm" onclick="exportIncidents()">📥 Export CSV</button>
+            {% endif %}
+        </div>
+    </div>
+    {% if incidents %}
+    <div class="md-incidents-table">
+        <div class="md-inc-header">
+            <span>Status</span>
+            <span>Root Cause</span>
+            <span>Started</span>
+            <span>Duration</span>
+        </div>
+        {% for inc in incidents[:20] %}
+        <div class="md-inc-row">
+            <span class="md-inc-status">
+                {% if inc.status == 'open' %}
+                    <span class="md-inc-badge md-inc-ongoing">● Ongoing</span>
+                {% else %}
+                    <span class="md-inc-badge md-inc-resolved">✓ Resolved</span>
+                {% endif %}
+            </span>
+            <span class="md-inc-cause">
+                {% if inc.get('status_code') %}
+                    <span class="md-http-badge">{{ inc.status_code }}</span>
+                    <span class="md-http-text">
+                        {% if inc.status_code == 0 or inc.status_code is none %}Connection Failed
+                        {% elif inc.status_code == 400 %}Bad Request
+                        {% elif inc.status_code == 401 %}Unauthorized
+                        {% elif inc.status_code == 403 %}Forbidden
+                        {% elif inc.status_code == 404 %}Not Found
+                        {% elif inc.status_code == 405 %}Method Not Allowed
+                        {% elif inc.status_code == 408 %}Request Timeout
+                        {% elif inc.status_code == 429 %}Too Many Requests
+                        {% elif inc.status_code == 500 %}Internal Server Error
+                        {% elif inc.status_code == 502 %}Bad Gateway
+                        {% elif inc.status_code == 503 %}Service Unavailable
+                        {% elif inc.status_code == 504 %}Gateway Timeout
+                        {% else %}HTTP {{ inc.status_code }}
+                        {% endif %}
+                    </span>
+                {% else %}
+                    <span class="md-http-badge md-http-timeout">—</span>
+                    <span class="md-http-text">Connection Failed</span>
+                {% endif %}
+            </span>
+            <span class="md-inc-time">
+                {{ inc.started_at.strftime('%b %d, %Y %H:%M UTC') if inc.started_at and inc.started_at.strftime is defined else '' }}
+            </span>
+            <span class="md-inc-duration">
+                {% if inc.get('duration_seconds') %}
+                    {% if inc.duration_seconds < 60 %}{{ inc.duration_seconds }}s
+                    {% elif inc.duration_seconds < 3600 %}{{ (inc.duration_seconds // 60) }}m {{ (inc.duration_seconds % 60) }}s
+                    {% else %}{{ (inc.duration_seconds // 3600) }}h {{ ((inc.duration_seconds % 3600) // 60) }}m
+                    {% endif %}
+                {% elif inc.status == 'open' %}
+                    <span class="md-inc-badge md-inc-ongoing" style="font-size:0.7rem;">● Ongoing</span>
+                {% else %}
+                    —
+                {% endif %}
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+    {% if incidents|length > 20 %}
+    <div class="md-inc-footer">Showing 20 of {{ incidents|length }} incidents</div>
+    {% elif incidents|length > 0 %}
+    <div class="md-inc-footer">That's all, folks!</div>
+    {% endif %}
+    {% else %}
+    <div class="md-empty">No incidents recorded yet. That's a good thing! 🎉</div>
     {% endif %}
 </div>
-{% endif %}
-
-<!-- Public Status Page -->
-{% if monitor.public and monitor.slug %}
-<div class="settings-card">
-    <h2>Public Status Page</h2>
-    <div class="setting-row">
-        <span class="setting-label">Share this link with your users</span>
-        <span class="setting-value active" style="max-width: none;">
-            <a href="/s/{{ monitor.slug }}" target="_blank" style="color: #2d6a4f; text-decoration: none;">
-                statusrooster.com/s/{{ monitor.slug }} ↗
-            </a>
-        </span>
+{% if monitor.get('ssl_expiry') or monitor.get('ssl_issuer') or monitor.get('keyword') or monitor.get('response_threshold_ms') or monitor.get('webhook_url') or monitor.get('maintenance_windows') or monitor.get('maintenance_window') %}
+<div class="md-section md-config-section">
+    <div class="md-config-grid">
+        {% if monitor.get('ssl_expiry') or monitor.get('ssl_issuer') %}
+        <div class="md-config-card">
+            <div class="md-config-title">🔒 SSL Certificate</div>
+            <div class="md-config-row">
+                <span>Issuer</span>
+                <span>{{ monitor.get('ssl_issuer', '—') }}</span>
+            </div>
+            <div class="md-config-row">
+                <span>Expires</span>
+                <span class="{% if (monitor.get('ssl_expiry_days', 999) or 999) <= 14 %}text-danger{% else %}text-success{% endif %}">
+                    {% if monitor.get('ssl_expiry') %}
+                        {{ monitor.ssl_expiry.strftime('%b %d, %Y') if monitor.ssl_expiry.strftime is defined else monitor.ssl_expiry }}
+                        {% if monitor.get('ssl_expiry_days') is not none %}
+                            ({{ monitor.ssl_expiry_days }}d)
+                        {% endif %}
+                    {% else %}—{% endif %}
+                </span>
+            </div>
+        </div>
+        {% endif %}
+        {% if monitor.get('keyword') %}
+        <div class="md-config-card">
+            <div class="md-config-title">🔍 Keyword Check</div>
+            <div class="md-config-row">
+                <span>Expression</span>
+                <code>{{ monitor.keyword }}</code>
+            </div>
+        </div>
+        {% endif %}
+        {% if monitor.get('webhook_url') %}
+        <div class="md-config-card">
+            <div class="md-config-title">🔗 Webhook</div>
+            <div class="md-config-row">
+                <span>URL</span>
+                <span class="md-config-mono">{{ monitor.webhook_url[:50] }}{{ '…' if monitor.webhook_url|length > 50 else '' }}</span>
+            </div>
+        </div>
+        {% endif %}
+        {% set mw_list = monitor.get('maintenance_windows', []) %}
+        {% if not mw_list and monitor.get('maintenance_window') %}
+            {% set mw_list = [monitor.maintenance_window] %}
+        {% endif %}
+        {% if mw_list %}
+        <div class="md-config-card">
+            <div class="md-config-title">🛠 Maintenance</div>
+            {% for mw in mw_list %}
+            <div class="md-config-row">
+                <span>{{ mw.day | capitalize }}</span>
+                <span>{{ mw.start_utc }}–{{ mw.end_utc }} UTC</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endif %}
 
-<!-- Uptime Badges -->
-{% if monitor.public %}
-<div class="settings-card">
-    <h2>Uptime Badges</h2>
-    <p class="badge-intro">Embed these in your GitHub README, docs, or website.</p>
+<!-- ── Alert Settings ── -->
+<div class="md-section">
+    <div class="md-section-header">
+        <h2>Alert channels</h2>
+    </div>
+    <div class="md-alert-channels">
+        <div class="md-alert-ch {% if monitor.alert_email %}md-ch-active{% endif %}">
+            <span class="md-ch-icon">✉</span>
+            <span class="md-ch-name">Email</span>
+            <span class="md-ch-status">{{ monitor.alert_email if monitor.alert_email else 'Not configured' }}</span>
+        </div>
+        <div class="md-alert-ch {% if monitor.get('alert_slack_webhook') %}md-ch-active{% endif %}">
+            <span class="md-ch-icon">💬</span>
+            <span class="md-ch-name">Slack</span>
+            <span class="md-ch-status">{{ 'Connected' if monitor.get('alert_slack_webhook') else 'Not configured' }}</span>
+        </div>
+        <div class="md-alert-ch">
+            <span class="md-ch-icon">📱</span>
+            <span class="md-ch-name">SMS</span>
+            <span class="md-ch-status">Coming soon</span>
+        </div>
+    </div>
+</div>
 
-    <div class="badge-section">
-        <div class="badge-preview">
+<!-- ── Uptime Badges ── -->
+{% if monitor.public %}
+<div class="md-section">
+    <div class="md-section-header">
+        <h2>Uptime badges</h2>
+    </div>
+    <div class="md-badges">
+        <div class="md-badge-preview">
             <img src="/badge/{{ monitor.id }}.svg" alt="Uptime badge" />
             <img src="/badge/{{ monitor.id }}/status.svg" alt="Status badge" />
             <img src="/badge/{{ monitor.id }}/response.svg" alt="Response time badge" />
         </div>
-
-        <div class="badge-snippet-group">
-            <label class="badge-snippet-label">Markdown</label>
-            <div class="badge-snippet">
-                <code id="badge-md">![Uptime]({{ request.url.scheme }}://{{ request.url.hostname }}/badge/{{ monitor.id }}.svg)</code>
-                <button class="btn-copy" onclick="copyBadge('badge-md')" title="Copy">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                </button>
-            </div>
-        </div>
-
-        <div class="badge-snippet-group">
-            <label class="badge-snippet-label">HTML</label>
-            <div class="badge-snippet">
-                <code id="badge-html">&lt;img src="{{ request.url.scheme }}://{{ request.url.hostname }}/badge/{{ monitor.id }}.svg" alt="Uptime" /&gt;</code>
-                <button class="btn-copy" onclick="copyBadge('badge-html')" title="Copy">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                </button>
-            </div>
-        </div>
-
-        <div class="badge-snippet-group">
-            <label class="badge-snippet-label">reStructuredText</label>
-            <div class="badge-snippet">
-                <code id="badge-rst">.. image:: {{ request.url.scheme }}://{{ request.url.hostname }}/badge/{{ monitor.id }}.svg
-   :alt: Uptime</code>
-                <button class="btn-copy" onclick="copyBadge('badge-rst')" title="Copy">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                </button>
-            </div>
-        </div>
-
-        <details class="badge-extra">
-            <summary>More badge variants</summary>
+        <div class="md-badge-snippets">
             <div class="badge-snippet-group">
-                <label class="badge-snippet-label">Status badge (up/down)</label>
+                <label class="badge-snippet-label">Markdown</label>
                 <div class="badge-snippet">
-                    <code id="badge-status-md">![Status]({{ request.url.scheme }}://{{ request.url.hostname }}/badge/{{ monitor.id }}/status.svg)</code>
-                    <button class="btn-copy" onclick="copyBadge('badge-status-md')" title="Copy">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                    </button>
+                    <code id="badge-md">![Uptime]({{ request.url.scheme }}://{{ request.url.hostname }}/badge/{{ monitor.id }}.svg)</code>
+                    <button class="btn-copy" onclick="copyBadge('badge-md')" title="Copy">📋</button>
                 </div>
             </div>
             <div class="badge-snippet-group">
-                <label class="badge-snippet-label">Response time badge</label>
+                <label class="badge-snippet-label">HTML</label>
                 <div class="badge-snippet">
-                    <code id="badge-response-md">![Response Time]({{ request.url.scheme }}://{{ request.url.hostname }}/badge/{{ monitor.id }}/response.svg)</code>
-                    <button class="btn-copy" onclick="copyBadge('badge-response-md')" title="Copy">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                    </button>
+                    <code id="badge-html">&lt;img src="{{ request.url.scheme }}://{{ request.url.hostname }}/badge/{{ monitor.id }}.svg" alt="Uptime" /&gt;</code>
+                    <button class="btn-copy" onclick="copyBadge('badge-html')" title="Copy">📋</button>
                 </div>
             </div>
-        </details>
+        </div>
     </div>
 </div>
 {% endif %}
 
-<!-- Alert Settings -->
-<div class="settings-card">
-    <h2 style="display: flex; justify-content: space-between; align-items: center;">
-        <span>Alert Settings</span>
-        <form method="POST" action="/monitors/{{ monitor.id }}/test-alert" style="margin:0;">
-            <button type="submit" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 1rem;"
-                    onclick="this.textContent='Sending...'; this.disabled=true; this.form.submit();">
-                Send test alert
-            </button>
-        </form>
-    </h2>
-    <div class="setting-row">
-        <span class="setting-label">Email</span>
-        <span class="setting-value {{ 'active' if monitor.alert_email else 'inactive' }}">
-            {{ monitor.alert_email or 'Not configured' }}
-        </span>
+{% if monitor.public and monitor.slug %}
+<div class="md-section">
+    <div class="md-section-header">
+        <h2>Public status page</h2>
     </div>
-    <div class="setting-row">
-        <span class="setting-label">Slack</span>
-        <span class="setting-value {{ 'active' if monitor.alert_slack_webhook else 'inactive' }}">
-            {{ 'Connected' if monitor.alert_slack_webhook else 'Not configured' }}
-        </span>
-    </div>
-    <div class="setting-row">
-        <span class="setting-label">SMS</span>
-        <span class="setting-value inactive">Coming soon</span>
+    <div class="md-status-page-link">
+        <a href="/s/{{ monitor.slug }}" target="_blank">statusrooster.com/s/{{ monitor.slug }} ↗</a>
     </div>
 </div>
+{% endif %}
 
-<!-- Recent Incidents -->
-<div class="incidents-card">
-    <h2>Recent Incidents</h2>
-    {% if incidents %}
-    {% for inc in incidents %}
-    <div class="incident-item">
-        <div class="incident-status">
-            {% if inc.status == 'open' %}
-                <strong>Ongoing</strong>
-            {% else %}
-                Resolved
-            {% endif %}
-            — {{ inc.monitor_name }}
-        </div>
-        <div>
-            <span class="incident-time">
-                {{ inc.started_at.strftime('%b %d, %H:%M UTC') if inc.started_at else '' }}
-            </span>
-            {% if inc.duration_seconds %}
-            <span class="incident-duration">
-                {% if inc.duration_seconds < 60 %}{{ inc.duration_seconds }}s
-                {% elif inc.duration_seconds < 3600 %}{{ (inc.duration_seconds // 60) }}m
-                {% else %}{{ (inc.duration_seconds // 3600) }}h {{ ((inc.duration_seconds % 3600) // 60) }}m
-                {% endif %}
-            </span>
-            {% endif %}
-        </div>
-    </div>
-    {% endfor %}
-    {% else %}
-    <div class="no-incidents">No incidents recorded yet.</div>
-    {% endif %}
-</div>
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 // @ts-nocheck
+const MONITOR_ID = '{{ monitor.id }}';
 
-/* ── Pause/Resume toggle ──────────────────────────────── */
+/* ── Pause/Resume ──────────────────────────────── */
 async function togglePause(monitorId) {
     const btn = document.getElementById('pauseResumeBtn');
     btn.disabled = true;
@@ -343,7 +413,7 @@ async function togglePause(monitorId) {
     } catch(e) { alert('Network error.'); btn.disabled = false; }
 }
 
-/* ── Banner duration ("Up for X" / "Down for X") ──────── */
+/* ── Duration text ("Currently up for X") ──────── */
 function formatDuration(seconds) {
     if (seconds < 60) return seconds + 's';
     if (seconds < 3600) return Math.floor(seconds / 60) + 'm';
@@ -356,107 +426,231 @@ function formatDuration(seconds) {
     }
     return m > 0 ? h + 'h ' + m + 'm' : h + 'h';
 }
-function updateBannerDuration() {
-    const banner = document.querySelector('.status-banner[data-status-since]');
-    if (!banner) return;
-    const since = banner.dataset.statusSince;
-    const status = banner.dataset.status;
-    const span = banner.querySelector('.banner-duration');
+function updateDuration() {
+    const el = document.querySelector('[data-status-since]');
+    if (!el) return;
+    const since = el.dataset.statusSince;
+    const status = el.dataset.status;
+    const span = el.querySelector('.md-duration-text');
     if (!since || !span) return;
     try {
         const d = new Date(since);
         if (isNaN(d.getTime())) return;
         const secs = Math.floor((Date.now() - d.getTime()) / 1000);
         if (secs < 0) return;
-        const prefix = status === 'up' ? 'for ' : status === 'down' ? 'for ' : '';
-        span.textContent = '· ' + prefix + formatDuration(secs);
+        span.textContent = 'Currently ' + status + ' for ' + formatDuration(secs);
     } catch(e) {}
 }
-updateBannerDuration();
-setInterval(updateBannerDuration, 30000);
+updateDuration();
+setInterval(updateDuration, 30000);
 
-// Parse checks data passed from server
-const checks = {{ checks | tojson }};
-
-// Prepare chart data — reverse so oldest is first
-const sorted = checks.slice().reverse();
-const labels = sorted.map(c => {
-    if (!c.timestamp) return '';
-    // Handle Firestore timestamp (could be string or object)
-    let d;
-    if (typeof c.timestamp === 'string') {
-        d = new Date(c.timestamp);
-    } else if (c.timestamp._seconds) {
-        d = new Date(c.timestamp._seconds * 1000);
-    } else {
-        d = new Date(c.timestamp);
-    }
-    return d.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-});
-const data = sorted.map(c => c.response_ms || null);
-
-// Downsample if too many points (keep it to ~100 for performance)
-function downsample(labels, data, maxPoints) {
-    if (labels.length <= maxPoints) return { labels, data };
-    const step = Math.ceil(labels.length / maxPoints);
-    return {
-        labels: labels.filter((_, i) => i % step === 0),
-        data: data.filter((_, i) => i % step === 0),
-    };
+/* ── Last check "ago" text (live-ticking + polling) ── */
+function updateLastCheck() {
+    const el = document.getElementById('lastCheckValue');
+    if (!el || !el.dataset.lastChecked) return;
+    try {
+        const d = new Date(el.dataset.lastChecked);
+        if (isNaN(d.getTime())) return;
+        const secs = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000));
+        if (secs < 60) {
+            el.textContent = secs + 's ago';
+        } else if (secs < 3600) {
+            const m = Math.floor(secs / 60);
+            const s = secs % 60;
+            el.textContent = m + 'm, ' + s + 's ago';
+        } else {
+            const h = Math.floor(secs / 3600);
+            const m = Math.floor((secs % 3600) / 60);
+            el.textContent = h + 'h, ' + m + 'm ago';
+        }
+    } catch(e) {}
 }
-const sampled = downsample(labels, data, 100);
+updateLastCheck();
+setInterval(updateLastCheck, 1000);
 
-const ctx = document.getElementById('responseChart').getContext('2d');
-new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: sampled.labels,
-        datasets: [{
-            label: 'Response Time (ms)',
-            data: sampled.data,
-            borderColor: '#6366f1',
-            backgroundColor: 'rgba(99, 102, 241, 0.08)',
-            borderWidth: 2,
-            fill: true,
-            tension: 0.3,
-            pointRadius: 0,
-            pointHitRadius: 10,
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                callbacks: {
-                    label: ctx => ctx.parsed.y ? `${ctx.parsed.y}ms` : 'Timeout'
-                }
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                title: { display: true, text: 'ms' },
-                grid: { color: '#f0f0f0' },
-            },
-            x: {
-                grid: { display: false },
-                ticks: { maxTicksLimit: 12, font: { size: 11 } }
+/* Poll for new last_checked timestamp so the counter resets on each check */
+async function pollLastChecked() {
+    try {
+        const resp = await fetch(`/api/monitors/${MONITOR_ID}/status`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (data.last_checked) {
+            const el = document.getElementById('lastCheckValue');
+            if (el) {
+                el.dataset.lastChecked = data.last_checked;
             }
         }
-    }
-});
+    } catch(e) {}
+}
+setInterval(pollLastChecked, 15000); // poll every 15s
 
+/* ── Uptime period slicer ──────────────────────── */
+function switchUptimePeriod(period, btn) {
+    // Toggle button active
+    document.querySelectorAll('.md-uptime-section .range-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const pctEl = document.getElementById('uptimePct');
+    const detailEl = document.getElementById('uptimeDetail');
+
+    // Update percentage — dataset keys: pct24h, pct7d, pct30d
+    const rawPct = pctEl.dataset['pct' + period];
+    pctEl.className = 'md-uptime-pct';
+    if (rawPct) {
+        const val = parseFloat(rawPct);
+        pctEl.textContent = rawPct + '%';
+        if (val >= 99.5) pctEl.classList.add('text-success');
+        else if (val >= 95) pctEl.classList.add('text-warning');
+        else pctEl.classList.add('text-danger');
+    } else {
+        pctEl.textContent = '—';
+    }
+
+    // Update detail text — dataset keys: detail24h, detail7d, detail30d
+    detailEl.textContent = detailEl.dataset['detail' + period] || 'No data';
+
+    // Switch bars
+    ['24h', '7d', '30d'].forEach(p => {
+        const barsEl = document.getElementById('uptimeBars' + p);
+        if (barsEl) barsEl.style.display = (p === period) ? 'flex' : 'none';
+    });
+}
+
+// Apply initial color to the uptime pct
+(function initUptimeColor() {
+    const el = document.getElementById('uptimePct');
+    if (!el) return;
+    const raw = el.dataset.pct24h;
+    if (raw) {
+        const val = parseFloat(raw);
+        if (val >= 99.5) el.classList.add('text-success');
+        else if (val >= 95) el.classList.add('text-warning');
+        else el.classList.add('text-danger');
+    }
+})();
+
+/* ── Response chart ────────────────────────────── */
+const initialChecks = {{ checks | tojson | safe }};
+let chart = null;
+
+function buildChart(checks) {
+    const sorted = checks.slice().reverse();
+    const labels = sorted.map(c => {
+        if (!c.timestamp) return '';
+        let d;
+        if (typeof c.timestamp === 'string') d = new Date(c.timestamp);
+        else if (c.timestamp._seconds) d = new Date(c.timestamp._seconds * 1000);
+        else d = new Date(c.timestamp);
+        return d.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+    });
+    const data = sorted.map(c => c.response_ms || null);
+
+    // Downsample
+    function ds(labels, data, max) {
+        if (labels.length <= max) return { labels, data };
+        const step = Math.ceil(labels.length / max);
+        return {
+            labels: labels.filter((_, i) => i % step === 0),
+            data: data.filter((_, i) => i % step === 0),
+        };
+    }
+    const s = ds(labels, data, 120);
+
+    const ctx = document.getElementById('responseChart').getContext('2d');
+    if (chart) chart.destroy();
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: s.labels,
+            datasets: [{
+                label: 'Response Time (ms)',
+                data: s.data,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.06)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3,
+                pointRadius: 0,
+                pointHitRadius: 10,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ctx.parsed.y ? `${ctx.parsed.y}ms` : 'Timeout'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: false },
+                    grid: { color: '#f0f0f0' },
+                    ticks: { font: { size: 11 }, color: '#999' },
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { maxTicksLimit: 10, font: { size: 11 }, color: '#999' }
+                }
+            }
+        }
+    });
+}
+
+buildChart(initialChecks);
+
+/* ── Chart time range switching ──────────────── */
+async function loadChartRange(hours, btn) {
+    document.querySelectorAll('.md-range-toggle .range-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    try {
+        const resp = await fetch(`/api/monitors/${MONITOR_ID}/checks?hours=${hours}`);
+        if (!resp.ok) return;
+        const json = await resp.json();
+        buildChart(json.checks);
+
+        document.getElementById('statAvg').textContent = (json.stats.avg || '—') + ' ms';
+        document.getElementById('statMin').textContent = (json.stats.min || '—') + ' ms';
+        document.getElementById('statMax').textContent = (json.stats.max || '—') + ' ms';
+    } catch(e) {
+        console.error('Failed to load chart data:', e);
+    }
+}
+
+/* ── Copy badge ──────────────────────────────── */
 function copyBadge(id) {
     const code = document.getElementById(id);
-    const text = code.textContent;
-    navigator.clipboard.writeText(text).then(() => {
+    navigator.clipboard.writeText(code.textContent).then(() => {
         const btn = code.parentElement.querySelector('.btn-copy');
-        btn.innerHTML = '✓';
-        setTimeout(() => {
-            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
-        }, 2000);
+        btn.textContent = '✓';
+        setTimeout(() => { btn.textContent = '📋'; }, 2000);
     });
+}
+
+/* ── Export incidents as CSV ─────────────────── */
+function exportIncidents() {
+    const rows = document.querySelectorAll('.md-inc-row');
+    let csv = 'Status,Root Cause,Started,Duration\n';
+    rows.forEach(row => {
+        const cols = row.querySelectorAll('span');
+        const status = (cols[0]?.textContent || '').trim();
+        const cause = (cols[1]?.textContent || '').replace(/\s+/g, ' ').trim();
+        const started = (cols[2]?.textContent || '').trim();
+        const duration = (cols[3]?.textContent || '').trim();
+        csv += `"${status}","${cause}","${started}","${duration}"\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = MONITOR_ID + '_incidents.csv';
+    a.click();
+    URL.revokeObjectURL(url);
 }
 </script>
 {% endblock %}

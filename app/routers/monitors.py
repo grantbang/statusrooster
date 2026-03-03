@@ -24,6 +24,7 @@ class CreateMonitorRequest(BaseModel):
     response_threshold_ms: int | None = None
     webhook_url: str = ""
     public: bool = True
+    check_interval: int | None = None
 
 
 class UpdateMonitorRequest(BaseModel):
@@ -35,6 +36,7 @@ class UpdateMonitorRequest(BaseModel):
     response_threshold_ms: int | None = None
     webhook_url: str | None = None
     public: bool | None = None
+    check_interval: int | None = None
 
 
 @router.post("")
@@ -59,6 +61,7 @@ async def create(req: CreateMonitorRequest, user: dict = Depends(get_current_use
         alert_email=req.alert_email or user.get("email", ""),
         alert_slack_webhook=req.alert_slack_webhook,
         public=req.public,
+        check_interval=req.check_interval,
     )
 
     # Set Day 7 fields that aren't in create_monitor params
@@ -117,6 +120,11 @@ async def update(monitor_id: str, req: UpdateMonitorRequest, user: dict = Depend
     # Gate Pro-only fields
     if "webhook_url" in updates and user.get("plan", "free") == "free":
         del updates["webhook_url"]
+    if "check_interval" in updates:
+        if user.get("plan", "free") == "free":
+            del updates["check_interval"]
+        else:
+            updates["check_interval"] = max(60, min(300, updates["check_interval"]))
 
     if updates:
         update_monitor(db, monitor_id, updates)
