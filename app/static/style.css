@@ -2651,15 +2651,156 @@ code {
 /* ============================================================
    15. API DOCS PAGE
    ============================================================ */
-.api-docs { max-width: 800px; }
-.api-docs h1 {
+.api-docs { max-width: 1140px; }
+.api-docs-header { margin-bottom: 2rem; }
+.api-docs-header h1 {
     font-size: var(--text-3xl);
     margin-bottom: var(--space-sm);
 }
-.api-docs .subtitle {
+.api-docs-header .subtitle {
     color: var(--text-muted);
     font-size: var(--text-md);
-    margin-bottom: var(--space-xl);
+    margin-bottom: var(--space-md);
+}
+
+/* Sidebar + main layout */
+.api-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+/* Left nav */
+.api-sidebar {
+    position: sticky;
+    top: 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md) 0;
+    max-height: calc(100vh - 3rem);
+    overflow-y: auto;
+}
+.api-nav-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-faint);
+    padding: 0.6rem 1.1rem 0.3rem;
+    margin: 0;
+}
+.api-nav-label:first-child { padding-top: 0.3rem; }
+.api-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 1.1rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.api-nav-item:hover {
+    background: var(--bg);
+    color: var(--text);
+}
+.api-nav-item.active {
+    color: var(--brand);
+    border-left-color: var(--brand);
+    background: var(--brand-light);
+    font-weight: 600;
+}
+.api-nav-item .nav-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    border-radius: 3px;
+}
+.api-nav-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0.5rem 1rem;
+}
+
+/* Main content area */
+.api-main { min-width: 0; }
+
+/* Type section header badge */
+.api-type-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+.api-type-header h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0;
+}
+.api-type-badge {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    letter-spacing: 0.3px;
+}
+.api-type-badge--http { background: #eef2ff; color: var(--brand); }
+.api-type-badge--json { background: #eff6ff; color: #2563eb; }
+.api-type-badge--heartbeat { background: #f0fdf4; color: #16a34a; }
+.api-type-badge--ssl { background: #fffbeb; color: #d97706; }
+.api-type-desc {
+    color: var(--text-secondary);
+    font-size: var(--text-base);
+    margin-bottom: 1.25rem;
+    line-height: 1.6;
+}
+
+/* Status pills in type headers */
+.api-status-pills {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 1.5rem;
+}
+.api-status-pill {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.15rem 0.55rem;
+    border-radius: 10px;
+    letter-spacing: 0.2px;
+}
+.api-status-pill--up { background: var(--success-bg); color: var(--success-text); }
+.api-status-pill--down { background: var(--danger-bg); color: var(--danger-text); }
+.api-status-pill--pending { background: #f3f4f6; color: #6b7280; }
+.api-status-pill--warn { background: #fffbeb; color: #d97706; }
+
+/* Section dividers */
+.api-type-section {
+    scroll-margin-top: 1.5rem;
+    padding-bottom: 2rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+}
+.api-type-section:last-child { border-bottom: none; margin-bottom: 0; }
+
+/* Responsive: collapse sidebar below 900px */
+@media (max-width: 900px) {
+    .api-layout {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    .api-sidebar {
+        position: static;
+        max-height: none;
+        margin-bottom: 1.5rem;
+        border-radius: var(--radius-md);
+    }
 }
 
 .api-section {
@@ -2741,6 +2882,17 @@ code {
     margin: 2rem 0 0.25rem;
     padding-top: 1.5rem;
     border-top: 1px solid var(--border);
+}
+
+/* API docs inline note callout */
+.api-note {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    margin: 12px 0;
 }
 
 /* Field reference */

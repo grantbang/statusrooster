@@ -8,429 +8,258 @@
 {% block content %}
 <div class="api-docs">
 
-<h1>API Reference</h1>
-<p class="subtitle">Programmatic access to your StatusRooster monitors and check data.</p>
+<!-- ─── Header ──────────────────────────────────────────────────── -->
+<div class="api-docs-header">
+    <h1>API Reference</h1>
+    <p class="subtitle">Programmatic access to your StatusRooster monitors, checks, and heartbeat pings.</p>
 
-<!-- Get Started CTA -->
-<div class="api-cta-bar">
-    {% if user %}
-    <a href="/settings" class="api-cta-btn">Get your API key &rarr;</a>
-    <a href="/docs" target="_blank" class="api-cta-link">Interactive Playground</a>
-    <a href="/openapi.json" target="_blank" class="api-cta-link">OpenAPI Spec</a>
-    {% else %}
-    <a href="/signup" class="api-cta-btn">Create free account &rarr;</a>
-    <a href="/docs" target="_blank" class="api-cta-link">Interactive Playground</a>
-    <a href="/openapi.json" target="_blank" class="api-cta-link">OpenAPI Spec</a>
-    {% endif %}
+    <div class="api-cta-bar">
+        {% if user %}
+        <a href="/settings" class="api-cta-btn">Get your API key &rarr;</a>
+        <a href="/docs" target="_blank" class="api-cta-link">Interactive Playground</a>
+        <a href="/openapi.json" target="_blank" class="api-cta-link">OpenAPI Spec</a>
+        {% else %}
+        <a href="/signup" class="api-cta-btn">Create free account &rarr;</a>
+        <a href="/docs" target="_blank" class="api-cta-link">Interactive Playground</a>
+        <a href="/openapi.json" target="_blank" class="api-cta-link">OpenAPI Spec</a>
+        {% endif %}
+    </div>
 </div>
 
-<!-- Auth Section -->
-<div class="api-section">
-    <h2>Authentication</h2>
-    <p>All API requests require an API key passed in the <code>X-API-Key</code> header.
-    {% if user %}
-    You can <a href="/settings" target="_blank">generate one in Settings</a>.
-    {% else %}
-    <a href="/signup" target="_blank">Sign up</a> to get one.
-    {% endif %}
-    </p>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  SIDEBAR + MAIN LAYOUT                                        -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="api-layout">
 
-    <div class="code-tabbed" data-tabs>
-        <div class="code-tab-bar">
-            <button class="active" onclick="switchTab(this,'curl')">curl</button>
-            <button onclick="switchTab(this,'python')">Python</button>
-            <button onclick="switchTab(this,'js')">JavaScript</button>
-        </div>
-        <div class="code-panel active" data-lang="curl"><span class="code-comment"># Example: authenticate with your API key</span>
-curl -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
+<!-- ─── Left Navigation ─────────────────────────────────────────── -->
+<nav class="api-sidebar">
+    <p class="api-nav-label">Getting Started</p>
+    <a class="api-nav-item active" href="#auth" onclick="scrollToSection(event,'auth')">Authentication</a>
+    <a class="api-nav-item" href="#client-setup" onclick="scrollToSection(event,'client-setup')">Client Setup</a>
+
+    <div class="api-nav-divider"></div>
+    <p class="api-nav-label">Monitor Types</p>
+    <a class="api-nav-item" href="#http" onclick="scrollToSection(event,'http')">
+        <span class="nav-icon" style="background:#eef2ff;display:inline-block"></span>
+        HTTP / HTTPS
+    </a>
+    <a class="api-nav-item" href="#json-api" onclick="scrollToSection(event,'json-api')">
+        <span class="nav-icon" style="background:#eff6ff;display:inline-block"></span>
+        JSON / API
+    </a>
+    <a class="api-nav-item" href="#heartbeat" onclick="scrollToSection(event,'heartbeat')">
+        <span class="nav-icon" style="background:#f0fdf4;display:inline-block"></span>
+        Heartbeat / Cron
+    </a>
+    <a class="api-nav-item" href="#ssl" onclick="scrollToSection(event,'ssl')">
+        <span class="nav-icon" style="background:#fffbeb;display:inline-block"></span>
+        SSL Certificate
+    </a>
+
+    <div class="api-nav-divider"></div>
+    <p class="api-nav-label">Shared Endpoints</p>
+    <a class="api-nav-item" href="#list-monitors" onclick="scrollToSection(event,'list-monitors')">List All Monitors</a>
+    <a class="api-nav-item" href="#get-monitor" onclick="scrollToSection(event,'get-monitor')">Retrieve Monitor</a>
+    <a class="api-nav-item" href="#check-history" onclick="scrollToSection(event,'check-history')">Check History</a>
+    <a class="api-nav-item" href="#update-monitor" onclick="scrollToSection(event,'update-monitor')">Update Monitor</a>
+    <a class="api-nav-item" href="#delete-monitor" onclick="scrollToSection(event,'delete-monitor')">Delete Monitor</a>
+
+    <div class="api-nav-divider"></div>
+    <p class="api-nav-label">Extras</p>
+    <a class="api-nav-item" href="#badges" onclick="scrollToSection(event,'badges')">Uptime Badges</a>
+    <a class="api-nav-item" href="#plan-limits" onclick="scrollToSection(event,'plan-limits')">Plan Limits</a>
+    <a class="api-nav-item" href="#rate-limits" onclick="scrollToSection(event,'rate-limits')">Rate Limits</a>
+</nav>
+
+<!-- ─── Main Content ────────────────────────────────────────────── -->
+<div class="api-main">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  AUTHENTICATION                                                -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="api-type-section" id="auth">
+    <div class="api-section">
+        <h2>Authentication</h2>
+        <p>All API requests require an API key in the <code>X-API-Key</code> header.
+        {% if user %}
+        Generate one in <a href="/settings" target="_blank">Settings → API Keys</a>.
+        {% else %}
+        <a href="/signup" target="_blank">Sign up</a> to get one.
+        {% endif %}
+        </p>
+
+        <div class="code-tabbed" data-tabs>
+            <div class="code-tab-bar">
+                <button class="active" onclick="switchTab(this,'curl')">curl</button>
+                <button onclick="switchTab(this,'python')">Python</button>
+                <button onclick="switchTab(this,'js')">JavaScript</button>
+            </div>
+            <div class="code-panel active" data-lang="curl">curl -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
   <span class="code-url">{{ app_url }}/api/v1/monitors</span></div>
-        <div class="code-panel" data-lang="python"><span class="code-comment"># pip install requests</span>
+            <div class="code-panel" data-lang="python">headers = {<span class="code-string">"X-API-Key"</span>: <span class="code-string">"sr_your_key_here"</span>}
+r = requests.get(<span class="code-string">"{{ app_url }}/api/v1/monitors"</span>, headers=headers)</div>
+            <div class="code-panel" data-lang="js"><span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">"{{ app_url }}/api/v1/monitors"</span>, {
+  headers: { <span class="code-string">"X-API-Key"</span>: <span class="code-string">"sr_your_key_here"</span> }
+});</div>
+        </div>
+
+        <p><strong>Response envelope:</strong> Every endpoint returns this shape:</p>
+        <div class="response-shape">{
+  "data": { ... },       <span class="code-comment">// Payload (object, array, or null)</span>
+  "error": null,         <span class="code-comment">// Error string, or null on success</span>
+  "meta": { ... }        <span class="code-comment">// Metadata (count, pagination, etc.)</span>
+}</div>
+
+        <p><strong>Error codes:</strong></p>
+        <table class="param-table">
+            <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+            <tbody>
+                <tr><td><code>401</code></td><td>Missing or invalid API key</td></tr>
+                <tr><td><code>403</code></td><td>Plan limit exceeded</td></tr>
+                <tr><td><code>404</code></td><td>Resource not found</td></tr>
+                <tr><td><code>422</code></td><td>Invalid or missing request body</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  CLIENT SETUP                                                  -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="api-type-section" id="client-setup">
+    <div class="api-section">
+        <h2>Client Setup</h2>
+        <p>All code examples on this page assume these variables are defined:</p>
+        <div class="code-tabbed" data-tabs>
+            <div class="code-tab-bar">
+                <button onclick="switchTab(this,'curl')">curl</button>
+                <button class="active" onclick="switchTab(this,'python')">Python</button>
+                <button onclick="switchTab(this,'js')">JavaScript</button>
+            </div>
+            <div class="code-panel" data-lang="curl"><span class="code-comment"># No setup — pass the header with each request</span>
+curl -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> <span class="code-url">{{ app_url }}/api/v1/monitors</span></div>
+            <div class="code-panel active" data-lang="python"><span class="code-comment"># pip install requests</span>
 <span class="code-key">import</span> requests
 
-headers = {<span class="code-string">"X-API-Key"</span>: <span class="code-string">"sr_your_key_here"</span>}
-r = requests.get(<span class="code-string">"{{ app_url }}/api/v1/monitors"</span>, headers=headers)
-print(r.json())</div>
-        <div class="code-panel" data-lang="js"><span class="code-comment">// Node.js / browser</span>
-<span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">"{{ app_url }}/api/v1/monitors"</span>, {
-  headers: { <span class="code-string">"X-API-Key"</span>: <span class="code-string">"sr_your_key_here"</span> }
-});
-<span class="code-key">const</span> data = <span class="code-key">await</span> res.json();
-console.log(data);</div>
+API_KEY = <span class="code-string">"sr_your_key_here"</span>
+BASE = <span class="code-string">"{{ app_url }}/api/v1"</span>
+headers = {<span class="code-string">"X-API-Key"</span>: API_KEY}</div>
+            <div class="code-panel" data-lang="js"><span class="code-comment">// Node.js or browser</span>
+<span class="code-key">const</span> API_KEY = <span class="code-string">"sr_your_key_here"</span>;
+<span class="code-key">const</span> BASE = <span class="code-string">"{{ app_url }}/api/v1"</span>;
+<span class="code-key">const</span> headers = { <span class="code-string">"X-API-Key"</span>: API_KEY };</div>
+        </div>
     </div>
-
-    <p><strong>Response format:</strong> All endpoints return JSON with this shape:</p>
-    <div class="response-shape">{
-  "data": { ... },       // The response payload (object, array, or null)
-  "error": null,         // Error message string, or null on success
-  "meta": { ... }        // Optional metadata (total count, pagination, etc.)
-}</div>
-
-    <p><strong>Error responses</strong> use standard HTTP status codes:</p>
-    <table class="param-table">
-        <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
-        <tbody>
-            <tr><td><code>401</code></td><td>Missing or invalid API key</td></tr>
-            <tr><td><code>403</code></td><td>Plan limit exceeded</td></tr>
-            <tr><td><code>404</code></td><td>Resource not found</td></tr>
-            <tr><td><code>422</code></td><td>Invalid or missing request body</td></tr>
-        </tbody>
-    </table>
 </div>
 
-<!-- List Monitors -->
-<div class="api-section">
-    <h2>Endpoints</h2>
 
-    <!-- LIST -->
-    <div class="endpoint open" id="ep-list">
-        <div class="endpoint-header" onclick="toggleEndpoint('ep-list')">
-            <span class="method-badge method-get">GET</span>
-            <span class="endpoint-path">/api/v1/monitors</span>
-            <span class="endpoint-desc">List all monitors</span>
-            <span class="chevron">&#9654;</span>
-        </div>
-        <div class="endpoint-body">
-            <p>Returns all monitors belonging to the authenticated user.</p>
-            <div class="code-tabbed" data-tabs>
-                <div class="code-tab-bar">
-                    <button class="active" onclick="switchTab(this,'curl')">curl</button>
-                    <button onclick="switchTab(this,'python')">Python</button>
-                    <button onclick="switchTab(this,'js')">JavaScript</button>
-                </div>
-                <div class="code-panel active" data-lang="curl">curl -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
-  <span class="code-url">{{ app_url }}/api/v1/monitors</span></div>
-                <div class="code-panel" data-lang="python">r = requests.get(f<span class="code-string">"{BASE}/monitors"</span>, headers=headers)
-monitors = r.json()[<span class="code-string">"data"</span>]
-
-<span class="code-key">for</span> m <span class="code-key">in</span> monitors:
-    print(f<span class="code-string">"{m['name']}: {m['status']}"</span>)</div>
-                <div class="code-panel" data-lang="js"><span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors`</span>, { headers });
-<span class="code-key">const</span> { data } = <span class="code-key">await</span> res.json();
-data.forEach(m => console.log(<span class="code-string">`${m.name}: ${m.status}`</span>));</div>
-            </div>
-
-            <p><strong>Example response</strong> (200 OK)<strong>:</strong></p>
-            <div class="response-shape">{
-  "data": [
-    {
-      "id": "jkUVy3EYnvGx16jWT2v0",
-      "url": "https://example.com",
-      "name": "My Website",
-      "status": "up",
-      "check_interval": 60,
-      "uptime_percent": 99.8,
-      "checks_total": 4320,
-      "checks_failed": 9,
-      "last_checked": "2026-02-28T12:30:00+00:00",
-      "last_status_code": 200,
-      "last_response_ms": 245.3,
-      "alert_email": "me@example.com",
-      "alert_slack_webhook": "",
-      "alert_sms": "",
-      "keyword": "Welcome",
-      "response_threshold_ms": 2000,
-      "webhook_url": "",
-      "ssl_expiry": "2026-06-15T00:00:00+00:00",
-      "ssl_issuer": "Let's Encrypt",
-      "ssl_expiry_alerted_days": null,
-      "maintenance_windows": [],
-      "public": true,
-      "paused": false,
-      "slug": "my-website-a3f8c1",
-      "created_at": "2026-01-15T08:00:00+00:00"
-    }
-  ],
-  "error": null,
-  "meta": { "total": 1 }
-}</div>
-            <details class="field-ref">
-                <summary>&#9432; Field reference (25 fields)</summary>
-                <table class="field-ref-table">
-                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
-                    <tbody>
-                        <tr><td><code>id</code></td><td class="field-type">string</td><td>Unique monitor ID</td></tr>
-                        <tr><td><code>url</code></td><td class="field-type">string</td><td>URL being monitored</td></tr>
-                        <tr><td><code>name</code></td><td class="field-type">string</td><td>Display name</td></tr>
-                        <tr><td><code>status</code></td><td class="field-type">string</td><td><code>"pending"</code> | <code>"up"</code> | <code>"down"</code></td></tr>
-                        <tr><td><code>check_interval</code></td><td class="field-type">int</td><td>Seconds between checks (default 60)</td></tr>
-                        <tr><td><code>uptime_percent</code></td><td class="field-type">float</td><td>Lifetime uptime %</td></tr>
-                        <tr><td><code>checks_total</code></td><td class="field-type">int</td><td>Total checks run</td></tr>
-                        <tr><td><code>checks_failed</code></td><td class="field-type">int</td><td>Total failed checks</td></tr>
-                        <tr><td><code>last_checked</code></td><td class="field-type">datetime|null</td><td>Last check timestamp (null if pending)</td></tr>
-                        <tr><td><code>last_status_code</code></td><td class="field-type">int|null</td><td>HTTP status from last check</td></tr>
-                        <tr><td><code>last_response_ms</code></td><td class="field-type">float|null</td><td>Response time in ms from last check</td></tr>
-                        <tr><td><code>alert_email</code></td><td class="field-type">string</td><td>Email for alerts</td></tr>
-                        <tr><td><code>alert_slack_webhook</code></td><td class="field-type">string</td><td>Slack webhook URL</td></tr>
-                        <tr><td><code>alert_sms</code></td><td class="field-type">string</td><td>SMS number (reserved, not yet active)</td></tr>
-                        <tr><td><code>keyword</code></td><td class="field-type">string</td><td>Keyword expression (supports <code>AND</code> / <code>OR</code>)</td></tr>
-                        <tr><td><code>response_threshold_ms</code></td><td class="field-type">string|null</td><td>Response condition (&gt; 2000, 200-3000, etc.)</td></tr>
-                        <tr><td><code>webhook_url</code></td><td class="field-type">string</td><td>Webhook for status changes (Pro)</td></tr>
-                        <tr><td><code>ssl_expiry</code></td><td class="field-type">datetime|null</td><td>SSL cert expiry (auto-detected)</td></tr>
-                        <tr><td><code>ssl_issuer</code></td><td class="field-type">string|null</td><td>SSL cert issuer (auto-detected)</td></tr>
-                        <tr><td><code>ssl_expiry_alerted_days</code></td><td class="field-type">int|null</td><td>Last SSL expiry alert threshold</td></tr>
-                        <tr><td><code>maintenance_windows</code></td><td class="field-type">array</td><td>Array of <code>{day, start_utc, end_utc}</code> objects (Pro)</td></tr>
-                        <tr><td><code>public</code></td><td class="field-type">bool</td><td>Has a public status page</td></tr>
-                        <tr><td><code>paused</code></td><td class="field-type">bool</td><td>Whether monitoring is paused</td></tr>
-                        <tr><td><code>slug</code></td><td class="field-type">string</td><td>Status page URL slug (<code>/s/{slug}</code>)</td></tr>
-                        <tr><td><code>created_at</code></td><td class="field-type">datetime</td><td>When the monitor was created</td></tr>
-                    </tbody>
-                </table>
-            </details>
-        </div>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  HTTP / HTTPS MONITORS                                         -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="api-type-section" id="http">
+    <div class="api-type-header">
+        <h2>HTTP / HTTPS Monitors</h2>
+        <span class="api-type-badge api-type-badge--http">monitor_type: "http"</span>
+    </div>
+    <p class="api-type-desc">Monitor websites and URLs for availability. Checks HTTP status code, response time, body keyword matching, and auto-detects SSL certificate expiry. This is the default monitor type.</p>
+    <div class="api-status-pills">
+        <span class="api-status-pill api-status-pill--pending">pending</span>
+        <span class="api-status-pill api-status-pill--up">up</span>
+        <span class="api-status-pill api-status-pill--down">down</span>
     </div>
 
-    <!-- GET SINGLE -->
-    <div class="endpoint" id="ep-get">
-        <div class="endpoint-header" onclick="toggleEndpoint('ep-get')">
-            <span class="method-badge method-get">GET</span>
-            <span class="endpoint-path">/api/v1/monitors/{id}</span>
-            <span class="endpoint-desc">Get a single monitor</span>
-            <span class="chevron">&#9654;</span>
-        </div>
-        <div class="endpoint-body">
-            <p>Returns a single monitor by ID. Same fields as the list endpoint.</p>
-            <div class="code-tabbed" data-tabs>
-                <div class="code-tab-bar">
-                    <button class="active" onclick="switchTab(this,'curl')">curl</button>
-                    <button onclick="switchTab(this,'python')">Python</button>
-                    <button onclick="switchTab(this,'js')">JavaScript</button>
-                </div>
-                <div class="code-panel active" data-lang="curl">curl -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
-  <span class="code-url">{{ app_url }}/api/v1/monitors/jkUVy3EYnvGx16jWT2v0</span></div>
-                <div class="code-panel" data-lang="python">monitor_id = <span class="code-string">"jkUVy3EYnvGx16jWT2v0"</span>
-r = requests.get(f<span class="code-string">"{BASE}/monitors/{monitor_id}"</span>, headers=headers)
-monitor = r.json()[<span class="code-string">"data"</span>]
-print(monitor[<span class="code-string">"status"</span>], monitor[<span class="code-string">"uptime_percent"</span>])</div>
-                <div class="code-panel" data-lang="js"><span class="code-key">const</span> id = <span class="code-string">"jkUVy3EYnvGx16jWT2v0"</span>;
-<span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors/${id}`</span>, { headers });
-<span class="code-key">const</span> { data } = <span class="code-key">await</span> res.json();
-console.log(data.status, data.uptime_percent);</div>
+    <!-- CREATE HTTP -->
+    <div class="api-section">
+        <div class="endpoint open" id="ep-create-http">
+            <div class="endpoint-header" onclick="toggleEndpoint('ep-create-http')">
+                <span class="method-badge method-post">POST</span>
+                <span class="endpoint-path">/api/v1/monitors</span>
+                <span class="endpoint-desc">Create HTTP monitor</span>
+                <span class="chevron">&#9654;</span>
             </div>
+            <div class="endpoint-body">
+                <p>Provision a new HTTP/HTTPS uptime monitor. Begins checking immediately with <code>pending</code> status until the first check completes.</p>
 
-            <p><strong>Example response</strong> (200 OK)<strong>:</strong></p>
-            <div class="response-shape">{
-  "data": {
-    "id": "jkUVy3EYnvGx16jWT2v0",
-    "url": "https://example.com",
-    "name": "My Website",
-    "status": "up",
-    "check_interval": 60,
-    "uptime_percent": 99.8,
-    "checks_total": 4320,
-    "checks_failed": 9,
-    "last_checked": "2026-02-28T12:30:00+00:00",
-    "last_status_code": 200,
-    "last_response_ms": 245.3,
-    "alert_email": "me@example.com",
-    "alert_slack_webhook": "",
-    "alert_sms": "",
-    "keyword": "Welcome",
-    "response_threshold_ms": 2000,
-    "webhook_url": "",
-    "ssl_expiry": "2026-06-15T00:00:00+00:00",
-    "ssl_issuer": "Let's Encrypt",
-    "ssl_expiry_alerted_days": null,
-    "maintenance_windows": [],
-    "public": true,
-    "paused": false,
-    "slug": "my-website-a3f8c1",
-    "created_at": "2026-01-15T08:00:00+00:00"
-  },
-  "error": null
-}</div>
-            <details class="field-ref">
-                <summary>&#9432; Field reference (25 fields)</summary>
-                <table class="field-ref-table">
-                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+                <table class="param-table">
+                    <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
                     <tbody>
-                        <tr><td><code>id</code></td><td class="field-type">string</td><td>Unique monitor ID</td></tr>
-                        <tr><td><code>url</code></td><td class="field-type">string</td><td>URL being monitored</td></tr>
-                        <tr><td><code>name</code></td><td class="field-type">string</td><td>Display name</td></tr>
-                        <tr><td><code>status</code></td><td class="field-type">string</td><td><code>"pending"</code> | <code>"up"</code> | <code>"down"</code></td></tr>
-                        <tr><td><code>check_interval</code></td><td class="field-type">int</td><td>Seconds between checks (default 60)</td></tr>
-                        <tr><td><code>uptime_percent</code></td><td class="field-type">float</td><td>Lifetime uptime %</td></tr>
-                        <tr><td><code>checks_total</code></td><td class="field-type">int</td><td>Total checks run</td></tr>
-                        <tr><td><code>checks_failed</code></td><td class="field-type">int</td><td>Total failed checks</td></tr>
-                        <tr><td><code>last_checked</code></td><td class="field-type">datetime|null</td><td>Last check timestamp (null if pending)</td></tr>
-                        <tr><td><code>last_status_code</code></td><td class="field-type">int|null</td><td>HTTP status from last check</td></tr>
-                        <tr><td><code>last_response_ms</code></td><td class="field-type">float|null</td><td>Response time in ms from last check</td></tr>
-                        <tr><td><code>alert_email</code></td><td class="field-type">string</td><td>Email for alerts</td></tr>
-                        <tr><td><code>alert_slack_webhook</code></td><td class="field-type">string</td><td>Slack webhook URL</td></tr>
-                        <tr><td><code>alert_sms</code></td><td class="field-type">string</td><td>SMS number (reserved, not yet active)</td></tr>
-                        <tr><td><code>keyword</code></td><td class="field-type">string</td><td>Keyword expression (supports <code>AND</code> / <code>OR</code>)</td></tr>
-                        <tr><td><code>response_threshold_ms</code></td><td class="field-type">string|null</td><td>Response condition (&gt; 2000, 200-3000, etc.)</td></tr>
-                        <tr><td><code>webhook_url</code></td><td class="field-type">string</td><td>Webhook for status changes (Pro)</td></tr>
-                        <tr><td><code>ssl_expiry</code></td><td class="field-type">datetime|null</td><td>SSL cert expiry (auto-detected)</td></tr>
-                        <tr><td><code>ssl_issuer</code></td><td class="field-type">string|null</td><td>SSL cert issuer (auto-detected)</td></tr>
-                        <tr><td><code>ssl_expiry_alerted_days</code></td><td class="field-type">int|null</td><td>Last SSL expiry alert threshold</td></tr>
-                        <tr><td><code>maintenance_windows</code></td><td class="field-type">array</td><td>Array of <code>{day, start_utc, end_utc}</code> objects (Pro)</td></tr>
-                        <tr><td><code>public</code></td><td class="field-type">bool</td><td>Has a public status page</td></tr>
-                        <tr><td><code>paused</code></td><td class="field-type">bool</td><td>Whether monitoring is paused</td></tr>
-                        <tr><td><code>slug</code></td><td class="field-type">string</td><td>Status page URL slug (<code>/s/{slug}</code>)</td></tr>
-                        <tr><td><code>created_at</code></td><td class="field-type">datetime</td><td>When the monitor was created</td></tr>
+                        <tr><td><span class="param-name">name</span></td><td>string</td><td><span class="param-required">required</span></td><td>Display name for the monitor</td></tr>
+                        <tr><td><span class="param-name">url</span></td><td>string</td><td><span class="param-required">required</span></td><td>Full URL including protocol (<code>https://example.com</code>)</td></tr>
+                        <tr><td><span class="param-name">monitor_type</span></td><td>string</td><td>optional</td><td><code>"http"</code> — this is the default, can be omitted</td></tr>
+                        <tr><td><span class="param-name">expected_status_code</span></td><td>integer</td><td>optional</td><td>Expected HTTP status code (default: <code>200</code>)</td></tr>
+                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>optional</td><td>Request timeout in seconds, 1–60 (default: <code>10</code>)</td></tr>
+                        <tr><td><span class="param-name">keyword</span></td><td>string</td><td>optional</td><td>Mark down if missing from body. Supports <code>AND</code> / <code>OR</code>: <code>"Welcome AND Login"</code></td></tr>
+                        <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>optional</td><td>Response time condition: <code>&gt; 2000</code>, <code>&lt; 200</code>, <code>200-3000</code></td></tr>
+                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>optional</td><td>Seconds between checks, 60–300 (Pro). Free locked to 300.</td></tr>
+                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>optional</td><td>Override email for alerts (defaults to account email)</td></tr>
+                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>optional</td><td>Slack incoming webhook URL (Pro)</td></tr>
+                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>optional</td><td>POST status changes to this URL (Pro)</td></tr>
+                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>optional</td><td>Expose on public status page (default: <code>true</code>)</td></tr>
+                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>optional</td><td>Create in paused state (default: <code>false</code>)</td></tr>
+                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>optional</td><td>Suppress alerts during windows (Pro). <code>[{"day":"monday","start_utc":"02:00","end_utc":"04:00"}]</code></td></tr>
                     </tbody>
                 </table>
-            </details>
-        </div>
-    </div>
 
-    <!-- CHECKS -->
-    <div class="endpoint" id="ep-checks">
-        <div class="endpoint-header" onclick="toggleEndpoint('ep-checks')">
-            <span class="method-badge method-get">GET</span>
-            <span class="endpoint-path">/api/v1/monitors/{id}/checks</span>
-            <span class="endpoint-desc">Get check history</span>
-            <span class="chevron">&#9654;</span>
-        </div>
-        <div class="endpoint-body">
-            <p>Returns recent check results for a monitor, newest first.</p>
-            <table class="param-table">
-                <thead><tr><th>Query param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
-                <tbody>
-                    <tr>
-                        <td><span class="param-name">limit</span></td>
-                        <td>integer</td>
-                        <td>100</td>
-                        <td>Number of checks (1-500)</td>
-                    </tr>
-                </tbody>
-            </table>
-            <div class="code-tabbed" data-tabs>
-                <div class="code-tab-bar">
-                    <button class="active" onclick="switchTab(this,'curl')">curl</button>
-                    <button onclick="switchTab(this,'python')">Python</button>
-                    <button onclick="switchTab(this,'js')">JavaScript</button>
-                </div>
-                <div class="code-panel active" data-lang="curl">curl -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
-  <span class="code-url">"{{ app_url }}/api/v1/monitors/jkUVy3EYnvGx16jWT2v0/checks?limit=5"</span></div>
-                <div class="code-panel" data-lang="python">monitor_id = <span class="code-string">"jkUVy3EYnvGx16jWT2v0"</span>
-r = requests.get(
-    f<span class="code-string">"{BASE}/monitors/{monitor_id}/checks"</span>,
-    headers=headers,
-    params={<span class="code-string">"limit"</span>: 5}
-)
-checks = r.json()[<span class="code-string">"data"</span>]
-
-<span class="code-key">for</span> c <span class="code-key">in</span> checks:
-    print(f<span class="code-string">"{c['timestamp']}: {c['response_ms']}ms"</span>)</div>
-                <div class="code-panel" data-lang="js"><span class="code-key">const</span> id = <span class="code-string">"jkUVy3EYnvGx16jWT2v0"</span>;
-<span class="code-key">const</span> res = <span class="code-key">await</span> fetch(
-  <span class="code-string">`${BASE}/monitors/${id}/checks?limit=5`</span>,
-  { headers }
-);
-<span class="code-key">const</span> { data } = <span class="code-key">await</span> res.json();
-data.forEach(c => console.log(<span class="code-string">`${c.timestamp}: ${c.response_ms}ms`</span>));</div>
-            </div>
-
-            <p><strong>Example response</strong> (200 OK)<strong>:</strong></p>
-            <div class="response-shape">{
-  "data": [
-    {
-      "id": "chk_a1b2c3",
-      "timestamp": "2026-02-28T12:30:00+00:00",
-      "status_code": 200,
-      "response_ms": 245.3,
-      "is_up": true
-    },
-    {
-      "id": "chk_d4e5f6",
-      "timestamp": "2026-02-28T12:29:00+00:00",
-      "status_code": 200,
-      "response_ms": 312.7,
-      "is_up": true
-    }
-  ],
-  "error": null,
-  "meta": { "monitor_id": "jkUVy3EYnvGx16jWT2v0", "total": 2, "limit": 5 }
-}</div>
-            <details class="field-ref">
-                <summary>&#9432; Field reference (5 fields)</summary>
-                <table class="field-ref-table">
-                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
-                    <tbody>
-                        <tr><td><code>id</code></td><td class="field-type">string</td><td>Unique check ID</td></tr>
-                        <tr><td><code>timestamp</code></td><td class="field-type">datetime</td><td>When the check ran</td></tr>
-                        <tr><td><code>status_code</code></td><td class="field-type">int|null</td><td>HTTP status (null if connection failed)</td></tr>
-                        <tr><td><code>response_ms</code></td><td class="field-type">float|null</td><td>Response time in ms (null if timeout)</td></tr>
-                        <tr><td><code>is_up</code></td><td class="field-type">bool</td><td>Whether the check passed</td></tr>
-                    </tbody>
-                </table>
-            </details>
-        </div>
-    </div>
-
-    <!-- CREATE -->
-    <div class="endpoint" id="ep-create">
-        <div class="endpoint-header" onclick="toggleEndpoint('ep-create')">
-            <span class="method-badge method-post">POST</span>
-            <span class="endpoint-path">/api/v1/monitors</span>
-            <span class="endpoint-desc">Create a monitor</span>
-            <span class="chevron">&#9654;</span>
-        </div>
-        <div class="endpoint-body">
-            <p>Create a new monitor. Checks start on the next cron cycle (~60s).</p>
-
-            <table class="param-table">
-                <thead><tr><th>Body field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
-                <tbody>
-                    <tr><td><span class="param-name">url</span></td><td>string</td><td><span class="param-required">yes</span></td><td>URL to monitor (include <code>https://</code>)</td></tr>
-                    <tr><td><span class="param-name">name</span></td><td>string</td><td><span class="param-required">yes</span></td><td>Display name</td></tr>
-                    <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>no</td><td>Defaults to account email</td></tr>
-                    <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>no</td><td>Slack incoming webhook URL</td></tr>
-                    <tr><td><span class="param-name">keyword</span></td><td>string</td><td>no</td><td>Alert if missing from response body. Supports <code>AND</code> / <code>OR</code>: <code>"Welcome AND Login"</code></td></tr>
-                    <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>no</td><td>Response time condition. Supports: <code>> 2000</code>, <code>< 200</code>, <code>200-3000</code> (range), or plain number</td></tr>
-                    <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>no</td><td>Status change webhook (Pro only)</td></tr>
-                    <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>no</td><td>Seconds between checks, 60–300 (Pro only, default: 60). Free plan is fixed at 300.</td></tr>
-                    <tr><td><span class="param-name">public</span></td><td>boolean</td><td>no</td><td>Create a status page (default: true)</td></tr>
-                    <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>no</td><td>Suppress alerts during windows (Pro only). Array of objects: <code>[{"day":"monday","start_utc":"02:00","end_utc":"04:00"}]</code>. Day: <code>monday</code>–<code>sunday</code> or <code>daily</code>.</td></tr>
-                </tbody>
-            </table>
-
-            <div class="code-tabbed" data-tabs>
-                <div class="code-tab-bar">
-                    <button class="active" onclick="switchTab(this,'curl')">curl</button>
-                    <button onclick="switchTab(this,'python')">Python</button>
-                    <button onclick="switchTab(this,'js')">JavaScript</button>
-                </div>
-                <div class="code-panel active" data-lang="curl">curl -X POST \
+                <div class="code-tabbed" data-tabs>
+                    <div class="code-tab-bar">
+                        <button class="active" onclick="switchTab(this,'curl')">curl</button>
+                        <button onclick="switchTab(this,'python')">Python</button>
+                        <button onclick="switchTab(this,'js')">JavaScript</button>
+                    </div>
+                    <div class="code-panel active" data-lang="curl">curl -X POST \
   -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
   -H <span class="code-string">"Content-Type: application/json"</span> \
-  -d <span class="code-string">'{"url":"https://example.com","name":"My Site","keyword":"Welcome"}'</span> \
+  -d <span class="code-string">'{
+    "name": "My Website",
+    "url": "https://example.com",
+    "expected_status_code": 200,
+    "timeout": 10,
+    "keyword": "Welcome",
+    "check_interval": 60
+  }'</span> \
   <span class="code-url">{{ app_url }}/api/v1/monitors</span></div>
-                <div class="code-panel" data-lang="python">r = requests.post(
+                    <div class="code-panel" data-lang="python">r = requests.post(
     f<span class="code-string">"{BASE}/monitors"</span>,
     headers=headers,
     json={
+        <span class="code-string">"name"</span>: <span class="code-string">"My Website"</span>,
         <span class="code-string">"url"</span>: <span class="code-string">"https://example.com"</span>,
-        <span class="code-string">"name"</span>: <span class="code-string">"My Site"</span>,
-        <span class="code-string">"keyword"</span>: <span class="code-string">"Welcome"</span>
+        <span class="code-string">"expected_status_code"</span>: 200,
+        <span class="code-string">"timeout"</span>: 10,
+        <span class="code-string">"keyword"</span>: <span class="code-string">"Welcome"</span>,
+        <span class="code-string">"check_interval"</span>: 60
     }
 )
-new_monitor = r.json()[<span class="code-string">"data"</span>]
-print(f<span class="code-string">"Created: {new_monitor['id']}"</span>)</div>
-                <div class="code-panel" data-lang="js"><span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors`</span>, {
+monitor = r.json()[<span class="code-string">"data"</span>]
+print(f<span class="code-string">"Created {monitor['id']} — status: {monitor['status']}"</span>)</div>
+                    <div class="code-panel" data-lang="js"><span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors`</span>, {
   method: <span class="code-string">"POST"</span>,
-  headers: {
-    ...headers,
-    <span class="code-string">"Content-Type"</span>: <span class="code-string">"application/json"</span>
-  },
+  headers: { ...headers, <span class="code-string">"Content-Type"</span>: <span class="code-string">"application/json"</span> },
   body: JSON.stringify({
+    name: <span class="code-string">"My Website"</span>,
     url: <span class="code-string">"https://example.com"</span>,
-    name: <span class="code-string">"My Site"</span>,
-    keyword: <span class="code-string">"Welcome"</span>
+    expected_status_code: 200,
+    timeout: 10,
+    keyword: <span class="code-string">"Welcome"</span>,
+    check_interval: 60
   })
 });
 <span class="code-key">const</span> { data } = <span class="code-key">await</span> res.json();
-console.log(<span class="code-string">`Created: ${data.id}`</span>);</div>
-            </div>
+console.log(<span class="code-string">`Created ${data.id}`</span>);</div>
+                </div>
 
-            <p><strong>Example response</strong> (201 Created)<strong>:</strong></p>
-            <div class="response-shape">{
+                <p><strong>Response</strong> (201 Created)<strong>:</strong></p>
+                <div class="response-shape">{
   "data": {
-    "id": "newMonitorId123",
+    "id": "mon_a1b2c3",
+    "monitor_type": "http",
+    "name": "My Website",
     "url": "https://example.com",
-    "name": "My Site",
     "status": "pending",
+    "expected_status_code": 200,
+    "timeout": 10,
+    "keyword": "Welcome",
+    "response_threshold_ms": null,
     "check_interval": 60,
     "uptime_percent": 100.0,
     "checks_total": 0,
@@ -438,388 +267,1023 @@ console.log(<span class="code-string">`Created: ${data.id}`</span>);</div>
     "last_checked": null,
     "last_status_code": null,
     "last_response_ms": null,
-    "alert_email": "you@example.com",
-    "alert_slack_webhook": "",
-    "alert_sms": "",
-    "keyword": "Welcome",
-    "response_threshold_ms": null,
-    "webhook_url": "",
     "ssl_expiry": null,
     "ssl_issuer": null,
-    "ssl_expiry_alerted_days": null,
-    "maintenance_windows": [],
-    "public": true,
-    "paused": false,
-    "slug": "my-site-c9a2f4",
-    "created_at": "2026-02-28T12:28:04+00:00"
-  },
-  "error": null
-}</div>
-            <details class="field-ref">
-                <summary>&#9432; Field reference (25 fields)</summary>
-                <table class="field-ref-table">
-                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
-                    <tbody>
-                        <tr><td><code>id</code></td><td class="field-type">string</td><td>Unique monitor ID</td></tr>
-                        <tr><td><code>url</code></td><td class="field-type">string</td><td>URL being monitored</td></tr>
-                        <tr><td><code>name</code></td><td class="field-type">string</td><td>Display name</td></tr>
-                        <tr><td><code>status</code></td><td class="field-type">string</td><td><code>"pending"</code> | <code>"up"</code> | <code>"down"</code></td></tr>
-                        <tr><td><code>check_interval</code></td><td class="field-type">int</td><td>Seconds between checks (default 60)</td></tr>
-                        <tr><td><code>uptime_percent</code></td><td class="field-type">float</td><td>Lifetime uptime %</td></tr>
-                        <tr><td><code>checks_total</code></td><td class="field-type">int</td><td>Total checks run</td></tr>
-                        <tr><td><code>checks_failed</code></td><td class="field-type">int</td><td>Total failed checks</td></tr>
-                        <tr><td><code>last_checked</code></td><td class="field-type">datetime|null</td><td>Last check timestamp (null if pending)</td></tr>
-                        <tr><td><code>last_status_code</code></td><td class="field-type">int|null</td><td>HTTP status from last check</td></tr>
-                        <tr><td><code>last_response_ms</code></td><td class="field-type">float|null</td><td>Response time in ms from last check</td></tr>
-                        <tr><td><code>alert_email</code></td><td class="field-type">string</td><td>Email for alerts</td></tr>
-                        <tr><td><code>alert_slack_webhook</code></td><td class="field-type">string</td><td>Slack webhook URL</td></tr>
-                        <tr><td><code>alert_sms</code></td><td class="field-type">string</td><td>SMS number (reserved, not yet active)</td></tr>
-                        <tr><td><code>keyword</code></td><td class="field-type">string</td><td>Keyword expression (supports <code>AND</code> / <code>OR</code>)</td></tr>
-                        <tr><td><code>response_threshold_ms</code></td><td class="field-type">string|null</td><td>Response condition (&gt; 2000, 200-3000, etc.)</td></tr>
-                        <tr><td><code>webhook_url</code></td><td class="field-type">string</td><td>Webhook for status changes (Pro)</td></tr>
-                        <tr><td><code>ssl_expiry</code></td><td class="field-type">datetime|null</td><td>SSL cert expiry (auto-detected)</td></tr>
-                        <tr><td><code>ssl_issuer</code></td><td class="field-type">string|null</td><td>SSL cert issuer (auto-detected)</td></tr>
-                        <tr><td><code>ssl_expiry_alerted_days</code></td><td class="field-type">int|null</td><td>Last SSL expiry alert threshold</td></tr>
-                        <tr><td><code>maintenance_windows</code></td><td class="field-type">array</td><td>Array of <code>{day, start_utc, end_utc}</code> objects (Pro)</td></tr>
-                        <tr><td><code>public</code></td><td class="field-type">bool</td><td>Has a public status page</td></tr>
-                        <tr><td><code>paused</code></td><td class="field-type">bool</td><td>Whether monitoring is paused</td></tr>
-                        <tr><td><code>slug</code></td><td class="field-type">string</td><td>Status page URL slug (<code>/s/{slug}</code>)</td></tr>
-                        <tr><td><code>created_at</code></td><td class="field-type">datetime</td><td>When the monitor was created</td></tr>
-                    </tbody>
-                </table>
-            </details>
-        </div>
-    </div>
-
-    <!-- UPDATE -->
-    <div class="endpoint" id="ep-update">
-        <div class="endpoint-header" onclick="toggleEndpoint('ep-update')">
-            <span class="method-badge method-put">PUT</span>
-            <span class="endpoint-path">/api/v1/monitors/{id}</span>
-            <span class="endpoint-desc">Update a monitor</span>
-            <span class="chevron">&#9654;</span>
-        </div>
-        <div class="endpoint-body">
-            <p>Update one or more fields on a monitor. Only include the fields you want to change — omitted fields stay as-is.</p>
-
-            <table class="param-table">
-                <thead><tr><th>Body field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
-                <tbody>
-                    <tr><td><span class="param-name">url</span></td><td>string</td><td>no</td><td>New URL to monitor (include <code>https://</code>)</td></tr>
-                    <tr><td><span class="param-name">name</span></td><td>string</td><td>no</td><td>Display name</td></tr>
-                    <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>no</td><td>Email for alerts</td></tr>
-                    <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>no</td><td>Slack incoming webhook URL</td></tr>
-                    <tr><td><span class="param-name">keyword</span></td><td>string</td><td>no</td><td>Alert if missing from response body. Supports <code>AND</code> / <code>OR</code>: <code>"Welcome AND Login"</code></td></tr>
-                    <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>no</td><td>Response time condition. Supports: <code>> 2000</code>, <code>< 200</code>, <code>200-3000</code> (range), or plain number</td></tr>
-                    <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>no</td><td>Status change webhook (Pro only)</td></tr>
-                    <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>no</td><td>Seconds between checks, 60–300 (Pro only). Free plan is fixed at 300.</td></tr>
-                    <tr><td><span class="param-name">public</span></td><td>boolean</td><td>no</td><td>Toggle public status page</td></tr>
-                    <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>no</td><td>Pause or resume monitoring</td></tr>
-                    <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>no</td><td>Suppress alerts during windows (Pro only). Array of objects: <code>[{"day":"monday","start_utc":"02:00","end_utc":"04:00"}]</code>. Day: <code>monday</code>–<code>sunday</code> or <code>daily</code>.</td></tr>
-                </tbody>
-            </table>
-
-            <div class="code-tabbed" data-tabs>
-                <div class="code-tab-bar">
-                    <button class="active" onclick="switchTab(this,'curl')">curl</button>
-                    <button onclick="switchTab(this,'python')">Python</button>
-                    <button onclick="switchTab(this,'js')">JavaScript</button>
-                </div>
-                <div class="code-panel active" data-lang="curl">curl -X PUT \
-  -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
-  -H <span class="code-string">"Content-Type: application/json"</span> \
-  -d <span class="code-string">'{"name":"New Name","keyword":"OK","paused":false}'</span> \
-  <span class="code-url">{{ app_url }}/api/v1/monitors/jkUVy3EYnvGx16jWT2v0</span></div>
-                <div class="code-panel" data-lang="python">monitor_id = <span class="code-string">"jkUVy3EYnvGx16jWT2v0"</span>
-r = requests.put(
-    f<span class="code-string">"{BASE}/monitors/{monitor_id}"</span>,
-    headers=headers,
-    json={
-        <span class="code-string">"name"</span>: <span class="code-string">"New Name"</span>,
-        <span class="code-string">"keyword"</span>: <span class="code-string">"OK"</span>,
-        <span class="code-string">"paused"</span>: False
-    }
-)
-updated = r.json()[<span class="code-string">"data"</span>]
-print(f<span class="code-string">"Updated: {updated['name']}"</span>)</div>
-                <div class="code-panel" data-lang="js"><span class="code-key">const</span> id = <span class="code-string">"jkUVy3EYnvGx16jWT2v0"</span>;
-<span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors/${id}`</span>, {
-  method: <span class="code-string">"PUT"</span>,
-  headers: {
-    ...headers,
-    <span class="code-string">"Content-Type"</span>: <span class="code-string">"application/json"</span>
-  },
-  body: JSON.stringify({
-    name: <span class="code-string">"New Name"</span>,
-    keyword: <span class="code-string">"OK"</span>,
-    paused: false
-  })
-});
-<span class="code-key">const</span> { data } = <span class="code-key">await</span> res.json();
-console.log(<span class="code-string">`Updated: ${data.name}`</span>);</div>
-            </div>
-
-            <p><strong>Example response</strong> (200 OK)<strong>:</strong></p>
-            <div class="response-shape">{
-  "data": {
-    "id": "jkUVy3EYnvGx16jWT2v0",
-    "url": "https://example.com",
-    "name": "New Name",
-    "status": "up",
-    "check_interval": 60,
-    "uptime_percent": 99.8,
-    "checks_total": 4320,
-    "checks_failed": 9,
-    "last_checked": "2026-02-28T12:30:00+00:00",
-    "last_status_code": 200,
-    "last_response_ms": 245.3,
     "alert_email": "you@example.com",
-    "alert_slack_webhook": "",
-    "alert_sms": "",
-    "keyword": "OK",
-    "response_threshold_ms": null,
-    "webhook_url": "",
-    "ssl_expiry": "2026-06-15T00:00:00+00:00",
-    "ssl_issuer": "Let's Encrypt",
-    "ssl_expiry_alerted_days": null,
-    "maintenance_windows": [],
     "public": true,
     "paused": false,
     "slug": "my-website-a3f8c1",
-    "created_at": "2026-01-15T08:00:00+00:00"
+    "created_at": "2026-03-03T12:00:00"
   },
   "error": null
 }</div>
-            <details class="field-ref">
-                <summary>&#9432; Field reference (25 fields)</summary>
-                <table class="field-ref-table">
-                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
-                    <tbody>
-                        <tr><td><code>id</code></td><td class="field-type">string</td><td>Unique monitor ID</td></tr>
-                        <tr><td><code>url</code></td><td class="field-type">string</td><td>URL being monitored</td></tr>
-                        <tr><td><code>name</code></td><td class="field-type">string</td><td>Display name</td></tr>
-                        <tr><td><code>status</code></td><td class="field-type">string</td><td><code>"pending"</code> | <code>"up"</code> | <code>"down"</code></td></tr>
-                        <tr><td><code>check_interval</code></td><td class="field-type">int</td><td>Seconds between checks (default 60)</td></tr>
-                        <tr><td><code>uptime_percent</code></td><td class="field-type">float</td><td>Lifetime uptime %</td></tr>
-                        <tr><td><code>checks_total</code></td><td class="field-type">int</td><td>Total checks run</td></tr>
-                        <tr><td><code>checks_failed</code></td><td class="field-type">int</td><td>Total failed checks</td></tr>
-                        <tr><td><code>last_checked</code></td><td class="field-type">datetime|null</td><td>Last check timestamp (null if pending)</td></tr>
-                        <tr><td><code>last_status_code</code></td><td class="field-type">int|null</td><td>HTTP status from last check</td></tr>
-                        <tr><td><code>last_response_ms</code></td><td class="field-type">float|null</td><td>Response time in ms from last check</td></tr>
-                        <tr><td><code>alert_email</code></td><td class="field-type">string</td><td>Email for alerts</td></tr>
-                        <tr><td><code>alert_slack_webhook</code></td><td class="field-type">string</td><td>Slack webhook URL</td></tr>
-                        <tr><td><code>alert_sms</code></td><td class="field-type">string</td><td>SMS number (reserved, not yet active)</td></tr>
-                        <tr><td><code>keyword</code></td><td class="field-type">string</td><td>Keyword expression (supports <code>AND</code> / <code>OR</code>)</td></tr>
-                        <tr><td><code>response_threshold_ms</code></td><td class="field-type">string|null</td><td>Response condition (&gt; 2000, 200-3000, etc.)</td></tr>
-                        <tr><td><code>webhook_url</code></td><td class="field-type">string</td><td>Webhook for status changes (Pro)</td></tr>
-                        <tr><td><code>ssl_expiry</code></td><td class="field-type">datetime|null</td><td>SSL cert expiry (auto-detected)</td></tr>
-                        <tr><td><code>ssl_issuer</code></td><td class="field-type">string|null</td><td>SSL cert issuer (auto-detected)</td></tr>
-                        <tr><td><code>ssl_expiry_alerted_days</code></td><td class="field-type">int|null</td><td>Last SSL expiry alert threshold</td></tr>
-                        <tr><td><code>maintenance_windows</code></td><td class="field-type">array</td><td>Array of <code>{day, start_utc, end_utc}</code> objects (Pro)</td></tr>
-                        <tr><td><code>public</code></td><td class="field-type">bool</td><td>Has a public status page</td></tr>
-                        <tr><td><code>paused</code></td><td class="field-type">bool</td><td>Whether monitoring is paused</td></tr>
-                        <tr><td><code>slug</code></td><td class="field-type">string</td><td>Status page URL slug (<code>/s/{slug}</code>)</td></tr>
-                        <tr><td><code>created_at</code></td><td class="field-type">datetime</td><td>When the monitor was created</td></tr>
-                    </tbody>
-                </table>
-            </details>
+            </div>
         </div>
     </div>
 
-    <!-- DELETE -->
-    <div class="endpoint" id="ep-delete">
-        <div class="endpoint-header" onclick="toggleEndpoint('ep-delete')">
-            <span class="method-badge method-delete">DELETE</span>
-            <span class="endpoint-path">/api/v1/monitors/{id}</span>
-            <span class="endpoint-desc">Delete a monitor</span>
-            <span class="chevron">&#9654;</span>
-        </div>
-        <div class="endpoint-body">
-            <p>Permanently delete a monitor and all its check history.</p>
-            <div class="code-tabbed" data-tabs>
-                <div class="code-tab-bar">
-                    <button class="active" onclick="switchTab(this,'curl')">curl</button>
-                    <button onclick="switchTab(this,'python')">Python</button>
-                    <button onclick="switchTab(this,'js')">JavaScript</button>
-                </div>
-                <div class="code-panel active" data-lang="curl">curl -X DELETE \
+    <!-- HTTP-specific response fields -->
+    <div class="api-section">
+        <h2>HTTP Response Fields</h2>
+        <p>Type-specific fields returned on HTTP monitors in list/retrieve responses:</p>
+        <table class="field-ref-table">
+            <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td><code>url</code></td><td class="field-type">string</td><td>Monitored URL</td></tr>
+                <tr><td><code>expected_status_code</code></td><td class="field-type">int</td><td>Expected HTTP status (default 200)</td></tr>
+                <tr><td><code>timeout</code></td><td class="field-type">int</td><td>Request timeout in seconds</td></tr>
+                <tr><td><code>keyword</code></td><td class="field-type">string</td><td>Body keyword check string</td></tr>
+                <tr><td><code>response_threshold_ms</code></td><td class="field-type">string|null</td><td>Response time condition</td></tr>
+                <tr><td><code>last_status_code</code></td><td class="field-type">int|null</td><td>HTTP status from most recent check</td></tr>
+                <tr><td><code>last_response_ms</code></td><td class="field-type">float|null</td><td>Response time in ms from most recent check</td></tr>
+                <tr><td><code>ssl_expiry</code></td><td class="field-type">datetime|null</td><td>Auto-detected SSL certificate expiry date</td></tr>
+                <tr><td><code>ssl_issuer</code></td><td class="field-type">string|null</td><td>Auto-detected SSL certificate issuer</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  JSON / API MONITORS                                           -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="api-type-section" id="json-api">
+    <div class="api-type-header">
+        <h2>JSON / API Monitors</h2>
+        <span class="api-type-badge api-type-badge--json">monitor_type: "json_api"</span>
+    </div>
+    <p class="api-type-desc">Monitor REST API endpoints with deep JSON response validation. Supports Authorization headers and field-level assertions using dot-notation paths, comparison operators, and existence checks.</p>
+    <div class="api-status-pills">
+        <span class="api-status-pill api-status-pill--pending">pending</span>
+        <span class="api-status-pill api-status-pill--up">up</span>
+        <span class="api-status-pill api-status-pill--down">down</span>
+    </div>
+
+    <!-- CREATE JSON/API -->
+    <div class="api-section">
+        <div class="endpoint open" id="ep-create-json">
+            <div class="endpoint-header" onclick="toggleEndpoint('ep-create-json')">
+                <span class="method-badge method-post">POST</span>
+                <span class="endpoint-path">/api/v1/monitors</span>
+                <span class="endpoint-desc">Create JSON/API monitor</span>
+                <span class="chevron">&#9654;</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Provision a JSON/API monitor that validates HTTP status, parses the JSON response body, and evaluates field-level assertions.</p>
+
+                <table class="param-table">
+                    <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="param-name">name</span></td><td>string</td><td><span class="param-required">required</span></td><td>Display name</td></tr>
+                        <tr><td><span class="param-name">monitor_type</span></td><td>string</td><td><span class="param-required">required</span></td><td><code>"json_api"</code></td></tr>
+                        <tr><td><span class="param-name">url</span></td><td>string</td><td><span class="param-required">required</span></td><td>API endpoint URL</td></tr>
+                        <tr><td><span class="param-name">expected_status_code</span></td><td>integer</td><td>optional</td><td>Expected HTTP status (default: <code>200</code>)</td></tr>
+                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>optional</td><td>Request timeout in seconds, 1–60 (default: <code>10</code>)</td></tr>
+                        <tr><td><span class="param-name">auth_header</span></td><td>string</td><td>optional</td><td>Authorization header value, e.g. <code>"Bearer tok_xxx"</code></td></tr>
+                        <tr><td><span class="param-name">json_assertions</span></td><td>array</td><td>optional</td><td>Array of assertion objects (see schema below)</td></tr>
+                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>optional</td><td>Check frequency in seconds, 60–300 (Pro)</td></tr>
+                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>optional</td><td>Override alert email</td></tr>
+                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>optional</td><td>Slack webhook (Pro)</td></tr>
+                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>optional</td><td>Status change webhook (Pro)</td></tr>
+                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>optional</td><td>Expose on status page (default: <code>true</code>)</td></tr>
+                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>optional</td><td>Create paused (default: <code>false</code>)</td></tr>
+                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>optional</td><td>Suppress alerts during windows (Pro)</td></tr>
+                    </tbody>
+                </table>
+
+                <p><strong>Assertion object schema:</strong></p>
+                <table class="param-table">
+                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="param-name">path</span></td><td>string</td><td>JSON path with dot notation: <code>"data.users[0].name"</code></td></tr>
+                        <tr><td><span class="param-name">operator</span></td><td>string</td><td><code>"equals"</code> · <code>"not_equals"</code> · <code>"contains"</code> · <code>"not_contains"</code> · <code>"greater_than"</code> · <code>"less_than"</code> · <code>"exists"</code> · <code>"not_exists"</code></td></tr>
+                        <tr><td><span class="param-name">value</span></td><td>string</td><td>Expected value (ignored for <code>exists</code> / <code>not_exists</code>)</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="code-tabbed" data-tabs>
+                    <div class="code-tab-bar">
+                        <button class="active" onclick="switchTab(this,'curl')">curl</button>
+                        <button onclick="switchTab(this,'python')">Python</button>
+                        <button onclick="switchTab(this,'js')">JavaScript</button>
+                    </div>
+                    <div class="code-panel active" data-lang="curl">curl -X POST \
   -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
-  <span class="code-url">{{ app_url }}/api/v1/monitors/jkUVy3EYnvGx16jWT2v0</span></div>
-                <div class="code-panel" data-lang="python">monitor_id = <span class="code-string">"jkUVy3EYnvGx16jWT2v0"</span>
-r = requests.delete(f<span class="code-string">"{BASE}/monitors/{monitor_id}"</span>, headers=headers)
-print(r.json())</div>
-                <div class="code-panel" data-lang="js"><span class="code-key">const</span> id = <span class="code-string">"jkUVy3EYnvGx16jWT2v0"</span>;
-<span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors/${id}`</span>, {
-  method: <span class="code-string">"DELETE"</span>,
-  headers
+  -H <span class="code-string">"Content-Type: application/json"</span> \
+  -d <span class="code-string">'{
+    "monitor_type": "json_api",
+    "name": "Health API",
+    "url": "https://api.example.com/v1/health",
+    "auth_header": "Bearer tok_live_xxxx",
+    "expected_status_code": 200,
+    "json_assertions": [
+      {"path": "status", "operator": "equals", "value": "ok"},
+      {"path": "data.version", "operator": "exists", "value": ""}
+    ]
+  }'</span> \
+  <span class="code-url">{{ app_url }}/api/v1/monitors</span></div>
+                    <div class="code-panel" data-lang="python">r = requests.post(
+    f<span class="code-string">"{BASE}/monitors"</span>,
+    headers=headers,
+    json={
+        <span class="code-string">"monitor_type"</span>: <span class="code-string">"json_api"</span>,
+        <span class="code-string">"name"</span>: <span class="code-string">"Health API"</span>,
+        <span class="code-string">"url"</span>: <span class="code-string">"https://api.example.com/v1/health"</span>,
+        <span class="code-string">"auth_header"</span>: <span class="code-string">"Bearer tok_live_xxxx"</span>,
+        <span class="code-string">"expected_status_code"</span>: 200,
+        <span class="code-string">"json_assertions"</span>: [
+            {<span class="code-string">"path"</span>: <span class="code-string">"status"</span>, <span class="code-string">"operator"</span>: <span class="code-string">"equals"</span>, <span class="code-string">"value"</span>: <span class="code-string">"ok"</span>},
+            {<span class="code-string">"path"</span>: <span class="code-string">"data.version"</span>, <span class="code-string">"operator"</span>: <span class="code-string">"exists"</span>, <span class="code-string">"value"</span>: <span class="code-string">""</span>}
+        ]
+    }
+)
+monitor = r.json()[<span class="code-string">"data"</span>]
+print(f<span class="code-string">"Created {monitor['id']}"</span>)</div>
+                    <div class="code-panel" data-lang="js"><span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors`</span>, {
+  method: <span class="code-string">"POST"</span>,
+  headers: { ...headers, <span class="code-string">"Content-Type"</span>: <span class="code-string">"application/json"</span> },
+  body: JSON.stringify({
+    monitor_type: <span class="code-string">"json_api"</span>,
+    name: <span class="code-string">"Health API"</span>,
+    url: <span class="code-string">"https://api.example.com/v1/health"</span>,
+    auth_header: <span class="code-string">"Bearer tok_live_xxxx"</span>,
+    expected_status_code: 200,
+    json_assertions: [
+      { path: <span class="code-string">"status"</span>, operator: <span class="code-string">"equals"</span>, value: <span class="code-string">"ok"</span> },
+      { path: <span class="code-string">"data.version"</span>, operator: <span class="code-string">"exists"</span>, value: <span class="code-string">""</span> }
+    ]
+  })
+});
+<span class="code-key">const</span> { data } = <span class="code-key">await</span> res.json();</div>
+                </div>
+
+                <p><strong>Response</strong> (201 Created)<strong>:</strong></p>
+                <div class="response-shape">{
+  "data": {
+    "id": "mon_d4e5f6",
+    "monitor_type": "json_api",
+    "name": "Health API",
+    "url": "https://api.example.com/v1/health",
+    "status": "pending",
+    "auth_header": "Bearer tok_live_xxxx",
+    "json_assertions": [
+      {"path": "status", "operator": "equals", "value": "ok"},
+      {"path": "data.version", "operator": "exists", "value": ""}
+    ],
+    "expected_status_code": 200,
+    "timeout": 10,
+    "check_interval": 60,
+    "alert_email": "you@example.com",
+    "public": true,
+    "paused": false,
+    "created_at": "2026-03-03T12:00:00"
+  },
+  "error": null
+}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JSON/API-specific response fields -->
+    <div class="api-section">
+        <h2>JSON/API Response Fields</h2>
+        <p>Fields specific to JSON/API monitors (in addition to the HTTP fields):</p>
+        <table class="field-ref-table">
+            <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td><code>auth_header</code></td><td class="field-type">string</td><td>Authorization header value sent with each check</td></tr>
+                <tr><td><code>json_assertions</code></td><td class="field-type">array|null</td><td>Array of <code>{path, operator, value}</code> assertion objects</td></tr>
+                <tr><td><code>last_status_code</code></td><td class="field-type">int|null</td><td>HTTP status from most recent check</td></tr>
+                <tr><td><code>last_response_ms</code></td><td class="field-type">float|null</td><td>Response time from most recent check</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  HEARTBEAT / CRON MONITORS                                     -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="api-type-section" id="heartbeat">
+    <div class="api-type-header">
+        <h2>Heartbeat / Cron Monitors</h2>
+        <span class="api-type-badge api-type-badge--heartbeat">monitor_type: "heartbeat"</span>
+    </div>
+    <p class="api-type-desc">Dead man's switch monitoring for cron jobs, scheduled tasks, and background workers. StatusRooster generates a unique ping URL — your service hits it on schedule. If a ping is missed beyond the grace period, the monitor transitions to <code>down</code> and alerts fire.</p>
+    <div class="api-status-pills">
+        <span class="api-status-pill api-status-pill--pending">pending</span>
+        <span class="api-status-pill api-status-pill--up">up</span>
+        <span class="api-status-pill api-status-pill--down">down</span>
+    </div>
+
+    <!-- CREATE HEARTBEAT -->
+    <div class="api-section">
+        <div class="endpoint open" id="ep-create-heartbeat">
+            <div class="endpoint-header" onclick="toggleEndpoint('ep-create-heartbeat')">
+                <span class="method-badge method-post">POST</span>
+                <span class="endpoint-path">/api/v1/monitors</span>
+                <span class="endpoint-desc">Create heartbeat monitor</span>
+                <span class="chevron">&#9654;</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Provision a heartbeat monitor. No <code>url</code> is needed — a unique <code>ping_url</code> is generated automatically and returned in the response. Add this URL to the end of your cron job or scheduled task.</p>
+
+                <table class="param-table">
+                    <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="param-name">name</span></td><td>string</td><td><span class="param-required">required</span></td><td>Display name (e.g. "Nightly Backup")</td></tr>
+                        <tr><td><span class="param-name">monitor_type</span></td><td>string</td><td><span class="param-required">required</span></td><td><code>"heartbeat"</code></td></tr>
+                        <tr><td><span class="param-name">heartbeat_interval</span></td><td>integer</td><td>optional</td><td>Expected ping frequency in seconds, 60–86400 (default: <code>300</code> = 5 min)</td></tr>
+                        <tr><td><span class="param-name">heartbeat_grace_period</span></td><td>integer</td><td>optional</td><td>Extra seconds before alerting, 0–3600 (default: <code>60</code>)</td></tr>
+                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>optional</td><td>Override alert email</td></tr>
+                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>optional</td><td>Slack webhook (Pro)</td></tr>
+                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>optional</td><td>Status change webhook (Pro)</td></tr>
+                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>optional</td><td>Expose on status page (default: <code>true</code>)</td></tr>
+                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>optional</td><td>Create paused (default: <code>false</code>)</td></tr>
+                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>optional</td><td>Suppress alerts during windows (Pro)</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="code-tabbed" data-tabs>
+                    <div class="code-tab-bar">
+                        <button class="active" onclick="switchTab(this,'curl')">curl</button>
+                        <button onclick="switchTab(this,'python')">Python</button>
+                        <button onclick="switchTab(this,'js')">JavaScript</button>
+                    </div>
+                    <div class="code-panel active" data-lang="curl">curl -X POST \
+  -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
+  -H <span class="code-string">"Content-Type: application/json"</span> \
+  -d <span class="code-string">'{
+    "monitor_type": "heartbeat",
+    "name": "Nightly Backup Job",
+    "heartbeat_interval": 86400,
+    "heartbeat_grace_period": 300
+  }'</span> \
+  <span class="code-url">{{ app_url }}/api/v1/monitors</span></div>
+                    <div class="code-panel" data-lang="python">r = requests.post(
+    f<span class="code-string">"{BASE}/monitors"</span>,
+    headers=headers,
+    json={
+        <span class="code-string">"monitor_type"</span>: <span class="code-string">"heartbeat"</span>,
+        <span class="code-string">"name"</span>: <span class="code-string">"Nightly Backup Job"</span>,
+        <span class="code-string">"heartbeat_interval"</span>: 86400,
+        <span class="code-string">"heartbeat_grace_period"</span>: 300
+    }
+)
+data = r.json()[<span class="code-string">"data"</span>]
+print(f<span class="code-string">"Ping URL: {data['ping_url']}"</span>)</div>
+                    <div class="code-panel" data-lang="js"><span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors`</span>, {
+  method: <span class="code-string">"POST"</span>,
+  headers: { ...headers, <span class="code-string">"Content-Type"</span>: <span class="code-string">"application/json"</span> },
+  body: JSON.stringify({
+    monitor_type: <span class="code-string">"heartbeat"</span>,
+    name: <span class="code-string">"Nightly Backup Job"</span>,
+    heartbeat_interval: 86400,
+    heartbeat_grace_period: 300
+  })
 });
 <span class="code-key">const</span> { data } = <span class="code-key">await</span> res.json();
-console.log(data);</div>
-            </div>
+console.log(<span class="code-string">`Ping URL: ${data.ping_url}`</span>);</div>
+                </div>
 
-            <p><strong>Example response</strong> (200 OK)<strong>:</strong></p>
-            <div class="response-shape">{
+                <p><strong>Response</strong> (201 Created)<strong>:</strong></p>
+                <div class="response-shape">{
   "data": {
-    "deleted": true,
-    "monitor_id": "jkUVy3EYnvGx16jWT2v0"
+    "id": "hb_abc789",
+    "monitor_type": "heartbeat",
+    "name": "Nightly Backup Job",
+    "status": "pending",
+    "ping_url": "{{ app_url }}/api/ping/hb_abc789",
+    "url": "{{ app_url }}/api/ping/hb_abc789",
+    "heartbeat_interval": 86400,
+    "heartbeat_grace_period": 300,
+    "alert_email": "you@example.com",
+    "public": true,
+    "paused": false,
+    "created_at": "2026-03-03T12:00:00"
   },
   "error": null
 }</div>
-            <details class="field-ref">
-                <summary>&#9432; Field reference (2 fields)</summary>
-                <table class="field-ref-table">
-                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
-                    <tbody>
-                        <tr><td><code>deleted</code></td><td class="field-type">bool</td><td>Always <code>true</code> on success</td></tr>
-                        <tr><td><code>monitor_id</code></td><td class="field-type">string</td><td>ID of the deleted monitor</td></tr>
-                    </tbody>
-                </table>
-            </details>
+                <p class="api-note">💡 Use the <code>ping_url</code> from the response in your crontab: <code>curl -fsS {{ app_url }}/api/ping/hb_abc789</code></p>
+            </div>
         </div>
     </div>
 
-    <!-- BADGES -->
-    <h3 class="endpoint-group-heading">Uptime Badges</h3>
-    <p>Embed live SVG badges in your README, docs, or website. <strong>No auth required</strong> — badges are public for monitors with <code>public: true</code>. Cached for 5 minutes.</p>
+    <!-- SEND HEARTBEAT PING -->
+    <div class="api-section">
+        <h2>Send Heartbeat Ping</h2>
+        <p>Your cron job or service hits this endpoint on schedule. If it stops pinging beyond <code>heartbeat_interval + heartbeat_grace_period</code>, the monitor transitions to <code>down</code>. <strong>No authentication required.</strong></p>
 
-    <div class="endpoint" id="ep-badge">
-        <div class="endpoint-header" onclick="toggleEndpoint('ep-badge')">
-            <span class="method-badge method-get">GET</span>
-            <span class="endpoint-path">/badge/{monitor_id}.svg</span>
-            <span class="endpoint-desc">Uptime percentage badge</span>
-            <span class="chevron">&#9654;</span>
+        <div class="endpoint open" id="ep-ping">
+            <div class="endpoint-header" onclick="toggleEndpoint('ep-ping')">
+                <span class="method-badge method-get">GET</span> <span class="method-badge method-post" style="margin-left:4px">POST</span> <span class="method-badge" style="background:#6b7280;color:#fff;margin-left:4px">HEAD</span>
+                <span class="endpoint-path">/api/ping/{monitor_id}</span>
+                <span class="endpoint-desc">Record a heartbeat ping</span>
+                <span class="chevron">&#9654;</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Records a successful ping and resets the heartbeat timer. Accepts GET, POST, or HEAD — use whichever fits your environment.</p>
+
+                <div class="code-tabbed" data-tabs>
+                    <div class="code-tab-bar">
+                        <button class="active" onclick="switchTab(this,'curl')">curl</button>
+                        <button onclick="switchTab(this,'python')">Python</button>
+                        <button onclick="switchTab(this,'js')">JavaScript</button>
+                    </div>
+                    <div class="code-panel active" data-lang="curl"><span class="code-comment"># Add to crontab (every 5 min)</span>
+*/5 * * * * curl -fsS --retry 3 <span class="code-url">{{ app_url }}/api/ping/hb_abc789</span>
+
+<span class="code-comment"># Or with wget</span>
+*/5 * * * * wget -q -O /dev/null <span class="code-url">{{ app_url }}/api/ping/hb_abc789</span>
+
+<span class="code-comment"># At the end of a deploy script</span>
+curl -fsS <span class="code-url">{{ app_url }}/api/ping/hb_abc789</span></div>
+                    <div class="code-panel" data-lang="python"><span class="code-comment"># At the end of your script / job</span>
+<span class="code-key">import</span> requests
+requests.get(<span class="code-string">"{{ app_url }}/api/ping/hb_abc789"</span>)</div>
+                    <div class="code-panel" data-lang="js"><span class="code-comment">// At the end of your scheduled function</span>
+<span class="code-key">await</span> fetch(<span class="code-string">"{{ app_url }}/api/ping/hb_abc789"</span>);</div>
+                </div>
+
+                <p><strong>Response</strong> (200 OK)<strong>:</strong></p>
+                <div class="response-shape">{
+  "status": "ok",
+  "monitor_id": "hb_abc789",
+  "pinged_at": "2026-03-03T12:30:00+00:00"
+}</div>
+                <p class="api-note">💡 <strong>Tip:</strong> Use <code>curl -fsS --retry 3</code> for silent operation with automatic retries on transient network errors.</p>
+            </div>
         </div>
-        <div class="endpoint-body">
-            <p>Returns a shields.io-style SVG badge showing the monitor's uptime percentage. Color-coded: green (&ge;99.5%), yellow-green (&ge;99%), yellow (&ge;95%), red (&lt;95%).</p>
-            <details class="field-ref">
-                <summary>&#9432; Badge behavior</summary>
-                <table class="field-ref-table">
-                    <thead><tr><th>Threshold</th><th>Color</th></tr></thead>
+    </div>
+
+    <!-- Heartbeat-specific response fields -->
+    <div class="api-section">
+        <h2>Heartbeat Response Fields</h2>
+        <p>Type-specific fields returned on heartbeat monitors in list/retrieve responses:</p>
+        <table class="field-ref-table">
+            <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td><code>ping_url</code></td><td class="field-type">string</td><td>Unique URL your service should hit on schedule</td></tr>
+                <tr><td><code>heartbeat_interval</code></td><td class="field-type">int</td><td>Expected ping frequency in seconds (60–86400)</td></tr>
+                <tr><td><code>heartbeat_grace_period</code></td><td class="field-type">int</td><td>Extra seconds before marking down (0–3600)</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  SSL CERTIFICATE MONITORS                                      -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="api-type-section" id="ssl">
+    <div class="api-type-header">
+        <h2>SSL Certificate Monitors</h2>
+        <span class="api-type-badge api-type-badge--ssl">monitor_type: "ssl"</span>
+    </div>
+    <p class="api-type-desc">Dedicated SSL/TLS certificate expiry monitoring. Connects to a domain on port 443, reads the certificate chain, and warns before expiration. The only monitor type with a <code>warn</code> status — triggered when the certificate is within the configured threshold of expiring.</p>
+    <div class="api-status-pills">
+        <span class="api-status-pill api-status-pill--pending">pending</span>
+        <span class="api-status-pill api-status-pill--up">up</span>
+        <span class="api-status-pill api-status-pill--warn">warn</span>
+        <span class="api-status-pill api-status-pill--down">down</span>
+    </div>
+
+    <!-- CREATE SSL -->
+    <div class="api-section">
+        <div class="endpoint open" id="ep-create-ssl">
+            <div class="endpoint-header" onclick="toggleEndpoint('ep-create-ssl')">
+                <span class="method-badge method-post">POST</span>
+                <span class="endpoint-path">/api/v1/monitors</span>
+                <span class="endpoint-desc">Create SSL certificate monitor</span>
+                <span class="chevron">&#9654;</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Provision an SSL certificate monitor. No <code>url</code> required — only the bare domain. StatusRooster checks the certificate chain and alerts before expiration.</p>
+
+                <table class="param-table">
+                    <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
                     <tbody>
-                        <tr><td>&ge; 99.5%</td><td class="field-type">green</td></tr>
-                        <tr><td>&ge; 99%</td><td class="field-type">yellow-green</td></tr>
-                        <tr><td>&ge; 95%</td><td class="field-type">yellow</td></tr>
-                        <tr><td>&lt; 95%</td><td class="field-type">red</td></tr>
+                        <tr><td><span class="param-name">name</span></td><td>string</td><td><span class="param-required">required</span></td><td>Display name (e.g. "example.com SSL")</td></tr>
+                        <tr><td><span class="param-name">monitor_type</span></td><td>string</td><td><span class="param-required">required</span></td><td><code>"ssl"</code></td></tr>
+                        <tr><td><span class="param-name">ssl_domain</span></td><td>string</td><td><span class="param-required">required</span></td><td>Domain to check — bare hostname, no <code>https://</code> (e.g. <code>"example.com"</code>)</td></tr>
+                        <tr><td><span class="param-name">ssl_expiry_threshold_days</span></td><td>integer</td><td>optional</td><td>Days before expiry to trigger <code>warn</code> status, 1–90 (default: <code>30</code>)</td></tr>
+                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>optional</td><td>Check frequency in seconds, 60–300 (Pro)</td></tr>
+                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>optional</td><td>Override alert email</td></tr>
+                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>optional</td><td>Slack webhook (Pro)</td></tr>
+                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>optional</td><td>Status change webhook (Pro)</td></tr>
+                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>optional</td><td>Expose on status page (default: <code>true</code>)</td></tr>
+                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>optional</td><td>Create paused (default: <code>false</code>)</td></tr>
+                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>optional</td><td>Suppress alerts during windows (Pro)</td></tr>
                     </tbody>
                 </table>
-            </details>
-            <div class="code-tabbed" data-tabs>
-                <div class="code-tab-bar">
-                    <button class="active" onclick="switchTab(this,'curl')">curl</button>
-                    <button onclick="switchTab(this,'python')">Python</button>
-                    <button onclick="switchTab(this,'js')">JavaScript</button>
+
+                <div class="code-tabbed" data-tabs>
+                    <div class="code-tab-bar">
+                        <button class="active" onclick="switchTab(this,'curl')">curl</button>
+                        <button onclick="switchTab(this,'python')">Python</button>
+                        <button onclick="switchTab(this,'js')">JavaScript</button>
+                    </div>
+                    <div class="code-panel active" data-lang="curl">curl -X POST \
+  -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
+  -H <span class="code-string">"Content-Type: application/json"</span> \
+  -d <span class="code-string">'{
+    "monitor_type": "ssl",
+    "name": "example.com SSL",
+    "ssl_domain": "example.com",
+    "ssl_expiry_threshold_days": 14
+  }'</span> \
+  <span class="code-url">{{ app_url }}/api/v1/monitors</span></div>
+                    <div class="code-panel" data-lang="python">r = requests.post(
+    f<span class="code-string">"{BASE}/monitors"</span>,
+    headers=headers,
+    json={
+        <span class="code-string">"monitor_type"</span>: <span class="code-string">"ssl"</span>,
+        <span class="code-string">"name"</span>: <span class="code-string">"example.com SSL"</span>,
+        <span class="code-string">"ssl_domain"</span>: <span class="code-string">"example.com"</span>,
+        <span class="code-string">"ssl_expiry_threshold_days"</span>: 14
+    }
+)
+monitor = r.json()[<span class="code-string">"data"</span>]
+print(f<span class="code-string">"SSL monitor: {monitor['id']}"</span>)</div>
+                    <div class="code-panel" data-lang="js"><span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors`</span>, {
+  method: <span class="code-string">"POST"</span>,
+  headers: { ...headers, <span class="code-string">"Content-Type"</span>: <span class="code-string">"application/json"</span> },
+  body: JSON.stringify({
+    monitor_type: <span class="code-string">"ssl"</span>,
+    name: <span class="code-string">"example.com SSL"</span>,
+    ssl_domain: <span class="code-string">"example.com"</span>,
+    ssl_expiry_threshold_days: 14
+  })
+});
+<span class="code-key">const</span> { data } = <span class="code-key">await</span> res.json();</div>
                 </div>
-                <div class="code-panel active" data-lang="curl"><span class="code-comment"># Markdown</span>
+
+                <p><strong>Response</strong> (201 Created)<strong>:</strong></p>
+                <div class="response-shape">{
+  "data": {
+    "id": "ssl_def012",
+    "monitor_type": "ssl",
+    "name": "example.com SSL",
+    "status": "pending",
+    "ssl_domain": "example.com",
+    "ssl_expiry_threshold_days": 14,
+    "url": "https://example.com",
+    "alert_email": "you@example.com",
+    "public": true,
+    "paused": false,
+    "created_at": "2026-03-03T12:00:00"
+  },
+  "error": null
+}</div>
+                <p class="api-note">⚠️ SSL monitors use three statuses: <code>up</code> (cert valid and not near expiry), <code>warn</code> (cert expires within threshold), <code>down</code> (cert expired, invalid, or unreachable).</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SSL-specific response fields -->
+    <div class="api-section">
+        <h2>SSL Response Fields</h2>
+        <p>Type-specific fields returned on SSL monitors in list/retrieve responses:</p>
+        <table class="field-ref-table">
+            <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td><code>ssl_domain</code></td><td class="field-type">string</td><td>Domain being monitored for certificate expiry</td></tr>
+                <tr><td><code>ssl_expiry_threshold_days</code></td><td class="field-type">int</td><td>Days before expiry to trigger <code>warn</code> (1–90)</td></tr>
+                <tr><td><code>ssl_expiry</code></td><td class="field-type">datetime|null</td><td>Certificate expiration date (populated after first check)</td></tr>
+                <tr><td><code>ssl_issuer</code></td><td class="field-type">string|null</td><td>Certificate issuer (e.g. "Let's Encrypt")</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  SHARED ENDPOINTS — LIST / GET / CHECKS / UPDATE / DELETE      -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="api-type-section" id="list-monitors">
+    <div class="api-section">
+        <h2>List All Monitors</h2>
+
+        <div class="endpoint open" id="ep-list">
+            <div class="endpoint-header" onclick="toggleEndpoint('ep-list')">
+                <span class="method-badge method-get">GET</span>
+                <span class="endpoint-path">/api/v1/monitors</span>
+                <span class="endpoint-desc">Retrieve all monitors for the authenticated account</span>
+                <span class="chevron">&#9654;</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Returns every monitor belonging to the authenticated user — all types in a single array. Use the <code>monitor_type</code> field to filter client-side by type.</p>
+
+                <div class="code-tabbed" data-tabs>
+                    <div class="code-tab-bar">
+                        <button class="active" onclick="switchTab(this,'curl')">curl</button>
+                        <button onclick="switchTab(this,'python')">Python</button>
+                        <button onclick="switchTab(this,'js')">JavaScript</button>
+                    </div>
+                    <div class="code-panel active" data-lang="curl">curl -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
+  <span class="code-url">{{ app_url }}/api/v1/monitors</span></div>
+                    <div class="code-panel" data-lang="python">r = requests.get(f<span class="code-string">"{BASE}/monitors"</span>, headers=headers)
+monitors = r.json()[<span class="code-string">"data"</span>]
+
+<span class="code-comment"># Filter by type</span>
+http_monitors = [m <span class="code-key">for</span> m <span class="code-key">in</span> monitors <span class="code-key">if</span> m[<span class="code-string">"monitor_type"</span>] == <span class="code-string">"http"</span>]
+heartbeats = [m <span class="code-key">for</span> m <span class="code-key">in</span> monitors <span class="code-key">if</span> m[<span class="code-string">"monitor_type"</span>] == <span class="code-string">"heartbeat"</span>]
+
+<span class="code-key">for</span> m <span class="code-key">in</span> monitors:
+    print(f<span class="code-string">"{m['name']} ({m['monitor_type']}): {m['status']}"</span>)</div>
+                    <div class="code-panel" data-lang="js"><span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors`</span>, { headers });
+<span class="code-key">const</span> { data } = <span class="code-key">await</span> res.json();
+
+<span class="code-comment">// Filter by type</span>
+<span class="code-key">const</span> httpMonitors = data.filter(m => m.monitor_type === <span class="code-string">"http"</span>);
+<span class="code-key">const</span> sslMonitors = data.filter(m => m.monitor_type === <span class="code-string">"ssl"</span>);
+
+data.forEach(m => console.log(<span class="code-string">`${m.name} (${m.monitor_type}): ${m.status}`</span>));</div>
+                </div>
+
+                <p><strong>Response</strong> (200 OK)<strong>:</strong></p>
+                <div class="response-shape">{
+  "data": [
+    {
+      "id": "mon_a1b2c3",
+      "monitor_type": "http",
+      "name": "My Website",
+      "url": "https://example.com",
+      "status": "up",
+      "check_interval": 60,
+      "uptime_percent": 99.8,
+      "checks_total": 4320,
+      "checks_failed": 9,
+      "last_checked": "2026-03-03T12:30:00+00:00",
+      "last_status_code": 200,
+      "last_response_ms": 245.3,
+      ...
+    },
+    {
+      "id": "hb_abc789",
+      "monitor_type": "heartbeat",
+      "name": "Nightly Backup",
+      "ping_url": "{{ app_url }}/api/ping/hb_abc789",
+      "status": "up",
+      "heartbeat_interval": 86400,
+      "heartbeat_grace_period": 300,
+      ...
+    }
+  ],
+  "error": null,
+  "meta": { "total": 2 }
+}</div>
+
+                <details class="field-ref">
+                    <summary>&#9432; Complete field reference (all monitor types)</summary>
+                    <table class="field-ref-table">
+                        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td colspan="3" style="background:#f3f4f6;font-weight:600;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;padding:8px 12px">Core Fields (all types)</td></tr>
+                            <tr><td><code>id</code></td><td class="field-type">string</td><td>Unique monitor ID</td></tr>
+                            <tr><td><code>monitor_type</code></td><td class="field-type">string</td><td><code>"http"</code> · <code>"json_api"</code> · <code>"heartbeat"</code> · <code>"ssl"</code></td></tr>
+                            <tr><td><code>name</code></td><td class="field-type">string</td><td>Display name</td></tr>
+                            <tr><td><code>url</code></td><td class="field-type">string</td><td>Monitored URL (or ping URL for heartbeat, <code>https://domain</code> for SSL)</td></tr>
+                            <tr><td><code>status</code></td><td class="field-type">string</td><td><code>"pending"</code> · <code>"up"</code> · <code>"down"</code> · <code>"warn"</code> (SSL only)</td></tr>
+                            <tr><td><code>check_interval</code></td><td class="field-type">int</td><td>Seconds between checks (60–300)</td></tr>
+                            <tr><td><code>uptime_percent</code></td><td class="field-type">float</td><td>Lifetime uptime percentage</td></tr>
+                            <tr><td><code>checks_total</code></td><td class="field-type">int</td><td>Total checks executed</td></tr>
+                            <tr><td><code>checks_failed</code></td><td class="field-type">int</td><td>Total failed checks</td></tr>
+                            <tr><td><code>last_checked</code></td><td class="field-type">datetime|null</td><td>Last check timestamp (null if never checked)</td></tr>
+                            <tr><td><code>alert_email</code></td><td class="field-type">string</td><td>Email for alerts</td></tr>
+                            <tr><td><code>alert_slack_webhook</code></td><td class="field-type">string</td><td>Slack webhook URL (Pro)</td></tr>
+                            <tr><td><code>alert_sms</code></td><td class="field-type">string</td><td>SMS number (Pro)</td></tr>
+                            <tr><td><code>webhook_url</code></td><td class="field-type">string</td><td>Status change webhook URL (Pro)</td></tr>
+                            <tr><td><code>maintenance_windows</code></td><td class="field-type">array</td><td>Array of <code>{day, start_utc, end_utc}</code> (Pro)</td></tr>
+                            <tr><td><code>public</code></td><td class="field-type">bool</td><td>Has a public status page</td></tr>
+                            <tr><td><code>paused</code></td><td class="field-type">bool</td><td>Monitoring is paused</td></tr>
+                            <tr><td><code>slug</code></td><td class="field-type">string</td><td>Status page URL slug (<code>/s/{slug}</code>)</td></tr>
+                            <tr><td><code>created_at</code></td><td class="field-type">datetime</td><td>Creation timestamp</td></tr>
+
+                            <tr><td colspan="3" style="background:#eef2ff;font-weight:600;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;padding:8px 12px">HTTP &amp; JSON/API Fields</td></tr>
+                            <tr><td><code>last_status_code</code></td><td class="field-type">int|null</td><td>HTTP status from most recent check</td></tr>
+                            <tr><td><code>last_response_ms</code></td><td class="field-type">float|null</td><td>Response time in ms</td></tr>
+                            <tr><td><code>expected_status_code</code></td><td class="field-type">int|null</td><td>Expected HTTP status (default 200)</td></tr>
+                            <tr><td><code>timeout</code></td><td class="field-type">int|null</td><td>Request timeout in seconds</td></tr>
+                            <tr><td><code>keyword</code></td><td class="field-type">string</td><td>Body keyword check string</td></tr>
+                            <tr><td><code>response_threshold_ms</code></td><td class="field-type">string|null</td><td>Response time condition</td></tr>
+                            <tr><td><code>ssl_expiry</code></td><td class="field-type">datetime|null</td><td>Auto-detected SSL cert expiry</td></tr>
+                            <tr><td><code>ssl_issuer</code></td><td class="field-type">string|null</td><td>Auto-detected SSL cert issuer</td></tr>
+
+                            <tr><td colspan="3" style="background:#eff6ff;font-weight:600;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;padding:8px 12px">JSON/API Only</td></tr>
+                            <tr><td><code>json_assertions</code></td><td class="field-type">array|null</td><td>Array of <code>{path, operator, value}</code></td></tr>
+                            <tr><td><code>auth_header</code></td><td class="field-type">string</td><td>Authorization header value</td></tr>
+
+                            <tr><td colspan="3" style="background:#f0fdf4;font-weight:600;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;padding:8px 12px">Heartbeat Only</td></tr>
+                            <tr><td><code>ping_url</code></td><td class="field-type">string</td><td>Unique ping URL</td></tr>
+                            <tr><td><code>heartbeat_interval</code></td><td class="field-type">int|null</td><td>Expected ping interval in seconds</td></tr>
+                            <tr><td><code>heartbeat_grace_period</code></td><td class="field-type">int|null</td><td>Grace period before alerting</td></tr>
+
+                            <tr><td colspan="3" style="background:#fffbeb;font-weight:600;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;padding:8px 12px">SSL Only</td></tr>
+                            <tr><td><code>ssl_domain</code></td><td class="field-type">string</td><td>Domain being checked</td></tr>
+                            <tr><td><code>ssl_expiry_threshold_days</code></td><td class="field-type">int|null</td><td>Days before expiry to trigger <code>warn</code></td></tr>
+                        </tbody>
+                    </table>
+                </details>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- GET SINGLE MONITOR -->
+<div class="api-type-section" id="get-monitor">
+    <div class="api-section">
+        <h2>Retrieve Monitor</h2>
+
+        <div class="endpoint" id="ep-get">
+            <div class="endpoint-header" onclick="toggleEndpoint('ep-get')">
+                <span class="method-badge method-get">GET</span>
+                <span class="endpoint-path">/api/v1/monitors/{id}</span>
+                <span class="endpoint-desc">Retrieve a single monitor by ID</span>
+                <span class="chevron">&#9654;</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Returns a single monitor document. Works with all monitor types. The response includes the same type-specific fields as the list endpoint.</p>
+
+                <div class="code-tabbed" data-tabs>
+                    <div class="code-tab-bar">
+                        <button class="active" onclick="switchTab(this,'curl')">curl</button>
+                        <button onclick="switchTab(this,'python')">Python</button>
+                        <button onclick="switchTab(this,'js')">JavaScript</button>
+                    </div>
+                    <div class="code-panel active" data-lang="curl">curl -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
+  <span class="code-url">{{ app_url }}/api/v1/monitors/mon_a1b2c3</span></div>
+                    <div class="code-panel" data-lang="python">r = requests.get(f<span class="code-string">"{BASE}/monitors/mon_a1b2c3"</span>, headers=headers)
+monitor = r.json()[<span class="code-string">"data"</span>]
+print(f<span class="code-string">"{monitor['monitor_type']}: {monitor['status']}"</span>)</div>
+                    <div class="code-panel" data-lang="js"><span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors/mon_a1b2c3`</span>, { headers });
+<span class="code-key">const</span> { data } = <span class="code-key">await</span> res.json();
+console.log(<span class="code-string">`${data.monitor_type}: ${data.status}`</span>);</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CHECK HISTORY -->
+<div class="api-type-section" id="check-history">
+    <div class="api-section">
+        <h2>Check History</h2>
+
+        <div class="endpoint" id="ep-checks">
+            <div class="endpoint-header" onclick="toggleEndpoint('ep-checks')">
+                <span class="method-badge method-get">GET</span>
+                <span class="endpoint-path">/api/v1/monitors/{id}/checks</span>
+                <span class="endpoint-desc">Retrieve check results for a monitor</span>
+                <span class="chevron">&#9654;</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Returns recent check results for any monitor type, newest first. For heartbeat monitors, each entry represents a scheduled check (not a ping).</p>
+
+                <table class="param-table">
+                    <thead><tr><th>Query Param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="param-name">limit</span></td><td>integer</td><td><code>100</code></td><td>Number of checks to return (1–500)</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="code-tabbed" data-tabs>
+                    <div class="code-tab-bar">
+                        <button class="active" onclick="switchTab(this,'curl')">curl</button>
+                        <button onclick="switchTab(this,'python')">Python</button>
+                        <button onclick="switchTab(this,'js')">JavaScript</button>
+                    </div>
+                    <div class="code-panel active" data-lang="curl">curl -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
+  <span class="code-url">"{{ app_url }}/api/v1/monitors/mon_a1b2c3/checks?limit=10"</span></div>
+                    <div class="code-panel" data-lang="python">r = requests.get(
+    f<span class="code-string">"{BASE}/monitors/mon_a1b2c3/checks"</span>,
+    headers=headers,
+    params={<span class="code-string">"limit"</span>: 10}
+)
+<span class="code-key">for</span> c <span class="code-key">in</span> r.json()[<span class="code-string">"data"</span>]:
+    print(f<span class="code-string">"{c['timestamp']}: {c['is_up']} — {c['response_ms']}ms"</span>)</div>
+                    <div class="code-panel" data-lang="js"><span class="code-key">const</span> res = <span class="code-key">await</span> fetch(
+  <span class="code-string">`${BASE}/monitors/mon_a1b2c3/checks?limit=10`</span>, { headers }
+);
+<span class="code-key">const</span> { data } = <span class="code-key">await</span> res.json();
+data.forEach(c => console.log(<span class="code-string">`${c.timestamp}: ${c.response_ms}ms`</span>));</div>
+                </div>
+
+                <p><strong>Response</strong> (200 OK)<strong>:</strong></p>
+                <div class="response-shape">{
+  "data": [
+    {
+      "id": "chk_a1b2c3",
+      "timestamp": "2026-03-03T12:30:00+00:00",
+      "status_code": 200,
+      "response_ms": 245.3,
+      "is_up": true
+    }
+  ],
+  "error": null,
+  "meta": { "monitor_id": "mon_a1b2c3", "total": 1, "limit": 10 }
+}</div>
+
+                <details class="field-ref">
+                    <summary>&#9432; Check record field reference</summary>
+                    <table class="field-ref-table">
+                        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>id</code></td><td class="field-type">string</td><td>Unique check ID</td></tr>
+                            <tr><td><code>timestamp</code></td><td class="field-type">datetime</td><td>When the check executed</td></tr>
+                            <tr><td><code>status_code</code></td><td class="field-type">int|null</td><td>HTTP status (null for heartbeat/SSL or connection failure)</td></tr>
+                            <tr><td><code>response_ms</code></td><td class="field-type">float|null</td><td>Response time in ms (null for heartbeat/SSL or timeout)</td></tr>
+                            <tr><td><code>is_up</code></td><td class="field-type">bool</td><td>Whether the check passed</td></tr>
+                        </tbody>
+                    </table>
+                </details>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- UPDATE MONITOR -->
+<div class="api-type-section" id="update-monitor">
+    <div class="api-section">
+        <h2>Update Monitor</h2>
+
+        <div class="endpoint" id="ep-update">
+            <div class="endpoint-header" onclick="toggleEndpoint('ep-update')">
+                <span class="method-badge method-put">PUT</span>
+                <span class="endpoint-path">/api/v1/monitors/{id}</span>
+                <span class="endpoint-desc">Modify an existing monitor</span>
+                <span class="chevron">&#9654;</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Partial update — include only the fields you want to change. Omitted fields are preserved. The <code>monitor_type</code> field <strong>cannot be changed</strong> after creation. Send type-appropriate fields for the monitor you're updating.</p>
+
+                <h4 style="margin:16px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted)">Shared Fields (all types)</h4>
+                <table class="param-table">
+                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="param-name">name</span></td><td>string</td><td>Display name</td></tr>
+                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>Alert email</td></tr>
+                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>Slack webhook URL (Pro)</td></tr>
+                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>Status change webhook (Pro)</td></tr>
+                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>Seconds between checks, 60–300 (Pro)</td></tr>
+                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Toggle public status page</td></tr>
+                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause or resume monitoring</td></tr>
+                        <tr><td><span class="param-name">slug</span></td><td>string</td><td>Custom status page slug</td></tr>
+                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows (Pro)</td></tr>
+                    </tbody>
+                </table>
+
+                <h4 style="margin:16px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted)">HTTP &amp; JSON/API Fields</h4>
+                <table class="param-table">
+                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="param-name">url</span></td><td>string</td><td>Monitored URL</td></tr>
+                        <tr><td><span class="param-name">expected_status_code</span></td><td>integer</td><td>Expected HTTP status</td></tr>
+                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>Timeout in seconds (1–60)</td></tr>
+                        <tr><td><span class="param-name">keyword</span></td><td>string</td><td>Body keyword check</td></tr>
+                        <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>Response time condition</td></tr>
+                    </tbody>
+                </table>
+
+                <h4 style="margin:16px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted)">JSON/API Only</h4>
+                <table class="param-table">
+                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="param-name">auth_header</span></td><td>string</td><td>Authorization header value</td></tr>
+                        <tr><td><span class="param-name">json_assertions</span></td><td>array</td><td>Replaces all assertions</td></tr>
+                    </tbody>
+                </table>
+
+                <h4 style="margin:16px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted)">Heartbeat Only</h4>
+                <table class="param-table">
+                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="param-name">heartbeat_interval</span></td><td>integer</td><td>Expected ping frequency (60–86400s)</td></tr>
+                        <tr><td><span class="param-name">heartbeat_grace_period</span></td><td>integer</td><td>Grace period before alert (0–3600s)</td></tr>
+                    </tbody>
+                </table>
+
+                <h4 style="margin:16px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted)">SSL Only</h4>
+                <table class="param-table">
+                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="param-name">ssl_domain</span></td><td>string</td><td>Domain to check</td></tr>
+                        <tr><td><span class="param-name">ssl_expiry_threshold_days</span></td><td>integer</td><td>Days before expiry to warn (1–90)</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="code-tabbed" data-tabs>
+                    <div class="code-tab-bar">
+                        <button class="active" onclick="switchTab(this,'curl')">curl</button>
+                        <button onclick="switchTab(this,'python')">Python</button>
+                        <button onclick="switchTab(this,'js')">JavaScript</button>
+                    </div>
+                    <div class="code-panel active" data-lang="curl"><span class="code-comment"># Update an HTTP monitor's keyword and timeout</span>
+curl -X PUT \
+  -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
+  -H <span class="code-string">"Content-Type: application/json"</span> \
+  -d <span class="code-string">'{"keyword":"OK","timeout":15}'</span> \
+  <span class="code-url">{{ app_url }}/api/v1/monitors/mon_a1b2c3</span>
+
+<span class="code-comment"># Update an SSL monitor's threshold</span>
+curl -X PUT \
+  -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
+  -H <span class="code-string">"Content-Type: application/json"</span> \
+  -d <span class="code-string">'{"ssl_expiry_threshold_days":7}'</span> \
+  <span class="code-url">{{ app_url }}/api/v1/monitors/ssl_def012</span></div>
+                    <div class="code-panel" data-lang="python"><span class="code-comment"># Update HTTP monitor</span>
+r = requests.put(
+    f<span class="code-string">"{BASE}/monitors/mon_a1b2c3"</span>,
+    headers=headers,
+    json={<span class="code-string">"keyword"</span>: <span class="code-string">"OK"</span>, <span class="code-string">"timeout"</span>: 15}
+)
+
+<span class="code-comment"># Update JSON/API assertions</span>
+r = requests.put(
+    f<span class="code-string">"{BASE}/monitors/mon_d4e5f6"</span>,
+    headers=headers,
+    json={
+        <span class="code-string">"json_assertions"</span>: [
+            {<span class="code-string">"path"</span>: <span class="code-string">"status"</span>, <span class="code-string">"operator"</span>: <span class="code-string">"equals"</span>, <span class="code-string">"value"</span>: <span class="code-string">"healthy"</span>}
+        ]
+    }
+)
+
+<span class="code-comment"># Update heartbeat interval</span>
+r = requests.put(
+    f<span class="code-string">"{BASE}/monitors/hb_abc789"</span>,
+    headers=headers,
+    json={<span class="code-string">"heartbeat_interval"</span>: 3600, <span class="code-string">"heartbeat_grace_period"</span>: 120}
+)</div>
+                    <div class="code-panel" data-lang="js"><span class="code-comment">// Update HTTP monitor keyword</span>
+<span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors/mon_a1b2c3`</span>, {
+  method: <span class="code-string">"PUT"</span>,
+  headers: { ...headers, <span class="code-string">"Content-Type"</span>: <span class="code-string">"application/json"</span> },
+  body: JSON.stringify({ keyword: <span class="code-string">"OK"</span>, timeout: 15 })
+});
+
+<span class="code-comment">// Update heartbeat interval</span>
+<span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors/hb_abc789`</span>, {
+  method: <span class="code-string">"PUT"</span>,
+  headers: { ...headers, <span class="code-string">"Content-Type"</span>: <span class="code-string">"application/json"</span> },
+  body: JSON.stringify({ heartbeat_interval: 3600 })
+});</div>
+                </div>
+
+                <p><strong>Response</strong> (200 OK)<strong>:</strong> Returns the full updated monitor object.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DELETE MONITOR -->
+<div class="api-type-section" id="delete-monitor">
+    <div class="api-section">
+        <h2>Delete Monitor</h2>
+
+        <div class="endpoint" id="ep-delete">
+            <div class="endpoint-header" onclick="toggleEndpoint('ep-delete')">
+                <span class="method-badge method-delete">DELETE</span>
+                <span class="endpoint-path">/api/v1/monitors/{id}</span>
+                <span class="endpoint-desc">Permanently delete a monitor</span>
+                <span class="chevron">&#9654;</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Permanently deletes a monitor and all associated check history. Works with all monitor types. This action is irreversible.</p>
+
+                <div class="code-tabbed" data-tabs>
+                    <div class="code-tab-bar">
+                        <button class="active" onclick="switchTab(this,'curl')">curl</button>
+                        <button onclick="switchTab(this,'python')">Python</button>
+                        <button onclick="switchTab(this,'js')">JavaScript</button>
+                    </div>
+                    <div class="code-panel active" data-lang="curl">curl -X DELETE \
+  -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
+  <span class="code-url">{{ app_url }}/api/v1/monitors/mon_a1b2c3</span></div>
+                    <div class="code-panel" data-lang="python">r = requests.delete(f<span class="code-string">"{BASE}/monitors/mon_a1b2c3"</span>, headers=headers)
+print(r.json())</div>
+                    <div class="code-panel" data-lang="js"><span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors/mon_a1b2c3`</span>, {
+  method: <span class="code-string">"DELETE"</span>, headers
+});
+console.log(<span class="code-key">await</span> res.json());</div>
+                </div>
+
+                <p><strong>Response</strong> (200 OK)<strong>:</strong></p>
+                <div class="response-shape">{
+  "data": { "deleted": true, "monitor_id": "mon_a1b2c3" },
+  "error": null
+}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  UPTIME BADGES                                                 -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="api-type-section" id="badges">
+    <div class="api-section">
+        <h2>Uptime Badges</h2>
+        <p>Embed live SVG badges in your README, docs, or website. <strong>No authentication required</strong> — badges are public for monitors with <code>public: true</code>. Cached for 5 minutes. Works with all monitor types.</p>
+
+        <!-- Uptime badge -->
+        <div class="endpoint" id="ep-badge">
+            <div class="endpoint-header" onclick="toggleEndpoint('ep-badge')">
+                <span class="method-badge method-get">GET</span>
+                <span class="endpoint-path">/badge/{monitor_id}.svg</span>
+                <span class="endpoint-desc">Uptime percentage badge</span>
+                <span class="chevron">&#9654;</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Shields.io-style SVG showing uptime percentage. Color-coded: green (≥99.5%), yellow-green (≥99%), yellow (≥95%), red (&lt;95%).</p>
+                <div class="code-tabbed" data-tabs>
+                    <div class="code-tab-bar">
+                        <button class="active" onclick="switchTab(this,'curl')">curl</button>
+                        <button onclick="switchTab(this,'python')">Python</button>
+                        <button onclick="switchTab(this,'js')">JavaScript</button>
+                    </div>
+                    <div class="code-panel active" data-lang="curl"><span class="code-comment"># Markdown</span>
 ![Uptime]({{ app_url }}/badge/YOUR_MONITOR_ID.svg)
 
 <span class="code-comment"># HTML</span>
-&lt;img src="{{ app_url }}/badge/YOUR_MONITOR_ID.svg" alt="Uptime" /&gt;
-
-<span class="code-comment"># curl (returns SVG)</span>
-curl <span class="code-url">{{ app_url }}/badge/YOUR_MONITOR_ID.svg</span></div>
-                <div class="code-panel" data-lang="python"><span class="code-comment"># Download badge SVG</span>
-r = requests.get(<span class="code-string">"{{ app_url }}/badge/YOUR_MONITOR_ID.svg"</span>)
+&lt;img src="{{ app_url }}/badge/YOUR_MONITOR_ID.svg" alt="Uptime" /&gt;</div>
+                    <div class="code-panel" data-lang="python">r = requests.get(<span class="code-string">"{{ app_url }}/badge/YOUR_MONITOR_ID.svg"</span>)
 <span class="code-key">with</span> open(<span class="code-string">"badge.svg"</span>, <span class="code-string">"w"</span>) <span class="code-key">as</span> f:
     f.write(r.text)</div>
-                <div class="code-panel" data-lang="js"><span class="code-comment">// Fetch badge SVG</span>
-<span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">"{{ app_url }}/badge/YOUR_MONITOR_ID.svg"</span>);
-<span class="code-key">const</span> svg = <span class="code-key">await</span> res.text();
-console.log(svg);</div>
+                    <div class="code-panel" data-lang="js"><span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">"{{ app_url }}/badge/YOUR_MONITOR_ID.svg"</span>);
+<span class="code-key">const</span> svg = <span class="code-key">await</span> res.text();</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status badge -->
+        <div class="endpoint" id="ep-badge-status">
+            <div class="endpoint-header" onclick="toggleEndpoint('ep-badge-status')">
+                <span class="method-badge method-get">GET</span>
+                <span class="endpoint-path">/badge/{monitor_id}/status.svg</span>
+                <span class="endpoint-desc">Current status badge</span>
+                <span class="chevron">&#9654;</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Shows current status: <strong>up</strong> (green), <strong>down</strong> (red), <strong>warn</strong> (amber, SSL only), or <strong>pending</strong> (gray).</p>
+                <div class="code-block"><span class="code-comment"># Markdown</span>
+![Status]({{ app_url }}/badge/YOUR_MONITOR_ID/status.svg)</div>
+            </div>
+        </div>
+
+        <!-- Response time badge -->
+        <div class="endpoint" id="ep-badge-response">
+            <div class="endpoint-header" onclick="toggleEndpoint('ep-badge-response')">
+                <span class="method-badge method-get">GET</span>
+                <span class="endpoint-path">/badge/{monitor_id}/response.svg</span>
+                <span class="endpoint-desc">Response time badge</span>
+                <span class="chevron">&#9654;</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Shows most recent response time. Best suited for HTTP and JSON/API monitors. Color-coded: green (&lt;500ms), yellow-green (&lt;1.5s), yellow (&lt;3s), red (≥3s).</p>
+                <div class="code-block"><span class="code-comment"># Markdown</span>
+![Response Time]({{ app_url }}/badge/YOUR_MONITOR_ID/response.svg)</div>
             </div>
         </div>
     </div>
-
-    <div class="endpoint" id="ep-badge-status">
-        <div class="endpoint-header" onclick="toggleEndpoint('ep-badge-status')">
-            <span class="method-badge method-get">GET</span>
-            <span class="endpoint-path">/badge/{monitor_id}/status.svg</span>
-            <span class="endpoint-desc">Up/down status badge</span>
-            <span class="chevron">&#9654;</span>
-        </div>
-        <div class="endpoint-body">
-            <p>Shows current monitor status: <strong>up</strong> (green), <strong>down</strong> (red), or <strong>pending</strong> (gray).</p>
-            <details class="field-ref">
-                <summary>&#9432; Badge behavior</summary>
-                <table class="field-ref-table">
-                    <thead><tr><th>Status</th><th>Color</th></tr></thead>
-                    <tbody>
-                        <tr><td>up</td><td class="field-type">green</td></tr>
-                        <tr><td>down</td><td class="field-type">red</td></tr>
-                        <tr><td>pending</td><td class="field-type">gray</td></tr>
-                    </tbody>
-                </table>
-            </details>
-            <div class="code-block"><span class="code-comment"># Markdown</span>
-![Status]({{ app_url }}/badge/YOUR_MONITOR_ID/status.svg)
-
-<span class="code-comment"># HTML</span>
-&lt;img src="{{ app_url }}/badge/YOUR_MONITOR_ID/status.svg" alt="Status" /&gt;</div>
-        </div>
-    </div>
-
-    <div class="endpoint" id="ep-badge-response">
-        <div class="endpoint-header" onclick="toggleEndpoint('ep-badge-response')">
-            <span class="method-badge method-get">GET</span>
-            <span class="endpoint-path">/badge/{monitor_id}/response.svg</span>
-            <span class="endpoint-desc">Response time badge</span>
-            <span class="chevron">&#9654;</span>
-        </div>
-        <div class="endpoint-body">
-            <p>Shows the most recent response time in milliseconds. Color-coded: green (&lt;500ms), yellow-green (&lt;1.5s), yellow (&lt;3s), red (&ge;3s).</p>
-            <details class="field-ref">
-                <summary>&#9432; Badge behavior</summary>
-                <table class="field-ref-table">
-                    <thead><tr><th>Threshold</th><th>Color</th></tr></thead>
-                    <tbody>
-                        <tr><td>&lt; 500ms</td><td class="field-type">green</td></tr>
-                        <tr><td>&lt; 1.5s</td><td class="field-type">yellow-green</td></tr>
-                        <tr><td>&lt; 3s</td><td class="field-type">yellow</td></tr>
-                        <tr><td>&ge; 3s</td><td class="field-type">red</td></tr>
-                    </tbody>
-                </table>
-            </details>
-            <div class="code-block"><span class="code-comment"># Markdown</span>
-![Response Time]({{ app_url }}/badge/YOUR_MONITOR_ID/response.svg)
-
-<span class="code-comment"># HTML</span>
-&lt;img src="{{ app_url }}/badge/YOUR_MONITOR_ID/response.svg" alt="Response Time" /&gt;</div>
-        </div>
-    </div>
 </div>
 
-<!-- Rate Limits -->
-<div class="api-section">
-    <h2>Rate Limits</h2>
-    <p>The API currently does not enforce strict rate limits. Please be reasonable — if you're polling, once per minute is plenty. We reserve the right to throttle abusive usage.</p>
-</div>
 
-<!-- Client Setup -->
-<div class="api-section">
-    <h2>Client Setup</h2>
-    <p>All endpoint examples above assume these variables are defined:</p>
-    <div class="code-tabbed" data-tabs>
-        <div class="code-tab-bar">
-            <button onclick="switchTab(this,'curl')">curl</button>
-            <button class="active" onclick="switchTab(this,'python')">Python</button>
-            <button onclick="switchTab(this,'js')">JavaScript</button>
-        </div>
-        <div class="code-panel" data-lang="curl"><span class="code-comment"># No setup needed — just pass the header with each request</span>
-curl -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> <span class="code-url">{{ app_url }}/api/v1/monitors</span></div>
-        <div class="code-panel active" data-lang="python"><span class="code-comment"># pip install requests</span>
-<span class="code-key">import</span> requests
-
-API_KEY = <span class="code-string">"sr_your_key_here"</span>
-BASE = <span class="code-string">"{{ app_url }}/api/v1"</span>
-headers = {<span class="code-string">"X-API-Key"</span>: API_KEY}</div>
-        <div class="code-panel" data-lang="js"><span class="code-comment">// Node.js or browser</span>
-<span class="code-key">const</span> API_KEY = <span class="code-string">"sr_your_key_here"</span>;
-<span class="code-key">const</span> BASE = <span class="code-string">"{{ app_url }}/api/v1"</span>;
-<span class="code-key">const</span> headers = { <span class="code-string">"X-API-Key"</span>: API_KEY };</div>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  PLAN LIMITS                                                   -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="api-type-section" id="plan-limits">
+    <div class="api-section">
+        <h2>Plan Limits</h2>
+        <p>Limits are enforced server-side on every API call. Exceeding a limit returns <code>403 Forbidden</code>.</p>
+        <table class="param-table">
+            <thead><tr><th>Limit</th><th>Free</th><th>Pro ($9/mo)</th></tr></thead>
+            <tbody>
+                <tr><td>Monitors</td><td>5</td><td>250</td></tr>
+                <tr><td>Check interval</td><td>300s (fixed)</td><td>60–300s (custom)</td></tr>
+                <tr><td>Slack / SMS / Webhooks</td><td>—</td><td>✓</td></tr>
+                <tr><td>Status pages</td><td>1</td><td>10</td></tr>
+                <tr><td>Maintenance windows</td><td>—</td><td>✓</td></tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
 
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  RATE LIMITS                                                   -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="api-type-section" id="rate-limits">
+    <div class="api-section">
+        <h2>Rate Limits</h2>
+        <p>No strict rate limits are enforced. Be reasonable — once per minute is sufficient for polling. Abusive usage may be throttled.</p>
+    </div>
 </div>
+
+
+</div><!-- /api-main -->
+</div><!-- /api-layout -->
+</div><!-- /api-docs -->
 {% endblock %}
 
 {% block extra_js %}
@@ -829,7 +1293,6 @@ function toggleEndpoint(id) {
 }
 
 function switchTab(btn, lang) {
-    // Switch all tabbed blocks on the page to the same language
     document.querySelectorAll('[data-tabs]').forEach(block => {
         block.querySelectorAll('.code-tab-bar button').forEach(b => {
             b.classList.toggle('active', b.textContent.toLowerCase().includes(
@@ -840,11 +1303,9 @@ function switchTab(btn, lang) {
             p.classList.toggle('active', p.dataset.lang === lang);
         });
     });
-    // Remember preference
     try { localStorage.setItem('sr_api_lang', lang); } catch(e) {}
 }
 
-// Copy to clipboard
 function copyCode(btn) {
     const parent = btn.closest('.code-tabbed, .code-block, .response-shape');
     let text = '';
@@ -861,7 +1322,36 @@ function copyCode(btn) {
     });
 }
 
-// Auto-inject copy buttons into all code blocks
+// Scroll-to-section nav
+function scrollToSection(e, id) {
+    e.preventDefault();
+    const el = document.getElementById(id);
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        history.replaceState(null, '', '#' + id);
+    }
+    document.querySelectorAll('.api-nav-item').forEach(n => n.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+}
+
+// Intersection observer for active nav tracking
+const sections = document.querySelectorAll('.api-type-section');
+const navItems = document.querySelectorAll('.api-nav-item');
+
+const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const id = entry.target.id;
+            navItems.forEach(n => {
+                n.classList.toggle('active', n.getAttribute('href') === '#' + id);
+            });
+        }
+    });
+}, { rootMargin: '-80px 0px -60% 0px', threshold: 0 });
+
+sections.forEach(s => observer.observe(s));
+
+// Auto-inject copy buttons
 document.querySelectorAll('.code-tabbed, .code-block, .response-shape').forEach(el => {
     const btn = document.createElement('button');
     btn.className = 'code-copy-btn';
@@ -870,7 +1360,7 @@ document.querySelectorAll('.code-tabbed, .code-block, .response-shape').forEach(
     el.appendChild(btn);
 });
 
-// Restore last-used language on load
+// Restore language preference
 try {
     const saved = localStorage.getItem('sr_api_lang');
     if (saved) {
@@ -878,5 +1368,12 @@ try {
         if (first) switchTab(first, saved);
     }
 } catch(e) {}
+
+// Handle hash on load
+if (location.hash) {
+    const id = location.hash.slice(1);
+    const el = document.getElementById(id);
+    if (el) setTimeout(() => el.scrollIntoView({ block: 'start' }), 100);
+}
 </script>
 {% endblock %}
