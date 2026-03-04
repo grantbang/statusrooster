@@ -70,6 +70,7 @@
 
     <div class="api-nav-divider"></div>
     <p class="api-nav-label">Extras</p>
+    <a class="api-nav-item" href="#webhooks" onclick="scrollToSection(event,'webhooks')">Webhook Payloads</a>
     <a class="api-nav-item" href="#badges" onclick="scrollToSection(event,'badges')">Uptime Badges</a>
     <a class="api-nav-item" href="#plan-limits" onclick="scrollToSection(event,'plan-limits')">Plan Limits</a>
     <a class="api-nav-item" href="#rate-limits" onclick="scrollToSection(event,'rate-limits')">Rate Limits</a>
@@ -114,19 +115,42 @@ r = requests.get(<span class="code-string">"{{ app_url }}/api/v1/monitors"</span
         <div class="response-shape">{
   "data": { ... },       <span class="code-comment">// Payload (object, array, or null)</span>
   "error": null,         <span class="code-comment">// Error string, or null on success</span>
-  "meta": { ... }        <span class="code-comment">// Metadata (count, pagination, etc.)</span>
+  "meta": { ... }        <span class="code-comment">// Optional — included on list endpoints (count, limit, etc.)</span>
 }</div>
+
+        <p style="margin-top:0.75rem;color:var(--muted);font-size:0.88rem;">All timestamps are UTC, formatted as ISO 8601 (<code>2026-03-03T12:30:00+00:00</code>).</p>
 
         <p><strong>Error codes:</strong></p>
         <table class="param-table">
             <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
             <tbody>
                 <tr><td><code>401</code></td><td>Missing or invalid API key</td></tr>
-                <tr><td><code>403</code></td><td>Plan limit exceeded</td></tr>
+                <tr><td><code>403</code></td><td>Plan limit exceeded, or Pro feature used on Free plan</td></tr>
                 <tr><td><code>404</code></td><td>Resource not found</td></tr>
                 <tr><td><code>422</code></td><td>Invalid or missing request body</td></tr>
             </tbody>
         </table>
+
+        <p><strong>Error response example:</strong></p>
+        <div class="response-shape"><span class="code-comment">// 403 — Pro feature on Free plan</span>
+{
+  "detail": {
+    "data": null,
+    "error": "Slack alerts require a Pro plan."
+  }
+}
+
+<span class="code-comment">// 422 — Validation error (missing required field)</span>
+{
+  "detail": [
+    {
+      "loc": ["body", "name"],
+      "msg": "Field required",
+      "type": "missing"
+    }
+  ]
+}</div>
+        <p style="color:var(--muted);font-size:0.88rem;">Pro-only fields (<code>alert_slack_webhook</code>, <code>webhook_url</code>, <code>check_interval</code>, <code>maintenance_windows</code>) return <code>403</code> if used on a Free plan — they are never silently ignored.</p>
     </div>
 </div>
 
@@ -717,6 +741,8 @@ console.log(<span class="code-string">`Ping URL: ${data.ping_url}`</span>);</div
             </div>
             <div class="endpoint-body">
                 <p>Records a successful ping and resets the heartbeat timer. If no ping arrives within <code>heartbeat_interval + heartbeat_grace_period</code>, the monitor transitions to <code>down</code>. Accepts GET, POST, or HEAD — use whichever fits your environment. <strong>No authentication required.</strong></p>
+
+                <p class="api-note">⚠️ The ping URL is <code>/api/ping/{id}</code> — note there is no <code>/v1/</code> in the path. This is a lightweight public endpoint, separate from the authenticated API.</p>
 
                 <div class="code-tabbed" data-tabs>
                     <div class="code-tab-bar">
@@ -1511,6 +1537,90 @@ console.log(<span class="code-string">`Down since ${data.started_at}, status: ${
 <h2 class="api-group-header">Extras</h2>
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  WEBHOOK PAYLOADS                                              -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="api-type-section" id="webhooks">
+    <div class="api-section">
+        <h2>Webhook Payloads</h2>
+        <p>When a monitor's status changes, StatusRooster POSTs a JSON payload to your configured <code>webhook_url</code> (Pro only). Your endpoint should return a <code>2xx</code> status within 10 seconds.</p>
+
+        <p><strong>Headers sent with every webhook:</strong></p>
+        <div class="response-shape">Content-Type: application/json
+User-Agent: StatusRooster/1.0</div>
+
+        <p><strong>Payload shape:</strong></p>
+        <div class="response-shape">{
+  "event": "monitor.down",
+  "monitor_name": "My Website",
+  "monitor_url": "https://example.com",
+  "status": "down",
+  "status_code": 503,
+  "response_ms": 12045.2,
+  "timestamp": "2026-03-03T08:15:00+00:00"
+}</div>
+
+        <details class="field-ref">
+            <summary>&#9432; Webhook payload field reference</summary>
+            <table class="field-ref-table">
+                <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>event</code></td><td class="field-type">string</td><td><code>"monitor.down"</code>, <code>"monitor.up"</code>, or <code>"test"</code></td></tr>
+                    <tr><td><code>monitor_name</code></td><td class="field-type">string</td><td>Monitor display name</td></tr>
+                    <tr><td><code>monitor_url</code></td><td class="field-type">string</td><td>Monitored URL</td></tr>
+                    <tr><td><code>status</code></td><td class="field-type">string</td><td><code>"up"</code>, <code>"down"</code>, or <code>"test"</code></td></tr>
+                    <tr><td><code>status_code</code></td><td class="field-type">int|null</td><td>HTTP status code (null for timeouts, heartbeat misses, SSL issues, or test events)</td></tr>
+                    <tr><td><code>response_ms</code></td><td class="field-type">float|null</td><td>Response time in ms (null for timeouts or non-HTTP monitors)</td></tr>
+                    <tr><td><code>timestamp</code></td><td class="field-type">string</td><td>ISO 8601 UTC timestamp</td></tr>
+                </tbody>
+            </table>
+        </details>
+
+        <p style="margin-top:1rem;"><strong>Example receiver:</strong></p>
+        <div class="code-tabbed" data-tabs>
+            <div class="code-tab-bar">
+                <button onclick="switchTab(this,'curl')">curl</button>
+                <button class="active" onclick="switchTab(this,'python')">Python</button>
+                <button onclick="switchTab(this,'js')">JavaScript</button>
+            </div>
+            <div class="code-panel" data-lang="curl"><span class="code-comment"># Test your webhook endpoint manually</span>
+curl -X POST <span class="code-url">https://your-server.com/webhooks/statusrooster</span> \
+  -H <span class="code-string">"Content-Type: application/json"</span> \
+  -d <span class="code-string">'{"event":"monitor.down","monitor_name":"My Website","monitor_url":"https://example.com","status":"down","status_code":503,"response_ms":12045.2,"timestamp":"2026-03-03T08:15:00+00:00"}'</span></div>
+            <div class="code-panel active" data-lang="python"><span class="code-comment"># Flask example</span>
+<span class="code-key">from</span> flask <span class="code-key">import</span> Flask, request
+
+app = Flask(__name__)
+
+@app.post(<span class="code-string">"/webhooks/statusrooster"</span>)
+<span class="code-key">def</span> handle_webhook():
+    data = request.json
+    <span class="code-key">if</span> data[<span class="code-string">"event"</span>] == <span class="code-string">"monitor.down"</span>:
+        print(f<span class="code-string">"🔴 {data['monitor_name']} is DOWN ({data['status_code']})"</span>)
+    <span class="code-key">elif</span> data[<span class="code-string">"event"</span>] == <span class="code-string">"monitor.up"</span>:
+        print(f<span class="code-string">"🟢 {data['monitor_name']} is back UP"</span>)
+    <span class="code-key">return</span> <span class="code-string">""</span>, 200</div>
+            <div class="code-panel" data-lang="js"><span class="code-comment">// Express example</span>
+<span class="code-key">const</span> express = require(<span class="code-string">"express"</span>);
+<span class="code-key">const</span> app = express();
+app.use(express.json());
+
+app.post(<span class="code-string">"/webhooks/statusrooster"</span>, (req, res) => {
+  <span class="code-key">const</span> { event, monitor_name, status_code } = req.body;
+  <span class="code-key">if</span> (event === <span class="code-string">"monitor.down"</span>) {
+    console.log(<span class="code-string">`🔴 ${monitor_name} is DOWN (${status_code})`</span>);
+  } <span class="code-key">else if</span> (event === <span class="code-string">"monitor.up"</span>) {
+    console.log(<span class="code-string">`🟢 ${monitor_name} is back UP`</span>);
+  }
+  res.sendStatus(200);
+});</div>
+        </div>
+
+        <p class="api-note">💡 Use the <strong>Test Alert</strong> button on your monitor's settings page to send a test webhook with <code>"event": "test"</code> and verify your endpoint is working.</p>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
 <!--  UPTIME BADGES                                                 -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="api-type-section" id="badges">
@@ -1614,7 +1724,8 @@ console.log(<span class="code-string">`Down since ${data.started_at}, status: ${
 <div class="api-type-section" id="rate-limits">
     <div class="api-section">
         <h2>Rate Limits</h2>
-        <p>No strict rate limits are enforced. Be reasonable — once per minute is sufficient for polling. Abusive usage may be throttled.</p>
+        <p>No strict rate limits are enforced today. Please keep polling under <strong>60 requests per minute</strong> — once per minute is sufficient for dashboard-style polling. Abusive usage may be throttled or blocked without notice.</p>
+        <p style="color:var(--muted);font-size:0.88rem;">The heartbeat ping endpoint (<code>/api/ping/{id}</code>) is excluded from this — ping as frequently as your cron job runs.</p>
     </div>
 </div>
 
