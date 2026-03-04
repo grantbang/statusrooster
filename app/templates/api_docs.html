@@ -11,7 +11,7 @@
 <!-- ─── Header ──────────────────────────────────────────────────── -->
 <div class="api-docs-header">
     <h1>API Reference</h1>
-    <p class="subtitle">Programmatic access to your StatusRooster monitors, checks, and heartbeat pings.</p>
+    <p class="subtitle">Programmatic access to your StatusRooster monitors, checks, incidents, and heartbeat pings.</p>
 
     <div class="api-cta-bar">
         {% if user %}
@@ -62,6 +62,11 @@
     <a class="api-nav-item" href="#get-monitor" onclick="scrollToSection(event,'get-monitor')">Retrieve Monitor</a>
     <a class="api-nav-item" href="#check-history" onclick="scrollToSection(event,'check-history')">Check History</a>
     <a class="api-nav-item" href="#delete-monitor" onclick="scrollToSection(event,'delete-monitor')">Delete Monitor</a>
+
+    <div class="api-nav-divider"></div>
+    <p class="api-nav-label">Incidents</p>
+    <a class="api-nav-item" href="#list-incidents" onclick="scrollToSection(event,'list-incidents')">List Incidents</a>
+    <a class="api-nav-item" href="#get-incident" onclick="scrollToSection(event,'get-incident')">Get Incident</a>
 
     <div class="api-nav-divider"></div>
     <p class="api-nav-label">Extras</p>
@@ -313,6 +318,7 @@ console.log(<span class="code-string">`Created ${data.id}`</span>);</div>
                         <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>Status change webhook URL (Pro)</td></tr>
                         <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Toggle public status page visibility</td></tr>
                         <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause or resume monitoring</td></tr>
+                        <tr><td><span class="param-name">slug</span></td><td>string</td><td>Custom status page URL slug (<code>/s/{slug}</code>). Auto-sanitized to lowercase alphanumeric + hyphens.</td></tr>
                         <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows (Pro)</td></tr>
                     </tbody>
                 </table>
@@ -532,6 +538,7 @@ print(f<span class="code-string">"Created {monitor['id']}"</span>)</div>
                         <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>Status change webhook URL (Pro)</td></tr>
                         <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Toggle public status page visibility</td></tr>
                         <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause or resume monitoring</td></tr>
+                        <tr><td><span class="param-name">slug</span></td><td>string</td><td>Custom status page URL slug (<code>/s/{slug}</code>)</td></tr>
                         <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows (Pro)</td></tr>
                     </tbody>
                 </table>
@@ -767,6 +774,7 @@ requests.get(<span class="code-string">"{{ app_url }}/api/ping/hb_abc789"</span>
                         <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>Status change webhook URL (Pro)</td></tr>
                         <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Toggle public status page visibility</td></tr>
                         <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause or resume monitoring</td></tr>
+                        <tr><td><span class="param-name">slug</span></td><td>string</td><td>Custom status page URL slug (<code>/s/{slug}</code>)</td></tr>
                         <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows (Pro)</td></tr>
                     </tbody>
                 </table>
@@ -947,6 +955,7 @@ print(f<span class="code-string">"SSL monitor: {monitor['id']}"</span>)</div>
                         <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>Status change webhook URL (Pro)</td></tr>
                         <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Toggle public status page visibility</td></tr>
                         <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause or resume monitoring</td></tr>
+                        <tr><td><span class="param-name">slug</span></td><td>string</td><td>Custom status page URL slug (<code>/s/{slug}</code>)</td></tr>
                         <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows (Pro)</td></tr>
                     </tbody>
                 </table>
@@ -1086,7 +1095,7 @@ data.forEach(m => console.log(<span class="code-string">`${m.name} (${m.monitor_
                             <tr><td><code>last_checked</code></td><td class="field-type">datetime|null</td><td>Last check timestamp (null if never checked)</td></tr>
                             <tr><td><code>alert_email</code></td><td class="field-type">string</td><td>Email for alerts</td></tr>
                             <tr><td><code>alert_slack_webhook</code></td><td class="field-type">string</td><td>Slack webhook URL (Pro)</td></tr>
-                            <tr><td><code>alert_sms</code></td><td class="field-type">string</td><td>SMS number (Pro)</td></tr>
+                            <tr><td><code>alert_sms</code></td><td class="field-type">string</td><td>SMS number (Pro, dashboard only — not settable via API)</td></tr>
                             <tr><td><code>webhook_url</code></td><td class="field-type">string</td><td>Status change webhook URL (Pro)</td></tr>
                             <tr><td><code>maintenance_windows</code></td><td class="field-type">array</td><td>Array of <code>{day, start_utc, end_utc}</code> (Pro)</td></tr>
                             <tr><td><code>public</code></td><td class="field-type">bool</td><td>Has a public status page</td></tr>
@@ -1304,6 +1313,194 @@ console.log(<span class="code-key">await</span> res.json());</div>
   "data": { "deleted": true, "monitor_id": "mon_a1b2c3" },
   "error": null
 }</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ─── INCIDENTS ────────────────────────────────────────────────── -->
+<h2 class="api-group-header">Incidents</h2>
+
+<p class="api-section-intro" style="color:var(--muted);font-size:0.92rem;margin:-0.5rem 0 1.5rem 0;">
+    Incidents are <strong>automatically created</strong> when a monitor goes down and <strong>automatically resolved</strong> when it recovers. They cannot be manually created, modified, or deleted via the API. These endpoints provide read-only access to your incident history.
+</p>
+
+<!-- LIST INCIDENTS -->
+<div class="api-type-section" id="list-incidents">
+    <div class="api-section">
+        <h2>List Incidents</h2>
+
+        <div class="endpoint" id="ep-list-incidents">
+            <div class="endpoint-header" onclick="toggleEndpoint('ep-list-incidents')">
+                <span class="method-badge method-get">GET</span>
+                <span class="endpoint-path">/api/v1/incidents</span>
+                <span class="endpoint-desc">List incidents across all your monitors</span>
+                <span class="chevron">&#9654;</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Returns incidents across all monitors belonging to the authenticated user, newest first. Filter by status, monitor, monitor type, and time window.</p>
+
+                <table class="param-table">
+                    <thead><tr><th>Query Param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>status</code></td><td class="field-type">string</td><td>—</td><td>Filter by status: <code>"open"</code> or <code>"resolved"</code>. Omit for all.</td></tr>
+                        <tr><td><code>monitor_id</code></td><td class="field-type">string</td><td>—</td><td>Filter to a specific monitor's incidents.</td></tr>
+                        <tr><td><code>monitor_type</code></td><td class="field-type">string</td><td>—</td><td>Filter by monitor type: <code>"http"</code>, <code>"json_api"</code>, <code>"heartbeat"</code>, or <code>"ssl"</code>.</td></tr>
+                        <tr><td><code>hours</code></td><td class="field-type">int</td><td>720</td><td>Time window in hours (1–8760). Default returns last 30 days.</td></tr>
+                        <tr><td><code>limit</code></td><td class="field-type">int</td><td>50</td><td>Max results (1–500).</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="code-tabbed" data-tabs>
+                    <div class="code-tab-bar">
+                        <button class="active" onclick="switchTab(this,'curl')">curl</button>
+                        <button onclick="switchTab(this,'python')">Python</button>
+                        <button onclick="switchTab(this,'js')">JavaScript</button>
+                    </div>
+                    <div class="code-panel active" data-lang="curl"><span class="code-comment"># All incidents (last 30 days)</span>
+curl -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
+  <span class="code-url">{{ app_url }}/api/v1/incidents</span>
+
+<span class="code-comment"># Only open incidents</span>
+curl -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
+  <span class="code-url">{{ app_url }}/api/v1/incidents?status=open</span>
+
+<span class="code-comment"># All heartbeat/cron incidents in the last 7 days</span>
+curl -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
+  <span class="code-url">{{ app_url }}/api/v1/incidents?monitor_type=heartbeat&amp;hours=168</span>
+
+<span class="code-comment"># Incidents for a specific monitor</span>
+curl -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
+  <span class="code-url">{{ app_url }}/api/v1/incidents?monitor_id=mon_a1b2c3</span></div>
+                    <div class="code-panel" data-lang="python"><span class="code-comment"># All incidents</span>
+r = requests.get(f<span class="code-string">"{BASE}/incidents"</span>, headers=headers)
+incidents = r.json()[<span class="code-string">"data"</span>]
+
+<span class="code-comment"># Only currently-open incidents</span>
+r = requests.get(f<span class="code-string">"{BASE}/incidents"</span>, headers=headers, params={<span class="code-string">"status"</span>: <span class="code-string">"open"</span>})
+open_incidents = r.json()[<span class="code-string">"data"</span>]
+
+<span class="code-key">for</span> inc <span class="code-key">in</span> incidents:
+    dur = f<span class="code-string">"{inc['duration_seconds']}s"</span> <span class="code-key">if</span> inc[<span class="code-string">"duration_seconds"</span>] <span class="code-key">else</span> <span class="code-string">"ongoing"</span>
+    print(f<span class="code-string">"{inc['monitor_name']}: {inc['status']} ({dur})"</span>)</div>
+                    <div class="code-panel" data-lang="js"><span class="code-comment">// All incidents</span>
+<span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/incidents`</span>, { headers });
+<span class="code-key">const</span> { data } = <span class="code-key">await</span> res.json();
+
+<span class="code-comment">// Filter open incidents client-side</span>
+<span class="code-key">const</span> openIncidents = data.filter(i => i.status === <span class="code-string">"open"</span>);
+
+data.forEach(i => {
+  <span class="code-key">const</span> dur = i.duration_seconds ? <span class="code-string">`${i.duration_seconds}s`</span> : <span class="code-string">"ongoing"</span>;
+  console.log(<span class="code-string">`${i.monitor_name}: ${i.status} (${dur})`</span>);
+});</div>
+                </div>
+
+                <p><strong>Response</strong> (200 OK)<strong>:</strong></p>
+                <div class="response-shape">{
+  "data": [
+    {
+      "id": "inc_x7k9m2",
+      "monitor_id": "mon_a1b2c3",
+      "monitor_name": "My Website",
+      "monitor_url": "https://example.com",
+      "status": "resolved",
+      "status_code": 503,
+      "response_ms": 12045.2,
+      "started_at": "2026-03-03T08:15:00+00:00",
+      "resolved_at": "2026-03-03T08:22:30+00:00",
+      "duration_seconds": 450
+    },
+    {
+      "id": "inc_p3q8r1",
+      "monitor_id": "mon_a1b2c3",
+      "monitor_name": "My Website",
+      "monitor_url": "https://example.com",
+      "status": "open",
+      "status_code": 522,
+      "response_ms": null,
+      "started_at": "2026-03-04T14:05:00+00:00",
+      "resolved_at": null,
+      "duration_seconds": null
+    }
+  ],
+  "error": null,
+  "meta": { "total": 2, "limit": 50, "hours": 720 }
+}</div>
+
+                <details class="field-ref">
+                    <summary>&#9432; Incident field reference</summary>
+                    <table class="field-ref-table">
+                        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>id</code></td><td class="field-type">string</td><td>Unique incident ID</td></tr>
+                            <tr><td><code>monitor_id</code></td><td class="field-type">string</td><td>ID of the monitor that triggered this incident</td></tr>
+                            <tr><td><code>monitor_name</code></td><td class="field-type">string</td><td>Monitor name at the time the incident was created</td></tr>
+                            <tr><td><code>monitor_url</code></td><td class="field-type">string</td><td>Monitor URL at the time the incident was created</td></tr>
+                            <tr><td><code>status</code></td><td class="field-type">string</td><td><code>"open"</code> (monitor is currently down) or <code>"resolved"</code> (monitor recovered)</td></tr>
+                            <tr><td><code>status_code</code></td><td class="field-type">int|null</td><td>HTTP status code that caused the failure (null for timeouts, heartbeat misses, or SSL issues)</td></tr>
+                            <tr><td><code>response_ms</code></td><td class="field-type">float|null</td><td>Response time when the incident started (null for timeouts or non-HTTP monitors)</td></tr>
+                            <tr><td><code>started_at</code></td><td class="field-type">datetime</td><td>When the monitor first went down</td></tr>
+                            <tr><td><code>resolved_at</code></td><td class="field-type">datetime|null</td><td>When the monitor recovered (null if still open)</td></tr>
+                            <tr><td><code>duration_seconds</code></td><td class="field-type">int|null</td><td>Total downtime in seconds (null if still open)</td></tr>
+                        </tbody>
+                    </table>
+                </details>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- GET INCIDENT -->
+<div class="api-type-section" id="get-incident">
+    <div class="api-section">
+        <h2>Get Incident</h2>
+
+        <div class="endpoint" id="ep-get-incident">
+            <div class="endpoint-header" onclick="toggleEndpoint('ep-get-incident')">
+                <span class="method-badge method-get">GET</span>
+                <span class="endpoint-path">/api/v1/incidents/{id}</span>
+                <span class="endpoint-desc">Retrieve a single incident by ID</span>
+                <span class="chevron">&#9654;</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Returns full details for a single incident. The incident must belong to one of your monitors.</p>
+
+                <div class="code-tabbed" data-tabs>
+                    <div class="code-tab-bar">
+                        <button class="active" onclick="switchTab(this,'curl')">curl</button>
+                        <button onclick="switchTab(this,'python')">Python</button>
+                        <button onclick="switchTab(this,'js')">JavaScript</button>
+                    </div>
+                    <div class="code-panel active" data-lang="curl">curl -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
+  <span class="code-url">{{ app_url }}/api/v1/incidents/inc_x7k9m2</span></div>
+                    <div class="code-panel" data-lang="python">r = requests.get(f<span class="code-string">"{BASE}/incidents/inc_x7k9m2"</span>, headers=headers)
+incident = r.json()[<span class="code-string">"data"</span>]
+print(f<span class="code-string">"Down since {incident['started_at']}, status: {incident['status']}"</span>)</div>
+                    <div class="code-panel" data-lang="js"><span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/incidents/inc_x7k9m2`</span>, { headers });
+<span class="code-key">const</span> { data } = <span class="code-key">await</span> res.json();
+console.log(<span class="code-string">`Down since ${data.started_at}, status: ${data.status}`</span>);</div>
+                </div>
+
+                <p><strong>Response</strong> (200 OK)<strong>:</strong></p>
+                <div class="response-shape">{
+  "data": {
+    "id": "inc_x7k9m2",
+    "monitor_id": "mon_a1b2c3",
+    "monitor_name": "My Website",
+    "monitor_url": "https://example.com",
+    "status": "resolved",
+    "status_code": 503,
+    "response_ms": 12045.2,
+    "started_at": "2026-03-03T08:15:00+00:00",
+    "resolved_at": "2026-03-03T08:22:30+00:00",
+    "duration_seconds": 450
+  },
+  "error": null
+}</div>
+
+                <p style="margin-top:1rem;color:var(--muted);font-size:0.88rem;">See <a href="#list-incidents" onclick="scrollToSection(event,'list-incidents')">List Incidents</a> for the complete field reference.</p>
             </div>
         </div>
     </div>

@@ -56,6 +56,19 @@ def resolve_incident(db, incident_id: str) -> dict | None:
     return incident
 
 
+def get_incident(db, incident_id: str) -> dict | None:
+    """
+    Get a single incident by ID.
+    Returns incident dict with id, or None if not found.
+    """
+    doc = db.collection(COLLECTION).document(incident_id).get()
+    if not doc.exists:
+        return None
+    incident = doc.to_dict()
+    incident["id"] = doc.id
+    return incident
+
+
 def get_open_incident(db, monitor_id: str) -> dict | None:
     """
     Get the current open (unresolved) incident for a monitor.
@@ -75,14 +88,17 @@ def get_open_incident(db, monitor_id: str) -> dict | None:
     return None
 
 
-def list_incidents_by_monitor(db, monitor_id: str, limit: int = 20) -> list[dict]:
+def list_incidents_by_monitor(db, monitor_id: str, limit: int = 20, status: str | None = None) -> list[dict]:
     """
     List incidents for a monitor, newest first.
+    Optionally filter by status ("open" or "resolved").
     Used for monitor detail views and status pages.
     """
+    query = db.collection(COLLECTION).where("monitor_id", "==", monitor_id)
+    if status is not None:
+        query = query.where("status", "==", status)
     docs = (
-        db.collection(COLLECTION)
-        .where("monitor_id", "==", monitor_id)
+        query
         .order_by("started_at", direction="DESCENDING")
         .limit(limit)
         .get()
@@ -95,9 +111,10 @@ def list_incidents_by_monitor(db, monitor_id: str, limit: int = 20) -> list[dict
     return incidents
 
 
-def list_incidents_by_user(db, monitor_ids: list[str], hours: int | None = 24, limit: int = 50) -> list[dict]:
+def list_incidents_by_user(db, monitor_ids: list[str], hours: int | None = 24, limit: int = 50, status: str | None = None) -> list[dict]:
     """
     List incidents across multiple monitors (by IDs), optionally filtered to the last N hours.
+    Optionally filter by status ("open" or "resolved").
     Returns newest first.
     """
     if not monitor_ids:
@@ -108,6 +125,9 @@ def list_incidents_by_user(db, monitor_ids: list[str], hours: int | None = 24, l
     for i in range(0, len(monitor_ids), 30):
         batch_ids = monitor_ids[i:i + 30]
         query = db.collection(COLLECTION).where("monitor_id", "in", batch_ids)
+
+        if status is not None:
+            query = query.where("status", "==", status)
 
         if hours is not None:
             cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)

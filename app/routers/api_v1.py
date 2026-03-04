@@ -15,6 +15,7 @@ from app.models.monitor import (
     update_monitor, delete_monitor,
 )
 from app.models.check import get_recent_checks
+from app.models.incident import get_incident, list_incidents_by_user
 from app.models.user import update_user
 from datetime import datetime
 
@@ -96,6 +97,12 @@ def _serialize_check(c: dict) -> dict:
     return s
 
 
+def _serialize_incident(inc: dict) -> dict:
+    """Serialize an incident for API output."""
+    s = _serialize(inc)
+    return s
+
+
 # ─── Shared schemas ─────────────────────────────────────────────────
 
 VALID_DAYS = Literal["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "daily"]
@@ -156,6 +163,74 @@ async def api_get_checks(
         data=[_serialize_check(c) for c in checks],
         meta={"monitor_id": monitor_id, "total": len(checks), "limit": limit},
     )
+
+
+# ─── Incident endpoints ────────────────────────────────────────────
+
+# LIST ALL INCIDENTS
+@router.get("/incidents")
+async def api_list_incidents(
+    status: str | None = None,
+    monitor_id: str | None = None,
+    monitor_type: str | None = None,
+    hours: int = 720,
+    limit: int = 50,
+    user: dict = Depends(get_api_user),
+):
+    """List incidents across all monitors for the authenticated user."""
+    if limit < 1:
+        limit = 1
+    if limit > 500:
+        limit = 500
+    if hours < 1:
+        hours = 1
+    if hours > 8760:
+        hours = 8760  # max 1 year
+
+    if status and status not in ("open", "resolved"):
+        err("Invalid status filter. Use 'open' or 'resolved'.", 422)
+
+    valid_types = ("http", "json_api", "heartbeat", "ssl")
+    if monitor_type and monitor_type not in valid_types:
+        err(f"Invalid monitor_type. Use one of: {', '.join(valid_types)}.", 422)
+
+    db = get_db()
+    monitors = list_monitors_by_user(db, user["id"])
+
+    # Filter by monitor_type if specified
+    if monitor_type:
+        monitors = [m for m in monitors if m.get("monitor_type") == monitor_type]
+
+    monitor_ids = [m["id"] for m in monitors]
+
+    # If filtering by a specific monitor, validate ownership
+    if monitor_id:
+        if monitor_id not in monitor_ids:
+            err("Monitor not found", 404)
+        monitor_ids = [monitor_id]
+
+    incidents = list_incidents_by_user(db, monitor_ids, hours=hours, limit=limit, status=status)
+    return ok(
+        data=[_serialize_incident(inc) for inc in incidents],
+        meta={"total": len(incidents), "limit": limit, "hours": hours},
+    )
+
+
+# GET SINGLE INCIDENT
+@router.get("/incidents/{incident_id}")
+async def api_get_incident(incident_id: str, user: dict = Depends(get_api_user)):
+    """Get a single incident by ID."""
+    db = get_db()
+    incident = get_incident(db, incident_id)
+    if not incident:
+        err("Incident not found", 404)
+
+    # Validate ownership — incident must belong to one of the user's monitors
+    monitor = get_monitor(db, incident["monitor_id"])
+    if not monitor or monitor["user_id"] != user["id"]:
+        err("Incident not found", 404)
+
+    return ok(data=_serialize_incident(incident))
 
 
 # CREATE MONITOR

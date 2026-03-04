@@ -101,6 +101,9 @@ async def status_badge(monitor_id: str):
     elif status == "down":
         color = "#e05d44"
         value = "down"
+    elif status == "warn":
+        color = "#dfb317"
+        value = "warn"
     else:
         color = "#9f9f9f"
         value = "pending"
