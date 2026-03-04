@@ -336,10 +336,13 @@ def _check_keyword_expression(expression: str, body: str) -> bool:
     """
     Evaluate a keyword expression against page body.
     Supports:
-      - Simple:  "Welcome"          → body contains "welcome"
-      - AND:     "Welcome AND Login" → body contains both
-      - OR:      "error OR failure"  → body contains at least one
+      - Simple:       "Welcome"              → body contains "welcome"
+      - Negation:     "!error"               → body does NOT contain "error"
+      - AND:          "Welcome AND Login"     → body contains both
+      - OR:           "error OR failure"      → body contains at least one
+      - Mixed:        "Welcome AND !error"    → contains "welcome" AND does NOT contain "error"
     AND has higher precedence than OR (standard boolean logic).
+    Prefix a term with ! to negate it (NOT contains).
     """
     expression = expression.strip()
     if not expression:
@@ -350,7 +353,21 @@ def _check_keyword_expression(expression: str, body: str) -> bool:
     for group in or_groups:
         # Each OR group may contain ANDs
         and_terms = [t.strip() for t in group.split(" AND ")]
-        all_match = all(term.lower() in body for term in and_terms if term)
+        all_match = True
+        for term in and_terms:
+            if not term:
+                continue
+            if term.startswith("!"):
+                # NOT contains — term passes if keyword is NOT in body
+                needle = term[1:].strip().lower()
+                if needle and needle in body:
+                    all_match = False
+                    break
+            else:
+                # Contains — term passes if keyword IS in body
+                if term.lower() not in body:
+                    all_match = False
+                    break
         if all_match:
             return True
     return False

@@ -194,8 +194,17 @@
 
             <div class="form-group">
                 <label for="keyword">Keyword Check</label>
-                <input type="text" id="keyword" name="keyword" value="{{ monitor.get('keyword', '') }}">
-                <div class="hint">Supports <code>AND</code> / <code>OR</code> — e.g. <code>Welcome AND Login</code>, <code>error OR failure</code></div>
+                <input type="hidden" id="keyword" name="keyword" value="{{ monitor.get('keyword', '') }}">
+                <div class="kw-builder" id="kwBuilder">
+                    <div class="kw-rows" id="kwRows">
+                        <!-- keyword rows injected by JS -->
+                    </div>
+                    <button type="button" class="kw-add-btn" onclick="kwAddRow()">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 7h5M7 4.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        Add keyword
+                    </button>
+                </div>
+                <div class="hint">Body must contain these keywords or the monitor is marked <strong>down</strong>. Case-insensitive.</div>
             </div>
             <div class="form-group">
                 <label for="response_threshold_ms">Response Threshold</label>
@@ -372,5 +381,103 @@
             <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>`;
         c.appendChild(row);
     }
+
+    /* ── Keyword Expression Builder (edit page) ── */
+    let kwRows = [];
+    let kwNextId = 0;
+
+    function kwAddRow(operator, keyword) {
+        kwRows.push({ id: kwNextId++, operator: operator || 'contains', keyword: keyword || '', nextOp: 'AND' });
+        kwRender();
+    }
+
+    function kwRemoveRow(id) {
+        kwRows = kwRows.filter(r => r.id !== id);
+        kwRender();
+    }
+
+    function kwUpdateRow(id, field, value) {
+        const row = kwRows.find(r => r.id === id);
+        if (row) { row[field] = value; kwSync(); }
+    }
+
+    function kwSetJoin(id, op) {
+        const row = kwRows.find(r => r.id === id);
+        if (row) { row.nextOp = op; kwSync(); kwRender(); }
+    }
+
+    function kwSync() {
+        const parts = [];
+        kwRows.forEach((r, i) => {
+            const kw = r.keyword.trim();
+            if (!kw) return;
+            if (i > 0 && parts.length > 0) {
+                const prev = kwRows[i - 1];
+                parts.push(prev.nextOp || 'AND');
+            }
+            parts.push(r.operator === 'not_contains' ? '!' + kw : kw);
+        });
+        document.getElementById('keyword').value = parts.join(' ');
+    }
+
+    function kwRender() {
+        const container = document.getElementById('kwRows');
+        if (!container) return;
+        if (kwRows.length === 0) {
+            container.innerHTML = '<div class="kw-empty">No keywords — click "Add keyword" to check for content in the response body</div>';
+            document.getElementById('keyword').value = '';
+            return;
+        }
+        let html = '';
+        kwRows.forEach((row, i) => {
+            if (i > 0) {
+                const join = kwRows[i - 1].nextOp || 'AND';
+                html += `<div class="kw-operator-row">
+                    <button type="button" class="kw-op-btn${join === 'AND' ? ' active' : ''}" onclick="kwSetJoin(${kwRows[i-1].id},'AND')">AND</button>
+                    <button type="button" class="kw-op-btn${join === 'OR' ? ' active' : ''}" onclick="kwSetJoin(${kwRows[i-1].id},'OR')">OR</button>
+                    <span class="kw-op-hint">${join === 'AND' ? 'Both conditions must pass' : 'At least one must pass'}</span>
+                </div>`;
+            }
+            html += `<div class="kw-row">
+                <select class="kw-select" onchange="kwUpdateRow(${row.id},'operator',this.value)">
+                    <option value="contains"${row.operator === 'contains' ? ' selected' : ''}>Contains</option>
+                    <option value="not_contains"${row.operator === 'not_contains' ? ' selected' : ''}>Not contains</option>
+                </select>
+                <input type="text" class="kw-input" value="${row.keyword.replace(/"/g, '&quot;')}" placeholder="e.g. Welcome" oninput="kwUpdateRow(${row.id},'keyword',this.value)" spellcheck="false">
+                <button type="button" class="kw-remove" onclick="kwRemoveRow(${row.id})" title="Remove keyword"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 4l6 6M10 4l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+            </div>`;
+        });
+        container.innerHTML = html;
+        kwSync();
+    }
+
+    // Parse existing keyword value into builder rows
+    (function initKeywordBuilder() {
+        const existing = document.getElementById('keyword');
+        if (!existing) return;
+        const val = existing.value.trim();
+        if (!val) { kwRender(); return; }
+
+        // Parse "term1 AND !term2 OR term3" back into rows
+        // "!" prefix = not_contains operator
+        const orGroups = val.split(/ OR /);
+        orGroups.forEach((group, gi) => {
+            const andTerms = group.split(/ AND /);
+            andTerms.forEach((term) => {
+                const t = term.trim();
+                const isNeg = t.startsWith('!');
+                kwRows.push({
+                    id: kwNextId++,
+                    operator: isNeg ? 'not_contains' : 'contains',
+                    keyword: isNeg ? t.slice(1) : t,
+                    nextOp: 'AND'
+                });
+            });
+            if (gi < orGroups.length - 1 && kwRows.length > 0) {
+                kwRows[kwRows.length - 1].nextOp = 'OR';
+            }
+        });
+        kwRender();
+    })();
 </script>
 {% endblock %}
