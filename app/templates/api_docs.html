@@ -61,7 +61,6 @@
     <a class="api-nav-item" href="#list-monitors" onclick="scrollToSection(event,'list-monitors')">List All Monitors</a>
     <a class="api-nav-item" href="#get-monitor" onclick="scrollToSection(event,'get-monitor')">Retrieve Monitor</a>
     <a class="api-nav-item" href="#check-history" onclick="scrollToSection(event,'check-history')">Check History</a>
-    <a class="api-nav-item" href="#update-monitor" onclick="scrollToSection(event,'update-monitor')">Update Monitor</a>
     <a class="api-nav-item" href="#delete-monitor" onclick="scrollToSection(event,'delete-monitor')">Delete Monitor</a>
 
     <div class="api-nav-divider"></div>
@@ -300,6 +299,74 @@ console.log(<span class="code-string">`Created ${data.id}`</span>);</div>
             </tbody>
         </table>
     </div>
+
+    <!-- UPDATE HTTP MONITOR -->
+    <div class="api-section">
+        <div class="endpoint" id="ep-update-http">
+            <div class="endpoint-header" onclick="toggleEndpoint('ep-update-http')">
+                <span class="method-badge method-put">PUT</span>
+                <span class="endpoint-path">/api/v1/monitors/{id}</span>
+                <span class="endpoint-desc">Update HTTP monitor</span>
+                <span class="chevron">&#9654;</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Partial update — include only the fields you want to change. Omitted fields are preserved.</p>
+
+                <table class="param-table">
+                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="param-name">name</span></td><td>string</td><td>Display name</td></tr>
+                        <tr><td><span class="param-name">url</span></td><td>string</td><td>Monitored URL</td></tr>
+                        <tr><td><span class="param-name">expected_status_code</span></td><td>integer</td><td>Expected HTTP status code</td></tr>
+                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>Timeout in seconds (1–60)</td></tr>
+                        <tr><td><span class="param-name">keyword</span></td><td>string</td><td>Body keyword expression (supports AND/OR, <code>!</code> for not-contains)</td></tr>
+                        <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>Response time condition (e.g. <code>> 2000</code>, <code>200-3000</code>)</td></tr>
+                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>Seconds between checks, 60–300 (Pro)</td></tr>
+                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>Alert email address</td></tr>
+                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>Slack webhook URL (Pro)</td></tr>
+                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>Status change webhook URL (Pro)</td></tr>
+                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Toggle public status page visibility</td></tr>
+                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause or resume monitoring</td></tr>
+                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows (Pro)</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="code-tabbed" data-tabs>
+                    <div class="code-tab-bar">
+                        <button class="active" onclick="switchTab(this,'curl')">curl</button>
+                        <button onclick="switchTab(this,'python')">Python</button>
+                        <button onclick="switchTab(this,'js')">JavaScript</button>
+                    </div>
+                    <div class="code-panel active" data-lang="curl">curl -X PUT \
+  -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
+  -H <span class="code-string">"Content-Type: application/json"</span> \
+  -d <span class="code-string">'{"keyword":"OK AND !error","timeout":15}'</span> \
+  <span class="code-url">{{ app_url }}/api/v1/monitors/mon_a1b2c3</span></div>
+                    <div class="code-panel" data-lang="python">r = requests.put(
+    f<span class="code-string">"{BASE}/monitors/mon_a1b2c3"</span>,
+    headers=headers,
+    json={
+        <span class="code-string">"keyword"</span>: <span class="code-string">"OK AND !error"</span>,
+        <span class="code-string">"timeout"</span>: 15,
+        <span class="code-string">"expected_status_code"</span>: 200
+    }
+)
+updated = r.json()[<span class="code-string">"data"</span>]</div>
+                    <div class="code-panel" data-lang="js"><span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors/mon_a1b2c3`</span>, {
+  method: <span class="code-string">"PUT"</span>,
+  headers: { ...headers, <span class="code-string">"Content-Type"</span>: <span class="code-string">"application/json"</span> },
+  body: JSON.stringify({
+    keyword: <span class="code-string">"OK AND !error"</span>,
+    timeout: 15,
+    expected_status_code: 200
+  })
+});
+<span class="code-key">const</span> { data } = <span class="code-key">await</span> res.json();</div>
+                </div>
+                <p><strong>Response</strong> (200 OK)<strong>:</strong> Returns the full updated monitor object.</p>
+            </div>
+        </div>
+    </div>
 </div>
 
 
@@ -456,6 +523,85 @@ print(f<span class="code-string">"Created {monitor['id']}"</span>)</div>
                 <tr><td><code>last_response_ms</code></td><td class="field-type">float|null</td><td>Response time from most recent check</td></tr>
             </tbody>
         </table>
+    </div>
+
+    <!-- UPDATE JSON/API MONITOR -->
+    <div class="api-section">
+        <div class="endpoint" id="ep-update-json">
+            <div class="endpoint-header" onclick="toggleEndpoint('ep-update-json')">
+                <span class="method-badge method-put">PUT</span>
+                <span class="endpoint-path">/api/v1/monitors/{id}</span>
+                <span class="endpoint-desc">Update JSON/API monitor</span>
+                <span class="chevron">&#9654;</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Partial update — include only the fields you want to change. Omitted fields are preserved.</p>
+
+                <table class="param-table">
+                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="param-name">name</span></td><td>string</td><td>Display name</td></tr>
+                        <tr><td><span class="param-name">url</span></td><td>string</td><td>API endpoint URL</td></tr>
+                        <tr><td><span class="param-name">expected_status_code</span></td><td>integer</td><td>Expected HTTP status code</td></tr>
+                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>Timeout in seconds (1–60)</td></tr>
+                        <tr><td><span class="param-name">auth_header</span></td><td>string</td><td>Authorization header value (e.g. <code>Bearer tok_xxx</code>)</td></tr>
+                        <tr><td><span class="param-name">json_assertions</span></td><td>array</td><td>Replaces all assertions — array of <code>{path, operator, value}</code></td></tr>
+                        <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>Response time condition</td></tr>
+                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>Seconds between checks, 60–300 (Pro)</td></tr>
+                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>Alert email address</td></tr>
+                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>Slack webhook URL (Pro)</td></tr>
+                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>Status change webhook URL (Pro)</td></tr>
+                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Toggle public status page visibility</td></tr>
+                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause or resume monitoring</td></tr>
+                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows (Pro)</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="code-tabbed" data-tabs>
+                    <div class="code-tab-bar">
+                        <button class="active" onclick="switchTab(this,'curl')">curl</button>
+                        <button onclick="switchTab(this,'python')">Python</button>
+                        <button onclick="switchTab(this,'js')">JavaScript</button>
+                    </div>
+                    <div class="code-panel active" data-lang="curl">curl -X PUT \
+  -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
+  -H <span class="code-string">"Content-Type: application/json"</span> \
+  -d <span class="code-string">'{
+    "auth_header": "Bearer tok_new_xxxx",
+    "json_assertions": [
+      {"path": "status", "operator": "equals", "value": "healthy"},
+      {"path": "data.count", "operator": "greater_than", "value": "0"}
+    ]
+  }'</span> \
+  <span class="code-url">{{ app_url }}/api/v1/monitors/mon_d4e5f6</span></div>
+                    <div class="code-panel" data-lang="python">r = requests.put(
+    f<span class="code-string">"{BASE}/monitors/mon_d4e5f6"</span>,
+    headers=headers,
+    json={
+        <span class="code-string">"auth_header"</span>: <span class="code-string">"Bearer tok_new_xxxx"</span>,
+        <span class="code-string">"json_assertions"</span>: [
+            {<span class="code-string">"path"</span>: <span class="code-string">"status"</span>, <span class="code-string">"operator"</span>: <span class="code-string">"equals"</span>, <span class="code-string">"value"</span>: <span class="code-string">"healthy"</span>},
+            {<span class="code-string">"path"</span>: <span class="code-string">"data.count"</span>, <span class="code-string">"operator"</span>: <span class="code-string">"greater_than"</span>, <span class="code-string">"value"</span>: <span class="code-string">"0"</span>}
+        ]
+    }
+)
+updated = r.json()[<span class="code-string">"data"</span>]</div>
+                    <div class="code-panel" data-lang="js"><span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors/mon_d4e5f6`</span>, {
+  method: <span class="code-string">"PUT"</span>,
+  headers: { ...headers, <span class="code-string">"Content-Type"</span>: <span class="code-string">"application/json"</span> },
+  body: JSON.stringify({
+    auth_header: <span class="code-string">"Bearer tok_new_xxxx"</span>,
+    json_assertions: [
+      { path: <span class="code-string">"status"</span>, operator: <span class="code-string">"equals"</span>, value: <span class="code-string">"healthy"</span> },
+      { path: <span class="code-string">"data.count"</span>, operator: <span class="code-string">"greater_than"</span>, value: <span class="code-string">"0"</span> }
+    ]
+  })
+});
+<span class="code-key">const</span> { data } = <span class="code-key">await</span> res.json();</div>
+                </div>
+                <p><strong>Response</strong> (200 OK)<strong>:</strong> Returns the full updated monitor object.</p>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -628,6 +774,69 @@ requests.get(<span class="code-string">"{{ app_url }}/api/ping/hb_abc789"</span>
             </tbody>
         </table>
     </div>
+
+    <!-- UPDATE HEARTBEAT MONITOR -->
+    <div class="api-section">
+        <div class="endpoint" id="ep-update-heartbeat">
+            <div class="endpoint-header" onclick="toggleEndpoint('ep-update-heartbeat')">
+                <span class="method-badge method-put">PUT</span>
+                <span class="endpoint-path">/api/v1/monitors/{id}</span>
+                <span class="endpoint-desc">Update heartbeat monitor</span>
+                <span class="chevron">&#9654;</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Partial update — include only the fields you want to change. Omitted fields are preserved.</p>
+
+                <table class="param-table">
+                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="param-name">name</span></td><td>string</td><td>Display name</td></tr>
+                        <tr><td><span class="param-name">heartbeat_interval</span></td><td>integer</td><td>Expected ping frequency in seconds (60–86400)</td></tr>
+                        <tr><td><span class="param-name">heartbeat_grace_period</span></td><td>integer</td><td>Grace period before alert in seconds (0–3600)</td></tr>
+                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>Seconds between checks, 60–300 (Pro)</td></tr>
+                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>Alert email address</td></tr>
+                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>Slack webhook URL (Pro)</td></tr>
+                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>Status change webhook URL (Pro)</td></tr>
+                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Toggle public status page visibility</td></tr>
+                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause or resume monitoring</td></tr>
+                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows (Pro)</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="code-tabbed" data-tabs>
+                    <div class="code-tab-bar">
+                        <button class="active" onclick="switchTab(this,'curl')">curl</button>
+                        <button onclick="switchTab(this,'python')">Python</button>
+                        <button onclick="switchTab(this,'js')">JavaScript</button>
+                    </div>
+                    <div class="code-panel active" data-lang="curl">curl -X PUT \
+  -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
+  -H <span class="code-string">"Content-Type: application/json"</span> \
+  -d <span class="code-string">'{"heartbeat_interval":3600,"heartbeat_grace_period":120}'</span> \
+  <span class="code-url">{{ app_url }}/api/v1/monitors/hb_abc789</span></div>
+                    <div class="code-panel" data-lang="python">r = requests.put(
+    f<span class="code-string">"{BASE}/monitors/hb_abc789"</span>,
+    headers=headers,
+    json={
+        <span class="code-string">"heartbeat_interval"</span>: 3600,
+        <span class="code-string">"heartbeat_grace_period"</span>: 120
+    }
+)
+updated = r.json()[<span class="code-string">"data"</span>]</div>
+                    <div class="code-panel" data-lang="js"><span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors/hb_abc789`</span>, {
+  method: <span class="code-string">"PUT"</span>,
+  headers: { ...headers, <span class="code-string">"Content-Type"</span>: <span class="code-string">"application/json"</span> },
+  body: JSON.stringify({
+    heartbeat_interval: 3600,
+    heartbeat_grace_period: 120
+  })
+});
+<span class="code-key">const</span> { data } = <span class="code-key">await</span> res.json();</div>
+                </div>
+                <p><strong>Response</strong> (200 OK)<strong>:</strong> Returns the full updated monitor object.</p>
+            </div>
+        </div>
+    </div>
 </div>
 
 
@@ -753,11 +962,74 @@ print(f<span class="code-string">"SSL monitor: {monitor['id']}"</span>)</div>
             </tbody>
         </table>
     </div>
+
+    <!-- UPDATE SSL MONITOR -->
+    <div class="api-section">
+        <div class="endpoint" id="ep-update-ssl">
+            <div class="endpoint-header" onclick="toggleEndpoint('ep-update-ssl')">
+                <span class="method-badge method-put">PUT</span>
+                <span class="endpoint-path">/api/v1/monitors/{id}</span>
+                <span class="endpoint-desc">Update SSL monitor</span>
+                <span class="chevron">&#9654;</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Partial update — include only the fields you want to change. Omitted fields are preserved.</p>
+
+                <table class="param-table">
+                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="param-name">name</span></td><td>string</td><td>Display name</td></tr>
+                        <tr><td><span class="param-name">ssl_domain</span></td><td>string</td><td>Domain to monitor for certificate expiry</td></tr>
+                        <tr><td><span class="param-name">ssl_expiry_threshold_days</span></td><td>integer</td><td>Days before expiry to trigger warn (1–90)</td></tr>
+                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>Seconds between checks, 60–300 (Pro)</td></tr>
+                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>Alert email address</td></tr>
+                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>Slack webhook URL (Pro)</td></tr>
+                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>Status change webhook URL (Pro)</td></tr>
+                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Toggle public status page visibility</td></tr>
+                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause or resume monitoring</td></tr>
+                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows (Pro)</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="code-tabbed" data-tabs>
+                    <div class="code-tab-bar">
+                        <button class="active" onclick="switchTab(this,'curl')">curl</button>
+                        <button onclick="switchTab(this,'python')">Python</button>
+                        <button onclick="switchTab(this,'js')">JavaScript</button>
+                    </div>
+                    <div class="code-panel active" data-lang="curl">curl -X PUT \
+  -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
+  -H <span class="code-string">"Content-Type: application/json"</span> \
+  -d <span class="code-string">'{"ssl_expiry_threshold_days":7,"name":"example.com SSL (tight)"}'</span> \
+  <span class="code-url">{{ app_url }}/api/v1/monitors/ssl_def012</span></div>
+                    <div class="code-panel" data-lang="python">r = requests.put(
+    f<span class="code-string">"{BASE}/monitors/ssl_def012"</span>,
+    headers=headers,
+    json={
+        <span class="code-string">"ssl_expiry_threshold_days"</span>: 7,
+        <span class="code-string">"name"</span>: <span class="code-string">"example.com SSL (tight)"</span>
+    }
+)
+updated = r.json()[<span class="code-string">"data"</span>]</div>
+                    <div class="code-panel" data-lang="js"><span class="code-key">const</span> res = <span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors/ssl_def012`</span>, {
+  method: <span class="code-string">"PUT"</span>,
+  headers: { ...headers, <span class="code-string">"Content-Type"</span>: <span class="code-string">"application/json"</span> },
+  body: JSON.stringify({
+    ssl_expiry_threshold_days: 7,
+    name: <span class="code-string">"example.com SSL (tight)"</span>
+  })
+});
+<span class="code-key">const</span> { data } = <span class="code-key">await</span> res.json();</div>
+                </div>
+                <p><strong>Response</strong> (200 OK)<strong>:</strong> Returns the full updated monitor object.</p>
+            </div>
+        </div>
+    </div>
 </div>
 
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
-<!--  SHARED ENDPOINTS — LIST / GET / CHECKS / UPDATE / DELETE      -->
+<!--  SHARED ENDPOINTS — LIST / GET / CHECKS / DELETE               -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="api-type-section" id="list-monitors">
     <div class="api-section">
@@ -996,140 +1268,6 @@ data.forEach(c => console.log(<span class="code-string">`${c.timestamp}: ${c.res
                         </tbody>
                     </table>
                 </details>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- UPDATE MONITOR -->
-<div class="api-type-section" id="update-monitor">
-    <div class="api-section">
-        <h2>Update Monitor</h2>
-
-        <div class="endpoint" id="ep-update">
-            <div class="endpoint-header" onclick="toggleEndpoint('ep-update')">
-                <span class="method-badge method-put">PUT</span>
-                <span class="endpoint-path">/api/v1/monitors/{id}</span>
-                <span class="endpoint-desc">Modify an existing monitor</span>
-                <span class="chevron">&#9654;</span>
-            </div>
-            <div class="endpoint-body">
-                <p>Partial update — include only the fields you want to change. Omitted fields are preserved. The <code>monitor_type</code> field <strong>cannot be changed</strong> after creation. Send type-appropriate fields for the monitor you're updating.</p>
-
-                <h4 style="margin:16px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted)">Shared Fields (all types)</h4>
-                <table class="param-table">
-                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
-                    <tbody>
-                        <tr><td><span class="param-name">name</span></td><td>string</td><td>Display name</td></tr>
-                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>Alert email</td></tr>
-                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>Slack webhook URL (Pro)</td></tr>
-                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>Status change webhook (Pro)</td></tr>
-                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>Seconds between checks, 60–300 (Pro)</td></tr>
-                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Toggle public status page</td></tr>
-                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause or resume monitoring</td></tr>
-                        <tr><td><span class="param-name">slug</span></td><td>string</td><td>Custom status page slug</td></tr>
-                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows (Pro)</td></tr>
-                    </tbody>
-                </table>
-
-                <h4 style="margin:16px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted)">HTTP &amp; JSON/API Fields</h4>
-                <table class="param-table">
-                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
-                    <tbody>
-                        <tr><td><span class="param-name">url</span></td><td>string</td><td>Monitored URL</td></tr>
-                        <tr><td><span class="param-name">expected_status_code</span></td><td>integer</td><td>Expected HTTP status</td></tr>
-                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>Timeout in seconds (1–60)</td></tr>
-                        <tr><td><span class="param-name">keyword</span></td><td>string</td><td>Body keyword check</td></tr>
-                        <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>Response time condition</td></tr>
-                    </tbody>
-                </table>
-
-                <h4 style="margin:16px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted)">JSON/API Only</h4>
-                <table class="param-table">
-                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
-                    <tbody>
-                        <tr><td><span class="param-name">auth_header</span></td><td>string</td><td>Authorization header value</td></tr>
-                        <tr><td><span class="param-name">json_assertions</span></td><td>array</td><td>Replaces all assertions</td></tr>
-                    </tbody>
-                </table>
-
-                <h4 style="margin:16px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted)">Heartbeat Only</h4>
-                <table class="param-table">
-                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
-                    <tbody>
-                        <tr><td><span class="param-name">heartbeat_interval</span></td><td>integer</td><td>Expected ping frequency (60–86400s)</td></tr>
-                        <tr><td><span class="param-name">heartbeat_grace_period</span></td><td>integer</td><td>Grace period before alert (0–3600s)</td></tr>
-                    </tbody>
-                </table>
-
-                <h4 style="margin:16px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted)">SSL Only</h4>
-                <table class="param-table">
-                    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
-                    <tbody>
-                        <tr><td><span class="param-name">ssl_domain</span></td><td>string</td><td>Domain to check</td></tr>
-                        <tr><td><span class="param-name">ssl_expiry_threshold_days</span></td><td>integer</td><td>Days before expiry to warn (1–90)</td></tr>
-                    </tbody>
-                </table>
-
-                <div class="code-tabbed" data-tabs>
-                    <div class="code-tab-bar">
-                        <button class="active" onclick="switchTab(this,'curl')">curl</button>
-                        <button onclick="switchTab(this,'python')">Python</button>
-                        <button onclick="switchTab(this,'js')">JavaScript</button>
-                    </div>
-                    <div class="code-panel active" data-lang="curl"><span class="code-comment"># Update an HTTP monitor's keyword and timeout</span>
-curl -X PUT \
-  -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
-  -H <span class="code-string">"Content-Type: application/json"</span> \
-  -d <span class="code-string">'{"keyword":"OK","timeout":15}'</span> \
-  <span class="code-url">{{ app_url }}/api/v1/monitors/mon_a1b2c3</span>
-
-<span class="code-comment"># Update an SSL monitor's threshold</span>
-curl -X PUT \
-  -H <span class="code-string">"X-API-Key: sr_your_key_here"</span> \
-  -H <span class="code-string">"Content-Type: application/json"</span> \
-  -d <span class="code-string">'{"ssl_expiry_threshold_days":7}'</span> \
-  <span class="code-url">{{ app_url }}/api/v1/monitors/ssl_def012</span></div>
-                    <div class="code-panel" data-lang="python"><span class="code-comment"># Update HTTP monitor</span>
-r = requests.put(
-    f<span class="code-string">"{BASE}/monitors/mon_a1b2c3"</span>,
-    headers=headers,
-    json={<span class="code-string">"keyword"</span>: <span class="code-string">"OK"</span>, <span class="code-string">"timeout"</span>: 15}
-)
-
-<span class="code-comment"># Update JSON/API assertions</span>
-r = requests.put(
-    f<span class="code-string">"{BASE}/monitors/mon_d4e5f6"</span>,
-    headers=headers,
-    json={
-        <span class="code-string">"json_assertions"</span>: [
-            {<span class="code-string">"path"</span>: <span class="code-string">"status"</span>, <span class="code-string">"operator"</span>: <span class="code-string">"equals"</span>, <span class="code-string">"value"</span>: <span class="code-string">"healthy"</span>}
-        ]
-    }
-)
-
-<span class="code-comment"># Update heartbeat interval</span>
-r = requests.put(
-    f<span class="code-string">"{BASE}/monitors/hb_abc789"</span>,
-    headers=headers,
-    json={<span class="code-string">"heartbeat_interval"</span>: 3600, <span class="code-string">"heartbeat_grace_period"</span>: 120}
-)</div>
-                    <div class="code-panel" data-lang="js"><span class="code-comment">// Update HTTP monitor keyword</span>
-<span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors/mon_a1b2c3`</span>, {
-  method: <span class="code-string">"PUT"</span>,
-  headers: { ...headers, <span class="code-string">"Content-Type"</span>: <span class="code-string">"application/json"</span> },
-  body: JSON.stringify({ keyword: <span class="code-string">"OK"</span>, timeout: 15 })
-});
-
-<span class="code-comment">// Update heartbeat interval</span>
-<span class="code-key">await</span> fetch(<span class="code-string">`${BASE}/monitors/hb_abc789`</span>, {
-  method: <span class="code-string">"PUT"</span>,
-  headers: { ...headers, <span class="code-string">"Content-Type"</span>: <span class="code-string">"application/json"</span> },
-  body: JSON.stringify({ heartbeat_interval: 3600 })
-});</div>
-                </div>
-
-                <p><strong>Response</strong> (200 OK)<strong>:</strong> Returns the full updated monitor object.</p>
             </div>
         </div>
     </div>
