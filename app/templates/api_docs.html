@@ -73,6 +73,9 @@
 <!-- ─── Main Content ────────────────────────────────────────────── -->
 <div class="api-main">
 
+<!-- ─── GETTING STARTED ─────────────────────────────────────────── -->
+<h2 class="api-group-header">Getting Started</h2>
+
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <!--  AUTHENTICATION                                                -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -152,12 +155,15 @@ headers = {<span class="code-string">"X-API-Key"</span>: API_KEY}</div>
 </div>
 
 
+<!-- ─── MONITOR TYPES ────────────────────────────────────────────── -->
+<h2 class="api-group-header">Monitor Types</h2>
+
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <!--  HTTP / HTTPS MONITORS                                         -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="api-type-section" id="http">
     <div class="api-type-header">
-        <h2>HTTP / HTTPS Monitors</h2>
+        <h2>HTTP / HTTPS</h2>
         <span class="api-type-badge api-type-badge--http">monitor_type: "http"</span>
     </div>
     <p class="api-type-desc">Monitor websites and URLs for availability. Checks HTTP status code, response time, body keyword matching, and auto-detects SSL certificate expiry. This is the default monitor type.</p>
@@ -169,7 +175,7 @@ headers = {<span class="code-string">"X-API-Key"</span>: API_KEY}</div>
 
     <!-- CREATE HTTP -->
     <div class="api-section">
-        <div class="endpoint open" id="ep-create-http">
+        <div class="endpoint" id="ep-create-http">
             <div class="endpoint-header" onclick="toggleEndpoint('ep-create-http')">
                 <span class="method-badge method-post">POST</span>
                 <span class="endpoint-path">/api/v1/monitors</span>
@@ -187,7 +193,7 @@ headers = {<span class="code-string">"X-API-Key"</span>: API_KEY}</div>
                         <tr><td><span class="param-name">monitor_type</span></td><td>string</td><td>optional</td><td><code>"http"</code> — this is the default, can be omitted</td></tr>
                         <tr><td><span class="param-name">expected_status_code</span></td><td>integer</td><td>optional</td><td>Expected HTTP status code (default: <code>200</code>)</td></tr>
                         <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>optional</td><td>Request timeout in seconds, 1–60 (default: <code>10</code>)</td></tr>
-                        <tr><td><span class="param-name">keyword</span></td><td>string</td><td>optional</td><td>Mark down if missing from body. Supports <code>AND</code> / <code>OR</code>: <code>"Welcome AND Login"</code></td></tr>
+                        <tr><td><span class="param-name">keyword</span></td><td>string</td><td>optional</td><td>Mark down if missing from body. Prefix with <code>!</code> for "not contains". Supports <code>AND</code> / <code>OR</code>: <code>"Welcome AND !Error"</code></td></tr>
                         <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>optional</td><td>Response time condition: <code>&gt; 2000</code>, <code>&lt; 200</code>, <code>200-3000</code></td></tr>
                         <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>optional</td><td>Seconds between checks, 60–300 (Pro). Free locked to 300.</td></tr>
                         <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>optional</td><td>Override email for alerts (defaults to account email)</td></tr>
@@ -280,26 +286,6 @@ console.log(<span class="code-string">`Created ${data.id}`</span>);</div>
         </div>
     </div>
 
-    <!-- HTTP-specific response fields -->
-    <div class="api-section">
-        <h2>HTTP Response Fields</h2>
-        <p>Type-specific fields returned on HTTP monitors in list/retrieve responses:</p>
-        <table class="field-ref-table">
-            <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
-            <tbody>
-                <tr><td><code>url</code></td><td class="field-type">string</td><td>Monitored URL</td></tr>
-                <tr><td><code>expected_status_code</code></td><td class="field-type">int</td><td>Expected HTTP status (default 200)</td></tr>
-                <tr><td><code>timeout</code></td><td class="field-type">int</td><td>Request timeout in seconds</td></tr>
-                <tr><td><code>keyword</code></td><td class="field-type">string</td><td>Body keyword check string</td></tr>
-                <tr><td><code>response_threshold_ms</code></td><td class="field-type">string|null</td><td>Response time condition</td></tr>
-                <tr><td><code>last_status_code</code></td><td class="field-type">int|null</td><td>HTTP status from most recent check</td></tr>
-                <tr><td><code>last_response_ms</code></td><td class="field-type">float|null</td><td>Response time in ms from most recent check</td></tr>
-                <tr><td><code>ssl_expiry</code></td><td class="field-type">datetime|null</td><td>Auto-detected SSL certificate expiry date</td></tr>
-                <tr><td><code>ssl_issuer</code></td><td class="field-type">string|null</td><td>Auto-detected SSL certificate issuer</td></tr>
-            </tbody>
-        </table>
-    </div>
-
     <!-- UPDATE HTTP MONITOR -->
     <div class="api-section">
         <div class="endpoint" id="ep-update-http">
@@ -375,7 +361,7 @@ updated = r.json()[<span class="code-string">"data"</span>]</div>
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="api-type-section" id="json-api">
     <div class="api-type-header">
-        <h2>JSON / API Monitors</h2>
+        <h2>JSON / API</h2>
         <span class="api-type-badge api-type-badge--json">monitor_type: "json_api"</span>
     </div>
     <p class="api-type-desc">Monitor REST API endpoints with deep JSON response validation. Supports Authorization headers and field-level assertions using dot-notation paths, comparison operators, and existence checks.</p>
@@ -387,7 +373,7 @@ updated = r.json()[<span class="code-string">"data"</span>]</div>
 
     <!-- CREATE JSON/API -->
     <div class="api-section">
-        <div class="endpoint open" id="ep-create-json">
+        <div class="endpoint" id="ep-create-json">
             <div class="endpoint-header" onclick="toggleEndpoint('ep-create-json')">
                 <span class="method-badge method-post">POST</span>
                 <span class="endpoint-path">/api/v1/monitors</span>
@@ -407,6 +393,7 @@ updated = r.json()[<span class="code-string">"data"</span>]</div>
                         <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>optional</td><td>Request timeout in seconds, 1–60 (default: <code>10</code>)</td></tr>
                         <tr><td><span class="param-name">auth_header</span></td><td>string</td><td>optional</td><td>Authorization header value, e.g. <code>"Bearer tok_xxx"</code></td></tr>
                         <tr><td><span class="param-name">json_assertions</span></td><td>array</td><td>optional</td><td>Array of assertion objects (see schema below)</td></tr>
+                        <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>optional</td><td>Response time condition: <code>&gt; 2000</code>, <code>&lt; 200</code>, <code>200-3000</code></td></tr>
                         <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>optional</td><td>Check frequency in seconds, 60–300 (Pro)</td></tr>
                         <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>optional</td><td>Override alert email</td></tr>
                         <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>optional</td><td>Slack webhook (Pro)</td></tr>
@@ -499,30 +486,22 @@ print(f<span class="code-string">"Created {monitor['id']}"</span>)</div>
     "expected_status_code": 200,
     "timeout": 10,
     "check_interval": 60,
+    "uptime_percent": 100.0,
+    "checks_total": 0,
+    "checks_failed": 0,
+    "last_checked": null,
+    "last_status_code": null,
+    "last_response_ms": null,
     "alert_email": "you@example.com",
     "public": true,
     "paused": false,
-    "created_at": "2026-03-03T12:00:00"
+    "slug": "health-api-d4e5f6",
+    "created_at": "2026-03-04T12:00:00"
   },
   "error": null
 }</div>
             </div>
         </div>
-    </div>
-
-    <!-- JSON/API-specific response fields -->
-    <div class="api-section">
-        <h2>JSON/API Response Fields</h2>
-        <p>Fields specific to JSON/API monitors (in addition to the HTTP fields):</p>
-        <table class="field-ref-table">
-            <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
-            <tbody>
-                <tr><td><code>auth_header</code></td><td class="field-type">string</td><td>Authorization header value sent with each check</td></tr>
-                <tr><td><code>json_assertions</code></td><td class="field-type">array|null</td><td>Array of <code>{path, operator, value}</code> assertion objects</td></tr>
-                <tr><td><code>last_status_code</code></td><td class="field-type">int|null</td><td>HTTP status from most recent check</td></tr>
-                <tr><td><code>last_response_ms</code></td><td class="field-type">float|null</td><td>Response time from most recent check</td></tr>
-            </tbody>
-        </table>
     </div>
 
     <!-- UPDATE JSON/API MONITOR -->
@@ -611,7 +590,7 @@ updated = r.json()[<span class="code-string">"data"</span>]</div>
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="api-type-section" id="heartbeat">
     <div class="api-type-header">
-        <h2>Heartbeat / Cron Monitors</h2>
+        <h2>Heartbeat / Cron</h2>
         <span class="api-type-badge api-type-badge--heartbeat">monitor_type: "heartbeat"</span>
     </div>
     <p class="api-type-desc">Dead man's switch monitoring for cron jobs, scheduled tasks, and background workers. StatusRooster generates a unique ping URL — your service hits it on schedule. If a ping is missed beyond the grace period, the monitor transitions to <code>down</code> and alerts fire.</p>
@@ -623,7 +602,7 @@ updated = r.json()[<span class="code-string">"data"</span>]</div>
 
     <!-- CREATE HEARTBEAT -->
     <div class="api-section">
-        <div class="endpoint open" id="ep-create-heartbeat">
+        <div class="endpoint" id="ep-create-heartbeat">
             <div class="endpoint-header" onclick="toggleEndpoint('ep-create-heartbeat')">
                 <span class="method-badge method-post">POST</span>
                 <span class="endpoint-path">/api/v1/monitors</span>
@@ -640,6 +619,7 @@ updated = r.json()[<span class="code-string">"data"</span>]</div>
                         <tr><td><span class="param-name">monitor_type</span></td><td>string</td><td><span class="param-required">required</span></td><td><code>"heartbeat"</code></td></tr>
                         <tr><td><span class="param-name">heartbeat_interval</span></td><td>integer</td><td>optional</td><td>Expected ping frequency in seconds, 60–86400 (default: <code>300</code> = 5 min)</td></tr>
                         <tr><td><span class="param-name">heartbeat_grace_period</span></td><td>integer</td><td>optional</td><td>Extra seconds before alerting, 0–3600 (default: <code>60</code>)</td></tr>
+                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>optional</td><td>Check frequency in seconds, 60–300 (Pro). Free locked to 300.</td></tr>
                         <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>optional</td><td>Override alert email</td></tr>
                         <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>optional</td><td>Slack webhook (Pro)</td></tr>
                         <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>optional</td><td>Status change webhook (Pro)</td></tr>
@@ -702,10 +682,15 @@ console.log(<span class="code-string">`Ping URL: ${data.ping_url}`</span>);</div
     "url": "{{ app_url }}/api/ping/hb_abc789",
     "heartbeat_interval": 86400,
     "heartbeat_grace_period": 300,
+    "uptime_percent": 100.0,
+    "checks_total": 0,
+    "checks_failed": 0,
+    "last_checked": null,
     "alert_email": "you@example.com",
     "public": true,
     "paused": false,
-    "created_at": "2026-03-03T12:00:00"
+    "slug": "nightly-backup-job-abc789",
+    "created_at": "2026-03-04T12:00:00"
   },
   "error": null
 }</div>
@@ -716,10 +701,7 @@ console.log(<span class="code-string">`Ping URL: ${data.ping_url}`</span>);</div
 
     <!-- SEND HEARTBEAT PING -->
     <div class="api-section">
-        <h2>Send Heartbeat Ping</h2>
-        <p>Your cron job or service hits this endpoint on schedule. If it stops pinging beyond <code>heartbeat_interval + heartbeat_grace_period</code>, the monitor transitions to <code>down</code>. <strong>No authentication required.</strong></p>
-
-        <div class="endpoint open" id="ep-ping">
+        <div class="endpoint" id="ep-ping">
             <div class="endpoint-header" onclick="toggleEndpoint('ep-ping')">
                 <span class="method-badge method-get">GET</span> <span class="method-badge method-post" style="margin-left:4px">POST</span> <span class="method-badge" style="background:#6b7280;color:#fff;margin-left:4px">HEAD</span>
                 <span class="endpoint-path">/api/ping/{monitor_id}</span>
@@ -727,7 +709,7 @@ console.log(<span class="code-string">`Ping URL: ${data.ping_url}`</span>);</div
                 <span class="chevron">&#9654;</span>
             </div>
             <div class="endpoint-body">
-                <p>Records a successful ping and resets the heartbeat timer. Accepts GET, POST, or HEAD — use whichever fits your environment.</p>
+                <p>Records a successful ping and resets the heartbeat timer. If no ping arrives within <code>heartbeat_interval + heartbeat_grace_period</code>, the monitor transitions to <code>down</code>. Accepts GET, POST, or HEAD — use whichever fits your environment. <strong>No authentication required.</strong></p>
 
                 <div class="code-tabbed" data-tabs>
                     <div class="code-tab-bar">
@@ -759,20 +741,6 @@ requests.get(<span class="code-string">"{{ app_url }}/api/ping/hb_abc789"</span>
                 <p class="api-note">💡 <strong>Tip:</strong> Use <code>curl -fsS --retry 3</code> for silent operation with automatic retries on transient network errors.</p>
             </div>
         </div>
-    </div>
-
-    <!-- Heartbeat-specific response fields -->
-    <div class="api-section">
-        <h2>Heartbeat Response Fields</h2>
-        <p>Type-specific fields returned on heartbeat monitors in list/retrieve responses:</p>
-        <table class="field-ref-table">
-            <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
-            <tbody>
-                <tr><td><code>ping_url</code></td><td class="field-type">string</td><td>Unique URL your service should hit on schedule</td></tr>
-                <tr><td><code>heartbeat_interval</code></td><td class="field-type">int</td><td>Expected ping frequency in seconds (60–86400)</td></tr>
-                <tr><td><code>heartbeat_grace_period</code></td><td class="field-type">int</td><td>Extra seconds before marking down (0–3600)</td></tr>
-            </tbody>
-        </table>
     </div>
 
     <!-- UPDATE HEARTBEAT MONITOR -->
@@ -845,7 +813,7 @@ updated = r.json()[<span class="code-string">"data"</span>]</div>
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="api-type-section" id="ssl">
     <div class="api-type-header">
-        <h2>SSL Certificate Monitors</h2>
+        <h2>SSL Certificate</h2>
         <span class="api-type-badge api-type-badge--ssl">monitor_type: "ssl"</span>
     </div>
     <p class="api-type-desc">Dedicated SSL/TLS certificate expiry monitoring. Connects to a domain on port 443, reads the certificate chain, and warns before expiration. The only monitor type with a <code>warn</code> status — triggered when the certificate is within the configured threshold of expiring.</p>
@@ -858,7 +826,7 @@ updated = r.json()[<span class="code-string">"data"</span>]</div>
 
     <!-- CREATE SSL -->
     <div class="api-section">
-        <div class="endpoint open" id="ep-create-ssl">
+        <div class="endpoint" id="ep-create-ssl">
             <div class="endpoint-header" onclick="toggleEndpoint('ep-create-ssl')">
                 <span class="method-badge method-post">POST</span>
                 <span class="endpoint-path">/api/v1/monitors</span>
@@ -935,32 +903,24 @@ print(f<span class="code-string">"SSL monitor: {monitor['id']}"</span>)</div>
     "status": "pending",
     "ssl_domain": "example.com",
     "ssl_expiry_threshold_days": 14,
+    "ssl_expiry": null,
+    "ssl_issuer": null,
     "url": "https://example.com",
+    "uptime_percent": 100.0,
+    "checks_total": 0,
+    "checks_failed": 0,
+    "last_checked": null,
     "alert_email": "you@example.com",
     "public": true,
     "paused": false,
-    "created_at": "2026-03-03T12:00:00"
+    "slug": "example-com-ssl-def012",
+    "created_at": "2026-03-04T12:00:00"
   },
   "error": null
 }</div>
                 <p class="api-note">⚠️ SSL monitors use three statuses: <code>up</code> (cert valid and not near expiry), <code>warn</code> (cert expires within threshold), <code>down</code> (cert expired, invalid, or unreachable).</p>
             </div>
         </div>
-    </div>
-
-    <!-- SSL-specific response fields -->
-    <div class="api-section">
-        <h2>SSL Response Fields</h2>
-        <p>Type-specific fields returned on SSL monitors in list/retrieve responses:</p>
-        <table class="field-ref-table">
-            <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
-            <tbody>
-                <tr><td><code>ssl_domain</code></td><td class="field-type">string</td><td>Domain being monitored for certificate expiry</td></tr>
-                <tr><td><code>ssl_expiry_threshold_days</code></td><td class="field-type">int</td><td>Days before expiry to trigger <code>warn</code> (1–90)</td></tr>
-                <tr><td><code>ssl_expiry</code></td><td class="field-type">datetime|null</td><td>Certificate expiration date (populated after first check)</td></tr>
-                <tr><td><code>ssl_issuer</code></td><td class="field-type">string|null</td><td>Certificate issuer (e.g. "Let's Encrypt")</td></tr>
-            </tbody>
-        </table>
     </div>
 
     <!-- UPDATE SSL MONITOR -->
@@ -1028,6 +988,9 @@ updated = r.json()[<span class="code-string">"data"</span>]</div>
 </div>
 
 
+<!-- ─── SHARED ENDPOINTS ─────────────────────────────────────────── -->
+<h2 class="api-group-header">Shared Endpoints</h2>
+
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <!--  SHARED ENDPOINTS — LIST / GET / CHECKS / DELETE               -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -1035,7 +998,7 @@ updated = r.json()[<span class="code-string">"data"</span>]</div>
     <div class="api-section">
         <h2>List All Monitors</h2>
 
-        <div class="endpoint open" id="ep-list">
+        <div class="endpoint" id="ep-list">
             <div class="endpoint-header" onclick="toggleEndpoint('ep-list')">
                 <span class="method-badge method-get">GET</span>
                 <span class="endpoint-path">/api/v1/monitors</span>
@@ -1174,7 +1137,7 @@ data.forEach(m => console.log(<span class="code-string">`${m.name} (${m.monitor_
                 <span class="chevron">&#9654;</span>
             </div>
             <div class="endpoint-body">
-                <p>Returns a single monitor document. Works with all monitor types. The response includes the same type-specific fields as the list endpoint.</p>
+                <p>Returns a single monitor document with all fields. Works with all monitor types.</p>
 
                 <div class="code-tabbed" data-tabs>
                     <div class="code-tab-bar">
@@ -1191,6 +1154,37 @@ print(f<span class="code-string">"{monitor['monitor_type']}: {monitor['status']}
 <span class="code-key">const</span> { data } = <span class="code-key">await</span> res.json();
 console.log(<span class="code-string">`${data.monitor_type}: ${data.status}`</span>);</div>
                 </div>
+
+                <p><strong>Response</strong> (200 OK)<strong>:</strong></p>
+                <div class="response-shape">{
+  "data": {
+    "id": "mon_a1b2c3",
+    "monitor_type": "http",
+    "name": "My Website",
+    "url": "https://example.com",
+    "status": "up",
+    "expected_status_code": 200,
+    "timeout": 10,
+    "keyword": "Welcome",
+    "response_threshold_ms": null,
+    "check_interval": 60,
+    "uptime_percent": 99.8,
+    "checks_total": 4320,
+    "checks_failed": 9,
+    "last_checked": "2026-03-04T12:30:00+00:00",
+    "last_status_code": 200,
+    "last_response_ms": 245.3,
+    "ssl_expiry": "2026-09-15T00:00:00",
+    "ssl_issuer": "Let's Encrypt",
+    "alert_email": "you@example.com",
+    "public": true,
+    "paused": false,
+    "slug": "my-website-a3f8c1",
+    "created_at": "2026-03-03T12:00:00"
+  },
+  "error": null
+}</div>
+                <p class="api-note">💡 The response shape is identical to objects in the List endpoint. See the <a href="#list-monitors" onclick="scrollToSection(event,'list-monitors')">complete field reference</a> for all type-specific fields.</p>
             </div>
         </div>
     </div>
@@ -1316,6 +1310,9 @@ console.log(<span class="code-key">await</span> res.json());</div>
 </div>
 
 
+<!-- ─── EXTRAS ───────────────────────────────────────────────────── -->
+<h2 class="api-group-header">Extras</h2>
+
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <!--  UPTIME BADGES                                                 -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -1323,6 +1320,12 @@ console.log(<span class="code-key">await</span> res.json());</div>
     <div class="api-section">
         <h2>Uptime Badges</h2>
         <p>Embed live SVG badges in your README, docs, or website. <strong>No authentication required</strong> — badges are public for monitors with <code>public: true</code>. Cached for 5 minutes. Works with all monitor types.</p>
+
+        <div class="badge-preview">
+            <svg xmlns="http://www.w3.org/2000/svg" width="106" height="20" role="img" aria-label="uptime: 99.9%"><title>uptime: 99.9%</title><linearGradient id="s1" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="r1"><rect width="106" height="20" rx="3" fill="#fff"/></clipPath><g clip-path="url(#r1)"><rect width="50" height="20" fill="#555"/><rect x="50" width="56" height="20" fill="#4c1"/><rect width="106" height="20" fill="url(#s1)"/></g><g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-rendering="geometricPrecision" font-size="11"><text x="25" y="15" fill="#010101" fill-opacity=".3">uptime</text><text x="25" y="14" fill="#fff">uptime</text><text x="78" y="15" fill="#010101" fill-opacity=".3">99.9%</text><text x="78" y="14" fill="#fff">99.9%</text></g></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="82" height="20" role="img" aria-label="status: up"><title>status: up</title><linearGradient id="s2" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="r2"><rect width="82" height="20" rx="3" fill="#fff"/></clipPath><g clip-path="url(#r2)"><rect width="50" height="20" fill="#555"/><rect x="50" width="32" height="20" fill="#4c1"/><rect width="82" height="20" fill="url(#s2)"/></g><g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-rendering="geometricPrecision" font-size="11"><text x="25" y="15" fill="#010101" fill-opacity=".3">status</text><text x="25" y="14" fill="#fff">status</text><text x="66" y="15" fill="#010101" fill-opacity=".3">up</text><text x="66" y="14" fill="#fff">up</text></g></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="118" height="20" role="img" aria-label="response: 245ms"><title>response: 245ms</title><linearGradient id="s3" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="r3"><rect width="118" height="20" rx="3" fill="#fff"/></clipPath><g clip-path="url(#r3)"><rect width="64" height="20" fill="#555"/><rect x="64" width="54" height="20" fill="#4c1"/><rect width="118" height="20" fill="url(#s3)"/></g><g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-rendering="geometricPrecision" font-size="11"><text x="32" y="15" fill="#010101" fill-opacity=".3">response</text><text x="32" y="14" fill="#fff">response</text><text x="91" y="15" fill="#010101" fill-opacity=".3">245ms</text><text x="91" y="14" fill="#fff">245ms</text></g></svg>
+        </div>
 
         <!-- Uptime badge -->
         <div class="endpoint" id="ep-badge">
@@ -1460,6 +1463,13 @@ function copyCode(btn) {
     });
 }
 
+// Auto-expand first endpoint in a section
+function expandSection(sectionEl) {
+    if (!sectionEl) return;
+    const first = sectionEl.querySelector('.endpoint:not(.open)');
+    if (first) first.classList.add('open');
+}
+
 // Scroll-to-section nav
 function scrollToSection(e, id) {
     e.preventDefault();
@@ -1467,6 +1477,7 @@ function scrollToSection(e, id) {
     if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         history.replaceState(null, '', '#' + id);
+        expandSection(el.closest('.api-type-section') || el);
     }
     document.querySelectorAll('.api-nav-item').forEach(n => n.classList.remove('active'));
     e.currentTarget.classList.add('active');
@@ -1511,7 +1522,12 @@ try {
 if (location.hash) {
     const id = location.hash.slice(1);
     const el = document.getElementById(id);
-    if (el) setTimeout(() => el.scrollIntoView({ block: 'start' }), 100);
+    if (el) {
+        setTimeout(() => {
+            el.scrollIntoView({ block: 'start' });
+            expandSection(el.closest('.api-type-section') || el);
+        }, 100);
+    }
 }
 </script>
 {% endblock %}

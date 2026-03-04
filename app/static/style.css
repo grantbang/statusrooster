@@ -2730,6 +2730,32 @@ code {
 /* Main content area */
 .api-main { min-width: 0; }
 
+/* Group headers — match left nav labels */
+.api-group-header {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--brand);
+    margin: 2rem 0 0.75rem;
+    padding: 0;
+    border: none;
+}
+.api-group-header:first-child { margin-top: 0; }
+
+/* Badge preview strip */
+.badge-preview {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 1rem 1.25rem;
+    background: #f9fafb;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-lg);
+}
+
 /* Type section header badge */
 .api-type-header {
     display: flex;
@@ -2783,11 +2809,13 @@ code {
 /* Section dividers */
 .api-type-section {
     scroll-margin-top: 1.5rem;
-    padding-bottom: 2rem;
-    margin-bottom: 2rem;
-    border-bottom: 1px solid var(--border);
+    margin-bottom: var(--space-lg);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg) var(--space-xl);
 }
-.api-type-section:last-child { border-bottom: none; margin-bottom: 0; }
+.api-type-section:last-child { margin-bottom: 0; }
 
 /* Responsive: collapse sidebar below 900px */
 @media (max-width: 900px) {
@@ -2810,6 +2838,18 @@ code {
     box-shadow: var(--shadow-sm);
     margin-bottom: var(--space-lg);
 }
+.api-section:last-child { margin-bottom: 0; }
+
+/* Inside a type section, api-section is just a transparent wrapper */
+.api-type-section .api-section {
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+    margin-bottom: var(--space-md);
+}
+.api-type-section .api-section:last-child { margin-bottom: 0; }
+
 .api-section h2 {
     font-size: 1.15rem;
     margin-bottom: 0.75rem;
