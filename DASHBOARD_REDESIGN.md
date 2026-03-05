@@ -560,164 +560,129 @@ async function openEditModal(monitorId) {
 
 ---
 
-## Execution Plan — Step by Step
+## Execution Checklist
 
 ### Step 0: Backend — Add `group` field (~15 min)
 
-**`app/models/monitor.py`:**
-- Add `group: str = ""` parameter to `create_monitor()`
-- Add `"group": group` to `monitor_data` dict
-
-**`app/routers/api_v1.py`:**
-- Add `group: str = ""` to `ApiCreateMonitor`
-- Add `group: str | None = None` to `ApiUpdateMonitor`
-- Add `group` to update logic
-- Add `"group"` to `_serialize_monitor()` response
-
-**`app/routers/pages.py`:**
-- Parse `group` from form data in `add_monitor()` and `edit_monitor_submit()`
-
-**`app/templates/api_docs.html`:**
-- Add `group` field to Create/Update field reference tables (all 4 types)
-- Add to response shape example
+- [ ] `models/monitor.py` — add `group: str = ""` param to `create_monitor()` + add to `monitor_data` dict
+- [ ] `api_v1.py` — add `group: str = ""` to `ApiCreateMonitor` schema
+- [ ] `api_v1.py` — add `group: str | None = None` to `ApiUpdateMonitor` schema + update logic
+- [ ] `api_v1.py` — add `"group"` to `_serialize_monitor()` response
+- [ ] `pages.py` — parse `group` from form data in `add_monitor()`
+- [ ] `pages.py` — parse `group` from form data in `edit_monitor_submit()`
 
 ### Step 1: Sidebar — Add Incidents link (~5 min)
 
-**`app/templates/dashboard_base.html`:**
-```html
-<a href="/incidents" class="app-sidebar-link {% block nav_incidents %}{% endblock %}">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-    </svg>
-    Incidents
-</a>
-```
+- [ ] `dashboard_base.html` — add Incidents nav link with alert-triangle SVG icon
+- [ ] `dashboard_base.html` — add `{% block nav_incidents %}{% endblock %}` for active state
 
 ### Step 2: Dashboard Simplification (~45 min)
 
-**Strip from `dashboard.html`:**
-- Remove `uptime-bar uptime-bar-daily` div and all `bar-seg` generation (~30 lines)
-- Remove `uptime-bar uptime-bar-hourly` div (~20 lines)
-- Remove `monitor-row-stats` div (3 inline stat columns) — uptime % and response become top-level row elements
-- Remove 30d/24h toggle from toolbar
-- Remove incidents panel (`incidents-panel`) and all incident HTML (~60 lines)
-- Remove `filterIncidents()` JS function
-- Simplify ⋯ menu: remove "Edit monitor settings" sub-section, keep: Edit, Pause/Resume, Clone, Copy URL, Delete
+**Remove from `dashboard.html`:**
+- [ ] Remove uptime bar daily div + all `bar-seg` generation (~30 lines)
+- [ ] Remove uptime bar hourly div (~20 lines)
+- [ ] Remove `monitor-row-stats` div (3 inline stat columns)
+- [ ] Remove 30d/24h toggle from toolbar
+- [ ] Remove incidents panel (`incidents-panel`) + all incident HTML (~60 lines)
+- [ ] Simplify ⋯ menu → keep only: Edit, Pause/Resume, Clone, Copy URL, Delete
 
 **Add to `dashboard.html`:**
-- Group headers with collapse toggle
-- Uptime % as a direct row element (was inside `monitor-row-stats`)
-- Response time as a direct row element (was inside `monitor-row-stats`)
-- Group filter options in filter dropdown
+- [ ] Group headers with collapse toggle (client-side `groupby`)
+- [ ] Uptime % as direct row element
+- [ ] Response time as direct row element
+- [ ] Group names in filter dropdown
 
 **Remove from `pages.py` dashboard route:**
-- `uptime_bars` computation (lines 348-375) — no longer needed on dashboard
-- `uptime_bars_hourly` computation — no longer needed
-- Remove those from template context dict
-- Keep `recent_incidents` in context (for count badge on sidebar, if we want)
+- [ ] Remove `uptime_bars` computation
+- [ ] Remove `uptime_bars_hourly` computation
+- [ ] Remove both from template context dict
 
-**`dashboard.html` JS cleanup:**
-- Remove `initBarTooltips()`, `barMouseEnter()`, `barMouseLeave()`
-- Remove `setUptimeRange()`
-- Remove `filterIncidents()`
-- Add `toggleGroup()` function
+**JS cleanup:**
+- [ ] Remove `initBarTooltips()`, `barMouseEnter()`, `barMouseLeave()`
+- [ ] Remove `setUptimeRange()`
+- [ ] Remove `filterIncidents()`
+- [ ] Add `toggleGroup()` function (collapse state → `localStorage`)
 
 ### Step 3: Incidents Page (~1 hr)
 
-**`app/routers/pages.py` — add route** (see code above)
+**Backend:**
+- [ ] `pages.py` — add `GET /incidents` route (query params: `hours`, `status`)
 
-**`app/templates/incidents.html` — NEW:**
-- Extends `dashboard_base.html`
-- `{% block nav_incidents %}active{% endblock %}`
-- Toolbar: search + status tabs + time range dropdown
-- Incident cards (loop over `incidents`)
-- Each card: clickable → `/incidents/{id}`
-- Client-side search (filter by monitor_name, monitor_url)
-- Status tabs (All/Ongoing/Resolved — client-side filter)
-- Time range: links that reload with `?hours=24` / `?hours=72` / `?hours=168` / `?hours=0`
-- Empty state: `✓ No incidents — all monitors healthy`
+**Template (`incidents.html` — NEW):**
+- [ ] Extends `dashboard_base.html`, sets `nav_incidents` active
+- [ ] Toolbar: search input + status tabs (All/Ongoing/Resolved) + time range dropdown
+- [ ] Incident card loop — each card: status badge, monitor name, root cause, URL, timestamp
+- [ ] Cards clickable → `/incidents/{id}`
+- [ ] Client-side search (filter by monitor name/URL on keyup)
+- [ ] Status tabs — client-side filter
+- [ ] Time range — reload with `?hours=24` / `72` / `168` / `0`
+- [ ] Empty state: `✓ No incidents — all monitors healthy`
 
 **CSS (`style.css`):**
-- `.inc-card` — card style (border, padding, cursor pointer)
-- `.inc-status-badge` — red ongoing, green resolved
-- `.inc-root-cause` — monospace badge with HTTP code
-- `.inc-meta` — muted second line with URL
-- `.inc-time` — right-aligned timestamp
+- [ ] `.inc-card` — card style
+- [ ] `.inc-status-badge` — red ongoing / green resolved
+- [ ] `.inc-root-cause` — monospace badge
+- [ ] `.inc-meta` — muted URL line
+- [ ] `.inc-time` — right-aligned timestamp
 
 ### Step 4: Incident Detail Page (~45 min)
 
-**`app/routers/pages.py` — add route** (see code above)
+**Backend:**
+- [ ] `pages.py` — add `GET /incidents/{id}` route (ownership validation)
 
-**`app/templates/incident_detail.html` — NEW:**
-- Extends `dashboard_base.html`
-- Back link → `/incidents`
-- Hero card with status, root cause, monitor name
-- Details grid (2-column key-value)
-- Timeline section (placeholder + initial detection event from incident doc)
-- "View monitor →" link to `/monitors/{id}`
+**Template (`incident_detail.html` — NEW):**
+- [ ] Extends `dashboard_base.html`
+- [ ] Back link → `/incidents`
+- [ ] Hero card: status badge + root cause text + monitor name (colored border)
+- [ ] Details grid: monitor, URL, type, started, resolved, duration, status code, response time
+- [ ] "View monitor →" link to `/monitors/{id}`
+- [ ] Timeline section: placeholder + initial detection event from incident doc
 
 **CSS:**
-- `.inc-detail-hero` — large card with colored left border
-- `.inc-detail-grid` — 2-column key-value pairs
-- `.inc-timeline` — vertical timeline with dots and lines
+- [ ] `.inc-detail-hero` — colored left border card
+- [ ] `.inc-detail-grid` — 2-column key-value
+- [ ] `.inc-timeline` — vertical timeline with dots
 
 ### Step 5: Add/Edit Modal Rebuild (~1.5 hrs)
 
-**This is the largest change.** The modal HTML structure gets section labels and the edit-mode JS.
+**Modal HTML rewrite:**
+- [ ] Add section labels: REQUEST → VALIDATION → ALERTS → SCHEDULE → OPTIONS
+- [ ] Restructure field order to match API docs
+- [ ] Add `group` text input with `<datalist>` autocomplete in Options
+- [ ] Add `slug` input in Options (hidden in add mode, visible in edit)
+- [ ] Add `id="addForm"` to form, `id="modalTitle"` to h2, `id="modalSubmitBtn"` to submit
+- [ ] Per-type field visibility (show/hide sections based on type selector)
 
-**`dashboard.html` modal rewrite:**
-1. Add section labels (`<div class="modal-section-label">REQUEST</div>`)
-2. Restructure field order: Request → Validation → Alerts → Schedule → Options
-3. Add `group` input field in Options section
-4. Add `slug` input field in Options section (hidden in add mode, visible in edit mode)
-5. Add `id="addForm"` to the form element
-6. Add `id="modalTitle"` to the h2
-7. Add `id="modalSubmitBtn"` to the submit button
+**Edit mode JS:**
+- [ ] `pages.py` — add `GET /api/monitors/{id}/edit-data` endpoint (returns monitor JSON)
+- [ ] `openEditModal(monitorId)` — fetch data, populate all fields, set title/action/button
+- [ ] `resetModal()` — clear all fields, reset to "Add Monitor" mode
+- [ ] Update `openModal()` to call `resetModal()` first
+- [ ] ⋯ menu "Edit" → `onclick="openEditModal('{{ m.id }}')"` (no page navigation)
+- [ ] Type selector read-only in edit mode (badge, not buttons)
 
-**`dashboard.html` JS additions:**
-1. `openEditModal(monitorId)` — fetch monitor data, populate modal, set edit mode
-2. `resetModal()` — clear all fields, set back to "Add" mode
-3. Update `openModal()` to call `resetModal()` first
-4. Update ⋯ menu "Edit" button: `onclick="openEditModal('{{ m.id }}')"` instead of navigate
-
-**`app/routers/pages.py` additions:**
-1. `GET /api/monitors/{id}/edit-data` endpoint (see code above)
-2. Keep `POST /monitors/{id}/edit` route (form submission target — already exists)
-3. Add `group` parsing to both `add_monitor()` and `edit_monitor_submit()`
-
-**`edit_monitor.html`:**
-- Keep the file but add a redirect/fallback — if someone bookmarked `/monitors/{id}/edit`, it still works
-- Or simply keep it as-is for now and deprecate later (less risk, more important things to ship)
+**Fallback:**
+- [ ] Keep `edit_monitor.html` working (don't delete — bookmarks, fallback)
 
 ### Step 6: Polish + CSS (~30 min)
 
-**`style.css` additions:**
-- `.modal-section-label` — uppercase, muted, border-bottom, letter-spacing
-- `.monitor-group` / `.group-header` / `.group-body` — group collapse
-- `.group-chevron` — rotate animation on collapse
-- Incident page styles (cards, badges, timeline)
-- Incident detail styles (hero, grid, timeline)
-- Clean up dashboard row styles (remove bar-related CSS — but keep for detail page)
-
-**Mobile audit:**
-- Modal scrolls properly at full height
-- Incident cards stack properly
-- Group headers tap target is large enough
+- [ ] `.modal-section-label` — uppercase, muted, border-bottom, letter-spacing
+- [ ] `.monitor-group` / `.group-header` / `.group-body` — group collapse styles
+- [ ] `.group-chevron` — rotate animation on collapse
+- [ ] Mobile: modal scrolls at full height
+- [ ] Mobile: incident cards stack properly
+- [ ] Mobile: group headers have large enough tap target
 
 ### Step 7: API Docs Update (~15 min)
 
-- Add `group` field to all 4 monitor type sections (Create + Update)
-- Add `group` to response shape
-- Add `group` to field reference dropdowns
+- [ ] Add `group` field to all 4 monitor type Create sections
+- [ ] Add `group` field to Update section
+- [ ] Add `group` to response shape example
+- [ ] Add `group` to field reference tables
 
-### Step 8: Commit
+### Step 8: Commit + Push
 
-```
-git add -A
-git commit -m "Dashboard redesign: simplified rows, groups, incidents pages, unified Add/Edit modal"
-git push
-```
+- [ ] `git add -A && git commit -m "Dashboard redesign: simplified rows, groups, incidents pages, unified Add/Edit modal" && git push`
 
 ---
 
