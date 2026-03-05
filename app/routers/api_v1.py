@@ -255,6 +255,7 @@ class ApiCreateMonitor(BaseModel):
     auth_header: str = ""
     ssl_domain: str = ""
     ssl_expiry_threshold_days: int | None = None
+    group: str = ""
 
 
 @router.post("/monitors", status_code=201)
@@ -306,9 +307,8 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
         auth_header=req.auth_header,
         ssl_domain=req.ssl_domain,
         ssl_expiry_threshold_days=req.ssl_expiry_threshold_days,
+        group=req.group,
     )
-
-    # For heartbeat monitors, set the ping URL
     if req.monitor_type == "heartbeat":
         from app.config import settings
         ping_url = f"{settings.APP_URL}/api/ping/{monitor['id']}"
@@ -342,6 +342,7 @@ class ApiUpdateMonitor(BaseModel):
     auth_header: str | None = None
     ssl_domain: str | None = None
     ssl_expiry_threshold_days: int | None = None
+    group: str | None = None
 
 
 @router.put("/monitors/{monitor_id}")
@@ -422,6 +423,8 @@ async def api_update_monitor(
         updates["ssl_domain"] = req.ssl_domain
     if req.ssl_expiry_threshold_days is not None:
         updates["ssl_expiry_threshold_days"] = max(1, min(90, req.ssl_expiry_threshold_days))
+    if req.group is not None:
+        updates["group"] = req.group
 
     if not updates:
         err("No fields to update. Send at least one field.", 422)

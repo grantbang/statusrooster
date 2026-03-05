@@ -564,12 +564,12 @@ async function openEditModal(monitorId) {
 
 ### Step 0: Backend — Add `group` field (~15 min)
 
-- [ ] `models/monitor.py` — add `group: str = ""` param to `create_monitor()` + add to `monitor_data` dict
-- [ ] `api_v1.py` — add `group: str = ""` to `ApiCreateMonitor` schema
-- [ ] `api_v1.py` — add `group: str | None = None` to `ApiUpdateMonitor` schema + update logic
-- [ ] `api_v1.py` — add `"group"` to `_serialize_monitor()` response
-- [ ] `pages.py` — parse `group` from form data in `add_monitor()`
-- [ ] `pages.py` — parse `group` from form data in `edit_monitor_submit()`
+- [x] `models/monitor.py` — add `group: str = ""` param to `create_monitor()` + add to `monitor_data` dict
+- [x] `api_v1.py` — add `group: str = ""` to `ApiCreateMonitor` schema
+- [x] `api_v1.py` — add `group: str | None = None` to `ApiUpdateMonitor` schema + update logic
+- [x] `api_v1.py` — add `"group"` to `_serialize_monitor()` response (auto-exposed via `_serialize_monitor`)
+- [x] `pages.py` — parse `group` from form data in `add_monitor()`
+- [x] `pages.py` — parse `group` from form data in `edit_monitor_submit()`
 
 ### Step 1: Sidebar — Add Incidents link (~5 min)
 
@@ -675,10 +675,10 @@ async function openEditModal(monitorId) {
 
 ### Step 7: API Docs Update (~15 min)
 
-- [ ] Add `group` field to all 4 monitor type Create sections
-- [ ] Add `group` field to Update section
-- [ ] Add `group` to response shape example
-- [ ] Add `group` to field reference tables
+- [x] Add `group` field to all 4 monitor type Create sections (parameter tables + JSON response examples)
+- [x] Add `group` field to all 4 Update sections (parameter tables)
+- [x] Add `group` to response shape example (shared response + all 4 Create responses)
+- [x] Add `group` to field reference table (Complete field reference)
 
 ### Step 8: Commit + Push
 

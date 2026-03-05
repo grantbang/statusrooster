@@ -426,6 +426,7 @@ async def add_monitor(
     auth_header = form.get("auth_header", "")
     ssl_domain = form.get("ssl_domain", "")
     ssl_expiry_threshold_days_raw = form.get("ssl_expiry_threshold_days", "")
+    group = form.get("group", "")
 
     db = get_db()
 
@@ -562,6 +563,7 @@ async def add_monitor(
         auth_header=auth_header,
         ssl_domain=ssl_domain,
         ssl_expiry_threshold_days=ssl_expiry_threshold_days,
+        group=group,
     )
 
     # For heartbeat monitors, set the ping URL on the monitor doc
@@ -630,6 +632,7 @@ async def edit_monitor_submit(
     auth_header = form.get("auth_header", "")
     ssl_domain = form.get("ssl_domain", "")
     ssl_expiry_threshold_days_raw = form.get("ssl_expiry_threshold_days", "")
+    group = form.get("group", "")
 
     db = get_db()
     monitor = get_monitor(db, monitor_id)
@@ -671,9 +674,8 @@ async def edit_monitor_submit(
         "paused": form.get("paused") == "true",
         "keyword": keyword,
         "response_threshold_ms": response_threshold_ms.strip() if response_threshold_ms else None,
+        "group": group,
     }
-
-    # Handle expected status code
     if expected_status_code_raw:
         try:
             updates["expected_status_code"] = int(expected_status_code_raw)
@@ -819,6 +821,7 @@ async def clone_monitor(request: Request, monitor_id: str):
         alert_email=monitor.get("alert_email", ""),
         alert_slack_webhook=monitor.get("alert_slack_webhook", ""),
         public=monitor.get("public", True),
+        group=monitor.get("group", ""),
     )
 
     # Copy extra fields

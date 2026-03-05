@@ -22,7 +22,8 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
                    expected_status_code: int | None = None, timeout: int | None = None,
                    json_assertions: list | None = None, auth_header: str = "",
                    ssl_domain: str = "", ssl_expiry_threshold_days: int | None = None,
-                   heartbeat_grace_period: int | None = None) -> dict:
+                   heartbeat_grace_period: int | None = None,
+                   group: str = "") -> dict:
     """Create a new monitor. Returns monitor dict with id.
 
     monitor_type: "http" | "heartbeat" | "json_api" | "ssl"
@@ -105,6 +106,7 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
         "maintenance_windows": maintenance_windows or [],  # List of {day, start_utc, end_utc} (Pro only)
         "public": public,
         "slug": slug,
+        "group": group,
         "created_at": datetime.now(timezone.utc),
     }
     doc_ref.set(monitor_data)

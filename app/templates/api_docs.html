@@ -28,7 +28,7 @@
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <!--  SIDEBAR + MAIN LAYOUT                                        -->
-<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- ════════════════════════from an API perpsective - do you think we're solid here for what we're going for - uptime robot has other things - but we're not trying to be them? see attached═══════════════════════════════════════ -->
 <div class="api-layout">
 
 <!-- ─── Left Navigation ─────────────────────────────────────────── -->
@@ -230,6 +230,7 @@ headers = {<span class="code-string">"X-API-Key"</span>: API_KEY}</div>
                         <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>optional</td><td>POST status changes to this URL (Pro)</td></tr>
                         <tr><td><span class="param-name">public</span></td><td>boolean</td><td>optional</td><td>Expose on public status page (default: <code>true</code>)</td></tr>
                         <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>optional</td><td>Create in paused state (default: <code>false</code>)</td></tr>
+                        <tr><td><span class="param-name">group</span></td><td>string</td><td>optional</td><td>Group tag for organizing monitors on the dashboard (e.g. <code>"Production"</code>)</td></tr>
                         <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>optional</td><td>Suppress alerts during windows (Pro). <code>[{"day":"monday","start_utc":"02:00","end_utc":"04:00"}]</code></td></tr>
                     </tbody>
                 </table>
@@ -306,6 +307,7 @@ console.log(<span class="code-string">`Created ${data.id}`</span>);</div>
     "alert_email": "you@example.com",
     "public": true,
     "paused": false,
+    "group": "",
     "slug": "my-website-a3f8c1",
     "created_at": "2026-03-03T12:00:00"
   },
@@ -342,6 +344,7 @@ console.log(<span class="code-string">`Created ${data.id}`</span>);</div>
                         <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>Status change webhook URL (Pro)</td></tr>
                         <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Toggle public status page visibility</td></tr>
                         <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause or resume monitoring</td></tr>
+                        <tr><td><span class="param-name">group</span></td><td>string</td><td>Group tag for organizing monitors (e.g. <code>"Production"</code>)</td></tr>
                         <tr><td><span class="param-name">slug</span></td><td>string</td><td>Custom status page URL slug (<code>/s/{slug}</code>). Auto-sanitized to lowercase alphanumeric + hyphens.</td></tr>
                         <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows (Pro)</td></tr>
                     </tbody>
@@ -430,6 +433,7 @@ updated = r.json()[<span class="code-string">"data"</span>]</div>
                         <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>optional</td><td>Status change webhook (Pro)</td></tr>
                         <tr><td><span class="param-name">public</span></td><td>boolean</td><td>optional</td><td>Expose on status page (default: <code>true</code>)</td></tr>
                         <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>optional</td><td>Create paused (default: <code>false</code>)</td></tr>
+                        <tr><td><span class="param-name">group</span></td><td>string</td><td>optional</td><td>Group tag for organizing monitors (e.g. <code>"Production"</code>)</td></tr>
                         <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>optional</td><td>Suppress alerts during windows (Pro)</td></tr>
                     </tbody>
                 </table>
@@ -525,6 +529,7 @@ print(f<span class="code-string">"Created {monitor['id']}"</span>)</div>
     "alert_email": "you@example.com",
     "public": true,
     "paused": false,
+    "group": "",
     "slug": "health-api-d4e5f6",
     "created_at": "2026-03-04T12:00:00"
   },
@@ -562,6 +567,7 @@ print(f<span class="code-string">"Created {monitor['id']}"</span>)</div>
                         <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>Status change webhook URL (Pro)</td></tr>
                         <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Toggle public status page visibility</td></tr>
                         <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause or resume monitoring</td></tr>
+                        <tr><td><span class="param-name">group</span></td><td>string</td><td>Group tag for organizing monitors</td></tr>
                         <tr><td><span class="param-name">slug</span></td><td>string</td><td>Custom status page URL slug (<code>/s/{slug}</code>)</td></tr>
                         <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows (Pro)</td></tr>
                     </tbody>
@@ -656,6 +662,7 @@ updated = r.json()[<span class="code-string">"data"</span>]</div>
                         <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>optional</td><td>Status change webhook (Pro)</td></tr>
                         <tr><td><span class="param-name">public</span></td><td>boolean</td><td>optional</td><td>Expose on status page (default: <code>true</code>)</td></tr>
                         <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>optional</td><td>Create paused (default: <code>false</code>)</td></tr>
+                        <tr><td><span class="param-name">group</span></td><td>string</td><td>optional</td><td>Group tag for organizing monitors (e.g. <code>"Infrastructure"</code>)</td></tr>
                         <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>optional</td><td>Suppress alerts during windows (Pro)</td></tr>
                     </tbody>
                 </table>
@@ -720,6 +727,7 @@ console.log(<span class="code-string">`Ping URL: ${data.ping_url}`</span>);</div
     "alert_email": "you@example.com",
     "public": true,
     "paused": false,
+    "group": "",
     "slug": "nightly-backup-job-abc789",
     "created_at": "2026-03-04T12:00:00"
   },
@@ -800,6 +808,7 @@ requests.get(<span class="code-string">"{{ app_url }}/api/ping/hb_abc789"</span>
                         <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>Status change webhook URL (Pro)</td></tr>
                         <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Toggle public status page visibility</td></tr>
                         <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause or resume monitoring</td></tr>
+                        <tr><td><span class="param-name">group</span></td><td>string</td><td>Group tag for organizing monitors</td></tr>
                         <tr><td><span class="param-name">slug</span></td><td>string</td><td>Custom status page URL slug (<code>/s/{slug}</code>)</td></tr>
                         <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows (Pro)</td></tr>
                     </tbody>
@@ -883,6 +892,7 @@ updated = r.json()[<span class="code-string">"data"</span>]</div>
                         <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>optional</td><td>Status change webhook (Pro)</td></tr>
                         <tr><td><span class="param-name">public</span></td><td>boolean</td><td>optional</td><td>Expose on status page (default: <code>true</code>)</td></tr>
                         <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>optional</td><td>Create paused (default: <code>false</code>)</td></tr>
+                        <tr><td><span class="param-name">group</span></td><td>string</td><td>optional</td><td>Group tag for organizing monitors (e.g. <code>"Infrastructure"</code>)</td></tr>
                         <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>optional</td><td>Suppress alerts during windows (Pro)</td></tr>
                     </tbody>
                 </table>
@@ -947,6 +957,7 @@ print(f<span class="code-string">"SSL monitor: {monitor['id']}"</span>)</div>
     "alert_email": "you@example.com",
     "public": true,
     "paused": false,
+    "group": "",
     "slug": "example-com-ssl-def012",
     "created_at": "2026-03-04T12:00:00"
   },
@@ -981,6 +992,7 @@ print(f<span class="code-string">"SSL monitor: {monitor['id']}"</span>)</div>
                         <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>Status change webhook URL (Pro)</td></tr>
                         <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Toggle public status page visibility</td></tr>
                         <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause or resume monitoring</td></tr>
+                        <tr><td><span class="param-name">group</span></td><td>string</td><td>Group tag for organizing monitors</td></tr>
                         <tr><td><span class="param-name">slug</span></td><td>string</td><td>Custom status page URL slug (<code>/s/{slug}</code>)</td></tr>
                         <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows (Pro)</td></tr>
                     </tbody>
@@ -1126,6 +1138,7 @@ data.forEach(m => console.log(<span class="code-string">`${m.name} (${m.monitor_
                             <tr><td><code>maintenance_windows</code></td><td class="field-type">array</td><td>Array of <code>{day, start_utc, end_utc}</code> (Pro)</td></tr>
                             <tr><td><code>public</code></td><td class="field-type">bool</td><td>Has a public status page</td></tr>
                             <tr><td><code>paused</code></td><td class="field-type">bool</td><td>Monitoring is paused</td></tr>
+                            <tr><td><code>group</code></td><td class="field-type">string</td><td>Dashboard group tag (empty string if ungrouped)</td></tr>
                             <tr><td><code>slug</code></td><td class="field-type">string</td><td>Status page URL slug (<code>/s/{slug}</code>)</td></tr>
                             <tr><td><code>created_at</code></td><td class="field-type">datetime</td><td>Creation timestamp</td></tr>
 
@@ -1214,6 +1227,7 @@ console.log(<span class="code-string">`${data.monitor_type}: ${data.status}`</sp
     "alert_email": "you@example.com",
     "public": true,
     "paused": false,
+    "group": "",
     "slug": "my-website-a3f8c1",
     "created_at": "2026-03-03T12:00:00"
   },
