@@ -9,7 +9,7 @@ from app.database import get_db
 from app.models.user import create_user, get_user_by_email, verify_password
 from app.models.monitor import list_monitors_by_user, get_monitor, get_monitor_by_slug, create_monitor, update_monitor, delete_monitor
 from app.models.check import get_recent_checks, get_daily_uptime
-from app.models.incident import list_incidents_by_monitor, list_incidents_by_user
+from app.models.incident import list_incidents_by_monitor, list_incidents_by_user, get_incident
 from app.models.api_key import generate_api_key, list_api_keys, revoke_api_key
 from app.services.auth import create_access_token, decode_access_token
 from app.services.alerts import _format_duration, send_test_alert
@@ -394,6 +394,109 @@ async def dashboard(request: Request):
         "summary_stats": summary_stats,
         "uptime_bars": uptime_bars,
         "uptime_bars_hourly": uptime_bars_hourly,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Incidents Pages
+# ---------------------------------------------------------------------------
+
+@router.get("/incidents", response_class=HTMLResponse)
+async def incidents_page(request: Request):
+    user = get_user_from_cookie(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+
+    db = get_db()
+    monitors = list_monitors_by_user(db, user["id"])
+    monitor_ids = [m["id"] for m in monitors]
+
+    # Query params
+    hours_param = request.query_params.get("hours", "168")
+    status_param = request.query_params.get("status")
+
+    try:
+        hours = int(hours_param) if hours_param and hours_param != "0" else None
+    except ValueError:
+        hours = 168
+
+    status_filter = status_param if status_param in ("open", "resolved") else None
+
+    incidents = list_incidents_by_user(
+        db, monitor_ids,
+        hours=hours if hours else 30 * 24,
+        limit=200,
+        status=status_filter,
+    ) if monitor_ids else []
+
+    # Build monitor lookup for type info
+    monitor_map = {m["id"]: m for m in monitors}
+
+    return templates.TemplateResponse("incidents.html", {
+        "request": request,
+        "user": user,
+        "incidents": incidents,
+        "monitor_map": monitor_map,
+        "hours": hours_param,
+        "status_filter": status_param or "all",
+    })
+
+
+@router.get("/incidents/{incident_id}", response_class=HTMLResponse)
+async def incident_detail_page(request: Request, incident_id: str):
+    user = get_user_from_cookie(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+
+    db = get_db()
+    incident = get_incident(db, incident_id)
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    # Verify ownership: incident's monitor must belong to this user
+    monitor = get_monitor(db, incident["monitor_id"])
+    if not monitor or monitor.get("user_id") != user["id"]:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    # Duration formatting
+    if incident.get("duration_seconds"):
+        incident["duration_formatted"] = _format_duration(incident["duration_seconds"])
+    elif incident.get("status") == "open" and incident.get("started_at"):
+        from datetime import datetime, timezone
+        elapsed = (datetime.now(timezone.utc) - incident["started_at"]).total_seconds()
+        incident["duration_formatted"] = _format_duration(int(elapsed)) + " (ongoing)"
+    else:
+        incident["duration_formatted"] = "—"
+
+    # Root cause text
+    sc = incident.get("status_code")
+    if sc:
+        if sc == 0:
+            incident["root_cause"] = "Connection failed"
+        elif sc >= 500:
+            incident["root_cause"] = f"HTTP {sc} Server Error"
+        elif sc >= 400:
+            incident["root_cause"] = f"HTTP {sc} Client Error"
+        elif sc == -1:
+            incident["root_cause"] = "Timeout"
+        elif sc == -2:
+            incident["root_cause"] = "DNS resolution failed"
+        else:
+            incident["root_cause"] = f"HTTP {sc}"
+    else:
+        mt = monitor.get("monitor_type", "http")
+        if mt == "heartbeat":
+            incident["root_cause"] = "Missed heartbeat ping"
+        elif mt == "ssl":
+            incident["root_cause"] = "SSL certificate issue"
+        else:
+            incident["root_cause"] = "Check failed"
+
+    return templates.TemplateResponse("incident_detail.html", {
+        "request": request,
+        "user": user,
+        "incident": incident,
+        "monitor": monitor,
     })
 
 

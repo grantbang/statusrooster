@@ -573,8 +573,8 @@ async function openEditModal(monitorId) {
 
 ### Step 1: Sidebar — Add Incidents link (~5 min)
 
-- [ ] `dashboard_base.html` — add Incidents nav link with alert-triangle SVG icon
-- [ ] `dashboard_base.html` — add `{% block nav_incidents %}{% endblock %}` for active state
+- [x] `dashboard_base.html` — add Incidents nav link with alert-triangle SVG icon
+- [x] `dashboard_base.html` — add `{% block nav_incidents %}{% endblock %}` for active state
 
 ### Step 2: Dashboard Simplification (~45 min)
 
@@ -606,17 +606,17 @@ async function openEditModal(monitorId) {
 ### Step 3: Incidents Page (~1 hr)
 
 **Backend:**
-- [ ] `pages.py` — add `GET /incidents` route (query params: `hours`, `status`)
+- [x] `pages.py` — add `GET /incidents` route (query params: `hours`, `status`)
 
 **Template (`incidents.html` — NEW):**
-- [ ] Extends `dashboard_base.html`, sets `nav_incidents` active
-- [ ] Toolbar: search input + status tabs (All/Ongoing/Resolved) + time range dropdown
-- [ ] Incident card loop — each card: status badge, monitor name, root cause, URL, timestamp
-- [ ] Cards clickable → `/incidents/{id}`
-- [ ] Client-side search (filter by monitor name/URL on keyup)
-- [ ] Status tabs — client-side filter
-- [ ] Time range — reload with `?hours=24` / `72` / `168` / `0`
-- [ ] Empty state: `✓ No incidents — all monitors healthy`
+- [x] Extends `dashboard_base.html`, sets `nav_incidents` active
+- [x] Toolbar: search input + status tabs (All/Ongoing/Resolved) + time range dropdown
+- [x] Incident card loop — each card: status badge, monitor name, root cause, URL, timestamp
+- [x] Cards clickable → `/incidents/{id}`
+- [x] Client-side search (filter by monitor name/URL on keyup)
+- [x] Status tabs — server-side filter via query param
+- [x] Time range — reload with `?hours=24` / `72` / `168` / `720` / `0`
+- [x] Empty state: `✓ No incidents — all monitors healthy`
 
 **CSS (`style.css`):**
 - [ ] `.inc-card` — card style
@@ -628,15 +628,15 @@ async function openEditModal(monitorId) {
 ### Step 4: Incident Detail Page (~45 min)
 
 **Backend:**
-- [ ] `pages.py` — add `GET /incidents/{id}` route (ownership validation)
+- [x] `pages.py` — add `GET /incidents/{id}` route (ownership validation)
 
 **Template (`incident_detail.html` — NEW):**
-- [ ] Extends `dashboard_base.html`
-- [ ] Back link → `/incidents`
-- [ ] Hero card: status badge + root cause text + monitor name (colored border)
-- [ ] Details grid: monitor, URL, type, started, resolved, duration, status code, response time
-- [ ] "View monitor →" link to `/monitors/{id}`
-- [ ] Timeline section: placeholder + initial detection event from incident doc
+- [x] Extends `dashboard_base.html`
+- [x] Back link → `/incidents`
+- [x] Hero card: status badge + root cause text + monitor name (colored border)
+- [x] Details grid: monitor, URL, type, started, resolved, duration, status code, response time
+- [x] "View monitor →" link to `/monitors/{id}`
+- [x] Timeline section: placeholder + initial detection event from incident doc
 
 **CSS:**
 - [ ] `.inc-detail-hero` — colored left border card
@@ -669,6 +669,8 @@ async function openEditModal(monitorId) {
 - [ ] `.modal-section-label` — uppercase, muted, border-bottom, letter-spacing
 - [ ] `.monitor-group` / `.group-header` / `.group-body` — group collapse styles
 - [ ] `.group-chevron` — rotate animation on collapse
+- [ ] Incidents list CSS (`.inc-card`, `.inc-badge`, `.inc-root-cause`, `.inc-toolbar`, etc.)
+- [ ] Incident detail CSS (`.inc-detail-hero`, `.inc-detail-grid`, `.inc-timeline`, etc.)
 - [ ] Mobile: modal scrolls at full height
 - [ ] Mobile: incident cards stack properly
 - [ ] Mobile: group headers have large enough tap target

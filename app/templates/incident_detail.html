@@ -1,0 +1,136 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Incident — {{ incident.monitor_name }}{% endblock %}
+{% block nav_incidents %}active{% endblock %}
+
+{% block content %}
+<div class="inc-detail-page">
+    <a href="/incidents" class="inc-back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Back to incidents
+    </a>
+
+    <!-- Hero Card -->
+    <div class="inc-detail-hero {{ 'inc-hero-ongoing' if incident.status == 'open' else 'inc-hero-resolved' }}">
+        <div class="inc-hero-top">
+            {% if incident.status == 'open' %}
+            <span class="inc-badge inc-badge-ongoing">Ongoing</span>
+            {% else %}
+            <span class="inc-badge inc-badge-resolved">Resolved</span>
+            {% endif %}
+            <span class="inc-hero-root-cause">{{ incident.root_cause }}</span>
+        </div>
+        <h2 class="inc-hero-monitor">{{ incident.monitor_name }}</h2>
+        <div class="inc-hero-url">{{ incident.monitor_url | replace('https://', '') | replace('http://', '') }}</div>
+    </div>
+
+    <!-- Details Grid -->
+    <div class="inc-detail-grid">
+        <div class="inc-detail-section">
+            <h3 class="inc-section-title">Details</h3>
+            <div class="inc-kv-grid">
+                <div class="inc-kv">
+                    <span class="inc-kv-label">Monitor</span>
+                    <span class="inc-kv-value">
+                        <a href="/monitors/{{ monitor.id }}" class="inc-monitor-link">{{ monitor.name }}</a>
+                    </span>
+                </div>
+                <div class="inc-kv">
+                    <span class="inc-kv-label">Type</span>
+                    <span class="inc-kv-value">
+                        {% if monitor.get('monitor_type') == 'heartbeat' %}♥ Heartbeat{% elif monitor.get('monitor_type') == 'json_api' %}{ } JSON/API{% elif monitor.get('monitor_type') == 'ssl' %}🔒 SSL{% else %}HTTP{% endif %}
+                    </span>
+                </div>
+                <div class="inc-kv">
+                    <span class="inc-kv-label">URL</span>
+                    <span class="inc-kv-value inc-kv-mono">{{ incident.monitor_url }}</span>
+                </div>
+                <div class="inc-kv">
+                    <span class="inc-kv-label">Root Cause</span>
+                    <span class="inc-kv-value"><span class="inc-root-cause">{{ incident.root_cause }}</span></span>
+                </div>
+                {% if incident.status_code %}
+                <div class="inc-kv">
+                    <span class="inc-kv-label">Status Code</span>
+                    <span class="inc-kv-value inc-kv-mono">{{ incident.status_code }}</span>
+                </div>
+                {% endif %}
+                {% if incident.response_ms %}
+                <div class="inc-kv">
+                    <span class="inc-kv-label">Response Time</span>
+                    <span class="inc-kv-value">{{ incident.response_ms|round(1) }} ms</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="inc-detail-section">
+            <h3 class="inc-section-title">Timeline</h3>
+            <div class="inc-kv-grid">
+                <div class="inc-kv">
+                    <span class="inc-kv-label">Started</span>
+                    <span class="inc-kv-value">
+                        {% if incident.started_at %}
+                        {{ incident.started_at.strftime('%b %-d, %Y at %H:%M:%S UTC') }}
+                        {% else %}—{% endif %}
+                    </span>
+                </div>
+                <div class="inc-kv">
+                    <span class="inc-kv-label">Resolved</span>
+                    <span class="inc-kv-value">
+                        {% if incident.resolved_at %}
+                        {{ incident.resolved_at.strftime('%b %-d, %Y at %H:%M:%S UTC') }}
+                        {% elif incident.status == 'open' %}
+                        <span style="color: var(--danger);">Not yet resolved</span>
+                        {% else %}—{% endif %}
+                    </span>
+                </div>
+                <div class="inc-kv">
+                    <span class="inc-kv-label">Duration</span>
+                    <span class="inc-kv-value">{{ incident.duration_formatted }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Timeline -->
+    <div class="inc-detail-section" style="margin-top: 1.5rem;">
+        <h3 class="inc-section-title">Activity</h3>
+        <div class="inc-timeline">
+            <div class="inc-timeline-event">
+                <div class="inc-timeline-dot inc-dot-down"></div>
+                <div class="inc-timeline-content">
+                    <div class="inc-timeline-text">Incident detected — monitor marked <strong>down</strong></div>
+                    <div class="inc-timeline-time">
+                        {% if incident.started_at %}{{ incident.started_at.strftime('%b %-d, %H:%M:%S UTC') }}{% endif %}
+                    </div>
+                </div>
+            </div>
+            {% if incident.status == 'resolved' and incident.resolved_at %}
+            <div class="inc-timeline-event">
+                <div class="inc-timeline-dot inc-dot-up"></div>
+                <div class="inc-timeline-content">
+                    <div class="inc-timeline-text">Monitor recovered — incident <strong>resolved</strong></div>
+                    <div class="inc-timeline-time">{{ incident.resolved_at.strftime('%b %-d, %H:%M:%S UTC') }}</div>
+                </div>
+            </div>
+            {% elif incident.status == 'open' %}
+            <div class="inc-timeline-event">
+                <div class="inc-timeline-dot inc-dot-pending"></div>
+                <div class="inc-timeline-content">
+                    <div class="inc-timeline-text" style="color: var(--muted);">Awaiting recovery…</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- View Monitor Link -->
+    <div style="margin-top: 2rem; text-align: center;">
+        <a href="/monitors/{{ monitor.id }}" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+            View monitor details
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+        </a>
+    </div>
+</div>
+{% endblock %}

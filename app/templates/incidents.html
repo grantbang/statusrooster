@@ -1,0 +1,137 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Incidents{% endblock %}
+{% block nav_incidents %}active{% endblock %}
+
+{% block content %}
+<div class="inc-page">
+    <div class="inc-page-header">
+        <h2>Incidents<span class="heading-dot">.</span></h2>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="inc-toolbar">
+        <div class="inc-toolbar-left">
+            <input type="text" id="incSearch" class="toolbar-search" placeholder="Search by monitor name or URL" oninput="filterIncidentCards()">
+        </div>
+        <div class="inc-toolbar-right">
+            <div class="inc-status-tabs">
+                <a href="/incidents?hours={{ hours }}&status=" class="inc-tab {% if status_filter == 'all' %}active{% endif %}">All</a>
+                <a href="/incidents?hours={{ hours }}&status=open" class="inc-tab {% if status_filter == 'open' %}active{% endif %}">Ongoing</a>
+                <a href="/incidents?hours={{ hours }}&status=resolved" class="inc-tab {% if status_filter == 'resolved' %}active{% endif %}">Resolved</a>
+            </div>
+            <div class="toolbar-dropdown">
+                <button class="btn btn-secondary btn-sm" onclick="toggleDropdown('timeDropdown')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    {% if hours == '24' %}Last 24h{% elif hours == '72' %}Last 3 days{% elif hours == '168' %}Last 7 days{% elif hours == '720' %}Last 30 days{% elif hours == '0' %}All time{% else %}Last 7 days{% endif %}
+                </button>
+                <div class="dropdown-menu dropdown-menu-right" id="timeDropdown">
+                    <a class="dropdown-item {% if hours == '24' %}active{% endif %}" href="/incidents?hours=24&status={{ status_filter if status_filter != 'all' else '' }}">Last 24 hours</a>
+                    <a class="dropdown-item {% if hours == '72' %}active{% endif %}" href="/incidents?hours=72&status={{ status_filter if status_filter != 'all' else '' }}">Last 3 days</a>
+                    <a class="dropdown-item {% if hours == '168' %}active{% endif %}" href="/incidents?hours=168&status={{ status_filter if status_filter != 'all' else '' }}">Last 7 days</a>
+                    <a class="dropdown-item {% if hours == '720' %}active{% endif %}" href="/incidents?hours=720&status={{ status_filter if status_filter != 'all' else '' }}">Last 30 days</a>
+                    <a class="dropdown-item {% if hours == '0' %}active{% endif %}" href="/incidents?hours=0&status={{ status_filter if status_filter != 'all' else '' }}">All time</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incident Cards -->
+    <div class="inc-list" id="incList">
+        {% if incidents %}
+        {% for inc in incidents %}
+        {% set mon = monitor_map.get(inc.monitor_id, {}) %}
+        <a href="/incidents/{{ inc.id }}" class="inc-card" data-name="{{ inc.monitor_name|lower }}" data-url="{{ inc.monitor_url|lower }}">
+            <div class="inc-card-left">
+                <div class="inc-indicator {{ 'inc-ongoing' if inc.status == 'open' else 'inc-resolved' }}"></div>
+                <div class="inc-card-info">
+                    <div class="inc-card-top">
+                        <span class="inc-monitor-name">{{ inc.monitor_name }}</span>
+                        {% if inc.status == 'open' %}
+                        <span class="inc-badge inc-badge-ongoing">Ongoing</span>
+                        {% else %}
+                        <span class="inc-badge inc-badge-resolved">Resolved</span>
+                        {% endif %}
+                    </div>
+                    <div class="inc-card-meta">
+                        {% if inc.status_code %}
+                        <span class="inc-root-cause">
+                            {% if inc.status_code == 0 %}Connection failed{% elif inc.status_code >= 500 %}HTTP {{ inc.status_code }}{% elif inc.status_code >= 400 %}HTTP {{ inc.status_code }}{% elif inc.status_code == -1 %}Timeout{% elif inc.status_code == -2 %}DNS failed{% else %}HTTP {{ inc.status_code }}{% endif %}
+                        </span>
+                        {% elif mon.get('monitor_type') == 'heartbeat' %}
+                        <span class="inc-root-cause">Missed ping</span>
+                        {% elif mon.get('monitor_type') == 'ssl' %}
+                        <span class="inc-root-cause">SSL issue</span>
+                        {% else %}
+                        <span class="inc-root-cause">Check failed</span>
+                        {% endif %}
+                        <span class="inc-url">{{ inc.monitor_url | replace('https://', '') | replace('http://', '') | truncate(40, True, '…') }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="inc-card-right">
+                <div class="inc-card-time">
+                    <span class="inc-time relative-time" data-ts="{{ inc.started_at.isoformat() if inc.started_at else '' }}">{{ inc.started_at.strftime('%b %-d, %H:%M') if inc.started_at else '' }}</span>
+                    {% if inc.duration_seconds %}
+                    <span class="inc-duration">{{ inc.duration_seconds // 3600 }}h {{ (inc.duration_seconds % 3600) // 60 }}m</span>
+                    {% elif inc.status == 'open' %}
+                    <span class="inc-duration inc-duration-ongoing">Ongoing</span>
+                    {% endif %}
+                </div>
+                <svg class="inc-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
+        </a>
+        {% endfor %}
+        {% else %}
+        <div class="inc-empty">
+            <div class="inc-empty-icon">✓</div>
+            <div class="inc-empty-text">No incidents{% if status_filter != 'all' %} matching "{{ status_filter }}"{% endif %} — all monitors healthy</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── Dropdowns ─────────────────────────────────────────── */
+function toggleDropdown(id) {
+    document.querySelectorAll('.dropdown-menu').forEach(m => { if (m.id !== id) m.classList.remove('open'); });
+    document.getElementById(id).classList.toggle('open');
+}
+document.addEventListener('click', e => {
+    if (!e.target.closest('.toolbar-dropdown'))
+        document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('open'));
+});
+
+/* ── Client-side search ────────────────────────────────── */
+function filterIncidentCards() {
+    const q = document.getElementById('incSearch').value.toLowerCase();
+    document.querySelectorAll('.inc-card').forEach(card => {
+        const name = card.dataset.name || '';
+        const url = card.dataset.url || '';
+        card.style.display = (!q || name.includes(q) || url.includes(q)) ? '' : 'none';
+    });
+}
+
+/* ── Relative timestamps ───────────────────────────────── */
+function updateRelativeTimes() {
+    document.querySelectorAll('.relative-time').forEach(el => {
+        const ts = el.dataset.ts;
+        if (!ts) return;
+        try {
+            const d = new Date(ts);
+            if (isNaN(d.getTime())) return;
+            const secs = Math.floor((Date.now() - d.getTime()) / 1000);
+            if (secs < 60) el.textContent = 'Just now';
+            else if (secs < 3600) el.textContent = Math.floor(secs / 60) + 'm ago';
+            else if (secs < 86400) el.textContent = Math.floor(secs / 3600) + 'h ago';
+            else if (secs < 604800) el.textContent = Math.floor(secs / 86400) + 'd ago';
+            else el.textContent = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        } catch(e) {}
+    });
+}
+updateRelativeTimes();
+setInterval(updateRelativeTimes, 30000);
+</script>
+{% endblock %}
