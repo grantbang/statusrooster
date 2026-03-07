@@ -1,7 +1,7 @@
 # StatusRooster Build Tracker
 
 **Start:** Feb 25, 2026 · **Target Launch:** Mar 7, 2026
-**Current Day: 10 (in progress)** · **Phase 3: Hardening & Launch**
+**Current Day: 11 (in progress)** · **Phase 3: Hardening & Launch**
 
 ---
 
@@ -467,26 +467,37 @@ _Goal: Add cron/heartbeat monitor type, harden email delivery for scale, wire re
 
 ---
 
-### Day 11 — Incidents, Activity Log, Hardening & Admin 🔲
+### Day 11 — Incidents, Activity Log, Hardening & Admin �
 _Goal: Build the incidents experience (our differentiator), harden for real users, basic admin._
 
-**11A. Incidents Pages (~1.5 hrs)** _(from COMPETITIVE_AUDIT.md Sections 4-5 — user said "LEAN IN HERE")_
+**11A. Incidents Pages ✅** _(from COMPETITIVE_AUDIT.md Sections 4-5 — user said "LEAN IN HERE")_
 
-- [ ] **Dedicated /incidents page** — full table with all incidents across monitors (~45 min)
+- [x] **Dedicated /incidents page** — full column-based grid matching dashboard design (~45 min)
   - Route: `GET /incidents` in `pages.py`
-  - Template: `incidents.html` — reuse data table pattern from dashboard
-  - Columns: Status (resolved/ongoing), Monitor name, Root Cause (HTTP code badge), Started, Resolved, Duration
-  - Data: `list_incidents_by_user()` already exists
-  - Search by monitor name/URL
-  - Sort: newest/oldest, longest/shortest
-  - Filter: Resolved / Ongoing / by status code range
-- [ ] **Incident detail page** — `/incidents/{id}` (~30 min)
+  - Template: `incidents.html` — reuses `dash-single`, `status-strip`, `monitors-heading`, `table-toolbar`, `monitor-card` classes
+  - Hero status strip with ongoing/resolved counts
+  - Columns: Status dot, Status badge, Monitor Name, Group, Type, Root Cause, Started, Duration, Chevron
+  - Grid: `.inc-grid` override (`24px 80px 1.4fr 84px 72px 1fr 90px 80px 28px`)
+  - Client-side filter dropdown (All/Ongoing/Resolved + group filter) — matches dashboard pattern
+  - Client-side sort (Newest/Oldest/A-Z/Z-A/Longest duration)
+  - Client-side search by monitor name/URL
+  - Time range dropdown (24h/3d/7d/30d/All) — server-side via query params
+  - Active filter badge with ✕ clear button (same as dashboard)
+  - Responsive: hides root-cause ≤1024px, collapses to mobile ≤768px
+  - Data: `list_incidents_by_user()` + `monitor_map` + `group_names` passed from `pages.py`
+- [x] **Incident detail page** — `/incidents/{id}` (~30 min)
   - Route: `GET /incidents/{id}` in `pages.py`
   - Template: `incident_detail.html`
   - Root cause card: prominent HTTP status code + human-readable text (e.g. "503 Service Unavailable")
   - Status + timestamps: started_at, resolved_at, duration
   - "Go to monitor" link
   - Request URL + method shown
+- [x] **Dashboard + Incidents polish** — active filter badge, column naming consistency
+  - Added `.active-filter-badge` with `.clear-filter-x` button on both dashboard and incidents toolbars
+  - Renamed column header "Name" → "Monitor Name" on both pages
+  - Rebalanced dashboard grid columns (name 1.2fr, URL 1.4fr)
+- [x] Git commit 11A (`2b3f666`)
+- [x] Deploy 11A to production (revision `statusrooster-00018-vgg`)
 
 **11B. Activity Log / Event Timeline (~1.5 hrs)** _(COMPETITIVE_AUDIT.md — rated "Very High ROI")_
 _This is the post-mortem feature that makes us feel professional. UptimeRobot's strongest page._
@@ -687,7 +698,7 @@ _Nice-to-have. Don't build until there's user demand._
 | 3. Hardening & Launch | 10-12 | � In progress |
 | 4. Post-Launch | 13+ | 🔲 Not started |
 
-**Day 10 in progress** · **Target launch: Day 12 (Mar 7)**
+**Day 11 in progress** · **Target launch: Day 12 (Mar 7)**
 
 ### What's actually live right now
 - ✅ Full monitoring engine: HTTP checks, SSL, keyword, response threshold, **heartbeat/cron**, **JSON/API assertions**, **SSL certificate monitoring**
@@ -702,6 +713,8 @@ _Nice-to-have. Don't build until there's user demand._
 - ✅ Modern developer-first design (white theme, indigo brand, Inter + JetBrains Mono)
 - ✅ Card-based dashboard with sidebar nav, status strip, uptime bars, inline stats
 - ✅ Search, filter, sort, bulk actions, clone monitor, context menus
+- ✅ Active filter badge with clear button on dashboard + incidents
+- ✅ Dedicated incidents page with column-based grid (matching dashboard), filter/sort/search, time range
 - ✅ Pre-computed uptime bars on monitor docs (dashboard loads in ~0.3s)
 - ✅ Plan gating: Free (5 monitors, 5min, email) vs Pro (250, 60s, Slack + webhooks)
 - ✅ Monitor detail: unified uptime slicer (24h/7d/30d), response chart with time picker, incidents table, CSV export
@@ -723,8 +736,8 @@ _Nice-to-have. Don't build until there's user demand._
 - ~~🔲 Multi-period uptime (7d/30d/90d) on detail page~~ ✅ Done (10D — unified uptime slicer)
 - ~~🔲 Response chart time range picker~~ ✅ Done (10D)
 - 🔲 Request timeout / Basic Auth / HTTP method fields (10E)
-- 🔲 Dedicated /incidents page (11A)
-- 🔲 Incident detail page + activity log timeline (11A + 11B)
+- ~~🔲 Dedicated /incidents page (11A)~~ ✅ Done (11A — full column-based grid, filter/sort/search, filter badge)
+- ~~🔲 Incident detail page + activity log timeline (11A + 11B)~~ ✅ Detail done (11A). Activity log timeline still 🔲 (11B)
 - 🔲 Custom 404/500 pages, meta tags, favicon (11C)
 
 ---

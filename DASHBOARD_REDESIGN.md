@@ -576,54 +576,59 @@ async function openEditModal(monitorId) {
 - [x] `dashboard_base.html` — add Incidents nav link with alert-triangle SVG icon
 - [x] `dashboard_base.html` — add `{% block nav_incidents %}{% endblock %}` for active state
 
-### Step 2: Dashboard Simplification (~45 min)
+### Step 2: Dashboard Simplification (~45 min) ✅
 
 **Remove from `dashboard.html`:**
-- [ ] Remove uptime bar daily div + all `bar-seg` generation (~30 lines)
-- [ ] Remove uptime bar hourly div (~20 lines)
-- [ ] Remove `monitor-row-stats` div (3 inline stat columns)
-- [ ] Remove 30d/24h toggle from toolbar
-- [ ] Remove incidents panel (`incidents-panel`) + all incident HTML (~60 lines)
-- [ ] Simplify ⋯ menu → keep only: Edit, Pause/Resume, Clone, Copy URL, Delete
+- [x] Remove uptime bar daily div + all `bar-seg` generation (~30 lines)
+- [x] Remove uptime bar hourly div (~20 lines)
+- [x] Remove `monitor-row-stats` div (3 inline stat columns)
+- [x] Remove 30d/24h toggle from toolbar
+- [x] Remove incidents panel (`incidents-panel`) + all incident HTML (~60 lines)
+- [x] Simplify ⋯ menu → keep only: Edit, Pause/Resume, Clone, Copy URL, Delete
 
 **Add to `dashboard.html`:**
-- [ ] Group headers with collapse toggle (client-side `groupby`)
-- [ ] Uptime % as direct row element
-- [ ] Response time as direct row element
-- [ ] Group names in filter dropdown
+- [x] Group headers with collapse toggle (client-side `groupby`) — replaced with Group column + filter dropdown
+- [x] Uptime % as direct row element
+- [x] Response time as direct row element
+- [x] Group names in filter dropdown
 
 **Remove from `pages.py` dashboard route:**
-- [ ] Remove `uptime_bars` computation
-- [ ] Remove `uptime_bars_hourly` computation
-- [ ] Remove both from template context dict
+- [x] Remove `uptime_bars` computation
+- [x] Remove `uptime_bars_hourly` computation
+- [x] Remove both from template context dict
 
 **JS cleanup:**
-- [ ] Remove `initBarTooltips()`, `barMouseEnter()`, `barMouseLeave()`
-- [ ] Remove `setUptimeRange()`
-- [ ] Remove `filterIncidents()`
-- [ ] Add `toggleGroup()` function (collapse state → `localStorage`)
+- [x] Remove `initBarTooltips()`, `barMouseEnter()`, `barMouseLeave()`
+- [x] Remove `setUptimeRange()`
+- [x] Remove `filterIncidents()`
+- [x] Add `toggleGroup()` function — replaced with Group column in grid layout
 
-### Step 3: Incidents Page (~1 hr)
+### Step 3: Incidents Page (~1 hr) ✅
 
 **Backend:**
 - [x] `pages.py` — add `GET /incidents` route (query params: `hours`, `status`)
 
 **Template (`incidents.html` — NEW):**
 - [x] Extends `dashboard_base.html`, sets `nav_incidents` active
-- [x] Toolbar: search input + status tabs (All/Ongoing/Resolved) + time range dropdown
-- [x] Incident card loop — each card: status badge, monitor name, root cause, URL, timestamp
+- [x] Toolbar: search input + Filter dropdown (All/Ongoing/Resolved/Groups) + Sort dropdown + time range dropdown
+- [x] Hero status strip with ongoing/resolved counts
+- [x] Column-based grid matching dashboard (9 columns: dot, status, name, group, type, root cause, started, duration, chevron)
 - [x] Cards clickable → `/incidents/{id}`
 - [x] Client-side search (filter by monitor name/URL on keyup)
-- [x] Status tabs — server-side filter via query param
+- [x] Client-side filter + sort (combined search+filter+sort)
 - [x] Time range — reload with `?hours=24` / `72` / `168` / `720` / `0`
+- [x] Active filter badge with ✕ clear button
 - [x] Empty state: `✓ No incidents — all monitors healthy`
+- [x] Responsive: hides root-cause ≤1024px, collapses to mobile ≤768px
 
 **CSS (`style.css`):**
-- [ ] `.inc-card` — card style
-- [ ] `.inc-status-badge` — red ongoing / green resolved
-- [ ] `.inc-root-cause` — monospace badge
-- [ ] `.inc-meta` — muted URL line
-- [ ] `.inc-time` — right-aligned timestamp
+- [x] `.inc-grid` — 9-column grid override
+- [x] `.inc-badge` / `.inc-badge-ongoing` / `.inc-badge-resolved` — status badges
+- [x] `.inc-root-cause` — monospace pill
+- [x] `.inc-cause-col` — overflow handling
+- [x] `.inc-chevron-col` — right chevron
+- [x] `a.inc-row-link` — link reset styles
+- [x] `.inc-empty` — empty state
 
 ### Step 4: Incident Detail Page (~45 min)
 
@@ -639,9 +644,9 @@ async function openEditModal(monitorId) {
 - [x] Timeline section: placeholder + initial detection event from incident doc
 
 **CSS:**
-- [ ] `.inc-detail-hero` — colored left border card
-- [ ] `.inc-detail-grid` — 2-column key-value
-- [ ] `.inc-timeline` — vertical timeline with dots
+- [x] `.inc-detail-hero` — colored left border card
+- [x] `.inc-detail-grid` — 2-column key-value
+- [x] `.inc-timeline` — vertical timeline with dots
 
 ### Step 5: Add/Edit Modal Rebuild (~1.5 hrs)
 
@@ -664,16 +669,17 @@ async function openEditModal(monitorId) {
 **Fallback:**
 - [ ] Keep `edit_monitor.html` working (don't delete — bookmarks, fallback)
 
-### Step 6: Polish + CSS (~30 min)
+### Step 6: Polish + CSS (~30 min) — Partially Done
 
 - [ ] `.modal-section-label` — uppercase, muted, border-bottom, letter-spacing
-- [ ] `.monitor-group` / `.group-header` / `.group-body` — group collapse styles
-- [ ] `.group-chevron` — rotate animation on collapse
-- [ ] Incidents list CSS (`.inc-card`, `.inc-badge`, `.inc-root-cause`, `.inc-toolbar`, etc.)
-- [ ] Incident detail CSS (`.inc-detail-hero`, `.inc-detail-grid`, `.inc-timeline`, etc.)
+- [ ] `.monitor-group` / `.group-header` / `.group-body` — group collapse styles (N/A — using column + filter instead)
+- [ ] `.group-chevron` — rotate animation on collapse (N/A — using column + filter instead)
+- [x] Incidents list CSS (`.inc-grid`, `.inc-badge`, `.inc-root-cause`, `.inc-cause-col`, `.inc-chevron-col`, `a.inc-row-link`, `.inc-empty`)
+- [x] Incident detail CSS (`.inc-detail-hero`, `.inc-detail-grid`, `.inc-timeline`)
+- [x] Active filter badge CSS (`.active-filter-badge`, `.clear-filter-x`) on both pages
 - [ ] Mobile: modal scrolls at full height
-- [ ] Mobile: incident cards stack properly
-- [ ] Mobile: group headers have large enough tap target
+- [x] Mobile: incident cards stack properly (responsive grid collapse ≤768px)
+- [ ] Mobile: group headers have large enough tap target (N/A — column approach)
 
 ### Step 7: API Docs Update (~15 min)
 
