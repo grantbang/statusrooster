@@ -118,14 +118,16 @@
                 <button class="dropdown-item" data-filter="down" onclick="setFilter('down','Down')">● Down</button>
                 <button class="dropdown-item" data-filter="paused" onclick="setFilter('paused','Paused')">⏸ Paused</button>
                 <button class="dropdown-item" data-filter="pending" onclick="setFilter('pending','Pending')">○ Pending</button>
+                {% if group_names %}
+                <hr class="row-menu-divider">
+                {% for gn in group_names %}
+                <button class="dropdown-item" data-filter="group:{{ gn }}" onclick="setFilter('group:{{ gn }}','{{ gn }}')">📁 {{ gn }}</button>
+                {% endfor %}
+                {% endif %}
             </div>
         </div>
     </div>
     <div class="toolbar-right">
-        <div class="uptime-range-toggle">
-            <button class="range-btn active" data-range="30d" onclick="setUptimeRange('30d', this)">30d</button>
-            <button class="range-btn" data-range="24h" onclick="setUptimeRange('24h', this)">24h</button>
-        </div>
         <div class="toolbar-dropdown">
             <button class="btn btn-secondary btn-sm" onclick="toggleDropdown('sortDropdown')">
                 ↕ <span id="sortLabel">Down first</span>
@@ -141,6 +143,20 @@
     </div>
 </div>
 
+<!-- Column header (sortable) -->
+<div class="d-col-header">
+    <div class="d-col-check"></div>
+    <div class="d-col-dot"></div>
+    <div class="d-col-name d-col-sortable" data-sort="name" onclick="colSort('name')">Name <span class="sort-arrow"></span></div>
+    <div class="d-col-group d-col-sortable" data-sort="group" onclick="colSort('group')">Group <span class="sort-arrow"></span></div>
+    <div class="d-col-type d-col-sortable" data-sort="type" onclick="colSort('type')">Type <span class="sort-arrow"></span></div>
+    <div class="d-col-url">URL</div>
+    <div class="d-col-uptime d-col-sortable" data-sort="uptime" onclick="colSort('uptime')">24h <span class="sort-arrow"></span></div>
+    <div class="d-col-response d-col-sortable" data-sort="response" onclick="colSort('response')">Resp. <span class="sort-arrow"></span></div>
+    <div class="d-col-checked">Checked</div>
+    <div class="d-col-actions"></div>
+</div>
+
 <!-- Monitor List -->
 <div class="monitor-list" id="monitorList">
     {% for m in monitors %}
@@ -150,7 +166,10 @@
          data-name="{{ m.name }}"
          data-url="{{ m.url }}"
          data-status="{{ 'paused' if m.get('paused') else m.status|default('pending') }}"
-         data-uptime="{{ m.uptime_percent|default(100) }}"
+         data-uptime="{{ m.get('uptime_24h', m.uptime_percent|default(100)) }}"
+         data-group="{{ m.get('group', '') }}"
+         data-type="{{ m.get('monitor_type', 'http') }}"
+         data-response="{{ m.get('last_response_ms', 0)|int }}"
     >
         <!-- Checkbox -->
         <div class="row-cb-wrap" onclick="event.stopPropagation()">
@@ -172,125 +191,96 @@
             {% endif %}
         </div>
 
-        <!-- Name + meta line -->
-        <div class="monitor-info">
-            <div class="monitor-name">{{ m.name }}</div>
-            <div class="monitor-meta">
-                <span class="monitor-type{% if m.get('monitor_type') == 'heartbeat' %} monitor-type-heartbeat{% elif m.get('monitor_type') == 'json_api' %} monitor-type-json{% elif m.get('monitor_type') == 'ssl' %} monitor-type-ssl{% endif %}">{% if m.get('monitor_type') == 'heartbeat' %}♥ Heartbeat{% elif m.get('monitor_type') == 'json_api' %}{ } JSON/API{% elif m.get('monitor_type') == 'ssl' %}🔒 SSL{% else %}HTTP{% endif %}</span>
-                <span class="monitor-url-text">{{ m.url | replace('https://', '') | replace('http://', '') | truncate(35, True, '…') }}</span>
-                {% set sc = m.get('last_status_change') or m.get('created_at') or '' %}
-                {% if m.get('paused') %}
-                    <span class="monitor-duration">Paused</span>
-                {% elif sc %}
-                    <span class="monitor-duration duration-text"
-                          data-status-since="{{ sc.isoformat() if sc.isoformat is defined else sc }}"
-                          data-status="{{ m.status|default('pending') }}"></span>
-                {% endif %}
-            </div>
+        <!-- Name -->
+        <div class="monitor-name-col" title="{{ m.name }}">
+            <span class="monitor-name">{{ m.name }}</span>
         </div>
 
-        <!-- Right side: interval + uptime bar + percentage + menu -->
-        <div class="monitor-right">
-            <div class="monitor-interval">
-                {% set ci = m.get('check_interval', 300) %}
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                {% if ci <= 60 %}60s{% elif ci < 120 %}{{ ci }}s{% elif ci < 300 %}{{ (ci / 60)|int }}m{% else %}5 min{% endif %}
-            </div>
+        <!-- Group -->
+        <div class="monitor-group-col">
+            {% if m.get('group') %}
+            <span class="monitor-group-text">{{ m.get('group') }}</span>
+            {% else %}
+            <span class="monitor-group-text monitor-group-none">—</span>
+            {% endif %}
+        </div>
 
-            <div class="uptime-bar uptime-bar-daily">
-                {% set bars = uptime_bars.get(m.id, []) %}
-                {% for seg in bars %}
-                    {% set pct = seg.pct %}
-                    {% set dt = seg.date %}
-                    {% if pct is none %}
-                        <div class="bar-seg bar-none" data-date="{{ dt }}" data-pct="No data"></div>
-                    {% elif pct >= 99.5 %}
-                        <div class="bar-seg bar-up" data-date="{{ dt }}" data-pct="Up {{ pct }}%"></div>
-                    {% elif pct >= 90 %}
-                        <div class="bar-seg bar-warn" data-date="{{ dt }}" data-pct="Up {{ pct }}%"></div>
-                    {% else %}
-                        <div class="bar-seg bar-down" data-date="{{ dt }}" data-pct="Up {{ pct }}%"></div>
-                    {% endif %}
-                {% endfor %}
-                <div class="bar-tooltip" style="display:none;"></div>
-            </div>
-            <div class="uptime-bar uptime-bar-hourly" style="display:none;">
-                {% set hbars = uptime_bars_hourly.get(m.id, []) %}
-                {% for seg in hbars %}
-                    {% set pct = seg.pct %}
-                    {% set dt = seg.date %}
-                    {% if pct is none %}
-                        <div class="bar-seg bar-none" data-date="{{ dt }}" data-pct="No data"></div>
-                    {% elif pct >= 99.5 %}
-                        <div class="bar-seg bar-up" data-date="{{ dt }}" data-pct="Up {{ pct }}%"></div>
-                    {% elif pct >= 90 %}
-                        <div class="bar-seg bar-warn" data-date="{{ dt }}" data-pct="Up {{ pct }}%"></div>
-                    {% else %}
-                        <div class="bar-seg bar-down" data-date="{{ dt }}" data-pct="Up {{ pct }}%"></div>
-                    {% endif %}
-                {% endfor %}
-                <div class="bar-tooltip" style="display:none;"></div>
-            </div>
+        <!-- Type -->
+        <div class="monitor-type-col">
+            <span class="monitor-type-label type-{{ m.get('monitor_type', 'http') }}">{% if m.get('monitor_type') == 'heartbeat' %}Heartbeat{% elif m.get('monitor_type') == 'json_api' %}JSON/API{% elif m.get('monitor_type') == 'ssl' %}SSL{% else %}HTTP{% endif %}</span>
+        </div>
 
-            <div class="monitor-row-stats">
+        <!-- URL -->
+        <div class="monitor-url-col" title="{{ m.url }}">
+            <span class="monitor-url-text">{{ m.url | replace('https://', '') | replace('http://', '') | truncate(30, True, '…') }}</span>
+        </div>
+
+        <!-- Uptime % (24h) -->
+        <div class="monitor-uptime-col">
+            {% set up = m.get('uptime_24h') %}
+            {% if up is none %}
                 {% set up = m.uptime_percent|default(100)|float %}
-                <div class="row-stat">
-                    <span class="row-stat-value {% if up >= 99.5 %}text-green{% elif up >= 95 %}text-yellow{% else %}text-red{% endif %}">{{ "%.2f"|format(up) }}%</span>
-                    <span class="row-stat-label">Uptime</span>
-                </div>
-                <div class="row-stat">
-                    {% if m.get('monitor_type') == 'heartbeat' %}
-                        {% set lhb = m.get('last_heartbeat') %}
-                        <span class="row-stat-value">{{ 'Never' if not lhb else '✓' }}</span>
-                        <span class="row-stat-label">Last ping</span>
-                    {% else %}
-                        <span class="row-stat-value">{{ m.get('last_response_ms', 0)|int }}<span class="row-stat-unit">ms</span></span>
-                        <span class="row-stat-label">Response</span>
-                    {% endif %}
-                </div>
-                {% set m_incidents = recent_incidents|selectattr('monitor_id', 'equalto', m.id)|list|length %}
-                <div class="row-stat">
-                    <span class="row-stat-value {% if m_incidents > 0 %}text-red{% endif %}">{{ m_incidents }}</span>
-                    <span class="row-stat-label">Incidents</span>
-                </div>
-            </div>
+            {% endif %}
+            <span class="uptime-value {% if up >= 99.5 %}text-green{% elif up >= 95 %}text-yellow{% else %}text-red{% endif %}" title="24h uptime: {{ "%.4f"|format(up) }}%">{{ "%.2f"|format(up) }}%</span>
+        </div>
 
-            <div class="row-menu-wrap" onclick="event.stopPropagation()">
-                <button class="row-menu-btn" onclick="toggleRowMenu(this)" title="Actions">⋯</button>
-                <div class="row-menu">
-                    <button class="row-menu-item" onclick="window.location='/monitors/{{ m.id }}/edit'">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        Edit monitor
-                    </button>
-                    <button class="row-menu-item" onclick="rowAction('toggle','{{ m.id }}', this)">
-                        {% if m.get('paused') %}
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        Resume monitor
-                        {% else %}
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-                        Pause monitor
-                        {% endif %}
-                    </button>
-                    <button class="row-menu-item" onclick="rowAction('copy','{{ m.id }}', this)" data-url="{{ m.url }}">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                        Copy URL
-                    </button>
-                    <button class="row-menu-item" onclick="rowAction('clone','{{ m.id }}', this)">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                        Clone monitor
-                    </button>
-                    <hr class="row-menu-divider">
-                    <div class="row-menu-section-label">Edit monitor settings</div>
-                    <button class="row-menu-item" onclick="window.location='/monitors/{{ m.id }}/edit'">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                        Interval &amp; timeout
-                    </button>
-                    <hr class="row-menu-divider">
-                    <button class="row-menu-item row-menu-danger" onclick="rowAction('delete','{{ m.id }}', this)">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                        Delete monitor
-                    </button>
-                </div>
+        <!-- Response time -->
+        <div class="monitor-response-col">
+            {% if m.get('monitor_type') == 'heartbeat' %}
+                {% set lhb = m.get('last_heartbeat') %}
+                <span class="response-value">{{ 'Never' if not lhb else '✓' }}</span>
+            {% elif m.get('monitor_type') == 'ssl' %}
+                {% set days_left = m.get('ssl_days_remaining') %}
+                <span class="response-value {% if days_left is not none and days_left <= 14 %}text-red{% elif days_left is not none and days_left <= 30 %}text-yellow{% endif %}">{{ (days_left|string + 'd') if days_left is not none else '—' }}</span>
+            {% else %}
+                <span class="response-value" title="{{ m.get('last_response_ms', 0)|int }}ms">{{ m.get('last_response_ms', 0)|int }}<span class="response-unit">ms</span></span>
+            {% endif %}
+        </div>
+
+        <!-- Last checked (live countdown) -->
+        <div class="monitor-checked-col">
+            {% set lc = m.get('last_checked') %}
+            {% if lc %}
+                {% set lc_iso = lc.isoformat() if lc.isoformat is defined else lc|string %}
+                {% if '+' not in lc_iso|string and 'Z' not in lc_iso|string %}
+                    {% set lc_iso = lc_iso ~ 'Z' %}
+                {% endif %}
+                <span class="checked-value last-checked-tick" data-last-checked="{{ lc_iso }}" title="Last checked: {{ lc.strftime('%Y-%m-%d %H:%M:%S UTC') if lc.strftime is defined else lc }}"></span>
+            {% else %}
+                <span class="checked-value checked-never">Never</span>
+            {% endif %}
+        </div>
+
+        <!-- ⋯ menu -->
+        <div class="row-menu-wrap" onclick="event.stopPropagation()">
+            <button class="row-menu-btn" onclick="toggleRowMenu(this)" title="Actions">⋯</button>
+            <div class="row-menu">
+                <button class="row-menu-item" onclick="window.location='/monitors/{{ m.id }}/edit'">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Edit
+                </button>
+                <button class="row-menu-item" onclick="rowAction('toggle','{{ m.id }}', this)">
+                    {% if m.get('paused') %}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Resume
+                    {% else %}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                    Pause
+                    {% endif %}
+                </button>
+                <button class="row-menu-item" onclick="rowAction('clone','{{ m.id }}', this)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    Clone
+                </button>
+                <button class="row-menu-item" onclick="rowAction('copy','{{ m.id }}', this)" data-url="{{ m.url }}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    Copy URL
+                </button>
+                <hr class="row-menu-divider">
+                <button class="row-menu-item row-menu-danger" onclick="rowAction('delete','{{ m.id }}', this)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    Delete
+                </button>
             </div>
         </div>
     </div>
@@ -304,51 +294,6 @@
     </div>
 </div>
 
-<!-- Incidents Panel (below table) -->
-<div class="incidents-panel">
-    <div class="incidents-header">
-        <h3>Recent Incidents</h3>
-        <div class="incidents-filters">
-            <button class="incident-filter active" data-hours="24" onclick="filterIncidents(24, this)">24h</button>
-            <button class="incident-filter" data-hours="72" onclick="filterIncidents(72, this)">3d</button>
-            <button class="incident-filter" data-hours="168" onclick="filterIncidents(168, this)">7d</button>
-            <button class="incident-filter" data-hours="0" onclick="filterIncidents(0, this)">All</button>
-        </div>
-    </div>
-    <div class="incidents-list" id="incidentsList">
-        {% if recent_incidents %}
-        {% for inc in recent_incidents %}
-        <div class="incident-row" data-started="{{ inc.started_at.isoformat() if inc.started_at else '' }}"
-             data-monitor-id="{{ inc.monitor_id }}">
-            <div class="incident-indicator {{ 'incident-open' if inc.status == 'open' else 'incident-resolved' }}"></div>
-            <div class="incident-details">
-                <div class="incident-title">
-                    <span class="incident-monitor">{{ inc.monitor_name }}</span>
-                    {% if inc.status == 'open' %}
-                    <span class="incident-status-badge incident-badge-open">Ongoing</span>
-                    {% else %}
-                    <span class="incident-status-badge incident-badge-resolved">Resolved</span>
-                    {% endif %}
-                </div>
-                <div class="incident-meta">
-                    {% if inc.status_code %}<span class="incident-code">{{ inc.status_code }}</span>{% endif %}
-                    <span class="incident-time relative-time" data-ts="{{ inc.started_at.isoformat() if inc.started_at else '' }}">{{ inc.started_at }}</span>
-                    {% if inc.duration_seconds %}
-                    <span class="incident-duration">↔ {{ inc.duration_seconds // 3600 }}h {{ (inc.duration_seconds % 3600) // 60 }}m {{ inc.duration_seconds % 60 }}s</span>
-                    {% elif inc.status == 'open' %}
-                    <span class="incident-duration incident-ongoing">⏱ Ongoing</span>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-        {% else %}
-        <div class="incidents-empty">
-            <span class="incidents-empty-icon">✓</span>
-            No incidents in the selected period
-        </div>
-        {% endif %}
-</div>
 
 </div> <!-- /.dash-single -->
 
@@ -890,7 +835,7 @@ document.addEventListener('click', e => {
         document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('open'));
 });
 
-/* ── Filtering ─────────────────────────────────────────── */
+/* ── Filtering (group-aware) ────────────────────────────── */
 let currentFilter = 'all';
 function setFilter(f, label) {
     currentFilter = f;
@@ -902,8 +847,10 @@ function filterTable() {
     const q = document.getElementById('monitorSearch').value.toLowerCase();
     document.querySelectorAll('#monitorList .monitor-card:not(.monitor-card-add)').forEach(card => {
         const name = card.dataset.name.toLowerCase(), url = card.dataset.url.toLowerCase(), status = card.dataset.status;
+        const group = card.dataset.group || '';
         const matchSearch = !q || name.includes(q) || url.includes(q);
-        const matchFilter = currentFilter === 'all' || status === currentFilter;
+        let matchFilter = currentFilter === 'all' || status === currentFilter;
+        if (currentFilter.startsWith('group:')) matchFilter = group === currentFilter.slice(6);
         card.style.display = matchSearch && matchFilter ? '' : 'none';
     });
 }
@@ -922,8 +869,23 @@ function sortList() {
     const list = document.getElementById('monitorList');
     const cards = Array.from(list.querySelectorAll('.monitor-card:not(.monitor-card-add)'));
     const addCard = list.querySelector('.monitor-card-add');
-    const statusOrder = {down: 0, pending: 1, up: 2, paused: 3};
+    const statusOrder = {down: 0, pending: 1, warn: 2, up: 3, paused: 4};
+    const typeOrder = {http: 0, json_api: 1, heartbeat: 2, ssl: 3};
+
     cards.sort((a, b) => {
+        // Column header sort takes priority if active
+        if (colSortField) {
+            let cmp = 0;
+            switch (colSortField) {
+                case 'name': cmp = a.dataset.name.localeCompare(b.dataset.name); break;
+                case 'group': cmp = (a.dataset.group||'').localeCompare(b.dataset.group||''); break;
+                case 'type': cmp = (typeOrder[a.dataset.type]||9) - (typeOrder[b.dataset.type]||9); break;
+                case 'uptime': cmp = parseFloat(a.dataset.uptime) - parseFloat(b.dataset.uptime); break;
+                case 'response': cmp = parseInt(a.dataset.response||0) - parseInt(b.dataset.response||0); break;
+            }
+            return colSortDir === 'desc' ? -cmp : cmp;
+        }
+        // Toolbar sort
         switch (currentSort) {
             case 'down-first': return (statusOrder[a.dataset.status]||9) - (statusOrder[b.dataset.status]||9);
             case 'name-asc': return a.dataset.name.localeCompare(b.dataset.name);
@@ -970,76 +932,64 @@ async function bulkAction(action) {
     } catch(e) { alert('Network error.'); }
 }
 
-/* ── Uptime bar tooltips ───────────────────────────────── */
-function initBarTooltips() {
-    document.querySelectorAll('.bar-seg').forEach(seg => {
-        seg.removeEventListener('mouseenter', barMouseEnter);
-        seg.removeEventListener('mouseleave', barMouseLeave);
-        seg.addEventListener('mouseenter', barMouseEnter);
-        seg.addEventListener('mouseleave', barMouseLeave);
-    });
-}
-function barMouseEnter() {
-    const bar = this.closest('.uptime-bar');
-    const tip = bar.querySelector('.bar-tooltip');
-    if (!tip) return;
-    const dt = this.dataset.date || '';
-    const pct = this.dataset.pct || 'No data';
-    tip.innerHTML = '<div class="bar-tt-date">' + dt + '</div><div class="bar-tt-pct">' + pct + '</div>';
-    tip.style.display = 'block';
-    const barRect = bar.getBoundingClientRect();
-    const segRect = this.getBoundingClientRect();
-    const segCenter = segRect.left + segRect.width / 2 - barRect.left;
-    tip.style.left = segCenter + 'px';
-}
-function barMouseLeave() {
-    const tip = this.closest('.uptime-bar').querySelector('.bar-tooltip');
-    if (tip) tip.style.display = 'none';
-}
-initBarTooltips();
-
-/* ── Uptime range toggle (24h hourly / 30d daily) ─────── */
-function setUptimeRange(range, btn) {
-    document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const showDaily = range === '30d';
-    document.querySelectorAll('.uptime-bar-daily').forEach(el => el.style.display = showDaily ? '' : 'none');
-    document.querySelectorAll('.uptime-bar-hourly').forEach(el => el.style.display = showDaily ? 'none' : '');
-    initBarTooltips();
-}
-
-/* ── Duration text ("Up 5 hr, 19 min" / "Down 38 min") ── */
-function formatDuration(seconds) {
-    if (seconds < 60) return seconds + ' sec';
-    if (seconds < 3600) return Math.floor(seconds / 60) + ' min';
+/* ── Live "last checked" ticker (every 1s) ─────────────── */
+function formatCheckedAgo(seconds) {
+    if (seconds < 0) return 'just now';
+    if (seconds < 60) return seconds + 's ago';
+    if (seconds < 3600) {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return s > 0 ? m + 'm ' + s + 's ago' : m + 'm ago';
+    }
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     if (h >= 24) {
         const d = Math.floor(h / 24);
         const rh = h % 24;
-        if (rh > 0) return d + ' day' + (d>1?'s':'') + ', ' + rh + ' hr';
-        return d + ' day' + (d>1?'s':'');
+        return rh > 0 ? d + 'd ' + rh + 'h ago' : d + 'd ago';
     }
-    if (m > 0) return h + ' hr, ' + m + ' min';
-    return h + ' hr';
+    return m > 0 ? h + 'h ' + m + 'm ago' : h + 'h ago';
 }
-function updateDurations() {
-    document.querySelectorAll('.duration-text').forEach(el => {
-        const since = el.dataset.statusSince;
-        const status = el.dataset.status;
-        if (!since) return;
+function tickLastChecked() {
+    const now = Date.now();
+    document.querySelectorAll('.last-checked-tick').forEach(el => {
+        const iso = el.dataset.lastChecked;
+        if (!iso) return;
         try {
-            const d = new Date(since);
-            if (isNaN(d.getTime())) return;
-            const secs = Math.floor((Date.now() - d.getTime()) / 1000);
-            if (secs < 0) return;
-            const prefix = status === 'up' ? 'Up ' : status === 'down' ? 'Down ' : '';
-            el.textContent = prefix + formatDuration(secs);
-        } catch(e) {}
+            let d = new Date(iso);
+            if (isNaN(d.getTime())) d = new Date(iso + 'Z');
+            if (isNaN(d.getTime())) { el.textContent = '—'; return; }
+            const secs = Math.floor((now - d.getTime()) / 1000);
+            el.textContent = formatCheckedAgo(secs);
+        } catch(e) { el.textContent = '—'; }
     });
 }
-updateDurations();
-setInterval(updateDurations, 30000);
+tickLastChecked();
+setInterval(tickLastChecked, 1000);
+
+/* ── Column header sort ────────────────────────────────── */
+let colSortField = null;
+let colSortDir = 'asc';
+function colSort(field) {
+    if (colSortField === field) {
+        colSortDir = colSortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+        colSortField = field;
+        colSortDir = 'asc';
+    }
+    // Update arrows
+    document.querySelectorAll('.d-col-sortable').forEach(col => {
+        const arrow = col.querySelector('.sort-arrow');
+        if (col.dataset.sort === field) {
+            arrow.textContent = colSortDir === 'asc' ? '▲' : '▼';
+            col.classList.add('sort-active');
+        } else {
+            arrow.textContent = '';
+            col.classList.remove('sort-active');
+        }
+    });
+    sortList();
+}
 
 /* ── Three-dot row menu ────────────────────────────────── */
 function toggleRowMenu(btn) {
@@ -1086,40 +1036,6 @@ async function rowAction(action, monitorId, btn) {
     }
 }
 
-/* ── Incident Filtering ────────────────────────────── */
-function filterIncidents(hours, btn) {
-    document.querySelectorAll('.incident-filter').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    const rows = document.querySelectorAll('.incident-row');
-    const emptyMsg = document.querySelector('.incidents-empty');
-    const now = new Date();
-    let visibleCount = 0;
-    rows.forEach(row => {
-        if (hours === 0) { row.style.display = ''; visibleCount++; return; }
-        const started = row.dataset.started;
-        if (!started) { row.style.display = 'none'; return; }
-        const d = new Date(started);
-        const diffHours = (now - d) / (1000 * 60 * 60);
-        if (diffHours <= hours) { row.style.display = ''; visibleCount++; }
-        else { row.style.display = 'none'; }
-    });
-    if (emptyMsg) emptyMsg.style.display = visibleCount === 0 ? '' : 'none';
-    if (visibleCount === 0 && !emptyMsg) {
-        const list = document.getElementById('incidentsList');
-        if (list) {
-            const existing = list.querySelector('.incidents-empty-dynamic');
-            if (!existing) {
-                const div = document.createElement('div');
-                div.className = 'incidents-empty incidents-empty-dynamic';
-                div.innerHTML = '<span class="incidents-empty-icon">✓</span> No incidents in the selected period';
-                list.appendChild(div);
-            }
-        }
-    } else {
-        const dyn = document.querySelector('.incidents-empty-dynamic');
-        if (dyn) dyn.remove();
-    }
-}
-filterIncidents(24, document.querySelector('.incident-filter[data-hours="24"]'));
+
 </script>
 {% endblock %}
