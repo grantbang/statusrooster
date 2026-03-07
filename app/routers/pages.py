@@ -447,6 +447,7 @@ async def add_monitor(
     ssl_domain = form.get("ssl_domain", "")
     ssl_expiry_threshold_days_raw = form.get("ssl_expiry_threshold_days", "")
     group = form.get("group", "")
+    slug = form.get("slug", "")
 
     db = get_db()
 
@@ -464,8 +465,8 @@ async def add_monitor(
             status_code=302,
         )
 
-    # Validate URL
-    if not url.startswith(("http://", "https://")):
+    # Validate URL (skip for heartbeat — URL is auto-generated)
+    if url and monitor_type != "heartbeat" and not url.startswith(("http://", "https://")):
         url = f"https://{url}"
 
     # Build maintenance windows list (Pro only)
@@ -560,6 +561,11 @@ async def add_monitor(
     if monitor_type == "heartbeat" and not url:
         url = ""  # Will be set after creation
 
+    # Clean up slug (lowercase, hyphens only)
+    import re
+    if slug:
+        slug = re.sub(r"[^a-z0-9\-]", "", slug.lower().replace(" ", "-")).strip("-")
+
     monitor = create_monitor(
         db,
         user_id=user["id"],
@@ -584,6 +590,7 @@ async def add_monitor(
         ssl_domain=ssl_domain,
         ssl_expiry_threshold_days=ssl_expiry_threshold_days,
         group=group,
+        slug=slug,
     )
 
     # For heartbeat monitors, set the ping URL on the monitor doc
@@ -664,7 +671,8 @@ async def edit_monitor_submit(
     if not monitor or monitor["user_id"] != user["id"]:
         return RedirectResponse(url="/dashboard?msg=Monitor+not+found&msg_type=error", status_code=302)
 
-    if not url.startswith(("http://", "https://")):
+    # Validate URL (skip empty URLs — heartbeat/SSL use hidden fields)
+    if url and not url.startswith(("http://", "https://")):
         url = f"https://{url}"
 
     # Clean up slug (lowercase, hyphens only)

@@ -23,7 +23,7 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
                    json_assertions: list | None = None, auth_header: str = "",
                    ssl_domain: str = "", ssl_expiry_threshold_days: int | None = None,
                    heartbeat_grace_period: int | None = None,
-                   group: str = "") -> dict:
+                   group: str = "", slug: str = "") -> dict:
     """Create a new monitor. Returns monitor dict with id.
 
     monitor_type: "http" | "heartbeat" | "json_api" | "ssl"
@@ -65,7 +65,8 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
         timeout = max(1, min(60, int(timeout)))
 
     doc_ref = db.collection(COLLECTION).document()
-    slug = generate_slug(name)
+    if not slug:
+        slug = generate_slug(name)
     monitor_data = {
         "user_id": user_id,
         "url": url,
