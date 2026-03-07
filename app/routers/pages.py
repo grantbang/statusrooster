@@ -404,6 +404,23 @@ async def incident_detail_page(request: Request, incident_id: str):
 # Monitor CRUD (form-based)
 # ---------------------------------------------------------------------------
 
+@router.get("/monitors/add", response_class=HTMLResponse)
+async def add_monitor_page(request: Request):
+    user = get_user_from_cookie(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+
+    db = get_db()
+    monitors = list_monitors_by_user(db, user["id"])
+    group_names = sorted(set(m.get("group", "") for m in monitors) - {""})
+
+    return templates.TemplateResponse("add_monitor.html", {
+        "request": request,
+        "user": user,
+        "group_names": group_names,
+    })
+
+
 @router.post("/monitors/add", response_class=HTMLResponse)
 async def add_monitor(
     request: Request,
@@ -603,10 +620,14 @@ async def edit_monitor_page(request: Request, monitor_id: str):
     if not monitor or monitor["user_id"] != user["id"]:
         return RedirectResponse(url="/dashboard?msg=Monitor+not+found&msg_type=error", status_code=302)
 
+    monitors = list_monitors_by_user(db, user["id"])
+    group_names = sorted(set(m.get("group", "") for m in monitors) - {""})
+
     return templates.TemplateResponse("edit_monitor.html", {
         "request": request,
         "user": user,
         "monitor": monitor,
+        "group_names": group_names,
     })
 
 

@@ -1,0 +1,476 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Add Monitor{% endblock %}
+{% block nav_monitoring %}active{% endblock %}
+
+{% block content %}
+{% set plan = user.get('plan', 'free') %}
+
+<a href="/dashboard" class="mf-back">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+    Dashboard
+</a>
+<h1 class="mf-heading">Add monitor<span class="mf-heading-dot">.</span></h1>
+
+<form method="POST" action="/monitors/add" id="addForm" class="mf-layout">
+
+    <!-- Monitor Type -->
+    <div class="mf-section">
+        <div class="mf-section-title">Monitor type</div>
+        <div class="mf-type-select">
+            <select id="monitorTypeSelect" onchange="setMonitorType(this.value)">
+                <option value="http" selected>🌐  HTTP / HTTPS</option>
+                <option value="json_api">📄  JSON / API</option>
+                <option value="heartbeat">💓  Heartbeat / Cron</option>
+                <option value="ssl">🔒  SSL Certificate</option>
+            </select>
+        </div>
+        <input type="hidden" id="monitor_type" name="monitor_type" value="http">
+    </div>
+
+    <!-- URL — HTTP -->
+    <div class="mf-section" id="httpSection">
+        <div class="mf-section-title">URL to monitor</div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <input type="text" id="url" name="url" placeholder="https://example.com" required>
+            <div class="hint">We'll check this URL at the interval you choose below.</div>
+        </div>
+    </div>
+
+    <!-- URL — JSON/API -->
+    <div class="mf-section" id="jsonApiSection" style="display: none;">
+        <div class="mf-section-title">API endpoint URL</div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <input type="text" id="json_url" placeholder="https://api.example.com/v1/health">
+            <div class="hint">We'll send a GET request and validate the JSON response.</div>
+        </div>
+    </div>
+
+    <!-- Heartbeat info -->
+    <div class="mf-section" id="heartbeatSection" style="display: none;">
+        <div class="mf-section-title">Heartbeat / cron monitoring</div>
+        <div class="mf-info-box" style="background: #f0fdf4; border-color: #bbf7d0;">
+            <div style="font-weight: 600; font-size: 0.9rem; color: #15803d; margin-bottom: 0.4rem;">How it works</div>
+            <ol style="margin: 0; padding-left: 1.2rem; font-size: 0.82rem; color: #166534; line-height: 1.7;">
+                <li>Create this monitor — we generate a unique <strong>ping URL</strong></li>
+                <li>Add the URL to your cron job, scheduler, or deploy script</li>
+                <li>If we don't receive a ping in time, we alert you instantly</li>
+            </ol>
+        </div>
+        <div class="form-group">
+            <label for="heartbeat_interval">Expected ping interval</label>
+            <select id="heartbeat_interval" name="heartbeat_interval">
+                <option value="60">Every 1 minute</option>
+                <option value="300" selected>Every 5 minutes</option>
+                <option value="600">Every 10 minutes</option>
+                <option value="900">Every 15 minutes</option>
+                <option value="1800">Every 30 minutes</option>
+                <option value="3600">Every 1 hour</option>
+                <option value="21600">Every 6 hours</option>
+                <option value="43200">Every 12 hours</option>
+                <option value="86400">Every 24 hours</option>
+            </select>
+            <div class="hint">We'll alert you if no ping arrives within this interval.</div>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="heartbeat_grace_period">Grace period <span class="label-optional">(seconds)</span></label>
+            <input type="number" id="heartbeat_grace_period" name="heartbeat_grace_period" value="30" min="0" max="3600" style="max-width: 140px;">
+            <div class="hint">Extra time after the interval before marking as down.</div>
+        </div>
+    </div>
+
+    <!-- SSL -->
+    <div class="mf-section" id="sslSection" style="display: none;">
+        <div class="mf-section-title">SSL certificate</div>
+        <div class="form-group">
+            <label for="ssl_domain">Domain</label>
+            <input type="text" id="ssl_domain" name="ssl_domain" placeholder="example.com">
+            <div class="hint">Enter the domain name — no protocol or path needed.</div>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="ssl_expiry_threshold_days">Warning threshold <span class="label-optional">(days)</span></label>
+            <input type="number" id="ssl_expiry_threshold_days" name="ssl_expiry_threshold_days" value="14" min="1" max="90" style="max-width: 140px;">
+            <div class="hint">Alert when certificate expires within this many days.</div>
+        </div>
+    </div>
+
+    <!-- Friendly Name -->
+    <div class="mf-section">
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="name">Friendly name</label>
+            <input type="text" id="name" name="name" placeholder="My Website" required>
+            <div class="hint">A short name to identify this monitor on your dashboard.</div>
+        </div>
+    </div>
+
+    <!-- Group -->
+    <div class="mf-section">
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="group">Group <span class="label-optional">(optional)</span></label>
+            <input type="text" id="group" name="group" list="groupSuggestions" placeholder="e.g. Production" autocomplete="off">
+            <datalist id="groupSuggestions">
+                {% for gn in group_names %}
+                <option value="{{ gn }}">
+                {% endfor %}
+            </datalist>
+            <div class="hint">Organize monitors by environment or project.</div>
+        </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="mf-section">
+        <div class="mf-section-title">How will we notify you?</div>
+        <div class="mf-notify-row">
+            <input type="checkbox" class="mf-notify-check" checked disabled>
+            <div class="mf-notify-icon">📧</div>
+            <div class="mf-notify-info">
+                <div class="mf-notify-label">Email</div>
+                <div class="mf-notify-detail">{{ user.email }}</div>
+            </div>
+        </div>
+        <input type="hidden" name="alert_email" value="{{ user.email }}">
+
+        <div class="mf-notify-row">
+            {% if plan != 'free' %}
+            <input type="checkbox" class="mf-notify-check" id="slackToggle"
+                   onchange="document.getElementById('slackUrlWrap').style.display = this.checked ? 'block' : 'none'">
+            {% else %}
+            <input type="checkbox" class="mf-notify-check" disabled>
+            {% endif %}
+            <div class="mf-notify-icon">💬</div>
+            <div class="mf-notify-info">
+                <div class="mf-notify-label">Slack</div>
+                {% if plan != 'free' %}
+                <div class="mf-notify-detail">Send alerts to a Slack channel</div>
+                {% else %}
+                <div class="mf-notify-detail"><a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a></div>
+                {% endif %}
+            </div>
+            {% if plan == 'free' %}<span class="mf-notify-pro">PRO</span>{% endif %}
+        </div>
+        <div id="slackUrlWrap" style="display: none; padding-left: 2.75rem; padding-bottom: 0.5rem;">
+            {% if plan != 'free' %}
+            <input type="text" name="alert_slack_webhook" placeholder="https://hooks.slack.com/services/...">
+            {% else %}
+            <input type="hidden" name="alert_slack_webhook" value="">
+            {% endif %}
+        </div>
+
+        <div class="mf-notify-row">
+            {% if plan != 'free' %}
+            <input type="checkbox" class="mf-notify-check" id="webhookToggle"
+                   onchange="document.getElementById('webhookUrlWrap').style.display = this.checked ? 'block' : 'none'">
+            {% else %}
+            <input type="checkbox" class="mf-notify-check" disabled>
+            {% endif %}
+            <div class="mf-notify-icon">🔗</div>
+            <div class="mf-notify-info">
+                <div class="mf-notify-label">Webhook</div>
+                {% if plan != 'free' %}
+                <div class="mf-notify-detail">POST JSON to your endpoint on status changes</div>
+                {% else %}
+                <div class="mf-notify-detail"><a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a></div>
+                {% endif %}
+            </div>
+            {% if plan == 'free' %}<span class="mf-notify-pro">PRO</span>{% endif %}
+        </div>
+        <div id="webhookUrlWrap" style="display: none; padding-left: 2.75rem; padding-bottom: 0.5rem;">
+            {% if plan != 'free' %}
+            <input type="text" name="webhook_url" placeholder="https://your-api.com/webhook">
+            {% else %}
+            <input type="hidden" name="webhook_url" value="">
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Monitor Interval -->
+    <div class="mf-section" id="intervalSection">
+        <div class="mf-section-title">Monitor interval</div>
+        {% if plan != 'free' %}
+        <div class="mf-interval-wrap">
+            <input type="range" class="mf-interval-slider" id="check_interval" name="check_interval" min="60" max="300" step="10" value="60"
+                   oninput="updateIntervalDisplay(this.value)">
+            <span class="mf-interval-value" id="intervalDisplay">60s</span>
+        </div>
+        <div class="mf-interval-labels"><span>60s</span><span>3m</span><span>5m</span></div>
+        <div class="hint" style="margin-top: 0.5rem;">Your monitor will be checked every <strong id="intervalText">60 seconds</strong>.</div>
+        {% else %}
+        <div class="mf-interval-wrap" style="opacity: 0.5;">
+            <input type="range" class="mf-interval-slider" disabled min="60" max="300" value="300" style="cursor: not-allowed;">
+            <span class="mf-interval-value" style="color: var(--text-muted);">5m</span>
+        </div>
+        <input type="hidden" name="check_interval" value="300">
+        <div class="hint" style="margin-top: 0.5rem;">Checked every <strong>5 minutes</strong>. <a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a> for 60s checks. <span class="mf-notify-pro" style="vertical-align: middle;">PRO</span></div>
+        {% endif %}
+    </div>
+
+    <!-- Advanced Settings -->
+    <div class="mf-section">
+        <button type="button" class="mf-collapse-toggle" onclick="toggleAdvanced(this)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+            Advanced settings
+        </button>
+        <div class="mf-collapse-content" id="advancedContent">
+
+            <!-- HTTP advanced -->
+            <div id="advHttp">
+                <div class="form-group">
+                    <label for="expected_status_code">Expected status code <span class="label-optional">(optional)</span></label>
+                    <input type="number" id="expected_status_code" name="expected_status_code" placeholder="200" min="100" max="599" style="max-width: 140px;">
+                    <div class="hint">Leave blank to accept any 2xx/3xx response.</div>
+                </div>
+                <div class="form-group">
+                    <label for="timeout">Request timeout <span class="label-optional">(seconds)</span></label>
+                    <input type="number" id="timeout" name="timeout" value="10" min="1" max="60" style="max-width: 140px;">
+                </div>
+                <div class="form-group">
+                    <label for="keyword">Keyword check <span class="label-optional">(optional)</span></label>
+                    <input type="hidden" id="keyword" name="keyword" value="">
+                    <div class="kw-builder" id="kwBuilder">
+                        <div class="kw-rows" id="kwRows"></div>
+                        <button type="button" class="kw-add-btn" onclick="kwAddRow()">
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 7h5M7 4.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                            Add keyword
+                        </button>
+                    </div>
+                    <div class="hint">Body must contain these keywords or the monitor is marked <strong>down</strong>.</div>
+                </div>
+                <div class="form-group">
+                    <label for="response_threshold_ms">Response threshold <span class="label-optional">(optional)</span></label>
+                    <input type="text" id="response_threshold_ms" name="response_threshold_ms" placeholder="e.g. > 2000 or 200-3000">
+                    <div class="hint">Supports: <code>&gt; 2000</code>, <code>&lt; 200</code>, <code>200-3000</code> (range).</div>
+                </div>
+            </div>
+
+            <!-- JSON/API advanced -->
+            <div id="advJson" style="display: none;">
+                <div class="form-group">
+                    <label for="json_expected_status">Expected status code <span class="label-optional">(optional)</span></label>
+                    <input type="number" id="json_expected_status" placeholder="200" min="100" max="599" style="max-width: 140px;">
+                </div>
+                <div class="form-group">
+                    <label for="json_timeout">Request timeout <span class="label-optional">(seconds)</span></label>
+                    <input type="number" id="json_timeout" value="10" min="1" max="60" style="max-width: 140px;">
+                </div>
+                <div class="form-group">
+                    <label for="auth_header">Authorization header <span class="label-optional">(optional)</span></label>
+                    <input type="text" id="auth_header" name="auth_header" placeholder="Bearer eyJhbGci...">
+                    <div class="hint">Sent as the <code>Authorization</code> header.</div>
+                </div>
+                <div class="form-group">
+                    <label>JSON assertions <span class="label-optional">(optional)</span></label>
+                    <div id="assertions-container"></div>
+                    <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; margin-top: 0.5rem;" onclick="addAssertion()">+ Add assertion</button>
+                    <div class="hint">Validate specific fields — e.g. <code>data.status</code> equals <code>ok</code>.</div>
+                </div>
+            </div>
+
+            <hr class="form-divider">
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
+                    <input type="checkbox" name="public" value="true" style="width: 18px; height: 18px; accent-color: var(--brand);"
+                           onchange="document.getElementById('slugGroup').style.display = this.checked ? 'block' : 'none'">
+                    Public status page
+                </label>
+                <div class="hint">When enabled, anyone can view the status page.</div>
+            </div>
+            <div class="form-group" id="slugGroup" style="display: none;">
+                <label for="slug">Status page slug <span class="label-optional">(optional)</span></label>
+                <input type="text" id="slug" name="slug" placeholder="my-website" pattern="[a-z0-9\-]+" title="Lowercase letters, numbers, and hyphens only">
+                <div class="hint">URL: <code>statusrooster.com/s/<span id="slug-preview">...</span></code></div>
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
+                    <input type="checkbox" name="paused" value="true" style="width: 18px; height: 18px; accent-color: var(--brand);">
+                    Start paused
+                </label>
+                <div class="hint">When paused, checks won't start until you resume.</div>
+            </div>
+
+            <!-- Maintenance windows -->
+            <hr class="form-divider">
+            <div class="form-group">
+                <label>Maintenance windows <span class="label-optional">(Pro)</span></label>
+                <div id="mw-container"></div>
+                {% if plan != 'free' %}
+                <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; margin-top: 0.5rem;" onclick="addMaintenanceWindow()">+ Add maintenance window</button>
+                <div class="hint">Suppress alerts during these windows (times in UTC).</div>
+                {% else %}
+                <div class="hint"><a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a> to suppress alerts during scheduled maintenance. <span class="mf-notify-pro" style="vertical-align: middle;">PRO</span></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sticky Submit -->
+    <div class="mf-footer">
+        <button type="submit" class="mf-submit">Add monitor</button>
+    </div>
+
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── Type Switcher ─────────────────────────────────────── */
+function setMonitorType(type) {
+    document.getElementById('monitor_type').value = type;
+    ['httpSection','jsonApiSection','heartbeatSection','sslSection'].forEach(id => document.getElementById(id).style.display = 'none');
+    ['advHttp','advJson'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    const interval = document.getElementById('intervalSection');
+
+    if (type === 'http') {
+        document.getElementById('httpSection').style.display = '';
+        document.getElementById('advHttp').style.display = '';
+        interval.style.display = '';
+        syncFieldNames('http');
+    } else if (type === 'json_api') {
+        document.getElementById('jsonApiSection').style.display = '';
+        document.getElementById('advJson').style.display = '';
+        interval.style.display = '';
+        syncFieldNames('json_api');
+    } else if (type === 'heartbeat') {
+        document.getElementById('heartbeatSection').style.display = '';
+        interval.style.display = 'none';
+        syncFieldNames('heartbeat');
+    } else if (type === 'ssl') {
+        document.getElementById('sslSection').style.display = '';
+        interval.style.display = '';
+        syncFieldNames('ssl');
+    }
+}
+function syncFieldNames(type) {
+    // Ensure correct name attributes reach the server
+    const urlField = document.getElementById('url');
+    const jsonUrl = document.getElementById('json_url');
+    if (type === 'json_api') {
+        if (urlField) urlField.removeAttribute('name');
+        if (jsonUrl) jsonUrl.setAttribute('name', 'url');
+        jsonUrl.setAttribute('required', '');
+        if (urlField) urlField.removeAttribute('required');
+    } else {
+        if (urlField) urlField.setAttribute('name', 'url');
+        if (jsonUrl) jsonUrl.removeAttribute('name');
+        if (jsonUrl) jsonUrl.removeAttribute('required');
+        if (type === 'http') urlField.setAttribute('required', '');
+        else urlField.removeAttribute('required');
+    }
+    const esc = document.getElementById('expected_status_code');
+    const jesc = document.getElementById('json_expected_status');
+    const to = document.getElementById('timeout');
+    const jto = document.getElementById('json_timeout');
+    if (type === 'json_api') {
+        if (esc) esc.removeAttribute('name');
+        if (jesc) jesc.setAttribute('name', 'expected_status_code');
+        if (to) to.removeAttribute('name');
+        if (jto) jto.setAttribute('name', 'timeout');
+    } else {
+        if (esc) esc.setAttribute('name', 'expected_status_code');
+        if (jesc) jesc.removeAttribute('name');
+        if (to) to.setAttribute('name', 'timeout');
+        if (jto) jto.removeAttribute('name');
+    }
+}
+
+/* ── Interval Display ─────────────────────────────────── */
+function updateIntervalDisplay(val) {
+    const v = parseInt(val);
+    const display = document.getElementById('intervalDisplay');
+    const text = document.getElementById('intervalText');
+    if (v < 120) { display.textContent = v + 's'; if (text) text.textContent = v + ' seconds'; }
+    else { display.textContent = Math.round(v / 60) + 'm'; if (text) text.textContent = Math.round(v / 60) + ' minutes'; }
+}
+
+/* ── Advanced Toggle ──────────────────────────────────── */
+function toggleAdvanced(btn) {
+    btn.classList.toggle('open');
+    document.getElementById('advancedContent').classList.toggle('open');
+}
+
+/* ── Slug Preview ─────────────────────────────────────── */
+const slugInput = document.getElementById('slug');
+if (slugInput) slugInput.addEventListener('input', function() { document.getElementById('slug-preview').textContent = this.value || '...'; });
+
+/* ── Maintenance Windows ──────────────────────────────── */
+const MW_DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday','daily'];
+function addMaintenanceWindow(day, start, end) {
+    const c = document.getElementById('mw-container');
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;';
+    const options = MW_DAYS.map(d => '<option value="'+d+'" '+(d===(day||'')?'selected':'')+'>'+d.charAt(0).toUpperCase()+d.slice(1)+'</option>').join('');
+    row.innerHTML = '<select name="maintenance_day[]" style="flex:0 0 auto;"><option value="">Day…</option>'+options+'</select>'
+        + '<input type="time" name="maintenance_start[]" value="'+(start||'')+'" style="flex:0 0 auto;">'
+        + '<span style="color:var(--text-muted);">to</span>'
+        + '<input type="time" name="maintenance_end[]" value="'+(end||'')+'" style="flex:0 0 auto;">'
+        + '<button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>';
+    c.appendChild(row);
+}
+
+/* ── JSON Assertion Builder ───────────────────────────── */
+const ASSERTION_OPS = [['equals','Equals'],['not_equals','Not equals'],['contains','Contains'],['not_contains','Not contains'],['exists','Exists'],['not_exists','Not exists'],['greater_than','Greater than'],['less_than','Less than']];
+function addAssertion(path, operator, value) {
+    const c = document.getElementById('assertions-container');
+    if (!c) return;
+    const row = document.createElement('div');
+    row.className = 'assertion-row';
+    row.style.cssText = 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;';
+    const options = ASSERTION_OPS.map(function(a) { return '<option value="'+a[0]+'" '+(a[0]===(operator||'equals')?'selected':'')+'>'+a[1]+'</option>'; }).join('');
+    row.innerHTML = '<input type="text" name="assertion_path[]" value="'+(path||'')+'" placeholder="data.status" style="flex:1;min-width:100px;">'
+        + '<select name="assertion_operator[]" style="flex:0 0 auto;">'+options+'</select>'
+        + '<input type="text" name="assertion_value[]" value="'+(value||'')+'" placeholder="ok" style="flex:1;min-width:80px;">'
+        + '<button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>';
+    c.appendChild(row);
+}
+
+/* ── Keyword Expression Builder ───────────────────────── */
+let kwRows = [];
+let kwNextId = 0;
+function kwAddRow(operator, keyword) {
+    kwRows.push({ id: kwNextId++, operator: operator || 'contains', keyword: keyword || '', nextOp: 'AND' });
+    kwRender();
+}
+function kwRemoveRow(id) { kwRows = kwRows.filter(function(r) { return r.id !== id; }); kwRender(); }
+function kwUpdateRow(id, field, value) { var row = kwRows.find(function(r) { return r.id === id; }); if (row) { row[field] = value; kwSync(); } }
+function kwSetJoin(id, op) { var row = kwRows.find(function(r) { return r.id === id; }); if (row) { row.nextOp = op; kwSync(); kwRender(); } }
+function kwSync() {
+    var parts = [];
+    kwRows.forEach(function(r, i) {
+        var kw = r.keyword.trim();
+        if (!kw) return;
+        if (i > 0 && parts.length > 0) parts.push(kwRows[i-1].nextOp || 'AND');
+        parts.push(r.operator === 'not_contains' ? '!' + kw : kw);
+    });
+    document.getElementById('keyword').value = parts.join(' ');
+}
+function kwRender() {
+    var container = document.getElementById('kwRows');
+    if (!container) return;
+    if (kwRows.length === 0) {
+        container.innerHTML = '<div class="kw-empty">No keywords — click "Add keyword" to check for content in the response body</div>';
+        document.getElementById('keyword').value = '';
+        return;
+    }
+    var html = '';
+    kwRows.forEach(function(row, i) {
+        if (i > 0) {
+            var join = kwRows[i-1].nextOp || 'AND';
+            html += '<div class="kw-operator-row">'
+                + '<button type="button" class="kw-op-btn'+(join==='AND'?' active':'')+'" onclick="kwSetJoin('+kwRows[i-1].id+',\'AND\')">AND</button>'
+                + '<button type="button" class="kw-op-btn'+(join==='OR'?' active':'')+'" onclick="kwSetJoin('+kwRows[i-1].id+',\'OR\')">OR</button>'
+                + '<span class="kw-op-hint">'+(join==='AND'?'Both conditions must pass':'At least one must pass')+'</span>'
+                + '</div>';
+        }
+        html += '<div class="kw-row">'
+            + '<select class="kw-select" onchange="kwUpdateRow('+row.id+',\'operator\',this.value)">'
+            + '<option value="contains"'+(row.operator==='contains'?' selected':'')+'>Contains</option>'
+            + '<option value="not_contains"'+(row.operator==='not_contains'?' selected':'')+'>Not contains</option>'
+            + '</select>'
+            + '<input type="text" class="kw-input" value="'+row.keyword.replace(/"/g,'&quot;')+'" placeholder="e.g. Welcome" oninput="kwUpdateRow('+row.id+',\'keyword\',this.value)" spellcheck="false">'
+            + '<button type="button" class="kw-remove" onclick="kwRemoveRow('+row.id+')" title="Remove keyword"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 4l6 6M10 4l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>'
+            + '</div>';
+    });
+    container.innerHTML = html;
+    kwSync();
+}
+kwRender();
+</script>
+{% endblock %}

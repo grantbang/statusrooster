@@ -1,117 +1,299 @@
-{% extends "base.html" %}
+{% extends "dashboard_base.html" %}
 {% block title %}Edit {{ monitor.name }}{% endblock %}
-
-{% block extra_css %}
-{% endblock %}
+{% block nav_monitoring %}active{% endblock %}
 
 {% block content %}
-<div class="edit-container">
-    <div class="edit-card">
-        <h1>Edit Monitor</h1>
-        <form method="POST" action="/monitors/{{ monitor.id }}/edit">
-            {% set is_heartbeat = monitor.get('monitor_type') == 'heartbeat' %}
-            {% set is_json_api = monitor.get('monitor_type') == 'json_api' %}
-            {% set is_ssl = monitor.get('monitor_type') == 'ssl' %}
-            {% set is_http = monitor.get('monitor_type', 'http') == 'http' %}
+{% set is_heartbeat = monitor.get('monitor_type') == 'heartbeat' %}
+{% set is_json_api = monitor.get('monitor_type') == 'json_api' %}
+{% set is_ssl = monitor.get('monitor_type') == 'ssl' %}
+{% set is_http = monitor.get('monitor_type', 'http') == 'http' %}
+{% set plan = user.get('plan', 'free') %}
 
-            <!-- Monitor Type Badge -->
-            <div class="form-group">
-                <label>Monitor Type</label>
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    {% if is_heartbeat %}
-                    <span class="edit-type-badge" style="background: #f0fdf4; color: #16a34a;">♥ Heartbeat / Cron</span>
-                    {% elif is_json_api %}
-                    <span class="edit-type-badge" style="background: #eff6ff; color: #2563eb;">{ } JSON / API</span>
-                    {% elif is_ssl %}
-                    <span class="edit-type-badge" style="background: #fefce8; color: #854d0e;">🔒 SSL Certificate</span>
-                    {% else %}
-                    <span class="edit-type-badge" style="background: #f5f3ff; color: #6366f1;">HTTP / HTTPS</span>
-                    {% endif %}
-                </div>
-            </div>
+<a href="/monitors/{{ monitor.id }}" class="mf-back">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+    Monitor detail
+</a>
+<h1 class="mf-heading">Edit {{ monitor.name }}<span class="mf-heading-dot">.</span></h1>
 
-            <!-- ═══ Heartbeat-specific fields ═══ -->
-            {% if is_heartbeat %}
-            <div class="form-group">
-                <label>Ping URL</label>
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <code style="flex: 1; padding: 0.6rem 0.75rem; background: var(--bg-secondary, #f8f9fa); border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; word-break: break-all;">{{ monitor.get('ping_url', '') }}</code>
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('{{ monitor.get('ping_url', '') }}').then(() => { this.textContent='✓ Copied'; setTimeout(() => this.textContent='📋 Copy', 2000); })">📋 Copy</button>
-                </div>
-                <div class="hint">Send a GET, POST, or HEAD request to this URL from your cron job or scheduled task</div>
+<form method="POST" action="/monitors/{{ monitor.id }}/edit" id="editForm" class="mf-layout">
+
+    <!-- Monitor Type (read-only) -->
+    <div class="mf-section">
+        <div class="mf-section-title">Monitor type</div>
+        {% if is_heartbeat %}
+        <span class="mf-type-badge" style="background: #f0fdf4; color: #16a34a;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            Heartbeat / Cron
+        </span>
+        {% elif is_json_api %}
+        <span class="mf-type-badge" style="background: #eff6ff; color: #2563eb;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+            JSON / API
+        </span>
+        {% elif is_ssl %}
+        <span class="mf-type-badge" style="background: #fefce8; color: #854d0e;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            SSL Certificate
+        </span>
+        {% else %}
+        <span class="mf-type-badge" style="background: #f5f3ff; color: #6366f1;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            HTTP / HTTPS
+        </span>
+        {% endif %}
+        <input type="hidden" name="monitor_type" value="{{ monitor.get('monitor_type', 'http') }}">
+    </div>
+
+    <!-- URL — HTTP -->
+    {% if is_http %}
+    <div class="mf-section">
+        <div class="mf-section-title">URL to monitor</div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <input type="text" id="url" name="url" value="{{ monitor.url }}" required>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- URL — JSON/API -->
+    {% if is_json_api %}
+    <div class="mf-section">
+        <div class="mf-section-title">API endpoint URL</div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <input type="text" id="url" name="url" value="{{ monitor.url }}" required>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Heartbeat config -->
+    {% if is_heartbeat %}
+    <div class="mf-section">
+        <div class="mf-section-title">Ping URL</div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: var(--space-md);">
+            <code style="flex: 1; padding: 0.6rem 0.75rem; background: #f8f9fa; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 0.85rem; word-break: break-all; font-family: var(--font-mono);">{{ monitor.get('ping_url', '') }}</code>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('{{ monitor.get('ping_url', '') }}').then(function() { this.textContent='Copied!'; setTimeout(function() { this.textContent='Copy'; }.bind(this), 2000); }.bind(this))">Copy</button>
+        </div>
+        <div class="hint" style="margin-bottom: var(--space-lg);">Send a GET, POST, or HEAD request to this URL from your cron job.</div>
+        <div class="form-group">
+            <label for="heartbeat_interval">Expected interval</label>
+            <select id="heartbeat_interval" name="heartbeat_interval" style="max-width: 300px;">
+                {% set hbi = monitor.get('heartbeat_interval', 300) %}
+                <option value="60" {% if hbi == 60 %}selected{% endif %}>Every 1 minute</option>
+                <option value="300" {% if hbi == 300 %}selected{% endif %}>Every 5 minutes</option>
+                <option value="600" {% if hbi == 600 %}selected{% endif %}>Every 10 minutes</option>
+                <option value="900" {% if hbi == 900 %}selected{% endif %}>Every 15 minutes</option>
+                <option value="1800" {% if hbi == 1800 %}selected{% endif %}>Every 30 minutes</option>
+                <option value="3600" {% if hbi == 3600 %}selected{% endif %}>Every 1 hour</option>
+                <option value="21600" {% if hbi == 21600 %}selected{% endif %}>Every 6 hours</option>
+                <option value="43200" {% if hbi == 43200 %}selected{% endif %}>Every 12 hours</option>
+                <option value="86400" {% if hbi == 86400 %}selected{% endif %}>Every 24 hours</option>
+            </select>
+            <div class="hint">We'll alert you if we don't receive a ping within this interval.</div>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="heartbeat_grace_period">Grace period <span class="label-optional">(seconds)</span></label>
+            <input type="number" id="heartbeat_grace_period" name="heartbeat_grace_period"
+                   value="{{ monitor.get('heartbeat_grace_period', 30) }}" min="0" max="3600" style="max-width: 140px;">
+            <div class="hint">Extra time after the interval before marking as down.</div>
+        </div>
+        <input type="hidden" name="url" value="{{ monitor.get('url', '') }}">
+    </div>
+    {% endif %}
+
+    <!-- SSL config -->
+    {% if is_ssl %}
+    <div class="mf-section">
+        <div class="mf-section-title">SSL certificate</div>
+        <div class="form-group">
+            <label for="ssl_domain">Domain</label>
+            <input type="text" id="ssl_domain" name="ssl_domain" value="{{ monitor.get('ssl_domain', '') }}" required>
+            <div class="hint">The domain to check for SSL certificate validity.</div>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="ssl_expiry_threshold_days">Warning threshold <span class="label-optional">(days)</span></label>
+            <input type="number" id="ssl_expiry_threshold_days" name="ssl_expiry_threshold_days"
+                   value="{{ monitor.get('ssl_expiry_threshold_days', 14) }}" min="1" max="90" style="max-width: 140px;">
+            <div class="hint">Alert when certificate expires within this many days.</div>
+        </div>
+        <input type="hidden" name="url" value="{{ monitor.get('url', '') }}">
+    </div>
+    {% endif %}
+
+    <!-- Display Name -->
+    <div class="mf-section">
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="name">Friendly name</label>
+            <input type="text" id="name" name="name" value="{{ monitor.name }}" required>
+            <div class="hint">A short name to identify this monitor on your dashboard.</div>
+        </div>
+    </div>
+
+    <!-- Group -->
+    <div class="mf-section">
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="group">Group <span class="label-optional">(optional)</span></label>
+            <input type="text" id="group" name="group" value="{{ monitor.get('group', '') }}" list="groupSuggestions" placeholder="e.g. Production" autocomplete="off">
+            <datalist id="groupSuggestions">
+                {% for gn in group_names %}
+                <option value="{{ gn }}">
+                {% endfor %}
+            </datalist>
+            <div class="hint">Organize monitors by environment or project.</div>
+        </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="mf-section">
+        <div class="mf-section-title">How will we notify you?</div>
+
+        <div class="mf-notify-row">
+            <input type="checkbox" class="mf-notify-check" checked disabled>
+            <div class="mf-notify-icon">📧</div>
+            <div class="mf-notify-info">
+                <div class="mf-notify-label">Email</div>
+                <div class="mf-notify-detail">{{ monitor.alert_email or user.email }}</div>
             </div>
-            <div class="form-group">
-                <label for="heartbeat_interval">Expected Interval</label>
-                <select id="heartbeat_interval" name="heartbeat_interval" style="max-width: 300px;">
-                    {% set hbi = monitor.get('heartbeat_interval', 300) %}
-                    <option value="60" {% if hbi == 60 %}selected{% endif %}>Every 1 minute</option>
-                    <option value="300" {% if hbi == 300 %}selected{% endif %}>Every 5 minutes</option>
-                    <option value="600" {% if hbi == 600 %}selected{% endif %}>Every 10 minutes</option>
-                    <option value="900" {% if hbi == 900 %}selected{% endif %}>Every 15 minutes</option>
-                    <option value="1800" {% if hbi == 1800 %}selected{% endif %}>Every 30 minutes</option>
-                    <option value="3600" {% if hbi == 3600 %}selected{% endif %}>Every 1 hour</option>
-                    <option value="21600" {% if hbi == 21600 %}selected{% endif %}>Every 6 hours</option>
-                    <option value="43200" {% if hbi == 43200 %}selected{% endif %}>Every 12 hours</option>
-                    <option value="86400" {% if hbi == 86400 %}selected{% endif %}>Every 24 hours</option>
-                </select>
-                <div class="hint">We'll alert you if we don't receive a ping within this interval</div>
-            </div>
-            <div class="form-group">
-                <label for="heartbeat_grace_period">Grace Period <span style="color: #999; font-weight: normal;">(seconds)</span></label>
-                <input type="number" id="heartbeat_grace_period" name="heartbeat_grace_period"
-                       value="{{ monitor.get('heartbeat_grace_period', 30) }}" min="0" max="3600" style="max-width: 120px;">
-                <div class="hint">Extra time after the interval before marking as down</div>
-            </div>
-            <input type="hidden" name="url" value="{{ monitor.get('url', '') }}">
+        </div>
+        <input type="hidden" name="alert_email" id="alert_email" value="{{ monitor.alert_email or user.email }}">
+
+        {% set has_slack = monitor.get('alert_slack_webhook', '') %}
+        <div class="mf-notify-row">
+            {% if plan != 'free' %}
+            <input type="checkbox" class="mf-notify-check" id="slackToggle" {% if has_slack %}checked{% endif %}
+                   onchange="document.getElementById('slackUrlWrap').style.display = this.checked ? 'block' : 'none'">
+            {% else %}
+            <input type="checkbox" class="mf-notify-check" disabled>
             {% endif %}
+            <div class="mf-notify-icon">💬</div>
+            <div class="mf-notify-info">
+                <div class="mf-notify-label">Slack</div>
+                {% if plan != 'free' %}
+                <div class="mf-notify-detail">Send alerts to a Slack channel</div>
+                {% else %}
+                <div class="mf-notify-detail"><a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a></div>
+                {% endif %}
+            </div>
+            {% if plan == 'free' %}<span class="mf-notify-pro">PRO</span>{% endif %}
+        </div>
+        <div id="slackUrlWrap" style="{% if not has_slack %}display: none;{% endif %} padding-left: 2.75rem; padding-bottom: 0.5rem;">
+            {% if plan != 'free' %}
+            <input type="text" id="alert_slack_webhook" name="alert_slack_webhook" value="{{ has_slack }}" placeholder="https://hooks.slack.com/services/...">
+            {% else %}
+            <input type="hidden" name="alert_slack_webhook" value="">
+            {% endif %}
+        </div>
 
-            <!-- ═══ HTTP-specific fields ═══ -->
+        {% set has_webhook = monitor.get('webhook_url', '') %}
+        <div class="mf-notify-row">
+            {% if plan != 'free' %}
+            <input type="checkbox" class="mf-notify-check" id="webhookToggle" {% if has_webhook %}checked{% endif %}
+                   onchange="document.getElementById('webhookUrlWrap').style.display = this.checked ? 'block' : 'none'">
+            {% else %}
+            <input type="checkbox" class="mf-notify-check" disabled>
+            {% endif %}
+            <div class="mf-notify-icon">🔗</div>
+            <div class="mf-notify-info">
+                <div class="mf-notify-label">Webhook</div>
+                {% if plan != 'free' %}
+                <div class="mf-notify-detail">POST JSON to your endpoint on status changes</div>
+                {% else %}
+                <div class="mf-notify-detail"><a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a></div>
+                {% endif %}
+            </div>
+            {% if plan == 'free' %}<span class="mf-notify-pro">PRO</span>{% endif %}
+        </div>
+        <div id="webhookUrlWrap" style="{% if not has_webhook %}display: none;{% endif %} padding-left: 2.75rem; padding-bottom: 0.5rem;">
+            {% if plan != 'free' %}
+            <input type="text" id="webhook_url" name="webhook_url" value="{{ has_webhook }}" placeholder="https://your-api.com/webhook">
+            {% else %}
+            <input type="hidden" name="webhook_url" value="">
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Monitor Interval -->
+    {% if not is_heartbeat %}
+    <div class="mf-section" id="intervalSection">
+        <div class="mf-section-title">Monitor interval</div>
+        {% if plan != 'free' %}
+        {% set ci = monitor.get('check_interval', 60) %}
+        <div class="mf-interval-wrap">
+            <input type="range" class="mf-interval-slider" id="check_interval" name="check_interval" min="60" max="300" step="10" value="{{ ci }}"
+                   oninput="updateIntervalDisplay(this.value)">
+            <span class="mf-interval-value" id="intervalDisplay">{% if ci < 120 %}{{ ci }}s{% else %}{{ (ci / 60)|int }}m{% endif %}</span>
+        </div>
+        <div class="mf-interval-labels"><span>60s</span><span>3m</span><span>5m</span></div>
+        <div class="hint" style="margin-top: 0.5rem;">Your monitor will be checked every <strong id="intervalText">{% if ci < 120 %}{{ ci }} seconds{% else %}{{ (ci / 60)|int }} minutes{% endif %}</strong>.</div>
+        {% else %}
+        <div class="mf-interval-wrap" style="opacity: 0.5;">
+            <input type="range" class="mf-interval-slider" disabled min="60" max="300" value="300" style="cursor: not-allowed;">
+            <span class="mf-interval-value" style="color: var(--text-muted);">5m</span>
+        </div>
+        <input type="hidden" name="check_interval" value="300">
+        <div class="hint" style="margin-top: 0.5rem;">Checked every <strong>5 minutes</strong>. <a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a> for 60s checks. <span class="mf-notify-pro" style="vertical-align: middle;">PRO</span></div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Advanced Settings -->
+    <div class="mf-section">
+        <button type="button" class="mf-collapse-toggle" onclick="toggleAdvanced(this)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+            Advanced settings
+        </button>
+        <div class="mf-collapse-content" id="advancedContent">
+
             {% if is_http %}
             <div class="form-group">
-                <label for="url">URL</label>
-                <input type="url" id="url" name="url" value="{{ monitor.url }}" required>
-            </div>
-            <div class="form-group">
-                <label for="expected_status_code">Expected Status Code <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                <label for="expected_status_code">Expected status code <span class="label-optional">(optional)</span></label>
                 <input type="number" id="expected_status_code" name="expected_status_code"
                        value="{{ monitor.get('expected_status_code', '') or '' }}"
-                       placeholder="200" min="100" max="599" style="max-width: 120px;">
-                <div class="hint">Leave blank to accept any 2xx/3xx response</div>
+                       placeholder="200" min="100" max="599" style="max-width: 140px;">
+                <div class="hint">Leave blank to accept any 2xx/3xx response.</div>
             </div>
             <div class="form-group">
-                <label for="timeout">Request Timeout <span style="color: #999; font-weight: normal;">(seconds)</span></label>
-                <input type="number" id="timeout" name="timeout" value="{{ monitor.get('timeout', 10) }}"
-                       min="1" max="60" style="max-width: 120px;">
+                <label for="timeout">Request timeout <span class="label-optional">(seconds)</span></label>
+                <input type="number" id="timeout" name="timeout" value="{{ monitor.get('timeout', 10) }}" min="1" max="60" style="max-width: 140px;">
+            </div>
+            <div class="form-group">
+                <label for="keyword">Keyword check <span class="label-optional">(optional)</span></label>
+                <input type="hidden" id="keyword" name="keyword" value="{{ monitor.get('keyword', '') }}">
+                <div class="kw-builder" id="kwBuilder">
+                    <div class="kw-rows" id="kwRows"></div>
+                    <button type="button" class="kw-add-btn" onclick="kwAddRow()">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 7h5M7 4.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        Add keyword
+                    </button>
+                </div>
+                <div class="hint">Body must contain these keywords or the monitor is marked <strong>down</strong>.</div>
+            </div>
+            <div class="form-group">
+                <label for="response_threshold_ms">Response threshold <span class="label-optional">(optional)</span></label>
+                <input type="text" id="response_threshold_ms" name="response_threshold_ms"
+                       value="{{ monitor.get('response_threshold_ms', '') or '' }}"
+                       placeholder="e.g. > 2000 or 200-3000">
+                <div class="hint">Supports: <code>&gt; 2000</code>, <code>&lt; 200</code>, <code>200-3000</code> (range).</div>
             </div>
             {% endif %}
 
-            <!-- ═══ JSON/API-specific fields ═══ -->
             {% if is_json_api %}
             <div class="form-group">
-                <label for="url">API Endpoint URL</label>
-                <input type="url" id="url" name="url" value="{{ monitor.url }}" required>
-            </div>
-            <div class="form-group">
-                <label for="expected_status_code">Expected Status Code <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                <label for="expected_status_code">Expected status code <span class="label-optional">(optional)</span></label>
                 <input type="number" id="expected_status_code" name="expected_status_code"
                        value="{{ monitor.get('expected_status_code', '') or '' }}"
-                       placeholder="200" min="100" max="599" style="max-width: 120px;">
-                <div class="hint">Leave blank to accept any 2xx/3xx response</div>
+                       placeholder="200" min="100" max="599" style="max-width: 140px;">
             </div>
             <div class="form-group">
-                <label for="timeout">Request Timeout <span style="color: #999; font-weight: normal;">(seconds)</span></label>
-                <input type="number" id="timeout" name="timeout" value="{{ monitor.get('timeout', 10) }}"
-                       min="1" max="60" style="max-width: 120px;">
+                <label for="timeout">Request timeout <span class="label-optional">(seconds)</span></label>
+                <input type="number" id="timeout" name="timeout" value="{{ monitor.get('timeout', 10) }}" min="1" max="60" style="max-width: 140px;">
             </div>
             <div class="form-group">
-                <label for="auth_header">Authorization Header <span style="color: #999; font-weight: normal;">(optional)</span></label>
-                <input type="text" id="auth_header" name="auth_header" value="{{ monitor.get('auth_header', '') }}"
-                       placeholder="Bearer eyJhbGci...">
-                <div class="hint">Sent as the <code>Authorization</code> header</div>
+                <label for="auth_header">Authorization header <span class="label-optional">(optional)</span></label>
+                <input type="text" id="auth_header" name="auth_header" value="{{ monitor.get('auth_header', '') }}" placeholder="Bearer eyJhbGci...">
+                <div class="hint">Sent as the <code>Authorization</code> header.</div>
             </div>
             <div class="form-group">
-                <label>JSON Assertions</label>
-                <div id="edit-assertions-container">
+                <label>JSON assertions <span class="label-optional">(optional)</span></label>
+                <div id="assertions-container">
                     {% for assertion in monitor.get('json_assertions', []) %}
                     <div class="assertion-row" style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;">
                         <input type="text" name="assertion_path[]" value="{{ assertion.get('path', '') }}" placeholder="data.status" style="flex:1;min-width:100px;">
@@ -125,359 +307,209 @@
                     </div>
                     {% endfor %}
                 </div>
-                <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; margin-top: 0.5rem;" onclick="addEditAssertion()">+ Add assertion</button>
-                <div class="hint">Validate specific fields in the JSON response — e.g. <code>data.status</code> equals <code>ok</code></div>
-            </div>
-            {% endif %}
-
-            <!-- ═══ SSL-specific fields ═══ -->
-            {% if is_ssl %}
-            <div class="form-group">
-                <label for="ssl_domain">Domain</label>
-                <input type="text" id="ssl_domain" name="ssl_domain" value="{{ monitor.get('ssl_domain', '') }}" required>
-                <div class="hint">The domain to check for SSL certificate validity</div>
+                <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; margin-top: 0.5rem;" onclick="addAssertion()">+ Add assertion</button>
+                <div class="hint">Validate specific fields — e.g. <code>data.status</code> equals <code>ok</code>.</div>
             </div>
             <div class="form-group">
-                <label for="ssl_expiry_threshold_days">Warning Threshold <span style="color: #999; font-weight: normal;">(days)</span></label>
-                <input type="number" id="ssl_expiry_threshold_days" name="ssl_expiry_threshold_days"
-                       value="{{ monitor.get('ssl_expiry_threshold_days', 14) }}" min="1" max="90" style="max-width: 120px;">
-                <div class="hint">Alert when certificate expires within this many days</div>
-            </div>
-            <input type="hidden" name="url" value="{{ monitor.get('url', '') }}">
-            {% endif %}
-
-            <!-- ═══ Shared fields ═══ -->
-            <div class="form-group">
-                <label for="name">Display Name</label>
-                <input type="text" id="name" name="name" value="{{ monitor.name }}" required>
-            </div>
-            <div class="form-group">
-                <label for="alert_email">Alert Email</label>
-                <input type="email" id="alert_email" name="alert_email" value="{{ monitor.alert_email }}">
-                <div class="hint">Receives down/recovery notifications</div>
-            </div>
-            <div class="form-group"{% if is_heartbeat or is_ssl %} style="display:none;"{% endif %}>
-                <label for="check_interval">Check Interval <span style="color: #999; font-weight: normal;">(Pro)</span></label>
-                {% if user.get('plan', 'free') != 'free' %}
-                {% set ci = monitor.get('check_interval', 60) %}
-                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    <input type="range" id="check_interval" name="check_interval" min="60" max="300" step="10" value="{{ ci }}"
-                           style="flex: 1; accent-color: #6366f1;"
-                           oninput="document.getElementById('intervalDisplay').textContent = this.value < 120 ? this.value + 's' : (this.value / 60).toFixed(0) + 'm'">
-                    <span id="intervalDisplay" style="min-width: 3rem; font-weight: 600; font-size: 0.95rem; color: #6366f1;">{% if ci < 120 %}{{ ci }}s{% else %}{{ (ci / 60)|int }}m{% endif %}</span>
-                </div>
-                <div class="hint">How often we check this URL (60s – 5m). Lower = faster incident detection.</div>
-                {% else %}
-                <div style="display: flex; align-items: center; gap: 0.75rem; opacity: 0.5;">
-                    <input type="range" disabled min="60" max="300" value="300" style="flex: 1; cursor: not-allowed;">
-                    <span style="min-width: 3rem; font-weight: 600; font-size: 0.95rem;">5m</span>
-                </div>
-                <input type="hidden" name="check_interval" value="300">
-                <div class="hint" style="color: #6366f1;"><a href="/api/billing/checkout" onclick="event.preventDefault(); document.querySelector('.upgrade-checkout-interval').submit();" style="color: #6366f1; text-decoration: underline;">Upgrade to Pro</a> for custom intervals (down to 60s)</div>
-                <form class="upgrade-checkout-interval" method="POST" action="/api/billing/checkout" style="display:none;"></form>
-                {% endif %}
-            </div>
-            <div class="form-group">
-                <label for="alert_slack_webhook">Slack Webhook URL <span style="color: #999; font-weight: normal;">(Pro)</span></label>
-                {% if user.get('plan', 'free') != 'free' %}
-                <input type="url" id="alert_slack_webhook" name="alert_slack_webhook" value="{{ monitor.alert_slack_webhook }}">
-                {% else %}
-                <input type="url" id="alert_slack_webhook" disabled placeholder="https://hooks.slack.com/services/..." style="opacity: 0.5; cursor: not-allowed;">
-                <input type="hidden" name="alert_slack_webhook" value="">
-                <div class="hint" style="color: #6366f1;"><a href="/api/billing/checkout" onclick="event.preventDefault(); document.querySelector('.upgrade-checkout').submit();" style="color: #6366f1; text-decoration: underline;">Upgrade to Pro</a> for Slack alerts</div>
-                {% endif %}
-            </div>
-
-            {% if is_http %}
-            <hr class="form-divider">
-            <h3 class="form-section-title">Advanced Monitoring</h3>
-
-            <div class="form-group">
-                <label for="keyword">Keyword Check</label>
-                <input type="hidden" id="keyword" name="keyword" value="{{ monitor.get('keyword', '') }}">
-                <div class="kw-builder" id="kwBuilder">
-                    <div class="kw-rows" id="kwRows">
-                        <!-- keyword rows injected by JS -->
-                    </div>
-                    <button type="button" class="kw-add-btn" onclick="kwAddRow()">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 7h5M7 4.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                        Add keyword
-                    </button>
-                </div>
-                <div class="hint">Body must contain these keywords or the monitor is marked <strong>down</strong>. Case-insensitive.</div>
-            </div>
-            <div class="form-group">
-                <label for="response_threshold_ms">Response Threshold</label>
+                <label for="response_threshold_ms">Response threshold <span class="label-optional">(optional)</span></label>
                 <input type="text" id="response_threshold_ms" name="response_threshold_ms"
                        value="{{ monitor.get('response_threshold_ms', '') or '' }}"
                        placeholder="e.g. > 2000 or 200-3000">
-                <div class="hint">Supports: <code>> 2000</code>, <code>< 200</code>, <code>200-3000</code> (range), or plain number (ms)</div>
             </div>
             {% endif %}
 
-            {% if is_json_api %}
+            <!-- Public status page -->
             <hr class="form-divider">
-            <h3 class="form-section-title">Response Threshold</h3>
             <div class="form-group">
-                <label for="response_threshold_ms">Response Threshold</label>
-                <input type="text" id="response_threshold_ms" name="response_threshold_ms"
-                       value="{{ monitor.get('response_threshold_ms', '') or '' }}"
-                       placeholder="e.g. > 2000 or 200-3000">
-                <div class="hint">Supports: <code>> 2000</code>, <code>< 200</code>, <code>200-3000</code> (range), or plain number (ms)</div>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
+                    <input type="checkbox" name="public" id="publicCheck" value="true"
+                           {% if monitor.public %}checked{% endif %}
+                           style="width: 18px; height: 18px; accent-color: var(--brand);"
+                           onchange="document.getElementById('slugGroup').style.display = this.checked ? 'block' : 'none'">
+                    Public status page
+                </label>
+                <div class="hint">When enabled, anyone can view the status page at <strong>/s/{{ monitor.slug }}</strong>.</div>
             </div>
-            {% endif %}
+            <div class="form-group" id="slugGroup" {% if not monitor.public %}style="display: none;"{% endif %}>
+                <label for="slug">Status page slug <span class="label-optional">(optional)</span></label>
+                <input type="text" id="slug" name="slug" value="{{ monitor.slug }}"
+                       pattern="[a-z0-9\-]+" title="Lowercase letters, numbers, and hyphens only">
+                <div class="hint">URL: <code>statusrooster.com/s/<span id="slug-preview">{{ monitor.slug }}</span></code>
+                    {% if monitor.public and monitor.slug %} — <a href="/s/{{ monitor.slug }}" target="_blank">View live</a>{% endif %}
+                </div>
+            </div>
 
-            {% if user.get('plan', 'free') != 'free' %}
+            <!-- Paused -->
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
+                    <input type="checkbox" name="paused" id="pausedCheck" value="true"
+                           {% if monitor.get('paused', False) %}checked{% endif %}
+                           style="width: 18px; height: 18px; accent-color: var(--brand);">
+                    Paused
+                </label>
+                <div class="hint">When paused, checks stop and no alerts are sent.</div>
+            </div>
+
+            <!-- Maintenance windows -->
             <hr class="form-divider">
-            <h3 class="form-section-title">Pro Features</h3>
-
             <div class="form-group">
-                <label for="webhook_url">Webhook URL</label>
-                <input type="url" id="webhook_url" name="webhook_url" value="{{ monitor.get('webhook_url', '') }}">
-                <div class="hint">We'll POST JSON to this URL on status changes</div>
-            </div>
-
-            <div class="form-group">
-                <label>Maintenance Windows</label>
-                <div id="edit-mw-container">
+                <label>Maintenance windows <span class="label-optional">(Pro)</span></label>
+                <div id="mw-container">
+                    {% if plan != 'free' %}
                     {% for mw in monitor.get('maintenance_windows', []) %}
-                    <div class="mw-row" style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;">
-                        <select name="maintenance_day[]" class="form-group" style="flex:0 0 auto;margin-bottom:0;">
+                    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;">
+                        <select name="maintenance_day[]" style="flex:0 0 auto;">
                             <option value="">Day…</option>
                             {% for day in ['monday','tuesday','wednesday','thursday','friday','saturday','sunday','daily'] %}
                             <option value="{{ day }}" {% if mw.get('day') == day %}selected{% endif %}>{{ day | capitalize }}</option>
                             {% endfor %}
                         </select>
                         <input type="time" name="maintenance_start[]" value="{{ mw.get('start_utc', '') }}" style="flex:0 0 auto;">
-                        <span class="text-muted">to</span>
+                        <span style="color: var(--text-muted);">to</span>
                         <input type="time" name="maintenance_end[]" value="{{ mw.get('end_utc', '') }}" style="flex:0 0 auto;">
                         <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>
                     </div>
                     {% endfor %}
+                    {% endif %}
                 </div>
-                <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; margin-top: 0.5rem;" onclick="addEditMW()">+ Add maintenance window</button>
-                <div class="hint">Suppress alerts during these windows (times in UTC)</div>
+                {% if plan != 'free' %}
+                <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; margin-top: 0.5rem;" onclick="addMaintenanceWindow()">+ Add maintenance window</button>
+                <div class="hint">Suppress alerts during these windows (times in UTC).</div>
+                {% else %}
+                <div class="hint"><a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a> to suppress alerts during scheduled maintenance. <span class="mf-notify-pro" style="vertical-align: middle;">PRO</span></div>
+                {% endif %}
             </div>
-            {% else %}
-            <hr class="form-divider">
-            <h3 class="form-section-title">Pro Features</h3>
-
-            <div class="form-group">
-                <label for="webhook_url">Webhook URL <span style="color: #999; font-weight: normal;">(Pro)</span></label>
-                <input type="url" id="webhook_url" disabled placeholder="https://your-api.com/webhook" style="opacity: 0.5; cursor: not-allowed;">
-                <input type="hidden" name="webhook_url" value="">
-                <div class="hint">We'll POST JSON to this URL on status changes</div>
-            </div>
-
-            <div class="form-group">
-                <label>Maintenance Windows <span style="color: #999; font-weight: normal;">(Pro)</span></label>
-                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; opacity: 0.5;">
-                    <select disabled style="cursor: not-allowed; flex: 0 0 auto; margin-bottom: 0;" class="form-group">
-                        <option>No maintenance window</option>
-                    </select>
-                    <input type="time" disabled style="cursor: not-allowed;">
-                    <span class="text-muted">to</span>
-                    <input type="time" disabled style="cursor: not-allowed;">
-                </div>
-                <div class="hint" style="color: #6366f1;"><a href="/api/billing/checkout" onclick="event.preventDefault(); document.querySelector('.upgrade-checkout').submit();" style="color: #6366f1; text-decoration: underline;">Upgrade to Pro</a> to suppress alerts during scheduled maintenance</div>
-                <form class="upgrade-checkout" method="POST" action="/api/billing/checkout" style="display:none;"></form>
-            </div>
-            {% endif %}
-
-            <hr class="form-divider">
-            <h3 class="form-section-title">Public Status Page</h3>
-
-            <div class="form-group">
-                <label class="toggle-label" for="public" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
-                    <input type="checkbox" id="public" name="public" value="true"
-                           {% if monitor.public %}checked{% endif %}
-                           style="width: 18px; height: 18px; accent-color: #6366f1;">
-                    <span>Make this monitor public</span>
-                </label>
-                <div class="hint">When public, anyone can view the status page at <strong>/s/{{ monitor.slug }}</strong></div>
-            </div>
-            <div class="form-group">
-                <label for="slug">Status Page Slug</label>
-                <input type="text" id="slug" name="slug" value="{{ monitor.slug }}"
-                       pattern="[a-z0-9\-]+" title="Lowercase letters, numbers, and hyphens only">
-                <div class="hint">Your public status page URL: <code>statusrooster.com/s/<span id="slug-preview">{{ monitor.slug }}</span></code>
-                    {% if monitor.public and monitor.slug %} &mdash; <a href="/s/{{ monitor.slug }}" target="_blank" style="color: #6366f1;">View live</a>{% endif %}
-                </div>
-            </div>
-
-            <hr class="form-divider">
-            <h3 class="form-section-title">Monitor Control</h3>
-
-            <div class="form-group">
-                <label class="toggle-label" for="paused" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
-                    <input type="checkbox" id="paused" name="paused" value="true"
-                           {% if monitor.get('paused', False) %}checked{% endif %}
-                           style="width: 18px; height: 18px; accent-color: #6366f1;">
-                    <span>Paused</span>
-                </label>
-                <div class="hint">When paused, checks stop and no alerts are sent</div>
-            </div>
-
-            <div class="form-actions">
-                <a href="/dashboard" class="btn btn-cancel">Cancel</a>
-                <button type="submit" class="btn btn-save">Save changes</button>
-            </div>
-        </form>
+        </div>
     </div>
-</div>
+
+    <!-- Sticky Submit -->
+    <div class="mf-footer">
+        <button type="submit" class="mf-submit">Save changes</button>
+    </div>
+
+</form>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    document.getElementById('slug').addEventListener('input', function() {
-        document.getElementById('slug-preview').textContent = this.value || '...';
+/* ── Interval Display ─────────────────────────────────── */
+function updateIntervalDisplay(val) {
+    var v = parseInt(val);
+    var display = document.getElementById('intervalDisplay');
+    var text = document.getElementById('intervalText');
+    if (v < 120) { display.textContent = v + 's'; if (text) text.textContent = v + ' seconds'; }
+    else { display.textContent = Math.round(v / 60) + 'm'; if (text) text.textContent = Math.round(v / 60) + ' minutes'; }
+}
+
+/* ── Advanced Toggle ──────────────────────────────────── */
+function toggleAdvanced(btn) {
+    btn.classList.toggle('open');
+    document.getElementById('advancedContent').classList.toggle('open');
+}
+
+/* ── Slug Preview ─────────────────────────────────────── */
+var slugInput = document.getElementById('slug');
+if (slugInput) slugInput.addEventListener('input', function() { document.getElementById('slug-preview').textContent = this.value || '...'; });
+
+/* ── Maintenance Windows ──────────────────────────────── */
+var MW_DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday','daily'];
+function addMaintenanceWindow(day, start, end) {
+    var c = document.getElementById('mw-container');
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;';
+    var options = MW_DAYS.map(function(d) { return '<option value="'+d+'" '+(d===(day||'')?'selected':'')+'>'+d.charAt(0).toUpperCase()+d.slice(1)+'</option>'; }).join('');
+    row.innerHTML = '<select name="maintenance_day[]" style="flex:0 0 auto;"><option value="">Day…</option>'+options+'</select>'
+        + '<input type="time" name="maintenance_start[]" value="'+(start||'')+'" style="flex:0 0 auto;">'
+        + '<span style="color:var(--text-muted);">to</span>'
+        + '<input type="time" name="maintenance_end[]" value="'+(end||'')+'" style="flex:0 0 auto;">'
+        + '<button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>';
+    c.appendChild(row);
+}
+
+/* ── JSON Assertion Builder ───────────────────────────── */
+var ASSERTION_OPS = [['equals','Equals'],['not_equals','Not equals'],['contains','Contains'],['not_contains','Not contains'],['exists','Exists'],['not_exists','Not exists'],['greater_than','Greater than'],['less_than','Less than']];
+function addAssertion(path, operator, value) {
+    var c = document.getElementById('assertions-container');
+    if (!c) return;
+    var row = document.createElement('div');
+    row.className = 'assertion-row';
+    row.style.cssText = 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;';
+    var options = ASSERTION_OPS.map(function(a) { return '<option value="'+a[0]+'" '+(a[0]===(operator||'equals')?'selected':'')+'>'+a[1]+'</option>'; }).join('');
+    row.innerHTML = '<input type="text" name="assertion_path[]" value="'+(path||'')+'" placeholder="data.status" style="flex:1;min-width:100px;">'
+        + '<select name="assertion_operator[]" style="flex:0 0 auto;">'+options+'</select>'
+        + '<input type="text" name="assertion_value[]" value="'+(value||'')+'" placeholder="ok" style="flex:1;min-width:80px;">'
+        + '<button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>';
+    c.appendChild(row);
+}
+
+/* ── Keyword Expression Builder ───────────────────────── */
+var kwRows = [];
+var kwNextId = 0;
+function kwAddRow(operator, keyword) {
+    kwRows.push({ id: kwNextId++, operator: operator || 'contains', keyword: keyword || '', nextOp: 'AND' });
+    kwRender();
+}
+function kwRemoveRow(id) { kwRows = kwRows.filter(function(r) { return r.id !== id; }); kwRender(); }
+function kwUpdateRow(id, field, value) { var row = kwRows.find(function(r) { return r.id === id; }); if (row) { row[field] = value; kwSync(); } }
+function kwSetJoin(id, op) { var row = kwRows.find(function(r) { return r.id === id; }); if (row) { row.nextOp = op; kwSync(); kwRender(); } }
+function kwSync() {
+    var parts = [];
+    kwRows.forEach(function(r, i) {
+        var kw = r.keyword.trim();
+        if (!kw) return;
+        if (i > 0 && parts.length > 0) parts.push(kwRows[i-1].nextOp || 'AND');
+        parts.push(r.operator === 'not_contains' ? '!' + kw : kw);
     });
-
-    const EDIT_MW_DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday','daily'];
-    function addEditMW(day, start, end) {
-        const container = document.getElementById('edit-mw-container');
-        const row = document.createElement('div');
-        row.className = 'mw-row';
-        row.style.cssText = 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;';
-        const options = EDIT_MW_DAYS.map(d =>
-            `<option value="${d}" ${d === (day||'') ? 'selected' : ''}>${d.charAt(0).toUpperCase()+d.slice(1)}</option>`
-        ).join('');
-        row.innerHTML = `
-            <select name="maintenance_day[]" class="form-group" style="flex:0 0 auto;margin-bottom:0;">
-                <option value="">Day…</option>${options}
-            </select>
-            <input type="time" name="maintenance_start[]" value="${start||''}" style="flex:0 0 auto;">
-            <span class="text-muted">to</span>
-            <input type="time" name="maintenance_end[]" value="${end||''}" style="flex:0 0 auto;">
-            <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>
-        `;
-        container.appendChild(row);
+    document.getElementById('keyword').value = parts.join(' ');
+}
+function kwRender() {
+    var container = document.getElementById('kwRows');
+    if (!container) return;
+    if (kwRows.length === 0) {
+        container.innerHTML = '<div class="kw-empty">No keywords — click "Add keyword" to check for content in the response body</div>';
+        document.getElementById('keyword').value = '';
+        return;
     }
-
-    /* ── JSON Assertion Builder (edit page) ── */
-    const EDIT_ASSERTION_OPS = [
-        ['equals', 'Equals'],
-        ['not_equals', 'Not equals'],
-        ['contains', 'Contains'],
-        ['not_contains', 'Not contains'],
-        ['exists', 'Exists'],
-        ['not_exists', 'Not exists'],
-        ['greater_than', 'Greater than'],
-        ['less_than', 'Less than'],
-    ];
-    function addEditAssertion(path, operator, value) {
-        const c = document.getElementById('edit-assertions-container');
-        if (!c) return;
-        const row = document.createElement('div');
-        row.className = 'assertion-row';
-        row.style.cssText = 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;';
-        const options = EDIT_ASSERTION_OPS.map(([val, label]) =>
-            `<option value="${val}" ${val === (operator || 'equals') ? 'selected' : ''}>${label}</option>`
-        ).join('');
-        row.innerHTML = `
-            <input type="text" name="assertion_path[]" value="${path || ''}" placeholder="data.status" style="flex:1;min-width:100px;">
-            <select name="assertion_operator[]" style="flex:0 0 auto;">${options}</select>
-            <input type="text" name="assertion_value[]" value="${value || ''}" placeholder="ok" style="flex:1;min-width:80px;">
-            <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>`;
-        c.appendChild(row);
-    }
-
-    /* ── Keyword Expression Builder (edit page) ── */
-    let kwRows = [];
-    let kwNextId = 0;
-
-    function kwAddRow(operator, keyword) {
-        kwRows.push({ id: kwNextId++, operator: operator || 'contains', keyword: keyword || '', nextOp: 'AND' });
-        kwRender();
-    }
-
-    function kwRemoveRow(id) {
-        kwRows = kwRows.filter(r => r.id !== id);
-        kwRender();
-    }
-
-    function kwUpdateRow(id, field, value) {
-        const row = kwRows.find(r => r.id === id);
-        if (row) { row[field] = value; kwSync(); }
-    }
-
-    function kwSetJoin(id, op) {
-        const row = kwRows.find(r => r.id === id);
-        if (row) { row.nextOp = op; kwSync(); kwRender(); }
-    }
-
-    function kwSync() {
-        const parts = [];
-        kwRows.forEach((r, i) => {
-            const kw = r.keyword.trim();
-            if (!kw) return;
-            if (i > 0 && parts.length > 0) {
-                const prev = kwRows[i - 1];
-                parts.push(prev.nextOp || 'AND');
-            }
-            parts.push(r.operator === 'not_contains' ? '!' + kw : kw);
-        });
-        document.getElementById('keyword').value = parts.join(' ');
-    }
-
-    function kwRender() {
-        const container = document.getElementById('kwRows');
-        if (!container) return;
-        if (kwRows.length === 0) {
-            container.innerHTML = '<div class="kw-empty">No keywords — click "Add keyword" to check for content in the response body</div>';
-            document.getElementById('keyword').value = '';
-            return;
+    var html = '';
+    kwRows.forEach(function(row, i) {
+        if (i > 0) {
+            var join = kwRows[i-1].nextOp || 'AND';
+            html += '<div class="kw-operator-row">'
+                + '<button type="button" class="kw-op-btn'+(join==='AND'?' active':'')+'" onclick="kwSetJoin('+kwRows[i-1].id+',\'AND\')">AND</button>'
+                + '<button type="button" class="kw-op-btn'+(join==='OR'?' active':'')+'" onclick="kwSetJoin('+kwRows[i-1].id+',\'OR\')">OR</button>'
+                + '<span class="kw-op-hint">'+(join==='AND'?'Both conditions must pass':'At least one must pass')+'</span>'
+                + '</div>';
         }
-        let html = '';
-        kwRows.forEach((row, i) => {
-            if (i > 0) {
-                const join = kwRows[i - 1].nextOp || 'AND';
-                html += `<div class="kw-operator-row">
-                    <button type="button" class="kw-op-btn${join === 'AND' ? ' active' : ''}" onclick="kwSetJoin(${kwRows[i-1].id},'AND')">AND</button>
-                    <button type="button" class="kw-op-btn${join === 'OR' ? ' active' : ''}" onclick="kwSetJoin(${kwRows[i-1].id},'OR')">OR</button>
-                    <span class="kw-op-hint">${join === 'AND' ? 'Both conditions must pass' : 'At least one must pass'}</span>
-                </div>`;
-            }
-            html += `<div class="kw-row">
-                <select class="kw-select" onchange="kwUpdateRow(${row.id},'operator',this.value)">
-                    <option value="contains"${row.operator === 'contains' ? ' selected' : ''}>Contains</option>
-                    <option value="not_contains"${row.operator === 'not_contains' ? ' selected' : ''}>Not contains</option>
-                </select>
-                <input type="text" class="kw-input" value="${row.keyword.replace(/"/g, '&quot;')}" placeholder="e.g. Welcome" oninput="kwUpdateRow(${row.id},'keyword',this.value)" spellcheck="false">
-                <button type="button" class="kw-remove" onclick="kwRemoveRow(${row.id})" title="Remove keyword"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 4l6 6M10 4l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
-            </div>`;
-        });
-        container.innerHTML = html;
-        kwSync();
-    }
+        html += '<div class="kw-row">'
+            + '<select class="kw-select" onchange="kwUpdateRow('+row.id+',\'operator\',this.value)">'
+            + '<option value="contains"'+(row.operator==='contains'?' selected':'')+'>Contains</option>'
+            + '<option value="not_contains"'+(row.operator==='not_contains'?' selected':'')+'>Not contains</option>'
+            + '</select>'
+            + '<input type="text" class="kw-input" value="'+row.keyword.replace(/"/g,'&quot;')+'" placeholder="e.g. Welcome" oninput="kwUpdateRow('+row.id+',\'keyword\',this.value)" spellcheck="false">'
+            + '<button type="button" class="kw-remove" onclick="kwRemoveRow('+row.id+')" title="Remove keyword"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 4l6 6M10 4l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>'
+            + '</div>';
+    });
+    container.innerHTML = html;
+    kwSync();
+}
 
-    // Parse existing keyword value into builder rows
-    (function initKeywordBuilder() {
-        const existing = document.getElementById('keyword');
-        if (!existing) return;
-        const val = existing.value.trim();
-        if (!val) { kwRender(); return; }
-
-        // Parse "term1 AND !term2 OR term3" back into rows
-        // "!" prefix = not_contains operator
-        const orGroups = val.split(/ OR /);
-        orGroups.forEach((group, gi) => {
-            const andTerms = group.split(/ AND /);
-            andTerms.forEach((term) => {
-                const t = term.trim();
-                const isNeg = t.startsWith('!');
-                kwRows.push({
-                    id: kwNextId++,
-                    operator: isNeg ? 'not_contains' : 'contains',
-                    keyword: isNeg ? t.slice(1) : t,
-                    nextOp: 'AND'
-                });
-            });
-            if (gi < orGroups.length - 1 && kwRows.length > 0) {
-                kwRows[kwRows.length - 1].nextOp = 'OR';
-            }
+// Parse existing keyword value into builder rows
+(function initKeywordBuilder() {
+    var existing = document.getElementById('keyword');
+    if (!existing) return;
+    var val = existing.value.trim();
+    if (!val) { kwRender(); return; }
+    var orGroups = val.split(/ OR /);
+    orGroups.forEach(function(group, gi) {
+        var andTerms = group.split(/ AND /);
+        andTerms.forEach(function(term) {
+            var t = term.trim();
+            var isNeg = t.startsWith('!');
+            kwRows.push({ id: kwNextId++, operator: isNeg ? 'not_contains' : 'contains', keyword: isNeg ? t.slice(1) : t, nextOp: 'AND' });
         });
-        kwRender();
-    })();
+        if (gi < orGroups.length - 1 && kwRows.length > 0) kwRows[kwRows.length - 1].nextOp = 'OR';
+    });
+    kwRender();
+})();
 </script>
 {% endblock %}

@@ -4224,3 +4224,308 @@ a.inc-row-link:hover { text-decoration: none; }
     .inc-detail-hero { padding: 1rem 1.25rem; }
     .inc-hero-monitor { font-size: 1.1rem; }
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   MONITOR FORM — Full-page Add / Edit forms  (mf-* prefix)
+   ═══════════════════════════════════════════════════════════ */
+
+/* Back link */
+.mf-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--brand);
+    text-decoration: none;
+    margin-bottom: 0.25rem;
+}
+.mf-back:hover { text-decoration: underline; }
+
+/* Page heading */
+.mf-heading {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--text);
+    margin: 0.15rem 0 1.5rem;
+    letter-spacing: -0.02em;
+}
+.mf-heading-dot { color: var(--brand); }
+
+/* Centered single-column layout */
+.mf-layout {
+    max-width: 640px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding-bottom: 5.5rem; /* room for sticky footer */
+}
+
+/* Card-style section */
+.mf-section {
+    background: var(--surface, #fff);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.mf-section-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted, #6b7280);
+    margin-bottom: 0.75rem;
+}
+
+/* ── Monitor type selector ─────────────────────────────── */
+.mf-type-select select {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.95rem;
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 8px;
+    background: var(--surface, #fff);
+    color: var(--text);
+    cursor: pointer;
+    appearance: auto;
+}
+
+/* Read-only type badge (edit page) */
+.mf-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+}
+
+/* ── Info box (heartbeat how-it-works, SSL info) ───────── */
+.mf-info-box {
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 10px;
+    padding: 1rem 1.15rem;
+    margin-bottom: 1rem;
+}
+
+/* ── Friendly name — just uses .form-group ─────────────── */
+.mf-friendly-name {
+    font-size: 0.95rem;
+}
+
+/* ── Notification rows ─────────────────────────────────── */
+.mf-notify-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--border-light, #f3f4f6);
+}
+.mf-notify-row:last-of-type { border-bottom: none; }
+
+.mf-notify-check {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--brand, #6366f1);
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.mf-notify-icon {
+    font-size: 1.3rem;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: -1px;
+}
+
+.mf-notify-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.mf-notify-label {
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--text);
+}
+
+.mf-notify-detail {
+    font-size: 0.82rem;
+    color: var(--text-muted, #6b7280);
+    margin-top: 0.1rem;
+}
+
+.mf-notify-pro {
+    font-size: 0.65rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #6366f1, #818cf8);
+    color: #fff;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    align-self: center;
+}
+
+.mf-pro-upgrade {
+    color: var(--brand, #6366f1);
+    text-decoration: underline;
+    font-weight: 500;
+}
+.mf-pro-upgrade:hover { text-decoration: none; }
+
+/* ── Interval slider ───────────────────────────────────── */
+.mf-interval-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.mf-interval-slider {
+    flex: 1;
+    accent-color: var(--brand, #6366f1);
+    height: 6px;
+}
+
+.mf-interval-value {
+    min-width: 3rem;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--brand, #6366f1);
+    text-align: right;
+}
+
+.mf-interval-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--text-muted, #6b7280);
+    margin-top: 0.2rem;
+    padding: 0 2px;
+}
+
+/* ── Collapsible Advanced section ──────────────────────── */
+.mf-collapse-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: none;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 0;
+}
+.mf-collapse-toggle svg {
+    transition: transform 0.2s ease;
+}
+.mf-collapse-toggle.open svg {
+    transform: rotate(90deg);
+}
+
+.mf-collapse-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.25s ease;
+    opacity: 0;
+}
+.mf-collapse-content.open {
+    max-height: 2000px;
+    opacity: 1;
+    margin-top: 1rem;
+}
+
+/* ── Pro tag (inline) ──────────────────────────────────── */
+.mf-pro-tag {
+    font-size: 0.6rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #6366f1, #818cf8);
+    color: #fff;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+    vertical-align: middle;
+    margin-left: 0.25rem;
+}
+
+/* ── Sticky submit footer ──────────────────────────────── */
+.mf-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface, #fff);
+    border-top: 1px solid var(--border, #e5e7eb);
+    padding: 0.85rem 1.5rem;
+    display: flex;
+    justify-content: flex-start;
+    z-index: 100;
+}
+
+/* On dashboard layout, respect the sidebar width */
+@media (min-width: 769px) {
+    .mf-footer {
+        left: var(--sidebar-width, 240px);
+    }
+}
+
+.mf-submit {
+    background: var(--brand, #6366f1);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.65rem 2rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+}
+.mf-submit:hover {
+    background: #4f46e5;
+}
+.mf-submit:active {
+    transform: scale(0.98);
+}
+
+/* ── Form divider ──────────────────────────────────────── */
+.form-divider {
+    border: none;
+    border-top: 1px solid var(--border, #e5e7eb);
+    margin: 1rem 0;
+}
+
+/* ── Label optional hint ───────────────────────────────── */
+.label-optional {
+    color: var(--text-muted, #6b7280);
+    font-weight: 400;
+    font-size: 0.85em;
+}
+
+/* ── Responsive ────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .mf-heading {
+        font-size: 1.35rem;
+    }
+    .mf-section {
+        padding: 1rem 1.15rem;
+        border-radius: 10px;
+    }
+    .mf-footer {
+        left: 0;
+        padding: 0.75rem 1rem;
+    }
+    .mf-submit {
+        width: 100%;
+    }
+    .mf-notify-row {
+        gap: 0.5rem;
+    }
+}

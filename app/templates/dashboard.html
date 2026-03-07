@@ -77,7 +77,7 @@
 </div>
 <div class="monitors-heading">
     <h2>Monitors<span class="heading-dot">.</span></h2>
-    <button class="btn btn-primary btn-new" onclick="openModal()">+ Add monitor</button>
+    <a href="/monitors/add" class="btn btn-primary btn-new" style="text-decoration:none;">+ Add monitor</a>
 </div>
 
 <!-- Toolbar: Search, Filter, Sort -->
@@ -243,15 +243,13 @@
 
         <!-- Last checked (live countdown) -->
         <div class="monitor-checked-col">
-            {% if m.get('last_checked') %}
-                <span class="checked-value last-checked-tick"
-                      data-last-checked="{{ m.last_checked.isoformat() if m.last_checked.isoformat is defined else m.last_checked }}">
-                    {% if m.last_checked.strftime is defined %}
-                        {{ m.last_checked.strftime('%H:%M UTC') }}
-                    {% else %}
-                        {{ m.last_checked }}
-                    {% endif %}
-                </span>
+            {% set lc = m.get('last_checked') %}
+            {% if lc %}
+                {% set lc_iso = lc.isoformat() if lc.isoformat is defined else lc|string %}
+                {% if '+' not in lc_iso|string and 'Z' not in lc_iso|string %}
+                    {% set lc_iso = lc_iso ~ 'Z' %}
+                {% endif %}
+                <span class="checked-value last-checked-tick" data-last-checked="{{ lc_iso }}" title="Last checked: {{ lc.strftime('%Y-%m-%d %H:%M:%S UTC') if lc.strftime is defined else lc }}"></span>
             {% else %}
                 <span class="checked-value checked-never">Never</span>
             {% endif %}
@@ -293,11 +291,11 @@
     {% endfor %}
 
     <!-- Add monitor row -->
-    <div class="monitor-card monitor-card-add" onclick="openModal()">
+    <a href="/monitors/add" class="monitor-card monitor-card-add" style="text-decoration: none; color: inherit;">
         <div class="row-cb-wrap"></div>
         <div class="monitor-dot"><span class="add-monitor-plus">+</span></div>
         <div class="monitor-info"><span class="add-monitor-label">Add monitor</span></div>
-    </div>
+    </a>
 </div>
 
 
@@ -308,249 +306,12 @@
     <h2>No monitors yet</h2>
     <p>Add your first URL to start tracking uptime, SSL, and response time.</p>
     <br>
-    <button class="btn btn-primary" onclick="openModal()">Add your first monitor</button>
+    <a href="/monitors/add" class="btn btn-primary">Add your first monitor</a>
     <p style="margin-top: 1rem; font-size: 0.85rem; color: #999;">
         Or use the <a href="/docs/api">REST API</a> to create one programmatically.
     </p>
 </div>
 {% endif %}
-
-<!-- Add Monitor Modal -->
-<div class="modal-overlay" id="addModal">
-    <div class="modal">
-        <button class="modal-close" onclick="closeModal()">✕</button>
-        <h2>Add monitor</h2>
-        <form method="POST" action="/monitors/add">
-            <div class="form-group">
-                <label>Monitor Type</label>
-                <div class="monitor-type-grid">
-                    <button type="button" class="type-btn type-btn-active" data-type="http" onclick="setMonitorType('http', this)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                        HTTP / HTTPS
-                    </button>
-                    <button type="button" class="type-btn" data-type="json_api" onclick="setMonitorType('json_api', this)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M10 13l-2 2 2 2"/><path d="M14 13l2 2-2 2"/></svg>
-                        JSON / API
-                    </button>
-                    <button type="button" class="type-btn" data-type="heartbeat" onclick="setMonitorType('heartbeat', this)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                        Heartbeat / Cron
-                    </button>
-                    <button type="button" class="type-btn" data-type="ssl" onclick="setMonitorType('ssl', this)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                        SSL Certificate
-                    </button>
-                </div>
-                <input type="hidden" id="monitor_type" name="monitor_type" value="http">
-            </div>
-
-            <!-- ═══ HTTP fields ═══ -->
-            <div id="httpFields">
-                <div class="form-group" id="urlGroup">
-                    <label for="url">URL to Monitor</label>
-                    <input type="url" id="url" name="url" placeholder="https://example.com" required>
-                    <div class="hint" id="urlHint">We'll check this URL at the interval you choose below</div>
-                </div>
-                <div class="form-group">
-                    <label for="expected_status_code">Expected Status Code <span style="color: #999; font-weight: normal;">(optional)</span></label>
-                    <input type="number" id="expected_status_code" name="expected_status_code" placeholder="200" min="100" max="599" style="max-width: 120px;">
-                    <div class="hint">Leave blank to accept any 2xx/3xx response</div>
-                </div>
-                <div class="form-group">
-                    <label for="timeout">Request Timeout <span style="color: #999; font-weight: normal;">(seconds)</span></label>
-                    <input type="number" id="timeout" name="timeout" placeholder="10" min="1" max="60" value="10" style="max-width: 120px;">
-                </div>
-                <div class="form-group">
-                    <label for="keyword">Keyword Check <span style="color: #999; font-weight: normal;">(optional)</span></label>
-                    <input type="hidden" id="keyword" name="keyword" value="">
-                    <div class="kw-builder" id="kwBuilder">
-                        <div class="kw-rows" id="kwRows">
-                            <!-- keyword rows injected by JS -->
-                        </div>
-                        <button type="button" class="kw-add-btn" onclick="kwAddRow()">
-                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 7h5M7 4.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                            Add keyword
-                        </button>
-                    </div>
-                    <div class="hint">Body must contain these keywords or the monitor is marked <strong>down</strong>. Case-insensitive.</div>
-                </div>
-                <div class="form-group">
-                    <label for="response_threshold_ms">Response Threshold <span style="color: #999; font-weight: normal;">(optional)</span></label>
-                    <input type="text" id="response_threshold_ms" name="response_threshold_ms" placeholder="e.g. > 2000 or 200-3000">
-                    <div class="hint">Supports: <code>> 2000</code>, <code>< 200</code>, <code>200-3000</code> (range), or plain number (ms)</div>
-                </div>
-            </div>
-
-            <!-- ═══ JSON/API fields ═══ -->
-            <div id="jsonApiFields" style="display: none;">
-                <div class="form-group">
-                    <label for="json_url">API Endpoint URL</label>
-                    <input type="url" id="json_url" name="url" placeholder="https://api.example.com/v1/health" disabled>
-                    <div class="hint">We'll send a GET request and validate the JSON response</div>
-                </div>
-                <div class="form-group">
-                    <label for="json_expected_status">Expected Status Code <span style="color: #999; font-weight: normal;">(optional)</span></label>
-                    <input type="number" id="json_expected_status" name="expected_status_code" placeholder="200" min="100" max="599" style="max-width: 120px;" disabled>
-                    <div class="hint">Leave blank to accept any 2xx/3xx response</div>
-                </div>
-                <div class="form-group">
-                    <label for="json_timeout">Request Timeout <span style="color: #999; font-weight: normal;">(seconds)</span></label>
-                    <input type="number" id="json_timeout" name="timeout" placeholder="10" min="1" max="60" value="10" style="max-width: 120px;" disabled>
-                </div>
-                <div class="form-group">
-                    <label for="auth_header">Authorization Header <span style="color: #999; font-weight: normal;">(optional)</span></label>
-                    <input type="text" id="auth_header" name="auth_header" placeholder="Bearer eyJhbGci..." disabled>
-                    <div class="hint">Sent as the <code>Authorization</code> header</div>
-                </div>
-                <div class="form-group">
-                    <label>JSON Assertions <span style="color: #999; font-weight: normal;">(optional)</span></label>
-                    <div id="assertions-container">
-                        <!-- assertions added dynamically -->
-                    </div>
-                    <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; margin-top: 0.5rem;" onclick="addAssertion()" id="addAssertionBtn" disabled>+ Add assertion</button>
-                    <div class="hint">Validate specific fields in the JSON response — e.g. <code>status</code> equals <code>ok</code></div>
-                </div>
-            </div>
-
-            <!-- ═══ Heartbeat fields ═══ -->
-            <div id="heartbeatGroup" style="display: none;">
-                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 1rem 1.15rem; margin-bottom: 1rem;">
-                    <div style="font-weight: 600; font-size: 0.9rem; color: #15803d; margin-bottom: 0.4rem;">How heartbeat monitoring works</div>
-                    <ol style="margin: 0; padding-left: 1.2rem; font-size: 0.82rem; color: #166534; line-height: 1.7;">
-                        <li>Create this monitor — we'll generate a unique <strong>ping URL</strong></li>
-                        <li>Add the URL to your cron job, scheduler, or deploy script</li>
-                        <li>If we don't receive a ping in time, we alert you instantly</li>
-                    </ol>
-                    <div style="margin-top: 0.5rem; font-size: 0.78rem; color: #166534; opacity: 0.8;">
-                        <code style="background: #dcfce7; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.78rem;">curl https://statusrooster.com/api/ping/&lt;id&gt;</code>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="heartbeat_interval">Expected Ping Interval</label>
-                    <select id="heartbeat_interval" name="heartbeat_interval" style="width: 100%;">
-                        <option value="60">Every 1 minute</option>
-                        <option value="300" selected>Every 5 minutes</option>
-                        <option value="600">Every 10 minutes</option>
-                        <option value="900">Every 15 minutes</option>
-                        <option value="1800">Every 30 minutes</option>
-                        <option value="3600">Every 1 hour</option>
-                        <option value="21600">Every 6 hours</option>
-                        <option value="43200">Every 12 hours</option>
-                        <option value="86400">Every 24 hours</option>
-                    </select>
-                    <div class="hint">We'll alert you if no ping arrives within this interval</div>
-                </div>
-                <div class="form-group">
-                    <label for="heartbeat_grace_period">Grace Period <span style="color: #999; font-weight: normal;">(seconds)</span></label>
-                    <input type="number" id="heartbeat_grace_period" name="heartbeat_grace_period" value="30" min="0" max="3600" style="max-width: 120px;">
-                    <div class="hint">Extra time allowed after the interval before marking as down (default: 30s)</div>
-                </div>
-            </div>
-
-            <!-- ═══ SSL fields ═══ -->
-            <div id="sslFields" style="display: none;">
-                <div style="background: #fefce8; border: 1px solid #fde68a; border-radius: 10px; padding: 1rem 1.15rem; margin-bottom: 1rem;">
-                    <div style="font-weight: 600; font-size: 0.9rem; color: #854d0e; margin-bottom: 0.4rem;">SSL Certificate Monitoring</div>
-                    <p style="margin: 0; font-size: 0.82rem; color: #713f12; line-height: 1.7;">
-                        We'll check your domain's SSL certificate on every check cycle and alert you when it's approaching expiration.
-                        The monitor enters a <strong>warning</strong> state when within threshold, and <strong>down</strong> when expired.
-                    </p>
-                </div>
-                <div class="form-group">
-                    <label for="ssl_domain">Domain</label>
-                    <input type="text" id="ssl_domain" name="ssl_domain" placeholder="example.com" disabled>
-                    <div class="hint">Enter the domain name — no protocol or path needed</div>
-                </div>
-                <div class="form-group">
-                    <label for="ssl_expiry_threshold_days">Warning Threshold <span style="color: #999; font-weight: normal;">(days)</span></label>
-                    <input type="number" id="ssl_expiry_threshold_days" name="ssl_expiry_threshold_days" value="14" min="1" max="90" style="max-width: 120px;" disabled>
-                    <div class="hint">Alert when certificate expires within this many days</div>
-                </div>
-            </div>
-
-            <!-- ═══ Shared fields ═══ -->
-            <div class="form-group" id="checkIntervalGroup">
-                <label for="check_interval">Check Interval <span style="color: #999; font-weight: normal;">(Pro)</span></label>
-                {% if user.get('plan', 'free') != 'free' %}
-                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    <input type="range" id="check_interval" name="check_interval" min="60" max="300" step="10" value="60"
-                           style="flex: 1; accent-color: #6366f1;"
-                           oninput="document.getElementById('intervalDisplay').textContent = this.value < 60 ? '60s' : this.value < 120 ? this.value + 's' : (this.value / 60).toFixed(0) + 'm'">
-                    <span id="intervalDisplay" style="min-width: 3rem; font-weight: 600; font-size: 0.95rem; color: var(--brand);">60s</span>
-                </div>
-                <div class="hint">How often we check (60s – 5m). Lower = faster incident detection.</div>
-                {% else %}
-                <div style="display: flex; align-items: center; gap: 0.75rem; opacity: 0.5;">
-                    <input type="range" disabled min="60" max="300" value="300" style="flex: 1; cursor: not-allowed;">
-                    <span style="min-width: 3rem; font-weight: 600; font-size: 0.95rem;">5m</span>
-                </div>
-                <input type="hidden" name="check_interval" value="300">
-                <div class="hint" style="color: #6366f1;"><a href="/api/billing/checkout" onclick="event.preventDefault(); this.closest('form').action='/api/billing/checkout'; this.closest('form').submit();" style="color: #6366f1; text-decoration: underline;">Upgrade to Pro</a> for custom intervals (down to 60s)</div>
-                {% endif %}
-            </div>
-            <div class="form-group">
-                <label for="name">Display Name</label>
-                <input type="text" id="name" name="name" placeholder="My Website" required>
-            </div>
-            <div class="form-group">
-                <label for="alert_email">Alert Email</label>
-                <input type="email" id="alert_email" name="alert_email" value="{{ user.email }}" placeholder="you@example.com">
-                <div class="hint" id="emailHint">We'll email you when this site goes down</div>
-            </div>
-            <div class="form-group">
-                <label for="alert_slack_webhook">Slack Webhook URL <span style="color: #999; font-weight: normal;">(Pro)</span></label>
-                {% if user.get('plan', 'free') != 'free' %}
-                <input type="url" id="alert_slack_webhook" name="alert_slack_webhook" placeholder="https://hooks.slack.com/services/...">
-                {% else %}
-                <input type="url" id="alert_slack_webhook" name="alert_slack_webhook" placeholder="https://hooks.slack.com/services/..." disabled style="opacity: 0.5; cursor: not-allowed;">
-                <input type="hidden" name="alert_slack_webhook" value="">
-                <div class="hint" style="color: #6366f1;"><a href="/api/billing/checkout" onclick="event.preventDefault(); this.closest('form').action='/api/billing/checkout'; this.closest('form').submit();" style="color: #6366f1; text-decoration: underline;">Upgrade to Pro</a> for Slack alerts</div>
-                {% endif %}
-            </div>
-            <div class="form-group" id="webhookGroup">
-                <label for="webhook_url">Webhook URL <span style="color: #999; font-weight: normal;">(Pro)</span></label>
-                {% if user.get('plan', 'free') != 'free' %}
-                <input type="url" id="webhook_url" name="webhook_url" placeholder="https://your-api.com/webhook">
-                {% else %}
-                <input type="url" id="webhook_url" name="webhook_url" placeholder="https://your-api.com/webhook" disabled style="opacity: 0.5; cursor: not-allowed;">
-                <input type="hidden" name="webhook_url" value="">
-                {% endif %}
-                <div class="hint">We'll POST JSON to this URL on status changes</div>
-            </div>
-            <div class="form-group" id="maintenanceGroup">
-                <label>Maintenance Windows <span style="color: #999; font-weight: normal;">(Pro)</span></label>
-                <div id="mw-container">
-                    <!-- windows added dynamically -->
-                </div>
-                {% if user.get('plan', 'free') != 'free' %}
-                <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; margin-top: 0.5rem;" onclick="addMaintenanceWindow()">+ Add maintenance window</button>
-                <div class="hint">Suppress alerts during these windows (times in UTC)</div>
-                {% else %}
-                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; opacity: 0.5;">
-                    <select disabled style="cursor: not-allowed; flex: 0 0 auto; margin-bottom: 0;" class="form-group">
-                        <option>No maintenance window</option>
-                    </select>
-                    <input type="time" disabled style="cursor: not-allowed;">
-                    <span class="text-muted">to</span>
-                    <input type="time" disabled style="cursor: not-allowed;">
-                </div>
-                <div class="hint" style="color: #6366f1;"><a href="/api/billing/checkout" onclick="event.preventDefault(); this.closest('form').action='/api/billing/checkout'; this.closest('form').submit();" style="color: #6366f1; text-decoration: underline;">Upgrade to Pro</a> to suppress alerts during scheduled maintenance</div>
-                {% endif %}
-            </div>
-            <div class="form-group" style="display: flex; gap: 2rem; align-items: center; flex-wrap: wrap;">
-                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                    <input type="checkbox" name="public" value="true" style="width: auto; accent-color: #6366f1;">
-                    Public status page
-                </label>
-                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                    <input type="checkbox" name="paused" value="true" style="width: auto; accent-color: #6366f1;">
-                    Start paused
-                </label>
-            </div>
-            <button type="submit" class="modal-submit">Add monitor</button>
-        </form>
-    </div>
-</div>
 
 <!-- Heartbeat Created Modal — shows ping URL + snippets after creation -->
 <div class="modal-overlay" id="heartbeatCreatedModal">
@@ -605,15 +366,10 @@
 
 {% block extra_js %}
 <script>
-/* ── Modal ─────────────────────────────────────────────── */
-function openModal() { document.getElementById('addModal').classList.add('active'); }
-function closeModal() { document.getElementById('addModal').classList.remove('active'); }
-document.getElementById('addModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeHeartbeatModal(); } });
-
 /* ── Heartbeat Created Modal ───────────────────────────── */
 function closeHeartbeatModal() { document.getElementById('heartbeatCreatedModal').classList.remove('active'); }
 document.getElementById('heartbeatCreatedModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeHeartbeatModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeHeartbeatModal(); } });
 function copyHbUrl() {
     const url = document.getElementById('hbPingUrl').textContent;
     navigator.clipboard.writeText(url).then(() => {
@@ -648,188 +404,8 @@ function copySnippet(id, btn) {
     }
 })();
 
-/* ── Monitor Type Switcher ─────────────────────────────── */
-function setMonitorType(type, btn) {
-    document.getElementById('monitor_type').value = type;
-    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('type-btn-active'));
-    btn.classList.add('type-btn-active');
-
-    const nameInput = document.getElementById('name');
-    const emailHint = document.getElementById('emailHint');
-
-    // Hide all type-specific sections
-    ['httpFields', 'jsonApiFields', 'heartbeatGroup', 'sslFields'].forEach(id => {
-        document.getElementById(id).style.display = 'none';
-    });
-
-    // Disable/enable form fields to prevent name collisions
-    document.querySelectorAll('#httpFields input, #httpFields select').forEach(el => { el.disabled = true; });
-    document.querySelectorAll('#jsonApiFields input, #jsonApiFields select, #jsonApiFields button').forEach(el => { el.disabled = true; });
-    document.querySelectorAll('#heartbeatGroup input, #heartbeatGroup select').forEach(el => { el.disabled = true; });
-    document.querySelectorAll('#sslFields input, #sslFields select').forEach(el => { el.disabled = true; });
-
-    // Show/hide shared fields
-    const checkIntervalGroup = document.getElementById('checkIntervalGroup');
-    const webhookGroup = document.getElementById('webhookGroup');
-    const maintenanceGroup = document.getElementById('maintenanceGroup');
-
-    if (type === 'http') {
-        document.getElementById('httpFields').style.display = 'block';
-        document.querySelectorAll('#httpFields input:not([type=hidden]), #httpFields select').forEach(el => { el.disabled = false; });
-        document.getElementById('url').setAttribute('required', '');
-        checkIntervalGroup.style.display = 'block';
-        webhookGroup.style.display = 'block';
-        maintenanceGroup.style.display = 'block';
-        nameInput.placeholder = 'My Website';
-        if (emailHint) emailHint.textContent = "We'll email you when this site goes down";
-    } else if (type === 'json_api') {
-        document.getElementById('jsonApiFields').style.display = 'block';
-        document.querySelectorAll('#jsonApiFields input:not([type=hidden]), #jsonApiFields select, #jsonApiFields button').forEach(el => { el.disabled = false; });
-        document.getElementById('json_url').setAttribute('required', '');
-        checkIntervalGroup.style.display = 'block';
-        webhookGroup.style.display = 'block';
-        maintenanceGroup.style.display = 'block';
-        nameInput.placeholder = 'e.g. Payment API, User Service';
-        if (emailHint) emailHint.textContent = "We'll email you when this API fails validation";
-    } else if (type === 'heartbeat') {
-        document.getElementById('heartbeatGroup').style.display = 'block';
-        document.querySelectorAll('#heartbeatGroup input:not([type=hidden]), #heartbeatGroup select').forEach(el => { el.disabled = false; });
-        checkIntervalGroup.style.display = 'none';
-        webhookGroup.style.display = 'block';
-        maintenanceGroup.style.display = 'none';
-        nameInput.placeholder = 'e.g. Nightly DB Backup, Invoice Cron';
-        if (emailHint) emailHint.textContent = "We'll email you if a ping is missed";
-    } else if (type === 'ssl') {
-        document.getElementById('sslFields').style.display = 'block';
-        document.querySelectorAll('#sslFields input:not([type=hidden]), #sslFields select').forEach(el => { el.disabled = false; });
-        document.getElementById('ssl_domain').setAttribute('required', '');
-        checkIntervalGroup.style.display = 'block';
-        webhookGroup.style.display = 'block';
-        maintenanceGroup.style.display = 'none';
-        nameInput.placeholder = 'e.g. example.com SSL';
-        if (emailHint) emailHint.textContent = "We'll email you when your SSL certificate is expiring";
-    }
-}
-
-/* ── JSON Assertion Builder ───────────────────────────── */
-const ASSERTION_OPS = [
-    ['equals', 'Equals'],
-    ['not_equals', 'Not equals'],
-    ['contains', 'Contains'],
-    ['not_contains', 'Not contains'],
-    ['exists', 'Exists'],
-    ['not_exists', 'Not exists'],
-    ['greater_than', 'Greater than'],
-    ['less_than', 'Less than'],
-];
-function addAssertion(path, operator, value) {
-    const c = document.getElementById('assertions-container');
-    const row = document.createElement('div');
-    row.className = 'assertion-row';
-    row.style.cssText = 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;';
-    const options = ASSERTION_OPS.map(([val, label]) =>
-        `<option value="${val}" ${val === (operator || 'equals') ? 'selected' : ''}>${label}</option>`
-    ).join('');
-    row.innerHTML = `
-        <input type="text" name="assertion_path[]" value="${path || ''}" placeholder="data.status" style="flex:1;min-width:100px;">
-        <select name="assertion_operator[]" style="flex:0 0 auto;">${options}</select>
-        <input type="text" name="assertion_value[]" value="${value || ''}" placeholder="ok" style="flex:1;min-width:80px;">
-        <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>`;
-    c.appendChild(row);
-}
-
-/* ── Keyword Expression Builder ───────────────────────── */
-let kwRows = [];
-let kwNextId = 0;
-
-function kwAddRow(operator, keyword) {
-    kwRows.push({ id: kwNextId++, operator: operator || 'contains', keyword: keyword || '', nextOp: 'AND' });
-    kwRender();
-}
-
-function kwRemoveRow(id) {
-    kwRows = kwRows.filter(r => r.id !== id);
-    kwRender();
-}
-
-function kwUpdateRow(id, field, value) {
-    const row = kwRows.find(r => r.id === id);
-    if (row) { row[field] = value; kwSync(); }
-}
-
-function kwSetJoin(id, op) {
-    const row = kwRows.find(r => r.id === id);
-    if (row) { row.nextOp = op; kwSync(); kwRender(); }
-}
-
-function kwSync() {
-    // Build expression: "Welcome AND !error OR Login"
-    // "!" prefix = not contains
-    const parts = [];
-    kwRows.forEach((r, i) => {
-        const kw = r.keyword.trim();
-        if (!kw) return;
-        if (i > 0 && parts.length > 0) {
-            const prev = kwRows[i - 1];
-            parts.push(prev.nextOp || 'AND');
-        }
-        parts.push(r.operator === 'not_contains' ? '!' + kw : kw);
-    });
-    document.getElementById('keyword').value = parts.join(' ');
-}
-
-function kwRender() {
-    const container = document.getElementById('kwRows');
-    if (kwRows.length === 0) {
-        container.innerHTML = '<div class="kw-empty">No keywords — click "Add keyword" to check for content in the response body</div>';
-        document.getElementById('keyword').value = '';
-        return;
-    }
-    let html = '';
-    kwRows.forEach((row, i) => {
-        if (i > 0) {
-            const join = kwRows[i - 1].nextOp || 'AND';
-            html += `<div class="kw-operator-row">
-                <button type="button" class="kw-op-btn${join === 'AND' ? ' active' : ''}" onclick="kwSetJoin(${kwRows[i-1].id},'AND')">AND</button>
-                <button type="button" class="kw-op-btn${join === 'OR' ? ' active' : ''}" onclick="kwSetJoin(${kwRows[i-1].id},'OR')">OR</button>
-                <span class="kw-op-hint">${join === 'AND' ? 'Both conditions must pass' : 'At least one must pass'}</span>
-            </div>`;
-        }
-        html += `<div class="kw-row">
-            <select class="kw-select" onchange="kwUpdateRow(${row.id},'operator',this.value)">
-                <option value="contains"${row.operator === 'contains' ? ' selected' : ''}>Contains</option>
-                <option value="not_contains"${row.operator === 'not_contains' ? ' selected' : ''}>Not contains</option>
-            </select>
-            <input type="text" class="kw-input" value="${row.keyword.replace(/"/g, '&quot;')}" placeholder="e.g. Welcome" oninput="kwUpdateRow(${row.id},'keyword',this.value)" spellcheck="false">
-            <button type="button" class="kw-remove" onclick="kwRemoveRow(${row.id})" title="Remove keyword"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 4l6 6M10 4l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
-        </div>`;
-    });
-    container.innerHTML = html;
-    kwSync();
-}
-
-// Init empty
-kwRender();
-
 /* ── Prevent info tooltips from triggering sort ────────── */
 document.querySelectorAll('.th-info').forEach(el => el.addEventListener('click', e => e.stopPropagation()));
-
-/* ── Maintenance windows ──────────────────────────────── */
-const MW_DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday','daily'];
-function addMaintenanceWindow(day, start, end) {
-    const c = document.getElementById('mw-container'), row = document.createElement('div');
-    row.className = 'mw-row';
-    row.style.cssText = 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;';
-    row.innerHTML = `
-        <select name="maintenance_day[]" class="form-group" style="flex:0 0 auto;margin-bottom:0;">
-            <option value="">Day…</option>${MW_DAYS.map(d => `<option value="${d}" ${d===(day||'')?'selected':''}>${d[0].toUpperCase()+d.slice(1)}</option>`).join('')}
-        </select>
-        <input type="time" name="maintenance_start[]" value="${start||''}" style="flex:0 0 auto;">
-        <span class="text-muted">to</span>
-        <input type="time" name="maintenance_end[]" value="${end||''}" style="flex:0 0 auto;">
-        <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>`;
-    c.appendChild(row);
-}
 
 /* ── Dropdowns ─────────────────────────────────────────── */
 function toggleDropdown(id) {
@@ -867,10 +443,6 @@ function filterTable() {
         card.style.display = matchSearch && matchFilter ? '' : 'none';
     });
 }
-
-/* ── Column sort state (must be declared before sortList) ── */
-let colSortField = null;
-let colSortDir = 'asc';
 
 /* ── Sorting ───────────────────────────────────────────── */
 let currentSort = 'down-first';
@@ -950,28 +522,34 @@ async function bulkAction(action) {
 }
 
 /* ── Live "last checked" ticker (every 1s) ─────────────── */
+function formatCheckedAgo(seconds) {
+    if (seconds < 0) return 'just now';
+    if (seconds < 60) return seconds + 's ago';
+    if (seconds < 3600) {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return s > 0 ? m + 'm ' + s + 's ago' : m + 'm ago';
+    }
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    if (h >= 24) {
+        const d = Math.floor(h / 24);
+        const rh = h % 24;
+        return rh > 0 ? d + 'd ' + rh + 'h ago' : d + 'd ago';
+    }
+    return m > 0 ? h + 'h ' + m + 'm ago' : h + 'h ago';
+}
 function tickLastChecked() {
+    const now = Date.now();
     document.querySelectorAll('.last-checked-tick').forEach(el => {
-        if (!el.dataset.lastChecked) return;
+        const iso = el.dataset.lastChecked;
+        if (!iso) return;
         try {
-            const d = new Date(el.dataset.lastChecked);
-            if (isNaN(d.getTime())) return;
-            const secs = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000));
-            if (secs < 60) {
-                el.textContent = secs + 's ago';
-            } else if (secs < 3600) {
-                const m = Math.floor(secs / 60);
-                const s = secs % 60;
-                el.textContent = m + 'm, ' + s + 's ago';
-            } else if (secs < 86400) {
-                const h = Math.floor(secs / 3600);
-                const m = Math.floor((secs % 3600) / 60);
-                el.textContent = h + 'h, ' + m + 'm ago';
-            } else {
-                const d2 = Math.floor(secs / 86400);
-                const h = Math.floor((secs % 86400) / 3600);
-                el.textContent = h > 0 ? d2 + 'd, ' + h + 'h ago' : d2 + 'd ago';
-            }
+            let d = new Date(iso);
+            if (isNaN(d.getTime())) d = new Date(iso + 'Z');
+            if (isNaN(d.getTime())) { el.textContent = '—'; return; }
+            const secs = Math.floor((now - d.getTime()) / 1000);
+            el.textContent = formatCheckedAgo(secs);
         } catch(e) { el.textContent = '—'; }
     });
 }
@@ -979,6 +557,8 @@ tickLastChecked();
 setInterval(tickLastChecked, 1000);
 
 /* ── Column header sort ────────────────────────────────── */
+let colSortField = null;
+let colSortDir = 'asc';
 function colSort(field) {
     if (colSortField === field) {
         colSortDir = colSortDir === 'asc' ? 'desc' : 'asc';
