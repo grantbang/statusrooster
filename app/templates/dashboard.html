@@ -126,6 +126,10 @@
                 {% endif %}
             </div>
         </div>
+        <span class="active-filter-badge" id="activeFilterBadge" style="display:none;">
+            <span id="activeFilterLabel"></span>
+            <button class="clear-filter-x" onclick="setFilter('all','All')" title="Clear filter">✕</button>
+        </span>
     </div>
     <div class="toolbar-right">
         <div class="toolbar-dropdown">
@@ -147,7 +151,7 @@
 <div class="d-col-header">
     <div class="d-col-check"></div>
     <div class="d-col-dot"></div>
-    <div class="d-col-name d-col-sortable" data-sort="name" onclick="colSort('name')">Name <span class="sort-arrow"></span></div>
+    <div class="d-col-name d-col-sortable" data-sort="name" onclick="colSort('name')">Monitor Name <span class="sort-arrow"></span></div>
     <div class="d-col-group d-col-sortable" data-sort="group" onclick="colSort('group')">Group <span class="sort-arrow"></span></div>
     <div class="d-col-type d-col-sortable" data-sort="type" onclick="colSort('type')">Type <span class="sort-arrow"></span></div>
     <div class="d-col-url">URL</div>
@@ -841,6 +845,13 @@ function setFilter(f, label) {
     currentFilter = f;
     document.querySelectorAll('#filterDropdown .dropdown-item').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
     document.getElementById('filterDropdown').classList.remove('open');
+    const badge = document.getElementById('activeFilterBadge');
+    if (f === 'all') {
+        badge.style.display = 'none';
+    } else {
+        document.getElementById('activeFilterLabel').textContent = label;
+        badge.style.display = '';
+    }
     filterTable();
 }
 function filterTable() {

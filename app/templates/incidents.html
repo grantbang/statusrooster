@@ -4,92 +4,197 @@
 {% block nav_incidents %}active{% endblock %}
 
 {% block content %}
-<div class="inc-page">
-    <div class="inc-page-header">
-        <h2>Incidents<span class="heading-dot">.</span></h2>
-    </div>
+<div class="dash-single">
 
-    <!-- Toolbar -->
-    <div class="inc-toolbar">
-        <div class="inc-toolbar-left">
-            <input type="text" id="incSearch" class="toolbar-search" placeholder="Search by monitor name or URL" oninput="filterIncidentCards()">
-        </div>
-        <div class="inc-toolbar-right">
-            <div class="inc-status-tabs">
-                <a href="/incidents?hours={{ hours }}&status=" class="inc-tab {% if status_filter == 'all' %}active{% endif %}">All</a>
-                <a href="/incidents?hours={{ hours }}&status=open" class="inc-tab {% if status_filter == 'open' %}active{% endif %}">Ongoing</a>
-                <a href="/incidents?hours={{ hours }}&status=resolved" class="inc-tab {% if status_filter == 'resolved' %}active{% endif %}">Resolved</a>
-            </div>
-            <div class="toolbar-dropdown">
-                <button class="btn btn-secondary btn-sm" onclick="toggleDropdown('timeDropdown')">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                    {% if hours == '24' %}Last 24h{% elif hours == '72' %}Last 3 days{% elif hours == '168' %}Last 7 days{% elif hours == '720' %}Last 30 days{% elif hours == '0' %}All time{% else %}Last 7 days{% endif %}
-                </button>
-                <div class="dropdown-menu dropdown-menu-right" id="timeDropdown">
-                    <a class="dropdown-item {% if hours == '24' %}active{% endif %}" href="/incidents?hours=24&status={{ status_filter if status_filter != 'all' else '' }}">Last 24 hours</a>
-                    <a class="dropdown-item {% if hours == '72' %}active{% endif %}" href="/incidents?hours=72&status={{ status_filter if status_filter != 'all' else '' }}">Last 3 days</a>
-                    <a class="dropdown-item {% if hours == '168' %}active{% endif %}" href="/incidents?hours=168&status={{ status_filter if status_filter != 'all' else '' }}">Last 7 days</a>
-                    <a class="dropdown-item {% if hours == '720' %}active{% endif %}" href="/incidents?hours=720&status={{ status_filter if status_filter != 'all' else '' }}">Last 30 days</a>
-                    <a class="dropdown-item {% if hours == '0' %}active{% endif %}" href="/incidents?hours=0&status={{ status_filter if status_filter != 'all' else '' }}">All time</a>
-                </div>
-            </div>
+<!-- Count ongoing vs resolved -->
+{% set ns = namespace(ongoing=0, resolved=0) %}
+{% for inc in incidents %}
+    {% if inc.status == 'open' %}{% set ns.ongoing = ns.ongoing + 1 %}
+    {% else %}{% set ns.resolved = ns.resolved + 1 %}{% endif %}
+{% endfor %}
+
+<!-- ═══════════════ Hero Status Strip ═══════════════ -->
+<div class="status-strip">
+    <div class="strip-left">
+        <div class="strip-status-dot {% if ns.ongoing > 0 %}strip-dot-down{% else %}strip-dot-up{% endif %}"></div>
+        <div class="strip-status-text">
+            {% if ns.ongoing > 0 %}
+                <span class="strip-headline strip-headline-down">{{ ns.ongoing }} ongoing incident{{ 's' if ns.ongoing != 1 }}</span>
+            {% else %}
+                <span class="strip-headline strip-headline-up">No active incidents</span>
+            {% endif %}
         </div>
     </div>
-
-    <!-- Incident Cards -->
-    <div class="inc-list" id="incList">
-        {% if incidents %}
-        {% for inc in incidents %}
-        {% set mon = monitor_map.get(inc.monitor_id, {}) %}
-        <a href="/incidents/{{ inc.id }}" class="inc-card" data-name="{{ inc.monitor_name|lower }}" data-url="{{ inc.monitor_url|lower }}">
-            <div class="inc-card-left">
-                <div class="inc-indicator {{ 'inc-ongoing' if inc.status == 'open' else 'inc-resolved' }}"></div>
-                <div class="inc-card-info">
-                    <div class="inc-card-top">
-                        <span class="inc-monitor-name">{{ inc.monitor_name }}</span>
-                        {% if inc.status == 'open' %}
-                        <span class="inc-badge inc-badge-ongoing">Ongoing</span>
-                        {% else %}
-                        <span class="inc-badge inc-badge-resolved">Resolved</span>
-                        {% endif %}
-                    </div>
-                    <div class="inc-card-meta">
-                        {% if inc.status_code %}
-                        <span class="inc-root-cause">
-                            {% if inc.status_code == 0 %}Connection failed{% elif inc.status_code >= 500 %}HTTP {{ inc.status_code }}{% elif inc.status_code >= 400 %}HTTP {{ inc.status_code }}{% elif inc.status_code == -1 %}Timeout{% elif inc.status_code == -2 %}DNS failed{% else %}HTTP {{ inc.status_code }}{% endif %}
-                        </span>
-                        {% elif mon.get('monitor_type') == 'heartbeat' %}
-                        <span class="inc-root-cause">Missed ping</span>
-                        {% elif mon.get('monitor_type') == 'ssl' %}
-                        <span class="inc-root-cause">SSL issue</span>
-                        {% else %}
-                        <span class="inc-root-cause">Check failed</span>
-                        {% endif %}
-                        <span class="inc-url">{{ inc.monitor_url | replace('https://', '') | replace('http://', '') | truncate(40, True, '…') }}</span>
-                    </div>
-                </div>
-            </div>
-            <div class="inc-card-right">
-                <div class="inc-card-time">
-                    <span class="inc-time relative-time" data-ts="{{ inc.started_at.isoformat() if inc.started_at else '' }}">{{ inc.started_at.strftime('%b %-d, %H:%M') if inc.started_at else '' }}</span>
-                    {% if inc.duration_seconds %}
-                    <span class="inc-duration">{{ inc.duration_seconds // 3600 }}h {{ (inc.duration_seconds % 3600) // 60 }}m</span>
-                    {% elif inc.status == 'open' %}
-                    <span class="inc-duration inc-duration-ongoing">Ongoing</span>
-                    {% endif %}
-                </div>
-                <svg class="inc-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-            </div>
-        </a>
-        {% endfor %}
-        {% else %}
-        <div class="inc-empty">
-            <div class="inc-empty-icon">✓</div>
-            <div class="inc-empty-text">No incidents{% if status_filter != 'all' %} matching "{{ status_filter }}"{% endif %} — all monitors healthy</div>
+    <div class="strip-counts">
+        <div class="strip-count-pill strip-count-down">
+            <span class="strip-count-dot dot-down"></span>
+            <span class="strip-count-value">{{ ns.ongoing }}</span>
+            <span class="strip-count-label">Ongoing</span>
         </div>
-        {% endif %}
+        <div class="strip-count-pill">
+            <span class="strip-count-dot dot-up"></span>
+            <span class="strip-count-value">{{ ns.resolved }}</span>
+            <span class="strip-count-label">Resolved</span>
+        </div>
     </div>
 </div>
+
+<div class="monitors-heading">
+    <h2>Incidents<span class="heading-dot">.</span></h2>
+</div>
+
+<!-- Toolbar: Search, Filter, Sort — mirrors dashboard exactly -->
+<div class="table-toolbar">
+    <div class="toolbar-left">
+        <input type="text" id="incSearch" class="toolbar-search" placeholder="Search by name or URL" oninput="filterIncidentRows()">
+        <div class="toolbar-dropdown">
+            <button class="btn btn-secondary btn-sm" onclick="toggleDropdown('filterDropdown')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+                Filter
+            </button>
+            <div class="dropdown-menu" id="filterDropdown">
+                <button class="dropdown-item active" data-filter="all" onclick="setIncFilter('all','All')">All</button>
+                <button class="dropdown-item" data-filter="ongoing" onclick="setIncFilter('ongoing','Ongoing')">● Ongoing</button>
+                <button class="dropdown-item" data-filter="resolved" onclick="setIncFilter('resolved','Resolved')">● Resolved</button>
+                {% if group_names %}
+                <hr class="row-menu-divider">
+                {% for gn in group_names %}
+                <button class="dropdown-item" data-filter="group:{{ gn }}" onclick="setIncFilter('group:{{ gn }}','{{ gn }}')">📁 {{ gn }}</button>
+                {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        <span class="active-filter-badge" id="activeFilterBadge" style="display:none;">
+            <span id="activeFilterLabel"></span>
+            <button class="clear-filter-x" onclick="setIncFilter('all','All')" title="Clear filter">✕</button>
+        </span>
+    </div>
+    <div class="toolbar-right">
+        <div class="toolbar-dropdown">
+            <button class="btn btn-secondary btn-sm" onclick="toggleDropdown('sortDropdown')">
+                ↕ <span id="sortLabel">Newest first</span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right" id="sortDropdown">
+                <button class="dropdown-item active" onclick="setIncSort('newest','Newest first')">Newest first</button>
+                <button class="dropdown-item" onclick="setIncSort('oldest','Oldest first')">Oldest first</button>
+                <button class="dropdown-item" onclick="setIncSort('name-asc','A → Z')">A → Z</button>
+                <button class="dropdown-item" onclick="setIncSort('name-desc','Z → A')">Z → A</button>
+                <button class="dropdown-item" onclick="setIncSort('longest','Longest duration')">Longest duration</button>
+            </div>
+        </div>
+        <div class="toolbar-dropdown">
+            <button class="btn btn-secondary btn-sm" onclick="toggleDropdown('timeDropdown')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                {% if hours == '24' %}24h{% elif hours == '72' %}3d{% elif hours == '168' %}7d{% elif hours == '720' %}30d{% elif hours == '0' %}All{% else %}7d{% endif %}
+            </button>
+            <div class="dropdown-menu dropdown-menu-right" id="timeDropdown">
+                <a class="dropdown-item {% if hours == '24' %}active{% endif %}" href="/incidents?hours=24&status={{ status_filter if status_filter != 'all' else '' }}">Last 24 hours</a>
+                <a class="dropdown-item {% if hours == '72' %}active{% endif %}" href="/incidents?hours=72&status={{ status_filter if status_filter != 'all' else '' }}">Last 3 days</a>
+                <a class="dropdown-item {% if hours == '168' %}active{% endif %}" href="/incidents?hours=168&status={{ status_filter if status_filter != 'all' else '' }}">Last 7 days</a>
+                <a class="dropdown-item {% if hours == '720' %}active{% endif %}" href="/incidents?hours=720&status={{ status_filter if status_filter != 'all' else '' }}">Last 30 days</a>
+                <a class="dropdown-item {% if hours == '0' %}active{% endif %}" href="/incidents?hours=0&status={{ status_filter if status_filter != 'all' else '' }}">All time</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if incidents %}
+<!-- Column header — same 10-col grid as dashboard, incident-appropriate labels -->
+<div class="d-col-header inc-grid">
+    <div></div>
+    <div>Status</div>
+    <div>Monitor Name</div>
+    <div>Group</div>
+    <div>Type</div>
+    <div>Root Cause</div>
+    <div>Started</div>
+    <div>Duration</div>
+    <div></div>
+</div>
+
+<!-- Incident rows — use monitor-card for identical row styling -->
+<div class="monitor-list" id="incList">
+    {% for inc in incidents %}
+    {% set mon = monitor_map.get(inc.monitor_id, {}) %}
+    <a href="/incidents/{{ inc.id }}" class="monitor-card inc-grid inc-row-link"
+       data-name="{{ inc.monitor_name|lower }}"
+       data-url="{{ (inc.monitor_url or '')|lower }}"
+       data-status="{{ inc.status }}"
+       data-group="{{ mon.get('group', '')|lower }}"
+       data-started="{{ inc.started_at.isoformat() if inc.started_at else '' }}"
+       data-duration="{{ inc.duration_seconds or 0 }}">
+
+        <!-- Status dot -->
+        <div class="monitor-dot">
+            <span class="dot {{ 'dot-down' if inc.status == 'open' else 'dot-up' }}"></span>
+        </div>
+
+        <!-- Status badge -->
+        <div>
+            {% if inc.status == 'open' %}
+            <span class="inc-badge inc-badge-ongoing">Ongoing</span>
+            {% else %}
+            <span class="inc-badge inc-badge-resolved">Resolved</span>
+            {% endif %}
+        </div>
+
+        <!-- Monitor name -->
+        <div class="monitor-name-col" title="{{ inc.monitor_name }}">
+            <span class="monitor-name">{{ inc.monitor_name }}</span>
+        </div>
+
+        <!-- Group -->
+        <div class="monitor-group-col">
+            {% if mon.get('group') %}
+            <span class="monitor-group-text">{{ mon.get('group') }}</span>
+            {% else %}
+            <span class="monitor-group-text monitor-group-none">—</span>
+            {% endif %}
+        </div>
+
+        <!-- Type -->
+        <div class="monitor-type-col">
+            <span class="monitor-type-label type-{{ mon.get('monitor_type', 'http') }}">{% if mon.get('monitor_type') == 'heartbeat' %}Heartbeat{% elif mon.get('monitor_type') == 'json_api' %}JSON/API{% elif mon.get('monitor_type') == 'ssl' %}SSL{% else %}HTTP{% endif %}</span>
+        </div>
+
+        <!-- Root cause -->
+        <div class="inc-cause-col">
+            <span class="inc-root-cause">{% if inc.status_code %}{% if inc.status_code == 0 %}Connection failed{% elif inc.status_code == -1 %}Timeout{% elif inc.status_code == -2 %}DNS failed{% else %}HTTP {{ inc.status_code }}{% endif %}{% elif mon.get('monitor_type') == 'heartbeat' %}Missed ping{% elif mon.get('monitor_type') == 'ssl' %}SSL issue{% else %}Check failed{% endif %}</span>
+        </div>
+
+        <!-- Started -->
+        <div class="monitor-checked-col">
+            <span class="checked-value relative-time" data-ts="{{ inc.started_at.isoformat() if inc.started_at else '' }}">{{ inc.started_at.strftime('%b %-d, %H:%M') if inc.started_at else '' }}</span>
+        </div>
+
+        <!-- Duration -->
+        <div class="monitor-response-col">
+            {% if inc.duration_seconds %}
+                {% set h = inc.duration_seconds // 3600 %}
+                {% set m = (inc.duration_seconds % 3600) // 60 %}
+                <span class="response-value">{% if h %}{{ h }}h {{ m }}m{% else %}{{ m }}m{% endif %}</span>
+            {% elif inc.status == 'open' %}
+                <span class="response-value text-red">Ongoing</span>
+            {% else %}
+                <span class="response-value">—</span>
+            {% endif %}
+        </div>
+
+        <!-- Chevron -->
+        <div class="inc-chevron-col">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="inc-empty">
+    <div class="inc-empty-icon">✓</div>
+    <div class="inc-empty-text">No incidents{% if status_filter != 'all' %} matching "{{ status_filter }}"{% endif %} — all monitors healthy</div>
+</div>
+{% endif %}
+
+</div> <!-- /.dash-single -->
 {% endblock %}
 
 {% block extra_js %}
@@ -104,14 +209,69 @@ document.addEventListener('click', e => {
         document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('open'));
 });
 
-/* ── Client-side search ────────────────────────────────── */
-function filterIncidentCards() {
-    const q = document.getElementById('incSearch').value.toLowerCase();
-    document.querySelectorAll('.inc-card').forEach(card => {
-        const name = card.dataset.name || '';
-        const url = card.dataset.url || '';
-        card.style.display = (!q || name.includes(q) || url.includes(q)) ? '' : 'none';
+/* ── Filter ────────────────────────────────────────────── */
+let currentFilter = 'all';
+function setIncFilter(filter, label) {
+    currentFilter = filter;
+    document.querySelectorAll('#filterDropdown .dropdown-item').forEach(i => {
+        i.classList.toggle('active', i.dataset.filter === filter);
     });
+    document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('open'));
+    const badge = document.getElementById('activeFilterBadge');
+    if (filter === 'all') {
+        badge.style.display = 'none';
+    } else {
+        document.getElementById('activeFilterLabel').textContent = label;
+        badge.style.display = '';
+    }
+    applyFilters();
+}
+
+/* ── Search + Filter combined ──────────────────────────── */
+function filterIncidentRows() { applyFilters(); }
+function applyFilters() {
+    const q = document.getElementById('incSearch').value.toLowerCase();
+    document.querySelectorAll('.inc-row-link').forEach(row => {
+        const name = row.dataset.name || '';
+        const url = row.dataset.url || '';
+        const status = row.dataset.status || '';
+        const group = row.dataset.group || '';
+        let show = true;
+        // text search
+        if (q && !name.includes(q) && !url.includes(q)) show = false;
+        // filter
+        if (currentFilter === 'ongoing' && status !== 'open') show = false;
+        if (currentFilter === 'resolved' && status !== 'resolved') show = false;
+        if (currentFilter.startsWith('group:') && group !== currentFilter.replace('group:','').toLowerCase()) show = false;
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+/* ── Sort ──────────────────────────────────────────────── */
+let currentSort = 'newest';
+function setIncSort(mode, label) {
+    currentSort = mode;
+    document.getElementById('sortLabel').textContent = label;
+    document.querySelectorAll('#sortDropdown .dropdown-item').forEach(i => i.classList.remove('active'));
+    event.target.classList.add('active');
+    document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('open'));
+    sortIncidents();
+}
+function sortIncidents() {
+    const list = document.getElementById('incList');
+    if (!list) return;
+    const rows = [...list.querySelectorAll('.inc-row-link')];
+    rows.sort((a, b) => {
+        switch (currentSort) {
+            case 'newest': return (b.dataset.started || '').localeCompare(a.dataset.started || '');
+            case 'oldest': return (a.dataset.started || '').localeCompare(b.dataset.started || '');
+            case 'name-asc': return (a.dataset.name || '').localeCompare(b.dataset.name || '');
+            case 'name-desc': return (b.dataset.name || '').localeCompare(a.dataset.name || '');
+            case 'longest': return (parseInt(b.dataset.duration)||0) - (parseInt(a.dataset.duration)||0);
+            default: return 0;
+        }
+    });
+    rows.forEach(r => list.appendChild(r));
 }
 
 /* ── Relative timestamps ───────────────────────────────── */

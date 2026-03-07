@@ -326,11 +326,17 @@ async def incidents_page(request: Request):
     # Build monitor lookup for type info
     monitor_map = {m["id"]: m for m in monitors}
 
+    # Extract unique group names for filter dropdown
+    group_names = sorted(set(
+        m.get("group", "") for m in monitors if m.get("group")
+    ))
+
     return templates.TemplateResponse("incidents.html", {
         "request": request,
         "user": user,
         "incidents": incidents,
         "monitor_map": monitor_map,
+        "group_names": group_names,
         "hours": hours_param,
         "status_filter": status_param or "all",
     })
