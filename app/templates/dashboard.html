@@ -243,13 +243,15 @@
 
         <!-- Last checked (live countdown) -->
         <div class="monitor-checked-col">
-            {% set lc = m.get('last_checked') %}
-            {% if lc %}
-                {% set lc_iso = lc.isoformat() if lc.isoformat is defined else lc|string %}
-                {% if '+' not in lc_iso|string and 'Z' not in lc_iso|string %}
-                    {% set lc_iso = lc_iso ~ 'Z' %}
-                {% endif %}
-                <span class="checked-value last-checked-tick" data-last-checked="{{ lc_iso }}" title="Last checked: {{ lc.strftime('%Y-%m-%d %H:%M:%S UTC') if lc.strftime is defined else lc }}"></span>
+            {% if m.get('last_checked') %}
+                <span class="checked-value last-checked-tick"
+                      data-last-checked="{{ m.last_checked.isoformat() if m.last_checked.isoformat is defined else m.last_checked }}">
+                    {% if m.last_checked.strftime is defined %}
+                        {{ m.last_checked.strftime('%H:%M UTC') }}
+                    {% else %}
+                        {{ m.last_checked }}
+                    {% endif %}
+                </span>
             {% else %}
                 <span class="checked-value checked-never">Never</span>
             {% endif %}
@@ -866,6 +868,10 @@ function filterTable() {
     });
 }
 
+/* ── Column sort state (must be declared before sortList) ── */
+let colSortField = null;
+let colSortDir = 'asc';
+
 /* ── Sorting ───────────────────────────────────────────── */
 let currentSort = 'down-first';
 function setSortMode(mode, label) {
@@ -944,34 +950,28 @@ async function bulkAction(action) {
 }
 
 /* ── Live "last checked" ticker (every 1s) ─────────────── */
-function formatCheckedAgo(seconds) {
-    if (seconds < 0) return 'just now';
-    if (seconds < 60) return seconds + 's ago';
-    if (seconds < 3600) {
-        const m = Math.floor(seconds / 60);
-        const s = seconds % 60;
-        return s > 0 ? m + 'm ' + s + 's ago' : m + 'm ago';
-    }
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    if (h >= 24) {
-        const d = Math.floor(h / 24);
-        const rh = h % 24;
-        return rh > 0 ? d + 'd ' + rh + 'h ago' : d + 'd ago';
-    }
-    return m > 0 ? h + 'h ' + m + 'm ago' : h + 'h ago';
-}
 function tickLastChecked() {
-    const now = Date.now();
     document.querySelectorAll('.last-checked-tick').forEach(el => {
-        const iso = el.dataset.lastChecked;
-        if (!iso) return;
+        if (!el.dataset.lastChecked) return;
         try {
-            let d = new Date(iso);
-            if (isNaN(d.getTime())) d = new Date(iso + 'Z');
-            if (isNaN(d.getTime())) { el.textContent = '—'; return; }
-            const secs = Math.floor((now - d.getTime()) / 1000);
-            el.textContent = formatCheckedAgo(secs);
+            const d = new Date(el.dataset.lastChecked);
+            if (isNaN(d.getTime())) return;
+            const secs = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000));
+            if (secs < 60) {
+                el.textContent = secs + 's ago';
+            } else if (secs < 3600) {
+                const m = Math.floor(secs / 60);
+                const s = secs % 60;
+                el.textContent = m + 'm, ' + s + 's ago';
+            } else if (secs < 86400) {
+                const h = Math.floor(secs / 3600);
+                const m = Math.floor((secs % 3600) / 60);
+                el.textContent = h + 'h, ' + m + 'm ago';
+            } else {
+                const d2 = Math.floor(secs / 86400);
+                const h = Math.floor((secs % 86400) / 3600);
+                el.textContent = h > 0 ? d2 + 'd, ' + h + 'h ago' : d2 + 'd ago';
+            }
         } catch(e) { el.textContent = '—'; }
     });
 }
@@ -979,8 +979,6 @@ tickLastChecked();
 setInterval(tickLastChecked, 1000);
 
 /* ── Column header sort ────────────────────────────────── */
-let colSortField = null;
-let colSortDir = 'asc';
 function colSort(field) {
     if (colSortField === field) {
         colSortDir = colSortDir === 'asc' ? 'desc' : 'asc';
