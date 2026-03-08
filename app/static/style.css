@@ -4253,6 +4253,17 @@ a.inc-row-link:hover { text-decoration: none; }
 }
 .mf-heading-dot { color: var(--brand); }
 
+/* 1.9: Heading subtitle — monitor type label on edit page */
+.mf-heading-sub {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-muted, #6b7280);
+    letter-spacing: 0;
+    text-transform: none;
+    margin-top: 0.25rem;
+}
+
 /* Centered single-column layout */
 .mf-layout {
     max-width: 640px;
@@ -4262,13 +4273,18 @@ a.inc-row-link:hover { text-decoration: none; }
     padding-bottom: 5.5rem; /* room for sticky footer */
 }
 
-/* Card-style section */
+/* Card-style section — 1.8: refined with more padding + subtle left-border accent on hover */
 .mf-section {
     background: var(--surface, #fff);
     border: 1px solid var(--border, #e5e7eb);
+    border-left: 3px solid transparent;
     border-radius: 12px;
-    padding: 1.25rem 1.5rem;
+    padding: 1.5rem 1.75rem;
     margin-bottom: 0.75rem;
+    transition: border-left-color 0.2s ease;
+}
+.mf-section:hover {
+    border-left-color: var(--brand, #6366f1);
 }
 
 .mf-section-title {
@@ -4278,6 +4294,240 @@ a.inc-row-link:hover { text-decoration: none; }
     letter-spacing: 0.5px;
     color: var(--text-muted, #6b7280);
     margin-bottom: 0.75rem;
+}
+
+/* 1.1: Section header — flex row with inline SVG icon + title */
+.mf-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+.mf-section-header svg {
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted, #6b7280);
+    flex-shrink: 0;
+}
+.mf-section-header-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted, #6b7280);
+}
+
+/* 1.2: Two-column field row — side-by-side fields, stacks on mobile */
+.mf-field-row {
+    display: flex;
+    gap: 1rem;
+}
+.mf-field-row > * {
+    flex: 1;
+    min-width: 0;
+}
+
+/* 1.3: Single field wrapper in the grid (label + input + hint) */
+.mf-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-bottom: 0.85rem;
+}
+.mf-field-group label {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text);
+}
+.mf-field-group .hint {
+    font-size: 0.78rem;
+    color: var(--text-muted, #6b7280);
+    margin-top: 0.1rem;
+    line-height: 1.4;
+}
+.mf-field-group input,
+.mf-field-group select,
+.mf-field-group textarea {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.95rem;
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 8px;
+    background: var(--surface, #fff);
+    color: var(--text);
+    transition: border-color 0.15s ease;
+}
+.mf-field-group input:focus,
+.mf-field-group select:focus,
+.mf-field-group textarea:focus {
+    outline: none;
+    border-color: var(--brand, #6366f1);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* 1.4: Pro overlay — subtle treatment for locked Pro features */
+.mf-pro-overlay {
+    position: relative;
+    opacity: 0.55;
+    pointer-events: none;
+    user-select: none;
+}
+.mf-pro-overlay::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    background: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 8px,
+        rgba(99, 102, 241, 0.03) 8px,
+        rgba(99, 102, 241, 0.03) 16px
+    );
+}
+.mf-pro-overlay-badge {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #6366f1, #818cf8);
+    color: #fff;
+    padding: 0.2rem 0.55rem;
+    border-radius: 5px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    z-index: 1;
+    pointer-events: auto;
+}
+.mf-pro-overlay-badge a {
+    color: #fff;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.mf-pro-overlay-badge a:hover {
+    text-decoration: none;
+}
+
+/* 1.5: HTTP method button group */
+.mf-method-select {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+.mf-method-btn {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 6px;
+    background: var(--surface, #fff);
+    color: var(--text-muted, #6b7280);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.mf-method-btn:hover {
+    border-color: var(--brand, #6366f1);
+    color: var(--brand, #6366f1);
+}
+.mf-method-btn.active {
+    background: var(--brand, #6366f1);
+    border-color: var(--brand, #6366f1);
+    color: #fff;
+}
+
+/* 1.6: Toggle/switch row for boolean settings */
+.mf-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid var(--border-light, #f3f4f6);
+}
+.mf-toggle-row:last-child {
+    border-bottom: none;
+}
+.mf-toggle-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+.mf-toggle-label-text {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+}
+.mf-toggle-label-hint {
+    font-size: 0.78rem;
+    color: var(--text-muted, #6b7280);
+}
+.mf-toggle-switch {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+}
+.mf-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.mf-toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--border, #e5e7eb);
+    border-radius: 22px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+.mf-toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 3px;
+    bottom: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+}
+.mf-toggle-switch input:checked + .mf-toggle-slider {
+    background: var(--brand, #6366f1);
+}
+.mf-toggle-switch input:checked + .mf-toggle-slider::before {
+    transform: translateX(18px);
+}
+
+/* 1.7: Auth section — type selector + credential fields */
+.mf-auth-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.mf-auth-type-select {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.92rem;
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 8px;
+    background: var(--surface, #fff);
+    color: var(--text);
+    cursor: pointer;
+}
+.mf-auth-fields {
+    display: none;
+    gap: 1rem;
+}
+.mf-auth-fields.visible {
+    display: flex;
+}
+.mf-auth-fields > * {
+    flex: 1;
+    min-width: 0;
 }
 
 /* ── Monitor type selector ─────────────────────────────── */
@@ -4517,6 +4767,21 @@ a.inc-row-link:hover { text-decoration: none; }
     .mf-section {
         padding: 1rem 1.15rem;
         border-radius: 10px;
+    }
+    .mf-field-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    .mf-auth-fields {
+        flex-direction: column;
+        gap: 0;
+    }
+    .mf-method-select {
+        gap: 0.3rem;
+    }
+    .mf-method-btn {
+        padding: 0.35rem 0.55rem;
+        font-size: 0.72rem;
     }
     .mf-footer {
         left: 0;
