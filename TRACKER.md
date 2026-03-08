@@ -344,20 +344,20 @@ uvicorn app.main:app --reload --port 8080
 
 ### Phase 1: CSS Foundation
 
-- [ ] **1.1** Add `.mf-section-header` — flex row with icon + title (replaces plain `.mf-section-title`)
-- [ ] **1.2** Add `.mf-field-row` — 2-column flex grid for side-by-side fields, stacks on mobile
-- [ ] **1.3** Add `.mf-field-group` — wrapper for a single field in the grid (label + input + hint)
-- [ ] **1.4** Add `.mf-pro-overlay` — subtle visual treatment for locked pro features (disabled state + badge)
-- [ ] **1.5** Add `.mf-method-select` — HTTP method button group (HEAD/GET/POST/PUT/PATCH/DELETE/OPTIONS)
-- [ ] **1.6** Add `.mf-toggle-row` — styled toggle/switch row for boolean settings (follow redirects, public, paused)
-- [ ] **1.7** Add `.mf-auth-section` — auth type selector + credential fields
-- [ ] **1.8** Refine existing `.mf-section` — slightly more padding, subtle left-border accent on hover
-- [ ] **1.9** Refine `.mf-heading` — add subtitle support (`.mf-heading-sub`) for edit page to show monitor type
+- [x] **1.1** Add `.mf-section-header` — flex row with icon + title (replaces plain `.mf-section-title`)
+- [x] **1.2** Add `.mf-field-row` — 2-column flex grid for side-by-side fields, stacks on mobile
+- [x] **1.3** Add `.mf-field-group` — wrapper for a single field in the grid (label + input + hint)
+- [x] **1.4** Add `.mf-pro-overlay` — subtle visual treatment for locked pro features (disabled state + badge)
+- [x] **1.5** Add `.mf-method-select` — HTTP method button group (HEAD/GET/POST/PUT/PATCH/DELETE/OPTIONS)
+- [x] **1.6** Add `.mf-toggle-row` — styled toggle/switch row for boolean settings (follow redirects, public, paused)
+- [x] **1.7** Add `.mf-auth-section` — auth type selector + credential fields
+- [x] **1.8** Refine existing `.mf-section` — slightly more padding, subtle left-border accent on hover
+- [x] **1.9** Refine `.mf-heading` — add subtitle support (`.mf-heading-sub`) for edit page to show monitor type
 
 #### ✅ Phase 1 Gate — CSS Validation
-- [ ] **1.T1** `grep` for every new class name in `style.css` — confirm all 9 classes exist and have rules
-- [ ] **1.T2** Create a throwaway HTML snippet with one of each new class to confirm they render without errors — check browser DevTools for missing/overridden styles
-- [ ] **1.T3** Verify no existing `.mf-*` classes were broken — load current Add Monitor page and confirm it still renders identically (templates not yet touched)
+- [x] **1.T1** `grep` for every new class name in `style.css` — confirm all 9 classes exist and have rules
+- [x] **1.T2** Create a throwaway HTML snippet with one of each new class to confirm they render without errors — check browser DevTools for missing/overridden styles
+- [x] **1.T3** Verify no existing `.mf-*` classes were broken — load current Add Monitor page and confirm it still renders identically (templates not yet touched)
 
 ---
 
@@ -681,8 +681,8 @@ Layout order (top to bottom):
 
 | # | What | Status |
 |---|------|--------|
-| 1 | Phase 1: Form CSS foundation | 🔲 |
-| 2 | Phase 2: Add Monitor template | 🔲 |
+| 1 | Phase 1: Form CSS foundation | ✅ |
+| 2 | Phase 2: Add Monitor template | ✅ |
 | 3 | Phase 3: Edit Monitor template | 🔲 |
 | 4 | Phase 4: Backend wiring | 🔲 |
 | 5 | Phase 5: Form E2E QA | 🔲 |
@@ -700,8 +700,8 @@ Layout order (top to bottom):
 **Work through Phases 1–9 sequentially. Run every Gate test before moving to the next Phase. Do not skip ahead.**
 
 ### Total Remaining Checkboxes
-- Phase 1: 9 build + 3 test = **12**
-- Phase 2: 13 build + 12 test = **25**
+- Phase 1: ~~12~~ **0** ✅
+- Phase 2: ~~25~~ **5** (5 browser-only gate tests remain)
 - Phase 3: 4 build + 9 test = **13**
 - Phase 4: 5 build + 10 test = **15**
 - Phase 5: 11 E2E = **11**
@@ -710,7 +710,7 @@ Layout order (top to bottom):
 - Phase 8: 4 build + 5 test = **9**
 - Phase 9: 10 E2E = **10**
 - Non-UI tasks: ~25
-- **Grand total: ~161 checkboxes**
+- **Grand total: ~129 checkboxes** (was 161, 32 completed)
 
 ---
 
@@ -719,7 +719,6 @@ Layout order (top to bottom):
 - `ACTION_PLAN.md` — original Day 10 workstream plan (superseded)
 - `DASHBOARD_REDESIGN.md` — original dashboard redesign plan (superseded)
 - `UI_REDESIGN.md` — original form + dashboard redesign checklist (superseded — merged into this tracker)
-- `HANDOFF.md` — project handoff notes
 - `TESTING.md` — testing strategy notes
 
 ---

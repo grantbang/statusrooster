@@ -7,6 +7,12 @@ It monitors websites, APIs, and cron jobs (heartbeat monitoring), and alerts use
 
 > **`TRACKER.md` is the single source of truth** for the project plan, completed work, and every remaining task. Read it first when starting a new chat.
 
+## TRACKER.md Rules
+- **Always work within the bounds of TRACKER.md.** Only build what's listed there. Don't add features, refactor code, or skip ahead without explicit approval.
+- **Keep TRACKER.md updated as you work.** When you complete a build item or gate test, mark its checkbox `[x]` immediately. Update the Execution Order Summary table and Remaining Checkboxes counts when a phase is finished.
+- **Follow the phase order.** Complete all build items and gate tests for the current phase before moving to the next one.
+- **Say which step you're working on.** When starting a task, reference the TRACKER item number (e.g., "Working on **3.2**").
+
 ## Tech Stack
 | Layer | Tech |
 |-------|------|
