@@ -404,27 +404,27 @@ Layout order (top to bottom):
 
 ### Phase 3: Edit Monitor Template (`edit_monitor.html`)
 
-- [ ] **3.1** Back link + heading with monitor type subtitle badge
-- [ ] **3.2** Mirror section structure from Add, but:
+- [x] **3.1** Back link + heading with monitor type subtitle badge
+- [x] **3.2** Mirror section structure from Add, but:
   - Monitor type is read-only (badge)
   - Heartbeat shows ping URL with copy button
   - Pre-populate all fields from `monitor` dict
   - HTTP method pre-selected from `monitor.http_method`
   - Basic Auth pre-populated from `monitor.basic_auth_user` / `monitor.basic_auth_pass`
   - Follow redirects pre-populated from `monitor.follow_redirects`
-- [ ] **3.3** Auto-open Advanced Settings if any advanced field has a non-default value
-- [ ] **3.4** Mirror all JS from add_monitor.html (interval display, slug preview, maintenance windows, assertions, keyword builder with init)
+- [x] **3.3** Auto-open Advanced Settings if any advanced field has a non-default value
+- [x] **3.4** Mirror all JS from add_monitor.html (interval display, slug preview, maintenance windows, assertions, keyword builder with init)
 
 #### ✅ Phase 3 Gate — Edit Form Rendering Tests
-- [ ] **3.T1** Load edit for **HTTP monitor** — all fields pre-populated (URL, name, group, email, interval, status code, timeout, keyword)
-- [ ] **3.T2** Load edit for **Heartbeat monitor** — ping URL with copy button, interval/grace pre-populated, no URL field, no interval slider
-- [ ] **3.T3** Load edit for **JSON/API monitor** — URL pre-populated, auth header shown, assertions rendered
-- [ ] **3.T4** Load edit for **SSL monitor** — domain + threshold pre-populated, no HTTP advanced fields
-- [ ] **3.T5** Auto-open Advanced — HTTP monitor with keyword set → Advanced expanded on load
-- [ ] **3.T6** Auto-open Advanced — HTTP monitor with no advanced values → Advanced collapsed
-- [ ] **3.T7** HTTP method — correct method button highlighted (defaults to GET for old monitors)
-- [ ] **3.T8** Basic Auth — monitor with `basic_auth_user` set → username/password visible and pre-populated
-- [ ] **3.T9** Backward compat — old monitor without `http_method`/`basic_auth_user`/`follow_redirects` → renders with sane defaults (GET, no auth, follow=true)
+- [x] **3.T1** Load edit for **HTTP monitor** — all fields pre-populated (URL, name, group, email, interval, status code, timeout, keyword)
+- [x] **3.T2** Load edit for **Heartbeat monitor** — ping URL with copy button, interval/grace pre-populated, no URL field, no interval slider
+- [x] **3.T3** Load edit for **JSON/API monitor** — URL pre-populated, auth header shown, assertions rendered *(verified with `RsJhlKuTjnmWC4QpE3vy` — GitHub API Zen)*
+- [x] **3.T4** Load edit for **SSL monitor** — domain + threshold pre-populated, no HTTP advanced fields *(verified with `cv0aiPhqP2l4oVlhbT9m` — Google SSL Check)*
+- [x] **3.T5** Auto-open Advanced — HTTP monitor with keyword set → Advanced expanded on load
+- [x] **3.T6** Auto-open Advanced — HTTP monitor with no advanced values → Advanced collapsed
+- [x] **3.T7** HTTP method — correct method button highlighted (defaults to GET for old monitors)
+- [x] **3.T8** Basic Auth — monitor with `basic_auth_user` set → username/password visible and pre-populated
+- [x] **3.T9** Backward compat — old monitor without `http_method`/`basic_auth_user`/`follow_redirects` → renders with sane defaults (GET, no auth, follow=true)
 
 ---
 
@@ -683,7 +683,7 @@ Layout order (top to bottom):
 |---|------|--------|
 | 1 | Phase 1: Form CSS foundation | ✅ |
 | 2 | Phase 2: Add Monitor template | ✅ |
-| 3 | Phase 3: Edit Monitor template | 🔲 |
+| 3 | Phase 3: Edit Monitor template | ✅ |
 | 4 | Phase 4: Backend wiring | 🔲 |
 | 5 | Phase 5: Form E2E QA | 🔲 |
 | 6 | Phase 6: Dashboard CSS | 🔲 |
@@ -702,7 +702,7 @@ Layout order (top to bottom):
 ### Total Remaining Checkboxes
 - Phase 1: ~~12~~ **0** ✅
 - Phase 2: ~~25~~ **5** (5 browser-only gate tests remain)
-- Phase 3: 4 build + 9 test = **13**
+- Phase 3: ~~13~~ **0** ✅
 - Phase 4: 5 build + 10 test = **15**
 - Phase 5: 11 E2E = **11**
 - Phase 6: 10 build + 3 test = **13**
@@ -710,7 +710,7 @@ Layout order (top to bottom):
 - Phase 8: 4 build + 5 test = **9**
 - Phase 9: 10 E2E = **10**
 - Non-UI tasks: ~25
-- **Grand total: ~129 checkboxes** (was 161, 32 completed)
+- **Grand total: ~116 checkboxes** (was 161, 45 completed)
 
 ---
 

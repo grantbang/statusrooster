@@ -156,4 +156,20 @@ uvicorn app.main:app --reload --port 8080
 ```
 - Local Firestore uses production data (same project)
 - Cloud Scheduler cron does NOT run locally — checks only happen in production
-- Test user: `testaccount1@statusrooster.com` (plan: pro)
+
+### Test Account
+| Field | Value |
+|-------|-------|
+| Email | `testaccount1@statusrooster.com` |
+| Password | `password` |
+| Plan | Pro |
+| Firestore user ID | `eydllii8PyTWHyi4BlmL` |
+| Monitors | 10 (3 HTTP + 4 Heartbeat + 1 HTTP + 1 JSON/API + 1 SSL) |
+
+Sample monitor IDs for this account:
+- **HTTP**: `Ik6AqPcmLGzGEX0jNlGO` (cnn), `gS1vyoLvAJO3UB3wovYc` (google), `OektTByRd3616BTFJfZG` (autotrader)
+- **Heartbeat**: `4PYKyssXU9AdINCdxci5` (test)
+- **JSON/API**: `RsJhlKuTjnmWC4QpE3vy` (GitHub API Zen)
+- **SSL**: `cv0aiPhqP2l4oVlhbT9m` (Google SSL Check)
+
+Use this account for all manual and automated testing against `localhost:8080`.
