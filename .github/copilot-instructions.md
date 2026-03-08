@@ -173,3 +173,49 @@ Sample monitor IDs for this account:
 - **SSL**: `cv0aiPhqP2l4oVlhbT9m` (Google SSL Check)
 
 Use this account for all manual and automated testing against `localhost:8080`.
+
+## Chat Handoff Protocol
+When the user says they want to switch to a new chat (e.g., "let's switch chats", "new chat", "generate handoff prompt"), generate a **copy-paste prompt** they can send to the new chat. Use this exact format:
+
+```
+We're building StatusRooster — an uptime monitoring SaaS. **Read `TRACKER.md` first** — it's the single source of truth. Also read `.github/copilot-instructions.md` for coding conventions, tech stack, test account, and project rules.
+
+## Where We Left Off
+
+**Phases completed:** [list completed phases with commit hashes]
+
+**Next phase: [Phase N: Name] — [status: not started / partially done]**
+
+[If partially done, list which items are done and which remain]
+
+Phase [N] has [X] build items ([N.1]–[N.X]) and [Y] gate tests ([N.T1]–[N.TY]). Here's the summary:
+
+| Item | What |
+|------|------|
+| **[N.1]** | [description] |
+| ... | ... |
+
+**Key context for Phase [N]:**
+- [Bullet points with critical technical context the next agent needs — what files to read, what's already wired, what gotchas exist]
+
+**Rules:**
+1. Always say which TRACKER step you're working on (e.g., "Working on **[N.1]**").
+2. Mark checkboxes `[x]` in `TRACKER.md` as you complete each item.
+3. No shortcuts — create real test data and verify with actual requests.
+4. Don't skip ahead to Phase [N+1] until all Phase [N] gate tests pass.
+5. Commit when Phase [N] is fully done.
+
+**Test account:** `testaccount1@statusrooster.com` / `password` (Pro plan, user ID `eydllii8PyTWHyi4BlmL`)
+
+**Dev server:** Should already be running on port 8080. If not: `cd /Applications/statusrooster && source venv/bin/activate && uvicorn app.main:app --reload --port 8080`
+
+Start by reading [files the agent should read first], then begin **[N.1]** (or resume **[N.X]** if mid-phase).
+```
+
+**Rules for generating the handoff:**
+- Fill in ALL brackets with real values from the current session
+- Include the last git commit hash if work was committed
+- Be specific about what's done vs. what's not — don't be vague
+- Include any gotchas or non-obvious context discovered during this session
+- If mid-phase, say exactly which items are `[x]` done and which are `[ ]` remaining
+- Keep it concise — the new chat will read TRACKER.md and copilot-instructions.md for full context
