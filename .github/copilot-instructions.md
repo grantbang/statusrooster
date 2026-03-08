@@ -5,6 +5,8 @@ StatusRooster is a **SaaS uptime monitoring product** for indie developers and s
 It monitors websites, APIs, and cron jobs (heartbeat monitoring), and alerts users when things break.
 **Target launch: Day 12 (Mar 7, 2026).**
 
+> **`TRACKER.md` is the single source of truth** for the project plan, completed work, and every remaining task. Read it first when starting a new chat.
+
 ## Tech Stack
 | Layer | Tech |
 |-------|------|
@@ -42,7 +44,7 @@ app/
 │   ├── incident.py      # Incident CRUD (Firestore)
 │   └── api_key.py       # API key CRUD
 ├── routers/
-│   ├── pages.py         # All SSR page routes + AJAX endpoints (~1200 lines)
+│   ├── pages.py         # All SSR page routes + AJAX endpoints (~1400 lines)
 │   ├── monitors.py      # Internal monitor API (CRUD)
 │   ├── api_v1.py        # Public API v1 (key-authed)
 │   ├── auth.py          # Auth routes (signup, login, logout)
@@ -52,18 +54,21 @@ app/
 │   ├── heartbeat.py     # Public heartbeat ping endpoint (/api/ping/{id})
 │   └── badge.py         # SVG uptime badges
 ├── services/
-│   ├── checker.py       # HTTP + heartbeat check engine (retry, SSL, keyword, threshold)
+│   ├── checker.py       # HTTP + heartbeat + SSL + JSON/API check engine
 │   ├── alerts.py        # Email (SendGrid) + Slack + SMS (Twilio) + webhook alert dispatch
 │   └── auth.py          # JWT + password hashing
 ├── templates/           # Jinja2 HTML templates
 │   ├── base.html        # Public page base (nav + footer)
 │   ├── dashboard_base.html  # App layout (sidebar + content area)
-│   ├── dashboard.html   # Monitor list (card rows, status strip, bulk actions)
+│   ├── dashboard.html       # Monitor list (card rows, status strip, bulk actions)
 │   ├── monitor_detail.html  # Single monitor view (uptime slicer, chart, incidents)
+│   ├── add_monitor.html     # Add monitor form (4 monitor types)
 │   ├── edit_monitor.html    # Edit monitor form
+│   ├── incidents.html       # Incidents list (column grid, filter/sort/search)
+│   ├── incident_detail.html # Incident detail (root cause, timestamps)
 │   └── ...              # landing, login, signup, pricing, settings, status pages, etc.
 └── static/
-    └── style.css        # Unified CSS (~4000 lines) with design tokens
+    └── style.css        # Unified CSS (~4500 lines) with design tokens
 ```
 
 ## Key Architecture Patterns
@@ -98,7 +103,7 @@ The dashboard reads **only monitor docs** — zero queries to the `checks` colle
 Gate features **server-side** (never trust the client). Show upgrade CTAs for Free users.
 
 ## Coding Conventions
-- **CSS class prefixes**: Dashboard uses `d-` prefix, monitor detail uses `md-` prefix
+- **CSS class prefixes**: Dashboard uses `d-` prefix, monitor detail uses `md-` prefix, monitor forms use `mf-` prefix, incidents use `inc-` prefix
 - **Jinja2 filters**: Use `| tojson | safe` for passing data to JavaScript
 - **Firestore**: Always use `merge=True` on updates to avoid clobbering fields
 - **Error handling**: Flash messages via cookie-based system (`set_flash` / `get_flash`)
@@ -118,14 +123,14 @@ StatusRooster has **4 distinct, first-class monitor types**:
 Each type has its own form section (create + edit), execution branch in `checker.py`, and display in templates.
 
 ## Current Priorities (What To Work On)
-See `TRACKER.md` for the full plan. The remaining work before launch:
+See `TRACKER.md` for the full plan with testing gates. The remaining work before launch:
 
-1. **Day 10E** — Add/Edit form: timeout, basic auth, HTTP method fields
-2. **Day 10F** — Pro upsell polish (interval badge, alert footer CTA)
-3. **Day 11A** — **Incidents pages** (`/incidents` list + `/incidents/{id}` detail) ← HIGHEST PRIORITY
-4. **Day 11B** — Activity log / event timeline on incident detail
-5. **Day 11C** — Hardening (404/500 pages, meta tags, favicon, mobile audit)
-6. **Day 11D** — Admin dashboard (lightweight KPIs, signup list, cron health)
+1. **UI Redesign — Add/Edit Forms** (Phases 1–5) — CSS foundation, Add template, Edit template, backend wiring, E2E QA ← **ACTIVE WORK**
+2. **UI Redesign — Dashboard** (Phases 6–9) — CSS, template + JS, backend, E2E QA
+3. **10F** — Pro upsell polish (interval badge, alert footer CTA)
+4. **11B** — Activity log / event timeline on incident detail
+5. **11C** — Hardening (404/500 pages, meta tags, favicon, mobile audit)
+6. **11D** — Admin dashboard (lightweight KPIs, signup list, cron health)
 7. **Day 12** — Testing & launch
 
 ## What NOT To Do

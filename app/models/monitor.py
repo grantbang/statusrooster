@@ -23,7 +23,9 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
                    json_assertions: list | None = None, auth_header: str = "",
                    ssl_domain: str = "", ssl_expiry_threshold_days: int | None = None,
                    heartbeat_grace_period: int | None = None,
-                   group: str = "", slug: str = "") -> dict:
+                   group: str = "", slug: str = "",
+                   http_method: str = "GET",
+                   basic_auth_user: str = "", basic_auth_pass: str = "") -> dict:
     """Create a new monitor. Returns monitor dict with id.
 
     monitor_type: "http" | "heartbeat" | "json_api" | "ssl"
