@@ -364,41 +364,41 @@ uvicorn app.main:app --reload --port 8080
 ### Phase 2: Add Monitor Template (`add_monitor.html`)
 
 Layout order (top to bottom):
-- [ ] **2.1** Back link + heading (existing pattern, keep)
-- [ ] **2.2** **Section: Monitor Type** — type selector dropdown (existing, keep)
-- [ ] **2.3** **Section: URL / Endpoint** — contextual per type:
+- [x] **2.1** Back link + heading (existing pattern, keep)
+- [x] **2.2** **Section: Monitor Type** — type selector dropdown (existing, keep)
+- [x] **2.3** **Section: URL / Endpoint** — contextual per type:
   - HTTP: URL input with `https://` prefix hint
   - JSON/API: API endpoint input
   - Heartbeat: "How it works" info box
   - SSL: Domain input + threshold in a 2-column row
-- [ ] **2.4** **Section: Friendly name + Group** — 2-column row (name required, group optional with datalist)
-- [ ] **2.5** **Section: Notifications** — Email (always on) + Slack (Pro) + Webhook (Pro) using `.mf-notify-row`
-- [ ] **2.6** **Section: Monitor Interval** — slider (Pro) or locked display (Free). Hidden for heartbeat type.
-- [ ] **2.7** **Section: Advanced Settings** (collapsible) containing sub-sections per type:
+- [x] **2.4** **Section: Friendly name + Group** — 2-column row (name required, group optional with datalist)
+- [x] **2.5** **Section: Notifications** — Email (always on) + Slack (Pro) + Webhook (Pro) using `.mf-notify-row`
+- [x] **2.6** **Section: Monitor Interval** — slider (Pro) or locked display (Free). Hidden for heartbeat type.
+- [x] **2.7** **Section: Advanced Settings** (collapsible) containing sub-sections per type:
   - HTTP: Request timeout + Expected status code (2-col row), HTTP method (button group), Follow redirects toggle, Basic Auth (type select → username/password 2-col), Keyword builder, Response threshold
   - JSON/API: Timeout + Expected status code (2-col), Auth header, JSON assertions builder, Response threshold
   - Heartbeat: (hidden — no advanced settings)
   - SSL: (hidden — settings already in main section)
-- [ ] **2.8** **Section: Advanced Settings → Status Page** — Public toggle + slug field
-- [ ] **2.9** **Section: Advanced Settings → Start Paused** — Paused toggle
-- [ ] **2.10** **Section: Advanced Settings → Maintenance Windows** — Pro-gated window builder
-- [ ] **2.11** Sticky submit footer (existing pattern)
-- [ ] **2.12** JavaScript: Ensure `setMonitorType()` / `syncFieldNames()` work with new DOM structure
-- [ ] **2.13** JavaScript: HTTP method button group click handler
+- [x] **2.8** **Section: Advanced Settings → Status Page** — Public toggle + slug field
+- [x] **2.9** **Section: Advanced Settings → Start Paused** — Paused toggle
+- [x] **2.10** **Section: Advanced Settings → Maintenance Windows** — Pro-gated window builder
+- [x] **2.11** Sticky submit footer (existing pattern)
+- [x] **2.12** JavaScript: Ensure `setMonitorType()` / `syncFieldNames()` work with new DOM structure
+- [x] **2.13** JavaScript: HTTP method button group click handler
 
 #### ✅ Phase 2 Gate — Add Form Rendering Tests
-- [ ] **2.T1** Load `/monitors/add` as Pro user — page renders without errors (check terminal for Jinja2 errors)
+- [x] **2.T1** Load `/monitors/add` as Pro user — page renders without errors (check terminal for Jinja2 errors)
 - [ ] **2.T2** Type switcher — click each of the 4 types, confirm correct sections show/hide for each
-- [ ] **2.T3** HTTP method button group — click each method, confirm hidden input updates
-- [ ] **2.T4** Basic Auth — select "Basic Auth" → username/password fields appear; select "None" → they hide
-- [ ] **2.T5** Follow redirects toggle — renders, checked by default
+- [x] **2.T3** HTTP method button group — click each method, confirm hidden input updates
+- [x] **2.T4** Basic Auth — select "Basic Auth" → username/password fields appear; select "None" → they hide
+- [x] **2.T5** Follow redirects toggle — renders, checked by default
 - [ ] **2.T6** Keyword builder — add 2 keywords with AND, confirm hidden input value updates
 - [ ] **2.T7** JSON assertions builder — switch to JSON/API type, add an assertion, confirm row renders
 - [ ] **2.T8** Maintenance window builder (Pro) — add a window, confirm day/start/end row appears
 - [ ] **2.T9** Slug field — check "Public status page", confirm slug input appears; type in it, confirm preview updates
-- [ ] **2.T10** 2-column layout — >768px: name + group side-by-side, timeout + status code side-by-side; <768px: stacks vertically
-- [ ] **2.T11** Sticky footer — scroll down, confirm "Add monitor" button stays fixed at bottom
-- [ ] **2.T12** All `name` attributes — inspect form HTML, verify every field has a `name` attribute and no duplicates for active type
+- [x] **2.T10** 2-column layout — >768px: name + group side-by-side, timeout + status code side-by-side; <768px: stacks vertically
+- [x] **2.T11** Sticky footer — scroll down, confirm "Add monitor" button stays fixed at bottom
+- [x] **2.T12** All `name` attributes — inspect form HTML, verify every field has a `name` attribute and no duplicates for active type
 
 ---
 

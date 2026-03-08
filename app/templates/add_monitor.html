@@ -5,6 +5,7 @@
 {% block content %}
 {% set plan = user.get('plan', 'free') %}
 
+<!-- 2.1: Back link + heading -->
 <a href="/dashboard" class="mf-back">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
     Dashboard
@@ -13,41 +14,65 @@
 
 <form method="POST" action="/monitors/add" id="addForm" class="mf-layout">
 
-    <!-- Monitor Type -->
+    <!-- 2.2: Monitor Type — segmented button group -->
     <div class="mf-section">
-        <div class="mf-section-title">Monitor type</div>
+        <div class="mf-section-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            <span class="mf-section-header-title">Monitor type</span>
+        </div>
         <div class="mf-type-select">
-            <select id="monitorTypeSelect" onchange="setMonitorType(this.value)">
-                <option value="http" selected>🌐  HTTP / HTTPS</option>
-                <option value="json_api">📄  JSON / API</option>
-                <option value="heartbeat">💓  Heartbeat / Cron</option>
-                <option value="ssl">🔒  SSL Certificate</option>
-            </select>
+            <button type="button" class="mf-type-btn active" onclick="setMonitorType('http')">
+                <span class="mf-type-icon">🌐</span>
+                HTTP / HTTPS
+            </button>
+            <button type="button" class="mf-type-btn" onclick="setMonitorType('json_api')">
+                <span class="mf-type-icon">📄</span>
+                JSON / API
+            </button>
+            <button type="button" class="mf-type-btn" onclick="setMonitorType('heartbeat')">
+                <span class="mf-type-icon">💓</span>
+                Heartbeat
+            </button>
+            <button type="button" class="mf-type-btn" onclick="setMonitorType('ssl')">
+                <span class="mf-type-icon">🔒</span>
+                SSL Cert
+            </button>
         </div>
         <input type="hidden" id="monitor_type" name="monitor_type" value="http">
     </div>
 
-    <!-- URL — HTTP -->
+    <!-- 2.3: URL / Endpoint — contextual per type -->
+
+    <!-- HTTP URL -->
     <div class="mf-section" id="httpSection">
-        <div class="mf-section-title">URL to monitor</div>
-        <div class="form-group" style="margin-bottom: 0;">
-            <input type="text" id="url" name="url" placeholder="https://example.com" required>
+        <div class="mf-section-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+            <span class="mf-section-header-title">URL to monitor</span>
+        </div>
+        <div class="mf-field-group">
+            <input type="text" id="url" name="url" class="mf-url-input" placeholder="https://example.com" required>
             <div class="hint">We'll check this URL at the interval you choose below.</div>
         </div>
     </div>
 
-    <!-- URL — JSON/API -->
+    <!-- JSON/API URL -->
     <div class="mf-section" id="jsonApiSection" style="display: none;">
-        <div class="mf-section-title">API endpoint URL</div>
-        <div class="form-group" style="margin-bottom: 0;">
-            <input type="text" id="json_url" placeholder="https://api.example.com/v1/health">
-            <div class="hint">We'll send a GET request and validate the JSON response.</div>
+        <div class="mf-section-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span class="mf-section-header-title">API endpoint URL</span>
+        </div>
+        <div class="mf-field-group">
+            <input type="text" id="json_url" class="mf-url-input" placeholder="https://api.example.com/v1/health">
+            <div class="hint">We'll send a request and validate the JSON response.</div>
         </div>
     </div>
 
-    <!-- Heartbeat info -->
+    <!-- Heartbeat info + settings -->
     <div class="mf-section" id="heartbeatSection" style="display: none;">
-        <div class="mf-section-title">Heartbeat / cron monitoring</div>
+        <div class="mf-section-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <span class="mf-section-header-title">Heartbeat / cron monitoring</span>
+        </div>
         <div class="mf-info-box" style="background: #f0fdf4; border-color: #bbf7d0;">
             <div style="font-weight: 600; font-size: 0.9rem; color: #15803d; margin-bottom: 0.4rem;">How it works</div>
             <ol style="margin: 0; padding-left: 1.2rem; font-size: 0.82rem; color: #166534; line-height: 1.7;">
@@ -56,135 +81,155 @@
                 <li>If we don't receive a ping in time, we alert you instantly</li>
             </ol>
         </div>
-        <div class="form-group">
-            <label for="heartbeat_interval">Expected ping interval</label>
-            <select id="heartbeat_interval" name="heartbeat_interval">
-                <option value="60">Every 1 minute</option>
-                <option value="300" selected>Every 5 minutes</option>
-                <option value="600">Every 10 minutes</option>
-                <option value="900">Every 15 minutes</option>
-                <option value="1800">Every 30 minutes</option>
-                <option value="3600">Every 1 hour</option>
-                <option value="21600">Every 6 hours</option>
-                <option value="43200">Every 12 hours</option>
-                <option value="86400">Every 24 hours</option>
-            </select>
-            <div class="hint">We'll alert you if no ping arrives within this interval.</div>
-        </div>
-        <div class="form-group" style="margin-bottom: 0;">
-            <label for="heartbeat_grace_period">Grace period <span class="label-optional">(seconds)</span></label>
-            <input type="number" id="heartbeat_grace_period" name="heartbeat_grace_period" value="30" min="0" max="3600" style="max-width: 140px;">
-            <div class="hint">Extra time after the interval before marking as down.</div>
-        </div>
-    </div>
-
-    <!-- SSL -->
-    <div class="mf-section" id="sslSection" style="display: none;">
-        <div class="mf-section-title">SSL certificate</div>
-        <div class="form-group">
-            <label for="ssl_domain">Domain</label>
-            <input type="text" id="ssl_domain" name="ssl_domain" placeholder="example.com">
-            <div class="hint">Enter the domain name — no protocol or path needed.</div>
-        </div>
-        <div class="form-group" style="margin-bottom: 0;">
-            <label for="ssl_expiry_threshold_days">Warning threshold <span class="label-optional">(days)</span></label>
-            <input type="number" id="ssl_expiry_threshold_days" name="ssl_expiry_threshold_days" value="14" min="1" max="90" style="max-width: 140px;">
-            <div class="hint">Alert when certificate expires within this many days.</div>
-        </div>
-    </div>
-
-    <!-- Friendly Name -->
-    <div class="mf-section">
-        <div class="form-group" style="margin-bottom: 0;">
-            <label for="name">Friendly name</label>
-            <input type="text" id="name" name="name" placeholder="My Website" required>
-            <div class="hint">A short name to identify this monitor on your dashboard.</div>
-        </div>
-    </div>
-
-    <!-- Group -->
-    <div class="mf-section">
-        <div class="form-group" style="margin-bottom: 0;">
-            <label for="group">Group <span class="label-optional">(optional)</span></label>
-            <input type="text" id="group" name="group" list="groupSuggestions" placeholder="e.g. Production" autocomplete="off">
-            <datalist id="groupSuggestions">
-                {% for gn in group_names %}
-                <option value="{{ gn }}">
-                {% endfor %}
-            </datalist>
-            <div class="hint">Organize monitors by environment or project.</div>
-        </div>
-    </div>
-
-    <!-- Notifications -->
-    <div class="mf-section">
-        <div class="mf-section-title">How will we notify you?</div>
-        <div class="mf-notify-row">
-            <input type="checkbox" class="mf-notify-check" checked disabled>
-            <div class="mf-notify-icon">📧</div>
-            <div class="mf-notify-info">
-                <div class="mf-notify-label">Email</div>
-                <div class="mf-notify-detail">{{ user.email }}</div>
+        <div class="mf-field-row">
+            <div class="mf-field-group">
+                <label for="heartbeat_interval">Expected ping interval</label>
+                <select id="heartbeat_interval" name="heartbeat_interval">
+                    <option value="60">Every 1 minute</option>
+                    <option value="300" selected>Every 5 minutes</option>
+                    <option value="600">Every 10 minutes</option>
+                    <option value="900">Every 15 minutes</option>
+                    <option value="1800">Every 30 minutes</option>
+                    <option value="3600">Every 1 hour</option>
+                    <option value="21600">Every 6 hours</option>
+                    <option value="43200">Every 12 hours</option>
+                    <option value="86400">Every 24 hours</option>
+                </select>
+                <div class="hint">Alert if no ping arrives within this window.</div>
+            </div>
+            <div class="mf-field-group">
+                <label for="heartbeat_grace_period">Grace period <span class="label-optional">(seconds)</span></label>
+                <input type="number" id="heartbeat_grace_period" name="heartbeat_grace_period" value="30" min="0" max="3600" style="max-width: 140px;">
+                <div class="hint">Extra time before marking as down.</div>
             </div>
         </div>
-        <input type="hidden" name="alert_email" value="{{ user.email }}">
+    </div>
 
-        <div class="mf-notify-row">
-            {% if plan != 'free' %}
-            <input type="checkbox" class="mf-notify-check" id="slackToggle"
-                   onchange="document.getElementById('slackUrlWrap').style.display = this.checked ? 'block' : 'none'">
-            {% else %}
-            <input type="checkbox" class="mf-notify-check" disabled>
-            {% endif %}
-            <div class="mf-notify-icon">💬</div>
-            <div class="mf-notify-info">
-                <div class="mf-notify-label">Slack</div>
-                {% if plan != 'free' %}
-                <div class="mf-notify-detail">Send alerts to a Slack channel</div>
+    <!-- SSL settings -->
+    <div class="mf-section" id="sslSection" style="display: none;">
+        <div class="mf-section-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <span class="mf-section-header-title">SSL certificate</span>
+        </div>
+        <div class="mf-field-row">
+            <div class="mf-field-group">
+                <label for="ssl_domain">Domain</label>
+                <input type="text" id="ssl_domain" name="ssl_domain" placeholder="example.com">
+                <div class="hint">No protocol or path needed.</div>
+            </div>
+            <div class="mf-field-group">
+                <label for="ssl_expiry_threshold_days">Warning threshold <span class="label-optional">(days)</span></label>
+                <input type="number" id="ssl_expiry_threshold_days" name="ssl_expiry_threshold_days" value="14" min="1" max="90" style="max-width: 140px;">
+                <div class="hint">Alert when cert expires within this many days.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2.4: Friendly name + Group — 2-column row -->
+    <div class="mf-section">
+        <div class="mf-section-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span class="mf-section-header-title">Identity</span>
+        </div>
+        <div class="mf-field-row">
+            <div class="mf-field-group">
+                <label for="name">Friendly name</label>
+                <input type="text" id="name" name="name" placeholder="My Website" required>
+                <div class="hint">A short name for your dashboard.</div>
+            </div>
+            <div class="mf-field-group">
+                <label for="group">Group <span class="label-optional">(optional)</span></label>
+                <input type="text" id="group" name="group" list="groupSuggestions" placeholder="e.g. Production" autocomplete="off">
+                <datalist id="groupSuggestions">
+                    {% for gn in group_names %}
+                    <option value="{{ gn }}">
+                    {% endfor %}
+                </datalist>
+                <div class="hint">Organize by environment or project.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2.5: Notifications -->
+    <div class="mf-section">
+        <div class="mf-section-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+            <span class="mf-section-header-title">Notifications</span>
+        </div>
+
+        <!-- Email (always on, editable) -->
+        <div class="mf-notify-channel">
+            <div class="mf-notify-channel-header">
+                <span class="mf-notify-channel-icon">📧</span>
+                <span class="mf-notify-channel-name">Email</span>
+                <span class="mf-notify-channel-badge mf-notify-channel-on">Always on</span>
+            </div>
+            <input type="email" name="alert_email" value="{{ user.email }}" class="mf-notify-channel-input" placeholder="you@example.com">
+        </div>
+
+        <!-- Slack (Pro) -->
+        <div class="mf-notify-channel">
+            <div class="mf-notify-channel-header">
+                <span class="mf-notify-channel-icon">💬</span>
+                <span class="mf-notify-channel-name">Slack</span>
+                {% if plan == 'free' %}
+                <span class="mf-notify-pro">PRO</span>
                 {% else %}
-                <div class="mf-notify-detail"><a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a></div>
+                <label class="mf-toggle-switch mf-toggle-switch-sm" style="margin-left: auto;">
+                    <input type="checkbox" id="slackToggle"
+                           onchange="document.getElementById('slackUrlWrap').style.display = this.checked ? 'block' : 'none'">
+                    <span class="mf-toggle-slider"></span>
+                </label>
                 {% endif %}
             </div>
-            {% if plan == 'free' %}<span class="mf-notify-pro">PRO</span>{% endif %}
-        </div>
-        <div id="slackUrlWrap" style="display: none; padding-left: 2.75rem; padding-bottom: 0.5rem;">
             {% if plan != 'free' %}
-            <input type="text" name="alert_slack_webhook" placeholder="https://hooks.slack.com/services/...">
+            <div id="slackUrlWrap" style="display: none;">
+                <input type="text" name="alert_slack_webhook" class="mf-notify-channel-input" placeholder="https://hooks.slack.com/services/...">
+                <div class="hint" style="margin-top: 0.25rem;">Paste your Slack incoming webhook URL.</div>
+            </div>
             {% else %}
+            <div class="mf-notify-channel-locked">
+                <a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a> to send alerts to Slack.
+            </div>
             <input type="hidden" name="alert_slack_webhook" value="">
             {% endif %}
         </div>
 
-        <div class="mf-notify-row">
-            {% if plan != 'free' %}
-            <input type="checkbox" class="mf-notify-check" id="webhookToggle"
-                   onchange="document.getElementById('webhookUrlWrap').style.display = this.checked ? 'block' : 'none'">
-            {% else %}
-            <input type="checkbox" class="mf-notify-check" disabled>
-            {% endif %}
-            <div class="mf-notify-icon">🔗</div>
-            <div class="mf-notify-info">
-                <div class="mf-notify-label">Webhook</div>
-                {% if plan != 'free' %}
-                <div class="mf-notify-detail">POST JSON to your endpoint on status changes</div>
+        <!-- Webhook (Pro) -->
+        <div class="mf-notify-channel">
+            <div class="mf-notify-channel-header">
+                <span class="mf-notify-channel-icon">🔗</span>
+                <span class="mf-notify-channel-name">Webhook</span>
+                {% if plan == 'free' %}
+                <span class="mf-notify-pro">PRO</span>
                 {% else %}
-                <div class="mf-notify-detail"><a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a></div>
+                <label class="mf-toggle-switch mf-toggle-switch-sm" style="margin-left: auto;">
+                    <input type="checkbox" id="webhookToggle"
+                           onchange="document.getElementById('webhookUrlWrap').style.display = this.checked ? 'block' : 'none'">
+                    <span class="mf-toggle-slider"></span>
+                </label>
                 {% endif %}
             </div>
-            {% if plan == 'free' %}<span class="mf-notify-pro">PRO</span>{% endif %}
-        </div>
-        <div id="webhookUrlWrap" style="display: none; padding-left: 2.75rem; padding-bottom: 0.5rem;">
             {% if plan != 'free' %}
-            <input type="text" name="webhook_url" placeholder="https://your-api.com/webhook">
+            <div id="webhookUrlWrap" style="display: none;">
+                <input type="text" name="webhook_url" class="mf-notify-channel-input" placeholder="https://your-api.com/webhook">
+                <div class="hint" style="margin-top: 0.25rem;">We'll POST JSON to this URL on status changes.</div>
+            </div>
             {% else %}
+            <div class="mf-notify-channel-locked">
+                <a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a> to receive webhook alerts.
+            </div>
             <input type="hidden" name="webhook_url" value="">
             {% endif %}
         </div>
     </div>
 
-    <!-- Monitor Interval -->
+    <!-- 2.6: Monitor Interval -->
     <div class="mf-section" id="intervalSection">
-        <div class="mf-section-title">Monitor interval</div>
+        <div class="mf-section-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span class="mf-section-header-title">Monitor interval</span>
+        </div>
         {% if plan != 'free' %}
         <div class="mf-interval-wrap">
             <input type="range" class="mf-interval-slider" id="check_interval" name="check_interval" min="60" max="300" step="10" value="60"
@@ -203,7 +248,7 @@
         {% endif %}
     </div>
 
-    <!-- Advanced Settings -->
+    <!-- 2.7: Advanced Settings (collapsible) -->
     <div class="mf-section">
         <button type="button" class="mf-collapse-toggle" onclick="toggleAdvanced(this)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
@@ -211,18 +256,75 @@
         </button>
         <div class="mf-collapse-content" id="advancedContent">
 
-            <!-- HTTP advanced -->
+            <!-- HTTP advanced fields -->
             <div id="advHttp">
-                <div class="form-group">
-                    <label for="expected_status_code">Expected status code <span class="label-optional">(optional)</span></label>
-                    <input type="number" id="expected_status_code" name="expected_status_code" placeholder="200" min="100" max="599" style="max-width: 140px;">
-                    <div class="hint">Leave blank to accept any 2xx/3xx response.</div>
+                <div class="mf-field-row">
+                    <div class="mf-field-group">
+                        <label for="timeout">Request timeout <span class="label-optional">(seconds)</span></label>
+                        <input type="number" id="timeout" name="timeout" value="10" min="1" max="60">
+                        <div class="hint">Max time to wait for a response.</div>
+                    </div>
+                    <div class="mf-field-group">
+                        <label for="expected_status_code">Expected status code <span class="label-optional">(optional)</span></label>
+                        <input type="number" id="expected_status_code" name="expected_status_code" placeholder="200" min="100" max="599">
+                        <div class="hint">Leave blank for any 2xx/3xx.</div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="timeout">Request timeout <span class="label-optional">(seconds)</span></label>
-                    <input type="number" id="timeout" name="timeout" value="10" min="1" max="60" style="max-width: 140px;">
+
+                <!-- 2.13: HTTP method button group -->
+                <div class="mf-field-group">
+                    <label>HTTP method</label>
+                    <div class="mf-method-select" id="httpMethodGroup">
+                        <button type="button" class="mf-method-btn active" data-method="GET" onclick="selectMethod(this)">GET</button>
+                        <button type="button" class="mf-method-btn" data-method="HEAD" onclick="selectMethod(this)">HEAD</button>
+                        <button type="button" class="mf-method-btn" data-method="POST" onclick="selectMethod(this)">POST</button>
+                        <button type="button" class="mf-method-btn" data-method="PUT" onclick="selectMethod(this)">PUT</button>
+                        <button type="button" class="mf-method-btn" data-method="PATCH" onclick="selectMethod(this)">PATCH</button>
+                        <button type="button" class="mf-method-btn" data-method="DELETE" onclick="selectMethod(this)">DELETE</button>
+                        <button type="button" class="mf-method-btn" data-method="OPTIONS" onclick="selectMethod(this)">OPTIONS</button>
+                    </div>
+                    <input type="hidden" id="http_method" name="http_method" value="GET">
+                    <div class="hint">Method used for the check request.</div>
                 </div>
-                <div class="form-group">
+
+                <!-- Follow redirects toggle -->
+                <div class="mf-toggle-row">
+                    <div class="mf-toggle-label">
+                        <span class="mf-toggle-label-text">Follow redirects</span>
+                        <span class="mf-toggle-label-hint">Automatically follow 3xx redirects when checking.</span>
+                    </div>
+                    <label class="mf-toggle-switch">
+                        <input type="checkbox" name="follow_redirects" value="true" checked>
+                        <span class="mf-toggle-slider"></span>
+                    </label>
+                </div>
+
+                <!-- Basic Auth -->
+                <div class="mf-field-group" style="margin-top: 0.75rem;">
+                    <label>Authentication</label>
+                    <div class="mf-auth-section">
+                        <select class="mf-auth-type-select" id="authTypeSelect" onchange="toggleAuthFields(this.value)">
+                            <option value="none">None</option>
+                            <option value="basic">Basic Auth {% if plan == 'free' %}(Pro){% endif %}</option>
+                        </select>
+                        <div class="mf-auth-fields" id="authFields">
+                            <div class="mf-field-group">
+                                <label for="basic_auth_user">Username</label>
+                                <input type="text" id="basic_auth_user" name="basic_auth_user" placeholder="admin">
+                            </div>
+                            <div class="mf-field-group">
+                                <label for="basic_auth_pass">Password</label>
+                                <input type="password" id="basic_auth_pass" name="basic_auth_pass" placeholder="••••••">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hint">Send credentials with each check request.</div>
+                </div>
+
+                <hr class="form-divider">
+
+                <!-- Keyword builder -->
+                <div class="mf-field-group">
                     <label for="keyword">Keyword check <span class="label-optional">(optional)</span></label>
                     <input type="hidden" id="keyword" name="keyword" value="">
                     <div class="kw-builder" id="kwBuilder">
@@ -234,29 +336,35 @@
                     </div>
                     <div class="hint">Body must contain these keywords or the monitor is marked <strong>down</strong>.</div>
                 </div>
-                <div class="form-group">
+
+                <!-- Response threshold -->
+                <div class="mf-field-group">
                     <label for="response_threshold_ms">Response threshold <span class="label-optional">(optional)</span></label>
                     <input type="text" id="response_threshold_ms" name="response_threshold_ms" placeholder="e.g. > 2000 or 200-3000">
                     <div class="hint">Supports: <code>&gt; 2000</code>, <code>&lt; 200</code>, <code>200-3000</code> (range).</div>
                 </div>
             </div>
 
-            <!-- JSON/API advanced -->
+            <!-- JSON/API advanced fields -->
             <div id="advJson" style="display: none;">
-                <div class="form-group">
-                    <label for="json_expected_status">Expected status code <span class="label-optional">(optional)</span></label>
-                    <input type="number" id="json_expected_status" placeholder="200" min="100" max="599" style="max-width: 140px;">
+                <div class="mf-field-row">
+                    <div class="mf-field-group">
+                        <label for="json_timeout">Request timeout <span class="label-optional">(seconds)</span></label>
+                        <input type="number" id="json_timeout" value="10" min="1" max="60">
+                        <div class="hint">Max time to wait for a response.</div>
+                    </div>
+                    <div class="mf-field-group">
+                        <label for="json_expected_status">Expected status code <span class="label-optional">(optional)</span></label>
+                        <input type="number" id="json_expected_status" placeholder="200" min="100" max="599">
+                        <div class="hint">Leave blank for any 2xx/3xx.</div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="json_timeout">Request timeout <span class="label-optional">(seconds)</span></label>
-                    <input type="number" id="json_timeout" value="10" min="1" max="60" style="max-width: 140px;">
-                </div>
-                <div class="form-group">
+                <div class="mf-field-group">
                     <label for="auth_header">Authorization header <span class="label-optional">(optional)</span></label>
                     <input type="text" id="auth_header" name="auth_header" placeholder="Bearer eyJhbGci...">
                     <div class="hint">Sent as the <code>Authorization</code> header.</div>
                 </div>
-                <div class="form-group">
+                <div class="mf-field-group">
                     <label>JSON assertions <span class="label-optional">(optional)</span></label>
                     <div id="assertions-container"></div>
                     <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; margin-top: 0.5rem;" onclick="addAssertion()">+ Add assertion</button>
@@ -265,43 +373,53 @@
             </div>
 
             <hr class="form-divider">
-            <div class="form-group">
-                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
-                    <input type="checkbox" name="public" value="true" style="width: 18px; height: 18px; accent-color: var(--brand);"
+
+            <!-- 2.8: Status Page — public toggle + slug -->
+            <div class="mf-toggle-row">
+                <div class="mf-toggle-label">
+                    <span class="mf-toggle-label-text">Public status page</span>
+                    <span class="mf-toggle-label-hint">Anyone can view the status page for this monitor.</span>
+                </div>
+                <label class="mf-toggle-switch">
+                    <input type="checkbox" name="public" value="true" id="publicToggle"
                            onchange="document.getElementById('slugGroup').style.display = this.checked ? 'block' : 'none'">
-                    Public status page
+                    <span class="mf-toggle-slider"></span>
                 </label>
-                <div class="hint">When enabled, anyone can view the status page.</div>
             </div>
-            <div class="form-group" id="slugGroup" style="display: none;">
+            <div class="mf-field-group" id="slugGroup" style="display: none; margin-top: 0.5rem;">
                 <label for="slug">Status page slug <span class="label-optional">(optional)</span></label>
                 <input type="text" id="slug" name="slug" placeholder="my-website" pattern="[a-z0-9\-]+" title="Lowercase letters, numbers, and hyphens only">
                 <div class="hint">URL: <code>statusrooster.com/s/<span id="slug-preview">...</span></code></div>
             </div>
-            <div class="form-group">
-                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
-                    <input type="checkbox" name="paused" value="true" style="width: 18px; height: 18px; accent-color: var(--brand);">
-                    Start paused
+
+            <!-- 2.9: Start Paused toggle -->
+            <div class="mf-toggle-row">
+                <div class="mf-toggle-label">
+                    <span class="mf-toggle-label-text">Start paused</span>
+                    <span class="mf-toggle-label-hint">Checks won't start until you resume.</span>
+                </div>
+                <label class="mf-toggle-switch">
+                    <input type="checkbox" name="paused" value="true">
+                    <span class="mf-toggle-slider"></span>
                 </label>
-                <div class="hint">When paused, checks won't start until you resume.</div>
             </div>
 
-            <!-- Maintenance windows -->
+            <!-- 2.10: Maintenance Windows (Pro) -->
             <hr class="form-divider">
-            <div class="form-group">
-                <label>Maintenance windows <span class="label-optional">(Pro)</span></label>
+            <div class="mf-field-group">
+                <label>Maintenance windows {% if plan == 'free' %}<span class="mf-pro-tag">PRO</span>{% endif %}</label>
                 <div id="mw-container"></div>
                 {% if plan != 'free' %}
                 <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; margin-top: 0.5rem;" onclick="addMaintenanceWindow()">+ Add maintenance window</button>
                 <div class="hint">Suppress alerts during these windows (times in UTC).</div>
                 {% else %}
-                <div class="hint"><a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a> to suppress alerts during scheduled maintenance. <span class="mf-notify-pro" style="vertical-align: middle;">PRO</span></div>
+                <div class="hint"><a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a> to suppress alerts during scheduled maintenance.</div>
                 {% endif %}
             </div>
         </div>
     </div>
 
-    <!-- Sticky Submit -->
+    <!-- 2.11: Sticky submit footer -->
     <div class="mf-footer">
         <button type="submit" class="mf-submit">Add monitor</button>
     </div>
@@ -314,6 +432,9 @@
 /* ── Type Switcher ─────────────────────────────────────── */
 function setMonitorType(type) {
     document.getElementById('monitor_type').value = type;
+    // Update button group active state
+    document.querySelectorAll('.mf-type-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.mf-type-btn[onclick*="' + type + '"]').classList.add('active');
     ['httpSection','jsonApiSection','heartbeatSection','sslSection'].forEach(id => document.getElementById(id).style.display = 'none');
     ['advHttp','advJson'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
     const interval = document.getElementById('intervalSection');
@@ -385,6 +506,21 @@ function toggleAdvanced(btn) {
     btn.classList.toggle('open');
     document.getElementById('advancedContent').classList.toggle('open');
 }
+
+/* ── 2.13: HTTP Method Selector ────────────────────────── */
+function selectMethod(btn) {
+    document.querySelectorAll('#httpMethodGroup .mf-method-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('http_method').value = btn.dataset.method;
+}
+
+/* ── Auth Fields Toggle ───────────────────────────────── */
+function toggleAuthFields(value) {
+    const fields = document.getElementById('authFields');
+    if (fields) fields.style.display = value === 'basic' ? 'grid' : 'none';
+}
+// Initialize auth fields hidden on load
+(function() { const f = document.getElementById('authFields'); if (f) f.style.display = 'none'; })();
 
 /* ── Slug Preview ─────────────────────────────────────── */
 const slugInput = document.getElementById('slug');
