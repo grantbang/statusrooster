@@ -852,6 +852,117 @@ Layout order (top to bottom):
 - [ ] **11H.T4** Incident detail + incidents list — no emoji anywhere visible
 - [ ] **11H.T5** Spot-check on a Windows user-agent (or Chrome/Firefox) — icons render correctly
 
+### 11I. Landing Page Overhaul 🔲
+
+> **Goal:** Make the landing page sell the product at first glance. Current page is text-heavy with no visuals, no social proof, and a weak hero. Fix: real app screenshots, a "How it works" flow, a transparency/trust section, and tighter copy. This is the user's first touch with the product — it needs to close.
+
+**Current structure (reference):**
+- Hero (API curl snippet + CTAs)
+- Value props strip (5 pills)
+- Live URL checker
+- Features (4 sections: API-first, badges, dashboard, 4 feature cards)
+- Pricing (Free + Pro)
+- Bottom CTA
+
+**What's missing:**
+- No screenshots — visitors can't see what the app looks like
+- No "How it works" — unclear onboarding path
+- No social proof (testimonials, monitor count, user count)
+- No transparency into how checks/alerts work (trust signal for devs)
+- Hero is API-first (dev audience ok, but misses the visual hook)
+
+**Build items:**
+
+- [ ] **11I.1** Take 4 real screenshots of the live app for use in landing page:
+  - Dashboard (with monitors in various states — up, down, warning)
+  - Monitor detail (response time chart visible)
+  - Incident detail (timeline + details card)
+  - Public status page (clean public view)
+  - Save as `app/static/screenshots/dashboard.png`, `monitor_detail.png`, `incident_detail.png`, `status_page.png`
+  - Size: 1280×800 or 1440×900, retina-quality if possible
+
+- [ ] **11I.2** Add "How it works" section (3-step flow) to `landing.html`:
+  - Step 1: Add a URL (30 seconds, no credit card)
+  - Step 2: We check every 5 minutes from multiple locations
+  - Step 3: Get alerted the moment something breaks (email/Slack/SMS)
+  - Simple numbered layout: icon + headline + one-sentence description
+  - Place above the Features section
+
+- [ ] **11I.3** Add app screenshot showcase to `landing.html`:
+  - Full-width or contained screenshot of dashboard (primary visual)
+  - Caption: "Every monitor at a glance — status, uptime %, response time, SSL health"
+  - Add a tabbed/clickable switcher with 3 tabs: Dashboard / Monitor Detail / Status Page
+  - Use CSS tab switching (no JS framework) — tab click swaps `.active` class on screenshot panels
+  - Place after "How it works"
+
+- [ ] **11I.4** Add "Transparency" section to `landing.html`:
+  - Headline: "No black boxes. Here's exactly what we check."
+  - Show a simplified view of what happens on each check cycle:
+    - HTTP check: what we test, what triggers an alert
+    - SSL check: expiry threshold, what we detect
+    - Heartbeat/cron: grace period, what "missed" means
+    - JSON/API: assertion logic
+  - Style: 2×2 grid of monitor type cards, each with icon + 2-3 bullet points
+  - Developer-trust signal — show you're not hiding how it works
+
+- [ ] **11I.5** Strengthen hero section in `landing.html`:
+  - Add a real screenshot or animated "status strip" (30 colored bars = 30 days uptime) as a visual hook next to/below the headline
+  - Add a live stat line: "Currently monitoring X URLs across Y users" (can be static for now: "Monitoring 1,000+ URLs" or real if you expose an endpoint)
+  - Tighten CTA — make "Start monitoring free" the dominant button; make "View API docs" secondary
+  - Add trust line below CTAs: "No credit card. 5 monitors free forever. Cancel anytime."
+
+- [ ] **11I.6** Add social proof rail to `landing.html`:
+  - Simple section: 2-3 short testimonial quotes (real or placeholder marked as such)
+  - OR: stat counter row: "1,000+ developers trust StatusRooster" / "99.9% alert delivery rate" / "< 30s alert time"
+  - Place between "How it works" and the screenshot showcase
+
+- [ ] **11I.7** Add corresponding CSS to `style.css` for all new landing sections:
+  - `.l-howto` — 3-step row, numbered circles, responsive collapse to vertical
+  - `.l-screenshots` — tab switcher, screenshot container, captions
+  - `.l-transparency` — 2×2 monitor type grid, icon + bullets
+  - `.l-social-proof` — testimonial/stat rail
+  - All sections must use design tokens (`--brand`, `--text`, `--muted`, `--border`) — no hardcoded colors
+
+**Gate tests:**
+- [ ] **11I.T1** Screenshot files exist in `app/static/screenshots/` and render in the browser (no broken image icons)
+- [ ] **11I.T2** "How it works" section visible at `localhost:8080` — 3 steps, icons, correct copy
+- [ ] **11I.T3** Screenshot tabs work — clicking Dashboard/Monitor Detail/Status Page switches the visible screenshot
+- [ ] **11I.T4** Transparency section visible — 4 monitor type cards with bullets
+- [ ] **11I.T5** Hero has trust line below CTAs and at least one visual element (stat strip or screenshot)
+- [ ] **11I.T6** Mobile viewport (≤768px): all new sections stack correctly, no overflow, screenshots scale down
+- [ ] **11I.T7** Page load: screenshots are reasonable size (< 500KB each, webp preferred if possible)
+
+---
+
+### 11J. SMS / Twilio Verification 🔲
+
+> **Goal:** Confirm that SMS alerts are fully wired and working in production. Implementation is complete (code exists), but env vars may not be set in Cloud Run. Verify end-to-end before launch so we can honestly advertise SMS alerts.
+
+**Current status (from code audit):**
+- ✅ `config.py` — `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` env vars defined
+- ✅ `alerts.py` — `send_sms()` implemented via Twilio REST API (not SDK), with error handling and graceful skip when not configured
+- ✅ `alerts.py` — SMS wired in `send_down_alert()`, `send_recovery_alert()`, and test alert flow
+- ✅ Monitor model — `alert_sms` field defined, settable via settings UI (Pro only)
+- ✅ Plan gating — SMS only sends when `user_plan == "pro"`
+- ❓ Cloud Run env vars — `TWILIO_ACCOUNT_SID/AUTH_TOKEN/FROM_NUMBER` may not be set in production
+- ❓ Twilio account — need to verify account is active, has a provisioned number, and has budget
+
+**Build items:**
+- [ ] **11J.1** Check Cloud Run service env vars: confirm `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` are set (via Cloud Console or `gcloud run services describe`)
+- [ ] **11J.2** If not set: add them via Cloud Console → Cloud Run → Edit Revision → Environment Variables; redeploy
+- [ ] **11J.3** Verify Twilio account dashboard: confirm account is active, from-number is provisioned, and has sufficient credit
+- [ ] **11J.4** Add `alert_sms` field to the test Pro account monitor (a real phone number) via the settings UI
+- [ ] **11J.5** Trigger a test SMS via the "Send test alert" button in monitor settings — confirm it arrives
+
+**Gate tests:**
+- [ ] **11J.T1** `TWILIO_ACCOUNT_SID` is non-empty in production Cloud Run — confirm via `gcloud run services describe`
+- [ ] **11J.T2** Test SMS received on phone — "Test alert from StatusRooster" message arrives within 30s
+- [ ] **11J.T3** Down alert SMS received when monitor goes down (or simulate with a test monitor pointing to a known-down URL)
+- [ ] **11J.T4** Recovery SMS received when monitor recovers
+- [ ] **11J.T5** Free plan user does NOT receive SMS (plan gate is enforced) — verify in logs
+
+---
+
 ### 11D. Admin Dashboard 🔲
 - [ ] Route: `GET /admin` — guard: only your email can access
 - [ ] KPI cards: total users, Pro users, Free users, MRR, total monitors, checks today
@@ -1087,7 +1198,9 @@ Layout order (top to bottom):
 | 18 | 11D: User Timezone Setting | ✅ |
 | 19 | 11E: API & API Docs QA | 🔲 |
 | 18 | 11D: Admin dashboard | 🔲 |
-| 19 | Day 12: Testing & launch | 🔲 |
+| 20 | 11I: Landing page overhaul | 🔲 |
+| 21 | 11J: SMS / Twilio verification | 🔲 |
+| 22 | Day 12: Testing & launch | 🔲 |
 
 **Work through Phases 1–9 sequentially. Run every Gate test before moving to the next Phase. Do not skip ahead.**
 
