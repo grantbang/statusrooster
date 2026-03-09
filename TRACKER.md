@@ -482,17 +482,17 @@ Layout order (top to bottom):
 
 ### Phase 5: Form End-to-End Integration QA
 
-- [ ] **5.1** **E2E: HTTP full flow** — Add with custom method (POST), basic auth, keyword, 120s interval → verify on dashboard → edit to change method to GET, remove auth → verify saved
-- [ ] **5.2** **E2E: JSON/API full flow** — Add with auth header + 2 assertions → verify → edit to add 3rd assertion → verify
-- [ ] **5.3** **E2E: Heartbeat full flow** — Add → verify ping URL on dashboard → edit interval → verify
-- [ ] **5.4** **E2E: SSL full flow** — Add with 30-day threshold → verify → edit to 7 days → verify
-- [ ] **5.5** **E2E: Free plan** — Slack/Webhook disabled, interval locked, maintenance hidden → submit works
-- [ ] **5.6** **E2E: Pro plan** — Slack + webhook + custom interval + maintenance window → all saved
-- [ ] **5.7** **Mobile spot-check** — Add + Edit at 375px → stacks cleanly, no horizontal scroll, sticky footer full-width
-- [ ] **5.8** **Backward compat** — Edit pre-redesign monitor (no `http_method`/`follow_redirects`) → loads with defaults → save without changes → no data lost
-- [ ] **5.9** **Delete regression** — Delete monitor from dashboard → gone, no errors
-- [ ] **5.10** **Pause/Resume regression** — Pause from dashboard → status changes, edit shows "Paused" checked
-- [ ] **5.11** **Status page regression** — Create public monitor with slug → `/s/{slug}` renders
+- [x] **5.1** **E2E: HTTP full flow** — Add with custom method (POST), basic auth, keyword, 120s interval → verify on dashboard → edit to change method to GET, remove auth → verify saved
+- [x] **5.2** **E2E: JSON/API full flow** — Add with auth header + 2 assertions → verify → edit to add 3rd assertion → verify
+- [x] **5.3** **E2E: Heartbeat full flow** — Add → verify ping URL on dashboard → edit interval → verify
+- [x] **5.4** **E2E: SSL full flow** — Add with 30-day threshold → verify → edit to 7 days → verify
+- [x] **5.5** **E2E: Free plan** — Slack/Webhook disabled, interval locked, maintenance hidden → submit works
+- [x] **5.6** **E2E: Pro plan** — Slack + webhook + custom interval + maintenance window → all saved
+- [ ] **5.7** **Mobile spot-check** — Add + Edit at 375px → stacks cleanly, no horizontal scroll, sticky footer full-width *(browser-only)*
+- [x] **5.8** **Backward compat** — Edit pre-redesign monitor (no `http_method`/`follow_redirects`) → loads with defaults → save without changes → no data lost
+- [x] **5.9** **Delete regression** — Delete monitor from dashboard → gone, no errors
+- [x] **5.10** **Pause/Resume regression** — Pause from dashboard → status changes, edit shows "Paused" checked
+- [x] **5.11** **Status page regression** — Create public monitor with slug → `/s/{slug}` renders
 
 ---
 
@@ -777,7 +777,7 @@ Layout order (top to bottom):
 | 2 | Phase 2: Add Monitor template | ✅ |
 | 3 | Phase 3: Edit Monitor template | ✅ |
 | 4 | Phase 4: Backend wiring | ✅ |
-| 5 | Phase 5: Form E2E QA | 🔲 |
+| 5 | Phase 5: Form E2E QA | ✅ |
 | 6 | Phase 6: Dashboard CSS | 🔲 |
 | 7 | Phase 7: Dashboard template + JS | 🔲 |
 | 8 | Phase 8: Dashboard backend | 🔲 |
@@ -797,13 +797,13 @@ Layout order (top to bottom):
 - Phase 2: ~~25~~ **5** (5 browser-only gate tests remain)
 - Phase 3: ~~13~~ **0** ✅
 - Phase 4: ~~27~~ **0** ✅
-- Phase 5: 11 E2E = **11**
+- Phase 5: ~~11~~ **1** (1 browser-only mobile spot-check remains)
 - Phase 6: 10 build + 3 test = **13**
 - Phase 7: 14 build + 14 test = **28**
 - Phase 8: 4 build + 5 test = **9**
 - Phase 9: 10 E2E = **10**
 - Non-UI tasks: ~25 + 54 (11E) = **~79**
-- **Grand total: ~155 checkboxes** (was 161, 72 completed + 54 new)
+- **Grand total: ~145 checkboxes** (was 155, 10 completed this phase)
 
 ---
 
