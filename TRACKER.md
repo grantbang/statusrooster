@@ -592,16 +592,16 @@ Layout order (top to bottom):
 
 ### Phase 9: Dashboard E2E QA
 
-- [ ] **9.1** **Full flow** — Create monitor → appears immediately → correct status/uptime/response
-- [ ] **9.2** **Edit flow** — Three-dot → Edit → change name → dashboard updates
-- [ ] **9.3** **Delete flow** — Delete → gone, aggregate stats update
-- [ ] **9.4** **Pause/Resume** — Pause via three-dot → paused state → resume → up/pending
-- [ ] **9.5** **Clone** — Clone → new copy appears
-- [ ] **9.6** **Free plan** — Upgrade banner at 4+ monitors, correct limits
-- [ ] **9.7** **Filter + Search combo** — Filter "Down" + search name → only matching down monitors
-- [ ] **9.8** **Mobile full flow** — Complete interaction at 375px (filter, search, menu, navigate)
-- [ ] **9.9** **30-day bars accuracy** — Compare bars against `daily_uptime_bars` data
-- [ ] **9.10** **Performance benchmark** — 10+ monitors loads <1s, no layout shift, no JS console errors
+- [x] **9.1** **Full flow** — Create monitor → appears immediately → correct status/uptime/response
+- [x] **9.2** **Edit flow** — Three-dot → Edit → change name → dashboard updates
+- [x] **9.3** **Delete flow** — Delete → gone, aggregate stats update
+- [x] **9.4** **Pause/Resume** — Pause via three-dot → paused state → resume → up/pending
+- [x] **9.5** **Clone** — Clone → new copy appears
+- [x] **9.6** **Free plan** — Upgrade banner at 4+ monitors, correct limits
+- [x] **9.7** **Filter + Search combo** — Filter "Down" + search name → only matching down monitors
+- [x] **9.8** **Mobile full flow** — Complete interaction at 375px (filter, search, menu, navigate)
+- [x] **9.9** **30-day bars accuracy** — Compare bars against `daily_uptime_bars` data
+- [x] **9.10** **Performance benchmark** — 10+ monitors loads <1s, no layout shift, no JS console errors
 
 ---
 
@@ -924,7 +924,7 @@ Layout order (top to bottom):
 | 6 | Phase 6: Dashboard CSS | ✅ |
 | 7 | Phase 7: Dashboard template + JS | ✅ |
 | 8 | Phase 8: Dashboard backend | ✅ |
-| 9 | Phase 9: Dashboard E2E QA | 🔲 |
+| 9 | Phase 9: Dashboard E2E QA | ✅ |
 | 10 | Phase 10: Checker Scale Hardening | ✅ |
 | 11 | 10B: GitHub OAuth | 🔲 |
 | 12 | 10F: Pro upsell polish | 🔲 |
