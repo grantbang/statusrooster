@@ -311,16 +311,19 @@
                     </label>
                 </div>
 
-                <!-- Basic Auth -->
+                <!-- Authentication -->
                 {% set has_auth_user = monitor.get('basic_auth_user', '') %}
+                {% set has_bearer = monitor.get('bearer_token', '') %}
+                {% set auth_type = 'bearer' if has_bearer else ('basic' if has_auth_user else 'none') %}
                 <div class="mf-field-group" style="margin-top: 0.75rem;">
                     <label>Authentication</label>
                     <div class="mf-auth-section">
-                        <select class="mf-auth-type-select" id="authTypeSelect" onchange="toggleAuthFields(this.value)">
-                            <option value="none" {% if not has_auth_user %}selected{% endif %}>None</option>
-                            <option value="basic" {% if has_auth_user %}selected{% endif %}>Basic Auth {% if plan == 'free' %}(Pro){% endif %}</option>
+                        <select class="mf-auth-type-select" id="authTypeSelect" name="auth_type" onchange="toggleAuthFields(this.value)">
+                            <option value="none" {% if auth_type == 'none' %}selected{% endif %}>None</option>
+                            <option value="basic" {% if auth_type == 'basic' %}selected{% endif %}>Basic Auth {% if plan == 'free' %}(Pro){% endif %}</option>
+                            <option value="bearer" {% if auth_type == 'bearer' %}selected{% endif %}>Bearer Token {% if plan == 'free' %}(Pro){% endif %}</option>
                         </select>
-                        <div class="mf-auth-fields" id="authFields" style="{% if not has_auth_user %}display: none;{% else %}display: grid;{% endif %}">
+                        <div class="mf-auth-fields" id="authFieldsBasic" style="{% if auth_type != 'basic' %}display: none;{% else %}display: grid;{% endif %}">
                             <div class="mf-field-group">
                                 <label for="basic_auth_user">Username</label>
                                 <input type="text" id="basic_auth_user" name="basic_auth_user" value="{{ has_auth_user }}" placeholder="admin">
@@ -330,8 +333,53 @@
                                 <input type="password" id="basic_auth_pass" name="basic_auth_pass" value="{{ monitor.get('basic_auth_pass', '') }}" placeholder="••••••">
                             </div>
                         </div>
+                        <div class="mf-auth-fields" id="authFieldsBearer" style="{% if auth_type != 'bearer' %}display: none;{% else %}display: block;{% endif %}">
+                            <div class="mf-field-group">
+                                <label for="bearer_token">Token</label>
+                                <input type="text" id="bearer_token" name="bearer_token" value="{{ has_bearer }}" placeholder="eyJhbGciOiJIUzI1NiIs...">
+                                <div class="hint">Sent as <code>Authorization: Bearer &lt;token&gt;</code> header.</div>
+                            </div>
+                        </div>
                     </div>
                     <div class="hint">Send credentials with each check request.</div>
+                </div>
+
+                <!-- Request body (shown for POST/PUT/PATCH/DELETE) -->
+                {% set cur_method = monitor.get('http_method', 'GET') %}
+                <div class="mf-field-group" id="requestBodyGroup" style="{% if cur_method not in ['POST','PUT','PATCH','DELETE'] %}display: none;{% endif %} margin-top: 0.75rem;">
+                    <label for="request_body">Request body <span class="label-optional">(optional)</span></label>
+                    <div style="margin-bottom: 0.4rem;">
+                        {% set cur_ct = monitor.get('request_content_type', 'application/json') %}
+                        <select id="request_content_type" name="request_content_type" style="max-width: 280px;">
+                            <option value="application/json" {% if cur_ct == 'application/json' %}selected{% endif %}>application/json</option>
+                            <option value="text/plain" {% if cur_ct == 'text/plain' %}selected{% endif %}>text/plain</option>
+                            <option value="application/x-www-form-urlencoded" {% if cur_ct == 'application/x-www-form-urlencoded' %}selected{% endif %}>application/x-www-form-urlencoded</option>
+                        </select>
+                    </div>
+                    <textarea id="request_body" name="request_body" rows="4" placeholder='{"key": "value"}' style="font-family: var(--font-mono); font-size: 0.85rem;">{{ monitor.get('request_body', '') }}</textarea>
+                    <div class="hint">Body sent with POST, PUT, PATCH, or DELETE requests.</div>
+                </div>
+
+                <!-- Custom headers (Pro) -->
+                <div class="mf-field-group" style="margin-top: 0.75rem;">
+                    <label>Custom headers {% if plan == 'free' %}<span class="mf-pro-tag">PRO</span>{% endif %} <span class="label-optional">(optional)</span></label>
+                    {% if plan != 'free' %}
+                    <div id="custom-headers-container">
+                        {% for h in monitor.get('custom_headers', []) %}
+                        <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;">
+                            <input type="text" name="header_key[]" value="{{ h.get('key', '') }}" placeholder="X-Custom-Header" style="flex:1;min-width:120px;">
+                            <input type="text" name="header_value[]" value="{{ h.get('value', '') }}" placeholder="value" style="flex:1;min-width:120px;">
+                            <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; margin-top: 0.5rem;" onclick="addCustomHeader()">+ Add header</button>
+                    <div class="hint">Additional headers sent with each check request.</div>
+                    {% else %}
+                    <div class="mf-notify-channel-locked">
+                        <a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a> to send custom request headers.
+                    </div>
+                    {% endif %}
                 </div>
 
                 <hr class="form-divider">
@@ -516,12 +564,32 @@ function selectMethod(btn) {
     document.querySelectorAll('#httpMethodGroup .mf-method-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('http_method').value = btn.dataset.method;
+    // Show/hide request body based on method
+    toggleRequestBody(btn.dataset.method);
+}
+function toggleRequestBody(method) {
+    const bodyGroup = document.getElementById('requestBodyGroup');
+    if (bodyGroup) bodyGroup.style.display = ['POST','PUT','PATCH','DELETE'].includes(method) ? '' : 'none';
 }
 
 /* ── Auth Fields Toggle ───────────────────────────────── */
 function toggleAuthFields(value) {
-    const fields = document.getElementById('authFields');
-    if (fields) fields.style.display = value === 'basic' ? 'grid' : 'none';
+    const basic = document.getElementById('authFieldsBasic');
+    const bearer = document.getElementById('authFieldsBearer');
+    if (basic) basic.style.display = value === 'basic' ? 'grid' : 'none';
+    if (bearer) bearer.style.display = value === 'bearer' ? 'block' : 'none';
+}
+
+/* ── Custom Headers Builder ───────────────────────────── */
+function addCustomHeader(key, value) {
+    const c = document.getElementById('custom-headers-container');
+    if (!c) return;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;';
+    row.innerHTML = '<input type="text" name="header_key[]" value="'+(key||'')+'" placeholder="X-Custom-Header" style="flex:1;min-width:120px;">'
+        + '<input type="text" name="header_value[]" value="'+(value||'')+'" placeholder="value" style="flex:1;min-width:120px;">'
+        + '<button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>';
+    c.appendChild(row);
 }
 
 /* ── Slug Preview ─────────────────────────────────────── */
@@ -650,6 +718,12 @@ function kwRender() {
     if (authHeader && authHeader.value && authHeader.value !== '') shouldOpen = true;
     const authUser = document.getElementById('basic_auth_user');
     if (authUser && authUser.value && authUser.value !== '') shouldOpen = true;
+    const bearerToken = document.getElementById('bearer_token');
+    if (bearerToken && bearerToken.value && bearerToken.value !== '') shouldOpen = true;
+    const reqBody = document.getElementById('request_body');
+    if (reqBody && reqBody.value && reqBody.value.trim() !== '') shouldOpen = true;
+    const headersContainer = document.getElementById('custom-headers-container');
+    if (headersContainer && headersContainer.children.length > 0) shouldOpen = true;
     const httpMethod = document.getElementById('http_method');
     if (httpMethod && httpMethod.value && httpMethod.value !== 'GET') shouldOpen = true;
     const followRedir = document.querySelector('input[name="follow_redirects"]');

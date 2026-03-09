@@ -47,6 +47,9 @@ async def close_client():
 async def check_url(url: str, timeout: float = 10.0, expected_status_code: int | None = None,
                     http_method: str = "GET", follow_redirects: bool = True,
                     basic_auth_user: str = "", basic_auth_pass: str = "",
+                    bearer_token: str = "",
+                    request_body: str = "", request_content_type: str = "",
+                    custom_headers: list | None = None,
                     client: httpx.AsyncClient | None = None) -> dict:
     """
     Perform an HTTP request to the target URL.
@@ -55,10 +58,29 @@ async def check_url(url: str, timeout: float = 10.0, expected_status_code: int |
     """
     try:
         headers = {}
-        if basic_auth_user and basic_auth_pass:
+        # Custom headers (applied first so auth headers can override)
+        if custom_headers:
+            for h in custom_headers:
+                key = h.get("key", "").strip()
+                val = h.get("value", "").strip()
+                if key:
+                    headers[key] = val
+        # Auth: Bearer token takes priority over Basic Auth
+        if bearer_token:
+            headers["Authorization"] = f"Bearer {bearer_token}"
+        elif basic_auth_user and basic_auth_pass:
             import base64
             credentials = base64.b64encode(f"{basic_auth_user}:{basic_auth_pass}".encode()).decode()
             headers["Authorization"] = f"Basic {credentials}"
+
+        # Request body for POST/PUT/PATCH/DELETE
+        content = None
+        if request_body and http_method.upper() in ("POST", "PUT", "PATCH", "DELETE"):
+            content = request_body.encode("utf-8")
+            if request_content_type:
+                headers["Content-Type"] = request_content_type
+            else:
+                headers["Content-Type"] = "application/json"
 
         # Use shared client if provided, otherwise create a one-off client
         owns_client = client is None
@@ -72,6 +94,7 @@ async def check_url(url: str, timeout: float = 10.0, expected_status_code: int |
                 timeout=timeout,
                 follow_redirects=follow_redirects,
                 headers=headers,
+                content=content,
             )
             elapsed_ms = round((time.monotonic() - start) * 1000, 2)
 
@@ -100,23 +123,28 @@ async def check_url(url: str, timeout: float = 10.0, expected_status_code: int |
 async def check_url_with_retry(url: str, timeout: float = 10.0, expected_status_code: int | None = None,
                                http_method: str = "GET", follow_redirects: bool = True,
                                basic_auth_user: str = "", basic_auth_pass: str = "",
+                               bearer_token: str = "",
+                               request_body: str = "", request_content_type: str = "",
+                               custom_headers: list | None = None,
                                client: httpx.AsyncClient | None = None) -> dict:
     """
     Check a URL with false positive prevention.
     If the first check fails, wait with jitter and retry once.
     Returns result dict with added 'retried' key.
     """
+    _extra = dict(bearer_token=bearer_token, request_body=request_body,
+                  request_content_type=request_content_type, custom_headers=custom_headers)
     result = await check_url(url, timeout, expected_status_code,
                              http_method=http_method, follow_redirects=follow_redirects,
                              basic_auth_user=basic_auth_user, basic_auth_pass=basic_auth_pass,
-                             client=client)
+                             client=client, **_extra)
     if not result["is_up"]:
         # Jitter retry delay to prevent synchronized retry storms during outages
         await asyncio.sleep(random.uniform(2, 8))
         result = await check_url(url, timeout, expected_status_code,
                                  http_method=http_method, follow_redirects=follow_redirects,
                                  basic_auth_user=basic_auth_user, basic_auth_pass=basic_auth_pass,
-                                 client=client)
+                                 client=client, **_extra)
         result["retried"] = True
     else:
         result["retried"] = False
@@ -601,11 +629,19 @@ async def _check_single_monitor_inner(monitor: dict, now: datetime) -> dict | No
         follow_redir = monitor.get("follow_redirects", True)
         ba_user = monitor.get("basic_auth_user", "")
         ba_pass = monitor.get("basic_auth_pass", "")
+        bearer_tok = monitor.get("bearer_token", "")
+        req_body = monitor.get("request_body", "")
+        req_ct = monitor.get("request_content_type", "")
+        cust_headers = monitor.get("custom_headers") or []
 
         result = await check_url_with_retry(
             monitor["url"], timeout=timeout_val, expected_status_code=expected_code,
             http_method=http_method, follow_redirects=follow_redir,
-            basic_auth_user=ba_user, basic_auth_pass=ba_pass, client=client,
+            basic_auth_user=ba_user, basic_auth_pass=ba_pass,
+            bearer_token=bearer_tok,
+            request_body=req_body, request_content_type=req_ct,
+            custom_headers=cust_headers,
+            client=client,
         )
         # Grab SSL info concurrently for HTTPS URLs
         ssl_info = {}

@@ -26,6 +26,9 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
                    group: str = "", slug: str = "",
                    http_method: str = "GET",
                    basic_auth_user: str = "", basic_auth_pass: str = "",
+                   bearer_token: str = "",
+                   request_body: str = "", request_content_type: str = "",
+                   custom_headers: list | None = None,
                    follow_redirects: bool = True) -> dict:
     """Create a new monitor. Returns monitor dict with id.
 
@@ -95,6 +98,10 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
         "http_method": http_method,                  # HTTP method (GET, POST, HEAD, etc.)
         "basic_auth_user": basic_auth_user,          # Basic Auth username (Pro only)
         "basic_auth_pass": basic_auth_pass,          # Basic Auth password (Pro only)
+        "bearer_token": bearer_token,                # Bearer token (Pro only)
+        "request_body": request_body,                # Request body for POST/PUT/PATCH
+        "request_content_type": request_content_type,  # Content-Type for request body
+        "custom_headers": custom_headers or [],      # Custom request headers [{key, value}] (Pro only)
         "follow_redirects": follow_redirects,        # Follow HTTP redirects (default True)
         # JSON/API assertion fields
         "json_assertions": json_assertions or [],    # List of {path, operator, value}

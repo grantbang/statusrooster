@@ -471,12 +471,24 @@ async def add_monitor(
     http_method = form.get("http_method", "GET").upper()
     basic_auth_user = form.get("basic_auth_user", "")
     basic_auth_pass = form.get("basic_auth_pass", "")
+    auth_type = form.get("auth_type", "none")  # none | basic | bearer
+    bearer_token = form.get("bearer_token", "")
+    request_body = form.get("request_body", "")
+    request_content_type = form.get("request_content_type", "")
     # Checkbox: sends "true" when checked, absent when unchecked.
     # Default to True for non-HTTP types (where the field isn't shown).
     if monitor_type == "http":
         follow_redirects = form.get("follow_redirects", "") == "true"
     else:
         follow_redirects = True
+
+    # Parse custom headers (Pro only)
+    custom_headers = []
+    header_keys = form.getlist("header_key[]")
+    header_values = form.getlist("header_value[]")
+    for hk, hv in zip(header_keys, header_values):
+        if hk.strip():
+            custom_headers.append({"key": hk.strip(), "value": hv.strip() if hv else ""})
 
     db = get_db()
 
@@ -595,10 +607,23 @@ async def add_monitor(
     if slug:
         slug = re.sub(r"[^a-z0-9\-]", "", slug.lower().replace(" ", "-")).strip("-")
 
-    # Gate basic auth to Pro only
+    # Gate auth/headers to Pro only
     if user.get("plan", "free") == "free":
         basic_auth_user = ""
         basic_auth_pass = ""
+        bearer_token = ""
+        custom_headers = []
+
+    # Clear auth fields based on auth type selection
+    if auth_type == "bearer":
+        basic_auth_user = ""
+        basic_auth_pass = ""
+    elif auth_type == "basic":
+        bearer_token = ""
+    else:
+        basic_auth_user = ""
+        basic_auth_pass = ""
+        bearer_token = ""
 
     # Validate http_method
     allowed_methods = {"GET", "POST", "HEAD", "PUT", "PATCH", "DELETE", "OPTIONS"}
@@ -633,6 +658,10 @@ async def add_monitor(
         http_method=http_method,
         basic_auth_user=basic_auth_user,
         basic_auth_pass=basic_auth_pass,
+        bearer_token=bearer_token,
+        request_body=request_body,
+        request_content_type=request_content_type,
+        custom_headers=custom_headers if user.get("plan", "free") != "free" else [],
         follow_redirects=follow_redirects,
     )
 
@@ -710,6 +739,18 @@ async def edit_monitor_submit(
     http_method = form.get("http_method", "GET").upper()
     basic_auth_user = form.get("basic_auth_user", "")
     basic_auth_pass = form.get("basic_auth_pass", "")
+    auth_type = form.get("auth_type", "none")  # none | basic | bearer
+    bearer_token = form.get("bearer_token", "")
+    request_body = form.get("request_body", "")
+    request_content_type = form.get("request_content_type", "")
+
+    # Parse custom headers
+    custom_headers = []
+    header_keys = form.getlist("header_key[]")
+    header_values = form.getlist("header_value[]")
+    for hk, hv in zip(header_keys, header_values):
+        if hk.strip():
+            custom_headers.append({"key": hk.strip(), "value": hv.strip() if hv else ""})
 
     db = get_db()
     monitor = get_monitor(db, monitor_id)
@@ -760,13 +801,29 @@ async def edit_monitor_submit(
         allowed_methods = {"GET", "POST", "HEAD", "PUT", "PATCH", "DELETE", "OPTIONS"}
         updates["http_method"] = http_method if http_method in allowed_methods else "GET"
         updates["follow_redirects"] = form.get("follow_redirects", "") == "true"
-        # Gate basic auth to Pro only
+        updates["request_body"] = request_body
+        updates["request_content_type"] = request_content_type
+
+        # Auth: clear fields based on auth type, gate to Pro
         if user.get("plan", "free") != "free":
-            updates["basic_auth_user"] = basic_auth_user
-            updates["basic_auth_pass"] = basic_auth_pass
+            if auth_type == "bearer":
+                updates["bearer_token"] = bearer_token
+                updates["basic_auth_user"] = ""
+                updates["basic_auth_pass"] = ""
+            elif auth_type == "basic":
+                updates["basic_auth_user"] = basic_auth_user
+                updates["basic_auth_pass"] = basic_auth_pass
+                updates["bearer_token"] = ""
+            else:
+                updates["basic_auth_user"] = ""
+                updates["basic_auth_pass"] = ""
+                updates["bearer_token"] = ""
+            updates["custom_headers"] = custom_headers
         else:
             updates["basic_auth_user"] = ""
             updates["basic_auth_pass"] = ""
+            updates["bearer_token"] = ""
+            updates["custom_headers"] = []
     if expected_status_code_raw:
         try:
             updates["expected_status_code"] = int(expected_status_code_raw)

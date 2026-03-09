@@ -614,6 +614,31 @@ Layout order (top to bottom):
 ### 10E. Add/Edit Form — Backend Fields ✅ *(merged into Phase 4)*
 > _Fully covered by Phase 4 build items 4.1–4.11 and gate tests 4.T1–4.T16. No separate work needed._
 
+### 10G-B. Form Feature Gaps (UptimeRobot Benchmark) ✅
+
+> **Context:** Competitive benchmark against UptimeRobot identified 3 high-ROI functional gaps in our Add/Edit forms. See `UPTIMEROBOT_BENCHMARK.md` for the full analysis.
+>
+> **Files to change:**
+> | File | What Changes |
+> |------|-------------|
+> | `app/templates/add_monitor.html` | Bearer auth option, request body textarea, custom headers builder |
+> | `app/templates/edit_monitor.html` | Same as above + preserve existing values |
+> | `app/services/checker.py` | Bearer token header, request body + content-type, custom headers merge |
+> | `app/routers/pages.py` | Parse new form fields on POST |
+> | `app/models/monitor.py` | New fields: `auth_type`, `bearer_token`, `request_body`, `request_content_type`, `custom_headers` |
+
+- [x] **10G-B.1** **Bearer/Token auth for HTTP monitors** — expand auth type dropdown to `None` / `Basic Auth` / `Bearer Token`, add token input field, wire backend (`checker.py` sends `Authorization: Bearer <token>` header). Apply to both Add + Edit forms.
+- [x] **10G-B.2** **Request body for POST/PUT/PATCH** — show textarea + Content-Type selector (`application/json` / `text/plain` / `application/x-www-form-urlencoded`) when method is POST/PUT/PATCH/DELETE. Wire backend (`checker.py` sends body with content-type). Apply to both Add + Edit forms.
+- [x] **10G-B.3** **Custom request headers (Pro)** — key-value builder in Advanced Settings (same pattern as JSON assertions builder). Store as `custom_headers: [{key, value}, ...]` on monitor doc. Checker merges into headers dict. Pro-gated with upgrade CTA for Free users. Apply to both Add + Edit forms.
+
+#### ✅ 10G-B Gate Tests
+- [x] **10G-B.T1** Create HTTP monitor with Bearer auth → checker sends `Authorization: Bearer <token>` header → monitor works
+- [x] **10G-B.T2** Create HTTP monitor with POST method + JSON body → checker sends body with correct Content-Type → monitor works
+- [x] **10G-B.T3** Create HTTP monitor with custom headers (Pro) → checker sends headers → monitor works
+- [x] **10G-B.T4** Edit existing monitor, add Bearer auth → save → re-edit → token value preserved
+- [x] **10G-B.T5** Edit existing monitor, add request body → save → re-edit → body + content-type preserved
+- [x] **10G-B.T6** Free user sees custom headers section as Pro-gated (greyed out + upgrade CTA)
+
 ### 10F. Pro Upsell Polish 🔲
 - [ ] Check interval badge on dashboard rows: "⏱ 5min" for Free with tooltip "Upgrade for 60s →"
 - [ ] Greyed Pro-only columns with lock 🔒 icon
@@ -927,12 +952,13 @@ Layout order (top to bottom):
 | 9 | Phase 9: Dashboard E2E QA | ✅ |
 | 10 | Phase 10: Checker Scale Hardening | ✅ |
 | 11 | 10B: GitHub OAuth | 🔲 |
-| 12 | 10F: Pro upsell polish | 🔲 |
-| 13 | 11B: Activity log | 🔲 |
-| 14 | 11C: Hardening | 🔲 |
-| 15 | 11E: API & API Docs QA | 🔲 |
-| 16 | 11D: Admin dashboard | 🔲 |
-| 17 | Day 12: Testing & launch | 🔲 |
+| 12 | 10G-B: Form Feature Gaps (Bearer auth, request body, custom headers) | ✅ |
+| 13 | 10F: Pro upsell polish | 🔲 |
+| 14 | 11B: Activity log | 🔲 |
+| 15 | 11C: Hardening | 🔲 |
+| 16 | 11E: API & API Docs QA | 🔲 |
+| 17 | 11D: Admin dashboard | 🔲 |
+| 18 | Day 12: Testing & launch | 🔲 |
 
 **Work through Phases 1–9 sequentially. Run every Gate test before moving to the next Phase. Do not skip ahead.**
 
@@ -954,6 +980,7 @@ Layout order (top to bottom):
 
 ## Reference Documents (archived — content merged here)
 - `COMPETITIVE_AUDIT.md` — full UptimeRobot page-by-page comparison
+- `UPTIMEROBOT_BENCHMARK.md` — UptimeRobot form benchmark: feature gap analysis + action plan for 10G-B
 - `ACTION_PLAN.md` — original Day 10 workstream plan (superseded)
 - `DASHBOARD_REDESIGN.md` — original dashboard redesign plan (superseded)
 - `UI_REDESIGN.md` — original form + dashboard redesign checklist (superseded — merged into this tracker)
