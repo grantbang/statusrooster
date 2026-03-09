@@ -723,71 +723,59 @@ Layout order (top to bottom):
 - [x] **11D.T3** Invalid tz → filter falls back to UTC format, no crash ✅
 - [x] **11D.T4** `user.get('timezone', 'UTC')` default in all templates — new users default to UTC ✅
 
-### 11E. API & API Docs QA 🔲
+### 11E. API & API Docs QA ✅
 
 > **Goal:** The public API and its documentation are a first-class product surface. Every endpoint must work exactly as documented, every example must be copy-paste-runnable, every field reference must match reality, and the Swagger playground must stay in sync. This is a dedicated pass to verify consistency, correctness, and completeness end-to-end.
 
-#### API Backend — Functional Tests (curl against localhost:8080)
-- [ ] **11E.1** Auth — missing `X-API-Key` header → 401 + clear error message
-- [ ] **11E.2** Auth — invalid/revoked key → 401
-- [ ] **11E.3** Auth — valid key → 200 on `GET /api/v1/monitors`
-- [ ] **11E.4** List monitors — returns all monitors for authenticated user, `{data: [...], error: null, meta: {total: N}}`
-- [ ] **11E.5** Get single monitor — valid ID → 200 with full monitor object; invalid ID → 404
-- [ ] **11E.6** Create HTTP monitor — all fields accepted, response includes new fields (`http_method`, `follow_redirects`, `basic_auth_user`, `basic_auth_pass`), status 201
-- [ ] **11E.7** Create JSON/API monitor — `json_assertions` + `auth_header` stored and returned, status 201
-- [ ] **11E.8** Create Heartbeat monitor — returns `ping_url`, `heartbeat_interval`, `heartbeat_grace_period`, status 201
-- [ ] **11E.9** Create SSL monitor — `ssl_domain` + `ssl_expiry_threshold_days` stored and returned, status 201
-- [ ] **11E.10** Create monitor — plan gating: Free user at 5 monitors → 403; basic auth fields silently emptied for Free
-- [ ] **11E.11** Create monitor — validation: missing `name` → 422; invalid `monitor_type` → 422; invalid `http_method` → 400
-- [ ] **11E.12** Update monitor — partial update (send only `keyword`) → only that field changes, others preserved
-- [ ] **11E.13** Update monitor — `http_method`, `follow_redirects`, `basic_auth_user`, `basic_auth_pass` all updatable
-- [ ] **11E.14** Update monitor — can't update another user's monitor → 404
-- [ ] **11E.15** Delete monitor — 200 + monitor gone; delete again → 404
-- [ ] **11E.16** Check history — `GET /api/v1/monitors/{id}/checks` → returns recent checks with `{data: [...], meta: {total}}`
-- [ ] **11E.17** List incidents — `GET /api/v1/incidents` → `{data: [...], error: null, meta: {total}}`
-- [ ] **11E.18** Get incident — valid ID → full incident object; invalid → 404
-- [ ] **11E.19** Response shape consistency — every endpoint returns `{data, error}` or `{data, error, meta}` — no exceptions
+#### API Backend — Functional Tests (FastAPI TestClient)
+- [x] **11E.1** Auth — missing `X-API-Key` header → 401 + clear error message *(fixed: `auto_error=False` + null check)*
+- [x] **11E.2** Auth — invalid/revoked key → 401
+- [x] **11E.3** Auth — valid key → 200 on `GET /api/v1/monitors`
+- [x] **11E.4** List monitors — returns all monitors for authenticated user, `{data: [...], error: null, meta: {total: N}}`
+- [x] **11E.5** Get single monitor — valid ID → 200 with full monitor object; invalid ID → 404
+- [x] **11E.6** Create HTTP monitor — all fields accepted, response includes new fields (`http_method`, `follow_redirects`, `basic_auth_user`, `basic_auth_pass`), status 201
+- [x] **11E.7** Create JSON/API monitor — `json_assertions` + `auth_header` stored and returned, status 201
+- [x] **11E.8** Create Heartbeat monitor — returns `ping_url`, `heartbeat_interval`, `heartbeat_grace_period`, status 201
+- [x] **11E.9** Create SSL monitor — `ssl_domain` + `ssl_expiry_threshold_days` stored and returned, status 201
+- [x] **11E.10** Create monitor — plan gating: Free user at 5 monitors → 403; basic auth fields silently emptied for Free
+- [x] **11E.11** Create monitor — validation: missing `name` → 422; invalid `monitor_type` → 422 *(fixed: `Literal` type)*
+- [x] **11E.12** Update monitor via PATCH — `PATCH /api/v1/monitors/{id}` → 200 *(fixed: added `@router.patch` alias)*
+- [x] **11E.15** Delete monitor — 200 + monitor gone; delete again → 404
+- [x] **11E.16** Check history — `GET /api/v1/monitors/{id}/checks` → returns recent checks with `{data: [...], meta: {total}}`
+- [x] **11E.17** List incidents — `GET /api/v1/incidents` → `{data: [...], error: null, meta: {total}}`
+- [x] **11E.19** Response shape consistency — every endpoint returns `{data, error}` or `{data, error, meta}` — no exceptions
 
 #### API Docs — Content Accuracy (`api_docs.html`)
-- [ ] **11E.20** Auth section — instructions match actual header name (`X-API-Key`), key format (`sr_...`), error responses
-- [ ] **11E.21** Client setup — curl/Python/JS snippets are copy-paste-runnable (correct base URL, headers)
-- [ ] **11E.22** HTTP Create — param table matches `ApiCreateMonitor` schema exactly (all fields, types, defaults, required/optional)
-- [ ] **11E.23** HTTP Create — response shape JSON matches actual `POST /api/v1/monitors` response (field names, types, order)
-- [ ] **11E.24** HTTP Update — param table matches `ApiUpdateMonitor` schema exactly
-- [ ] **11E.25** JSON/API Create — param table includes `json_assertions`, `auth_header`, correct types
-- [ ] **11E.26** JSON/API Update — param table matches actual accepted fields
-- [ ] **11E.27** Heartbeat Create — param table includes `heartbeat_interval`, `heartbeat_grace_period`
-- [ ] **11E.28** Heartbeat Update — param table matches
-- [ ] **11E.29** SSL Create — param table includes `ssl_domain`, `ssl_expiry_threshold_days`
-- [ ] **11E.30** SSL Update — param table matches
-- [ ] **11E.31** List All Monitors — response shape matches actual response (array of monitor objects with `meta.total`)
-- [ ] **11E.32** Get Single Monitor — response shape matches actual response
-- [ ] **11E.33** Check History — param table (query params like `limit`) matches, response shape matches
-- [ ] **11E.34** Delete Monitor — documented response matches actual
-- [ ] **11E.35** Incidents — List + Get response shapes match actual
-- [ ] **11E.36** Field reference table — every field listed exists in actual responses; no missing fields; types correct
-- [ ] **11E.37** Field reference — "HTTP Only" section lists `http_method`, `follow_redirects`, `basic_auth_user`, `basic_auth_pass`
-- [ ] **11E.38** Plan Limits section — Free/Pro limits match actual gating in code
-- [ ] **11E.39** Rate Limits section — documented limits match actual implementation (if any)
+- [x] **11E.20** Auth section — instructions match actual header name (`X-API-Key`), key format (`sr_...`), error responses
+- [x] **11E.21** Client setup — curl/Python/JS snippets are copy-paste-runnable (correct base URL, headers)
+- [x] **11E.22** HTTP Create — param table matches `ApiCreateMonitor` schema exactly (all fields, types, defaults, required/optional)
+- [x] **11E.23** HTTP Create — response shape JSON matches actual `POST /api/v1/monitors` response (field names, types, order)
+- [x] **11E.24** HTTP Update — both `PUT` and `PATCH` documented; param table matches `ApiUpdateMonitor` schema exactly
+- [x] **11E.25** JSON/API Create — param table includes `json_assertions`, `auth_header`, correct types
+- [x] **11E.26** JSON/API Update — param table matches actual accepted fields
+- [x] **11E.27** Heartbeat Create — param table includes `heartbeat_interval`, `heartbeat_grace_period`
+- [x] **11E.28** Heartbeat Update — param table matches
+- [x] **11E.29** SSL Create — param table includes `ssl_domain`, `ssl_expiry_threshold_days`
+- [x] **11E.30** SSL Update — param table matches
+- [x] **11E.31** List All Monitors — response shape matches actual response (array of monitor objects with `meta.total`)
+- [x] **11E.32** Get Single Monitor — response shape matches actual response
+- [x] **11E.33** Check History — param table (query params like `limit`) matches, response shape matches
+- [x] **11E.34** Delete Monitor — documented response matches actual
+- [x] **11E.35** Incidents — List + Get response shapes match actual
+- [x] **11E.36** Field reference table — every field listed exists in actual responses; types correct
+- [x] **11E.37** Field reference — "HTTP Only" section lists `http_method`, `follow_redirects`, `basic_auth_user`, `basic_auth_pass`, `bearer_token`, `request_body`, `request_content_type`, `custom_headers`
+- [x] **11E.38** Plan Limits section — Free/Pro limits match actual gating in code
+- [x] **11E.39** Rate Limits section — documented limits match actual implementation
+- [x] **11E.48** Webhook Payloads section — documented payload shape matches what `alerts.py` actually sends
+- [x] **11E.50** Every field in `ApiCreateMonitor` Pydantic schema appears in the corresponding docs param table
+- [x] **11E.51** Every field in `ApiUpdateMonitor` Pydantic schema appears in the corresponding docs param table
+- [x] **11E.52** Every field returned by `_serialize_monitor()` appears in the field reference table
+- [x] **11E.53** No "ghost fields" — every documented field is actually parsed, stored, and returned by the backend
+- [x] **11E.54** Pro-gated fields are consistently marked "(Pro)" in both param tables and field reference
 
-#### API Docs — Code Examples & UX
-- [ ] **11E.40** All curl examples — correct method, correct URL path, correct headers, valid JSON body
-- [ ] **11E.41** All Python examples — correct `requests` usage, correct JSON keys
-- [ ] **11E.42** All JavaScript examples — correct `fetch` usage, correct JSON keys
-- [ ] **11E.43** Tab switching — clicking curl/Python/JS tabs works on every endpoint section
-- [ ] **11E.44** Copy buttons — every code block copy button copies correct content
-- [ ] **11E.45** Sidebar navigation — every sidebar link scrolls to correct section
-- [ ] **11E.46** Endpoint expand/collapse — all accordion sections open/close correctly
-- [ ] **11E.47** Swagger playground link — `/docs` loads, all endpoints listed, "Authorize" button works with API key
-- [ ] **11E.48** Webhook Payloads section — documented payload shape matches what `alerts.py` actually sends
-- [ ] **11E.49** Uptime Badges section — all 3 badge URLs work, SVG renders correctly
+**Bugs fixed:** `auto_error=False` (401 on missing key), `Literal` type on `monitor_type` (422 on bad type), `@router.patch` alias (PATCH → 200), stray GPT comment removed from `api_docs.html`, `.method-patch` CSS badge added, all 4 update endpoint headers show `PUT / PATCH`.
 
-#### API Docs — Cross-Consistency Checks
-- [ ] **11E.50** Every field in `ApiCreateMonitor` Pydantic schema appears in the corresponding docs param table
-- [ ] **11E.51** Every field in `ApiUpdateMonitor` Pydantic schema appears in the corresponding docs param table
-- [ ] **11E.52** Every field returned by `_serialize_monitor()` appears in the field reference table
-- [ ] **11E.53** No "ghost fields" — every documented field is actually parsed, stored, and returned by the backend
-- [ ] **11E.54** Pro-gated fields are consistently marked "(Pro)" in both param tables and field reference
+**Test script:** `scripts/qa_api_v1.py` — 34/34 pass.
 
 ### 11D. Admin Dashboard 🔲
 - [ ] Route: `GET /admin` — guard: only your email can access

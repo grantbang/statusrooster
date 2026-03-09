@@ -6,7 +6,7 @@ All responses follow: {data, error, meta}
 
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import APIKeyHeader
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, field_validator
 from typing import Literal
 from app.database import get_db
 from app.models.api_key import get_user_by_api_key
@@ -25,19 +25,19 @@ FREE_MONITOR_LIMIT = 5
 PRO_MONITOR_LIMIT = 250
 
 # Security scheme — tells Swagger to show an "Authorize" button + lock icons
-api_key_header = APIKeyHeader(name="X-API-Key", description="Your StatusRooster API key (starts with sr_)")
+api_key_header = APIKeyHeader(name="X-API-Key", description="Your StatusRooster API key (starts with sr_)", auto_error=False)
 
 
 # ─── Auth dependency ────────────────────────────────────────────────
 
-async def get_api_user(api_key: str = Depends(api_key_header)) -> dict:
+async def get_api_user(api_key: str | None = Depends(api_key_header)) -> dict:
     """Authenticate via X-API-Key header."""
-    api_key = api_key.strip()
-    if not api_key:
+    if not api_key or not api_key.strip():
         raise HTTPException(
             status_code=401,
             detail="Missing API key. Pass your key in the X-API-Key header.",
         )
+    api_key = api_key.strip()
     db = get_db()
     user = get_user_by_api_key(db, api_key)
     if not user:
@@ -246,7 +246,7 @@ class ApiCreateMonitor(BaseModel):
     paused: bool = False
     check_interval: int | None = None
     maintenance_windows: list[MaintenanceWindow] | None = None
-    monitor_type: str = "http"          # "http" | "heartbeat" | "json_api" | "ssl"
+    monitor_type: Literal["http", "json_api", "heartbeat", "ssl"] = "http"
     heartbeat_interval: int | None = None
     heartbeat_grace_period: int | None = None
     expected_status_code: int | None = None
@@ -386,6 +386,7 @@ class ApiUpdateMonitor(BaseModel):
 
 
 @router.put("/monitors/{monitor_id}")
+@router.patch("/monitors/{monitor_id}")
 async def api_update_monitor(
     monitor_id: str,
     req: ApiUpdateMonitor,

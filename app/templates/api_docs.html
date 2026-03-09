@@ -28,7 +28,7 @@
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <!--  SIDEBAR + MAIN LAYOUT                                        -->
-<!-- ════════════════════════from an API perpsective - do you think we're solid here for what we're going for - uptime robot has other things - but we're not trying to be them? see attached═══════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="api-layout">
 
 <!-- ─── Left Navigation ─────────────────────────────────────────── -->
@@ -337,13 +337,13 @@ console.log(<span class="code-string">`Created ${data.id}`</span>);</div>
     <div class="api-section">
         <div class="endpoint" id="ep-update-http">
             <div class="endpoint-header" onclick="toggleEndpoint('ep-update-http')">
-                <span class="method-badge method-put">PUT</span>
+                <span class="method-badge method-put">PUT</span> <span class="method-badge method-patch">PATCH</span>
                 <span class="endpoint-path">/api/v1/monitors/{id}</span>
                 <span class="endpoint-desc">Update HTTP monitor</span>
                 <span class="chevron">&#9654;</span>
             </div>
             <div class="endpoint-body">
-                <p>Partial update — include only the fields you want to change. Omitted fields are preserved.</p>
+                <p>Partial update — include only the fields you want to change. Omitted fields are preserved. Both <code>PUT</code> and <code>PATCH</code> are accepted and behave identically.</p>
 
                 <table class="param-table">
                     <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -567,13 +567,13 @@ print(f<span class="code-string">"Created {monitor['id']}"</span>)</div>
     <div class="api-section">
         <div class="endpoint" id="ep-update-json">
             <div class="endpoint-header" onclick="toggleEndpoint('ep-update-json')">
-                <span class="method-badge method-put">PUT</span>
+                <span class="method-badge method-put">PUT</span> <span class="method-badge method-patch">PATCH</span>
                 <span class="endpoint-path">/api/v1/monitors/{id}</span>
                 <span class="endpoint-desc">Update JSON/API monitor</span>
                 <span class="chevron">&#9654;</span>
             </div>
             <div class="endpoint-body">
-                <p>Partial update — include only the fields you want to change. Omitted fields are preserved.</p>
+                <p>Partial update — include only the fields you want to change. Omitted fields are preserved. Both <code>PUT</code> and <code>PATCH</code> are accepted and behave identically.</p>
 
                 <table class="param-table">
                     <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -812,13 +812,13 @@ requests.get(<span class="code-string">"{{ app_url }}/api/ping/hb_abc789"</span>
     <div class="api-section">
         <div class="endpoint" id="ep-update-heartbeat">
             <div class="endpoint-header" onclick="toggleEndpoint('ep-update-heartbeat')">
-                <span class="method-badge method-put">PUT</span>
+                <span class="method-badge method-put">PUT</span> <span class="method-badge method-patch">PATCH</span>
                 <span class="endpoint-path">/api/v1/monitors/{id}</span>
                 <span class="endpoint-desc">Update heartbeat monitor</span>
                 <span class="chevron">&#9654;</span>
             </div>
             <div class="endpoint-body">
-                <p>Partial update — include only the fields you want to change. Omitted fields are preserved.</p>
+                <p>Partial update — include only the fields you want to change. Omitted fields are preserved. Both <code>PUT</code> and <code>PATCH</code> are accepted and behave identically.</p>
 
                 <table class="param-table">
                     <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -996,13 +996,13 @@ print(f<span class="code-string">"SSL monitor: {monitor['id']}"</span>)</div>
     <div class="api-section">
         <div class="endpoint" id="ep-update-ssl">
             <div class="endpoint-header" onclick="toggleEndpoint('ep-update-ssl')">
-                <span class="method-badge method-put">PUT</span>
+                <span class="method-badge method-put">PUT</span> <span class="method-badge method-patch">PATCH</span>
                 <span class="endpoint-path">/api/v1/monitors/{id}</span>
                 <span class="endpoint-desc">Update SSL monitor</span>
                 <span class="chevron">&#9654;</span>
             </div>
             <div class="endpoint-body">
-                <p>Partial update — include only the fields you want to change. Omitted fields are preserved.</p>
+                <p>Partial update — include only the fields you want to change. Omitted fields are preserved. Both <code>PUT</code> and <code>PATCH</code> are accepted and behave identically.</p>
 
                 <table class="param-table">
                     <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
