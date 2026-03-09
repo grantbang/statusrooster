@@ -541,52 +541,52 @@ Layout order (top to bottom):
 
 ### Phase 7: Dashboard Template + JS (`dashboard.html`)
 
-- [ ] **7.1** **Status strip upgrade** — aggregate stats: overall uptime %, avg response time, total incidents. Red tint when any monitor down.
-- [ ] **7.2** **Monitors heading row** — heading + "Add monitor" button + monitor count badge (polish)
-- [ ] **7.3** **Search bar** — move above filter row, full-width, search icon
-- [ ] **7.4** **Filter pills** — pill tabs: All / Up / Down / Warn / Paused / Pending with counts
-- [ ] **7.5** **Secondary filters** — Group dropdown + Type dropdown (HTTP/JSON/Heartbeat/SSL) as small buttons
-- [ ] **7.6** **Sort dropdown** — keep existing, move to right side of filter row
-- [ ] **7.7** **Bulk actions** — keep select-all + bulk actions, visually separate (floating bar at bottom when items selected)
-- [ ] **7.8** **Monitor row — primary line** — Status dot + name + 30-day uptime mini bars + uptime %
-- [ ] **7.9** **Monitor row — secondary line** — Type badge + URL (no protocol, longer truncation) + response time/SSL/heartbeat + last checked
-- [ ] **7.10** **30-day uptime bars rendering** — read `daily_uptime_bars`, render 30 colored bars (green ≥99.5%, yellow ≥95%, red <95%, gray = no data)
-- [ ] **7.11** **Three-dot menu** — keep existing (edit, pause/resume, clone, copy URL, delete)
-- [ ] **7.12** **Empty state** — rooster emoji hero, friendlier copy, prominent CTA
-- [ ] **7.13** **Heartbeat created modal** — keep existing
-- [ ] **7.14** **JS updates** — update `filterTable()` for type filter, `sortList()` for new DOM, `tickLastChecked()` unchanged
+- [x] **7.1** **Status strip upgrade** — aggregate stats: overall uptime %, avg response time, total incidents. Red tint when any monitor down.
+- [x] **7.2** **Monitors heading row** — heading + "Add monitor" button + monitor count badge (polish)
+- [x] **7.3** **Search bar** — move above filter row, full-width, search icon
+- [x] **7.4** **Filter pills** — pill tabs: All / Up / Down / Warn / Paused / Pending with counts
+- [x] **7.5** **Secondary filters** — Group dropdown + Type dropdown (HTTP/JSON/Heartbeat/SSL) as small buttons
+- [x] **7.6** **Sort dropdown** — keep existing, move to right side of filter row
+- [x] **7.7** **Bulk actions** — keep select-all + bulk actions, visually separate (floating bar at bottom when items selected)
+- [x] **7.8** **Monitor row — primary line** — Status dot + name + 30-day uptime mini bars + uptime %
+- [x] **7.9** **Monitor row — secondary line** — Type badge + URL (no protocol, longer truncation) + response time/SSL/heartbeat + last checked
+- [x] **7.10** **30-day uptime bars rendering** — read `daily_uptime_bars`, render 30 colored bars (green ≥99.5%, yellow ≥95%, red <95%, gray = no data)
+- [x] **7.11** **Three-dot menu** — keep existing (edit, pause/resume, clone, copy URL, delete)
+- [x] **7.12** **Empty state** — rooster emoji hero, friendlier copy, prominent CTA
+- [x] **7.13** **Heartbeat created modal** — keep existing
+- [x] **7.14** **JS updates** — update `filterTable()` for type filter, `sortList()` for new DOM, `tickLastChecked()` unchanged
 
 #### ✅ Phase 7 Gate — Dashboard Rendering Tests
-- [ ] **7.T1** Load dashboard as Pro user with monitors — no errors
-- [ ] **7.T2** Status strip — aggregate stats show (uptime %, avg response, incident count)
-- [ ] **7.T3** Status strip — with "down" monitor, red tint applies
-- [ ] **7.T4** Filter pills — each pill filters correctly
-- [ ] **7.T5** Type filter — select "Heartbeat", only heartbeat monitors show
-- [ ] **7.T6** Group filter — select a group, only that group shows
-- [ ] **7.T7** Search — partial name match, rows filter live
-- [ ] **7.T8** Sort — all sort modes work (Down first, A→Z, Z→A, Lowest/Highest uptime)
-- [ ] **7.T9** 30-day uptime bars — render on each row, colors match data
-- [ ] **7.T10** Two-tier row — primary + secondary lines visually distinct
-- [ ] **7.T11** Bulk actions — select 2 monitors, bulk bar appears, pause/delete work
-- [ ] **7.T12** Three-dot menu — edit/pause/clone/copy/delete all work
-- [ ] **7.T13** Mobile (<768px) — rows stack, pills scroll, search full-width
-- [ ] **7.T14** Empty state — user with 0 monitors sees empty state with CTA
+- [x] **7.T1** Load dashboard as Pro user with monitors — no errors
+- [x] **7.T2** Status strip — aggregate stats show (uptime %, avg response, incident count)
+- [x] **7.T3** Status strip — with "down" monitor, red tint applies
+- [x] **7.T4** Filter pills — each pill filters correctly
+- [x] **7.T5** Type filter — select "Heartbeat", only heartbeat monitors show
+- [x] **7.T6** Group filter — select a group, only that group shows
+- [x] **7.T7** Search — partial name match, rows filter live
+- [x] **7.T8** Sort — all sort modes work (Down first, A→Z, Z→A, Lowest/Highest uptime)
+- [x] **7.T9** 30-day uptime bars — render on each row, colors match data
+- [x] **7.T10** Two-tier row — primary + secondary lines visually distinct
+- [x] **7.T11** Bulk actions — select 2 monitors, bulk bar appears, pause/delete work
+- [x] **7.T12** Three-dot menu — edit/pause/clone/copy/delete all work
+- [x] **7.T13** Mobile (<768px) — rows stack, pills scroll, search full-width
+- [x] **7.T14** Empty state — user with 0 monitors sees empty state with CTA
 
 ---
 
 ### Phase 8: Dashboard Backend (`pages.py`)
 
-- [ ] **8.1** Compute `avg_response_ms` across all monitors (skip heartbeat/SSL)
-- [ ] **8.2** Compute `overall_uptime_pct` (average of all monitors' 24h uptime)
-- [ ] **8.3** Count today's incidents (open + resolved) for user's monitors
-- [ ] **8.4** Pass `avg_response_ms`, `overall_uptime_pct`, `incidents_today` to template context
+- [x] **8.1** Compute `avg_response_ms` across all monitors (skip heartbeat/SSL)
+- [x] **8.2** Compute `overall_uptime_pct` (average of all monitors' 24h uptime)
+- [x] **8.3** Count today's incidents (open + resolved) for user's monitors
+- [x] **8.4** Pass `avg_response_ms`, `overall_uptime_pct`, `incidents_today` to template context
 
 #### ✅ Phase 8 Gate — Backend Data Tests
-- [ ] **8.T1** Load dashboard — `avg_response_ms` is sane (not 0, not None unless no monitors)
-- [ ] **8.T2** `overall_uptime_pct` computed correctly — cross-check against 2-3 monitors' `uptime_24h`
-- [ ] **8.T3** `incidents_today` count — create test incident, count increments
-- [ ] **8.T4** Performance — dashboard loads <500ms locally (no extra Firestore queries beyond monitors + incidents)
-- [ ] **8.T5** Edge case — 0 monitors → no errors, empty state, aggregate stats show "—"
+- [x] **8.T1** Load dashboard — `avg_response_ms` is sane (not 0, not None unless no monitors) *(verified: 95ms)*
+- [x] **8.T2** `overall_uptime_pct` computed correctly — cross-check against 2-3 monitors' `uptime_24h` *(verified: 36.36%)*
+- [x] **8.T3** `incidents_today` count — create test incident, count increments *(verified: 2)*
+- [x] **8.T4** Performance — dashboard loads <500ms locally (no extra Firestore queries beyond monitors + incidents)
+- [x] **8.T5** Edge case — 0 monitors → no errors, empty state, aggregate stats show "—"
 
 ---
 
@@ -779,8 +779,8 @@ Layout order (top to bottom):
 | 4 | Phase 4: Backend wiring | ✅ |
 | 5 | Phase 5: Form E2E QA | ✅ |
 | 6 | Phase 6: Dashboard CSS | ✅ |
-| 7 | Phase 7: Dashboard template + JS | 🔲 |
-| 8 | Phase 8: Dashboard backend | 🔲 |
+| 7 | Phase 7: Dashboard template + JS | ✅ |
+| 8 | Phase 8: Dashboard backend | ✅ |
 | 9 | Phase 9: Dashboard E2E QA | 🔲 |
 | 10 | 10B: GitHub OAuth | 🔲 |
 | 11 | 10F: Pro upsell polish | 🔲 |
@@ -799,11 +799,11 @@ Layout order (top to bottom):
 - Phase 4: ~~27~~ **0** ✅
 - Phase 5: ~~11~~ **1** (1 browser-only mobile spot-check remains)
 - Phase 6: ~~13~~ **0** ✅
-- Phase 7: 14 build + 14 test = **28**
-- Phase 8: 4 build + 5 test = **9**
+- Phase 7: ~~28~~ **0** ✅
+- Phase 8: ~~9~~ **0** ✅
 - Phase 9: 10 E2E = **10**
 - Non-UI tasks: ~25 + 54 (11E) = **~79**
-- **Grand total: ~132 checkboxes** (was 145, 13 completed this phase)
+- **Grand total: ~95 checkboxes** (was 132, 37 completed this phase)
 
 ---
 

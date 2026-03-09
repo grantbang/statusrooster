@@ -281,6 +281,23 @@ async def dashboard(request: Request):
         up = sum(b.get("up", 0) for b in hbars)
         m["uptime_24h"] = round((up / total) * 100, 2) if total > 0 else None
 
+    # ---------- Aggregate stats for status strip ----------
+    # Compute avg response time (skip heartbeat/SSL — they don't have meaningful response_ms)
+    response_monitors = [m for m in monitors if m.get("monitor_type") in ("http", "json_api") and m.get("last_response_ms")]
+    avg_response_ms = round(sum(m["last_response_ms"] for m in response_monitors) / len(response_monitors)) if response_monitors else None
+
+    # Compute overall uptime % (average of all monitors' 24h uptime)
+    uptime_vals = [m["uptime_24h"] for m in monitors if m.get("uptime_24h") is not None]
+    overall_uptime_pct = round(sum(uptime_vals) / len(uptime_vals), 2) if uptime_vals else None
+
+    # Count today's incidents — use lightweight query with small limit
+    try:
+        monitor_ids = [m["id"] for m in monitors]
+        all_incidents = list_incidents_by_user(db, monitor_ids, hours=24, limit=50)
+        incidents_today = len(all_incidents)
+    except Exception:
+        incidents_today = 0
+
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
         "user": user,
@@ -288,6 +305,9 @@ async def dashboard(request: Request):
         "flash_message": flash_message,
         "flash_type": flash_type,
         "group_names": group_names,
+        "avg_response_ms": avg_response_ms,
+        "overall_uptime_pct": overall_uptime_pct,
+        "incidents_today": incidents_today,
     })
 
 

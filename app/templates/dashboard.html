@@ -32,7 +32,7 @@
 {% endfor %}
 
 <!-- ═══════════════ Hero Status Strip ═══════════════ -->
-<div class="status-strip">
+<div class="status-strip {% if ns.down > 0 %}d-status-strip-alert{% elif ns.warn > 0 %}d-status-strip-warn{% endif %}">
     <div class="strip-left">
         <div class="strip-status-dot {% if ns.down > 0 %}strip-dot-down{% elif ns.warn > 0 %}strip-dot-warn{% else %}strip-dot-up{% endif %}"></div>
         <div class="strip-status-text">
@@ -45,47 +45,51 @@
             {% endif %}
         </div>
     </div>
-    <div class="strip-counts">
-        <div class="strip-count-pill strip-count-up">
-            <span class="strip-count-dot dot-up"></span>
-            <span class="strip-count-value">{{ ns.up }}</span>
-            <span class="strip-count-label">Up</span>
+    <div class="d-agg-stats">
+        <div class="d-agg-stat">
+            <span class="d-agg-stat-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </span>
+            <span class="d-agg-stat-value">{{ overall_uptime_pct if overall_uptime_pct is not none else '—' }}{% if overall_uptime_pct is not none %}%{% endif %}</span>
+            <span class="d-agg-stat-label">uptime</span>
         </div>
-        <div class="strip-count-pill strip-count-down">
-            <span class="strip-count-dot dot-down"></span>
-            <span class="strip-count-value">{{ ns.down }}</span>
-            <span class="strip-count-label">Down</span>
+        <div class="d-agg-stat">
+            <span class="d-agg-stat-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </span>
+            <span class="d-agg-stat-value">{{ avg_response_ms if avg_response_ms is not none else '—' }}{% if avg_response_ms is not none %}ms{% endif %}</span>
+            <span class="d-agg-stat-label">avg response</span>
         </div>
-        {% if ns.warn > 0 %}
-        <div class="strip-count-pill strip-count-warn">
-            <span class="strip-count-dot dot-warn"></span>
-            <span class="strip-count-value">{{ ns.warn }}</span>
-            <span class="strip-count-label">Warn</span>
-        </div>
-        {% endif %}
-        <div class="strip-count-pill strip-count-paused">
-            <span class="strip-count-dot dot-paused"></span>
-            <span class="strip-count-value">{{ ns.paused }}</span>
-            <span class="strip-count-label">Paused</span>
-        </div>
-        <div class="strip-count-pill strip-count-pending">
-            <span class="strip-count-dot dot-pending"></span>
-            <span class="strip-count-value">{{ ns.pending }}</span>
-            <span class="strip-count-label">Pending</span>
+        <div class="d-agg-stat">
+            <span class="d-agg-stat-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </span>
+            <span class="d-agg-stat-value">{{ incidents_today if incidents_today is not none else '0' }}</span>
+            <span class="d-agg-stat-label">incidents today</span>
         </div>
     </div>
 </div>
+
+<!-- ═══════════════ Monitors Heading Row ═══════════════ -->
 <div class="monitors-heading">
-    <h2>Monitors<span class="heading-dot">.</span></h2>
+    <h2>Monitors<span class="heading-dot">.</span> <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted); vertical-align: middle;">{{ monitors | length }}</span></h2>
     <a href="/monitors/add" class="btn btn-primary btn-new" style="text-decoration:none;">+ Add monitor</a>
 </div>
 
-<!-- Toolbar: Search, Filter, Sort -->
+<!-- ═══════════════ Search Bar ═══════════════ -->
+<div style="margin-bottom: 0.75rem;">
+    <div style="position: relative;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); pointer-events: none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="monitorSearch" class="toolbar-search" placeholder="Search monitors…" oninput="filterTable(); updateAppliedFilters();" style="width: 100%; padding-left: 2.25rem; box-sizing: border-box;">
+    </div>
+</div>
+
+<!-- ═══════════════ Filter Row ═══════════════ -->
 <div class="table-toolbar">
-    <div class="toolbar-left">
+    <div class="toolbar-left" style="flex:1; gap: 0.5rem;">
+        <!-- Select All + Bulk -->
         <div class="toolbar-select-wrap">
             <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" title="Select all">
-            <span class="toolbar-select-count" id="selectCount">0 / {{ monitors | length }}</span>
         </div>
         <div class="toolbar-dropdown" id="bulkDropdownWrap" style="display:none;">
             <button class="btn btn-secondary btn-sm bulk-actions-btn" onclick="toggleDropdown('bulkDropdown')">
@@ -106,32 +110,50 @@
                 </button>
             </div>
         </div>
-        <input type="text" id="monitorSearch" class="toolbar-search" placeholder="Search by name or url" oninput="filterTable()">
+
+        <!-- Filter Pills -->
+        <div class="d-filter-pills">
+            <button class="d-filter-pill active" data-filter="all" onclick="setPillFilter('all', this)">All <span class="pill-count">{{ monitors | length }}</span></button>
+            <button class="d-filter-pill" data-filter="up" onclick="setPillFilter('up', this)"><span class="pill-dot" style="background:var(--success);"></span> Up <span class="pill-count">{{ ns.up }}</span></button>
+            <button class="d-filter-pill" data-filter="down" onclick="setPillFilter('down', this)"><span class="pill-dot" style="background:var(--danger);"></span> Down <span class="pill-count">{{ ns.down }}</span></button>
+            {% if ns.warn > 0 %}
+            <button class="d-filter-pill" data-filter="warn" onclick="setPillFilter('warn', this)"><span class="pill-dot" style="background:var(--warning);"></span> Warn <span class="pill-count">{{ ns.warn }}</span></button>
+            {% endif %}
+            <button class="d-filter-pill" data-filter="paused" onclick="setPillFilter('paused', this)"><span class="pill-dot" style="background:#9ca3af;"></span> Paused <span class="pill-count">{{ ns.paused }}</span></button>
+            <button class="d-filter-pill" data-filter="pending" onclick="setPillFilter('pending', this)"><span class="pill-dot" style="background:#d1d5db;"></span> Pending <span class="pill-count">{{ ns.pending }}</span></button>
+        </div>
+
+        <!-- Secondary Filters: Group + Type -->
+        {% if group_names %}
         <div class="toolbar-dropdown">
-            <button class="btn btn-secondary btn-sm" onclick="toggleDropdown('filterDropdown')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
-                Filter
+            <button class="btn btn-secondary btn-sm" onclick="toggleDropdown('groupDropdown')" id="groupFilterBtn">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                Group
             </button>
-            <div class="dropdown-menu" id="filterDropdown">
-                <button class="dropdown-item active" data-filter="all" onclick="setFilter('all','All')">All</button>
-                <button class="dropdown-item" data-filter="up" onclick="setFilter('up','Up')">● Up</button>
-                <button class="dropdown-item" data-filter="down" onclick="setFilter('down','Down')">● Down</button>
-                <button class="dropdown-item" data-filter="paused" onclick="setFilter('paused','Paused')">⏸ Paused</button>
-                <button class="dropdown-item" data-filter="pending" onclick="setFilter('pending','Pending')">○ Pending</button>
-                {% if group_names %}
-                <hr class="row-menu-divider">
+            <div class="dropdown-menu" id="groupDropdown">
+                <button class="dropdown-item active" data-filter="all" onclick="setGroupFilter('all', 'Group')">All groups</button>
                 {% for gn in group_names %}
-                <button class="dropdown-item" data-filter="group:{{ gn }}" onclick="setFilter('group:{{ gn }}','{{ gn }}')">📁 {{ gn }}</button>
+                <button class="dropdown-item" data-filter="{{ gn }}" onclick="setGroupFilter('{{ gn }}', '{{ gn }}')">{{ gn }}</button>
                 {% endfor %}
-                {% endif %}
             </div>
         </div>
-        <span class="active-filter-badge" id="activeFilterBadge" style="display:none;">
-            <span id="activeFilterLabel"></span>
-            <button class="clear-filter-x" onclick="setFilter('all','All')" title="Clear filter">✕</button>
-        </span>
+        {% endif %}
+        <div class="toolbar-dropdown">
+            <button class="btn btn-secondary btn-sm" onclick="toggleDropdown('typeDropdown')" id="typeFilterBtn">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Type
+            </button>
+            <div class="dropdown-menu" id="typeDropdown">
+                <button class="dropdown-item active" data-filter="all" onclick="setTypeFilter('all', 'Type')">All types</button>
+                <button class="dropdown-item" data-filter="http" onclick="setTypeFilter('http', 'HTTP')">HTTP</button>
+                <button class="dropdown-item" data-filter="json_api" onclick="setTypeFilter('json_api', 'JSON/API')">JSON/API</button>
+                <button class="dropdown-item" data-filter="heartbeat" onclick="setTypeFilter('heartbeat', 'Heartbeat')">Heartbeat</button>
+                <button class="dropdown-item" data-filter="ssl" onclick="setTypeFilter('ssl', 'SSL')">SSL</button>
+            </div>
+        </div>
     </div>
     <div class="toolbar-right">
+        <span class="toolbar-select-count" id="selectCount" style="font-size:0.75rem;color:var(--text-muted);display:none;">0 / {{ monitors | length }}</span>
         <div class="toolbar-dropdown">
             <button class="btn btn-secondary btn-sm" onclick="toggleDropdown('sortDropdown')">
                 ↕ <span id="sortLabel">Down first</span>
@@ -147,24 +169,17 @@
     </div>
 </div>
 
-<!-- Column header (sortable) -->
-<div class="d-col-header">
-    <div class="d-col-check"></div>
-    <div class="d-col-dot"></div>
-    <div class="d-col-name d-col-sortable" data-sort="name" onclick="colSort('name')">Monitor Name <span class="sort-arrow"></span></div>
-    <div class="d-col-group d-col-sortable" data-sort="group" onclick="colSort('group')">Group <span class="sort-arrow"></span></div>
-    <div class="d-col-type d-col-sortable" data-sort="type" onclick="colSort('type')">Type <span class="sort-arrow"></span></div>
-    <div class="d-col-url">URL</div>
-    <div class="d-col-uptime d-col-sortable" data-sort="uptime" onclick="colSort('uptime')">24h <span class="sort-arrow"></span></div>
-    <div class="d-col-response d-col-sortable" data-sort="response" onclick="colSort('response')">Resp. <span class="sort-arrow"></span></div>
-    <div class="d-col-checked">Checked</div>
-    <div class="d-col-actions"></div>
+<!-- ═══════════════ Applied Filters Bar ═══════════════ -->
+<div class="d-applied-filters" id="appliedFilters" style="display:none;">
+    <span id="appliedFilterBadges"></span>
+    <button class="d-clear-all-btn" onclick="clearAllFilters()">Clear all</button>
 </div>
 
-<!-- Monitor List -->
+<!-- ═══════════════ Monitor List — Two-Tier Rows ═══════════════ -->
 <div class="monitor-list" id="monitorList">
     {% for m in monitors %}
-    <div class="monitor-card"
+    {% set daily_bars = m.get('daily_uptime_bars') or [] %}
+    <div class="monitor-card d-two-tier"
          onclick="if(!event.target.closest('.row-cb-wrap')&&!event.target.closest('.row-menu-wrap')) window.location='/monitors/{{ m.id }}'"
          data-id="{{ m.id }}"
          data-name="{{ m.name }}"
@@ -175,140 +190,133 @@
          data-type="{{ m.get('monitor_type', 'http') }}"
          data-response="{{ m.get('last_response_ms', 0)|int }}"
     >
-        <!-- Checkbox -->
-        <div class="row-cb-wrap" onclick="event.stopPropagation()">
-            <input type="checkbox" class="row-cb" value="{{ m.id }}" onchange="updateBulkBar()">
-        </div>
+        <!-- Primary Line: checkbox + dot + name + 30-day bars + uptime % + menu -->
+        <div class="d-row-primary">
+            <!-- Checkbox -->
+            <div class="row-cb-wrap" onclick="event.stopPropagation()">
+                <input type="checkbox" class="row-cb" value="{{ m.id }}" onchange="updateBulkBar()">
+            </div>
 
-        <!-- Status dot -->
-        <div class="monitor-dot">
-            {% if m.get('paused') %}
-                <span class="dot dot-paused">⏸</span>
-            {% elif m.status == 'up' %}
-                <span class="dot dot-up"></span>
-            {% elif m.status == 'warn' %}
-                <span class="dot dot-warn"></span>
-            {% elif m.status == 'down' %}
-                <span class="dot dot-down"></span>
-            {% else %}
-                <span class="dot dot-pending"></span>
-            {% endif %}
-        </div>
+            <!-- Status dot -->
+            <div class="monitor-dot">
+                {% if m.get('paused') %}
+                    <span class="dot dot-paused">⏸</span>
+                {% elif m.status == 'up' %}
+                    <span class="dot dot-up"></span>
+                {% elif m.status == 'warn' %}
+                    <span class="dot dot-warn"></span>
+                {% elif m.status == 'down' %}
+                    <span class="dot dot-down"></span>
+                {% else %}
+                    <span class="dot dot-pending"></span>
+                {% endif %}
+            </div>
 
-        <!-- Name -->
-        <div class="monitor-name-col" title="{{ m.name }}">
-            <span class="monitor-name">{{ m.name }}</span>
-        </div>
+            <!-- Name -->
+            <span class="monitor-name" title="{{ m.name }}">{{ m.name }}</span>
 
-        <!-- Group -->
-        <div class="monitor-group-col">
-            {% if m.get('group') %}
-            <span class="monitor-group-text">{{ m.get('group') }}</span>
-            {% else %}
-            <span class="monitor-group-text monitor-group-none">—</span>
-            {% endif %}
-        </div>
+            <!-- 30-day uptime bars -->
+            <div class="d-uptime-bars" title="30-day uptime">
+                {% for bar in daily_bars[-30:] %}
+                    {% set bar_total = bar.get('total', 0) %}
+                    {% set bar_up = bar.get('up', 0) %}
+                    {% set pct = (bar_up / bar_total * 100) if bar_total > 0 else -1 %}
+                    <div class="d-uptime-bar {% if pct < 0 %}bar-nodata{% elif pct >= 99.5 %}bar-up{% elif pct >= 95 %}bar-warn{% else %}bar-down{% endif %}" title="{{ bar.get('date', '') }}: {{ '%.1f' | format(pct) if pct >= 0 else 'No data' }}%"></div>
+                {% endfor %}
+                {% for _ in range(30 - daily_bars[-30:]|length) %}
+                    <div class="d-uptime-bar bar-nodata" title="No data"></div>
+                {% endfor %}
+            </div>
 
-        <!-- Type -->
-        <div class="monitor-type-col">
-            <span class="monitor-type-label type-{{ m.get('monitor_type', 'http') }}">{% if m.get('monitor_type') == 'heartbeat' %}Heartbeat{% elif m.get('monitor_type') == 'json_api' %}JSON/API{% elif m.get('monitor_type') == 'ssl' %}SSL{% else %}HTTP{% endif %}</span>
-        </div>
-
-        <!-- URL -->
-        <div class="monitor-url-col" title="{{ m.url }}">
-            <span class="monitor-url-text">{{ m.url | replace('https://', '') | replace('http://', '') | truncate(30, True, '…') }}</span>
-        </div>
-
-        <!-- Uptime % (24h) -->
-        <div class="monitor-uptime-col">
+            <!-- Uptime % -->
             {% set up = m.get('uptime_24h') %}
             {% if up is none %}
                 {% set up = m.uptime_percent|default(100)|float %}
             {% endif %}
-            <span class="uptime-value {% if up >= 99.5 %}text-green{% elif up >= 95 %}text-yellow{% else %}text-red{% endif %}" title="24h uptime: {{ "%.4f"|format(up) }}%">{{ "%.2f"|format(up) }}%</span>
+            <span class="uptime-value {% if up >= 99.5 %}text-green{% elif up >= 95 %}text-yellow{% else %}text-red{% endif %}" title="24h uptime: {{ '%.4f'|format(up) }}%">{{ '%.2f'|format(up) }}%</span>
+
+            <!-- ⋯ menu -->
+            <div class="row-menu-wrap" onclick="event.stopPropagation()">
+                <button class="row-menu-btn" onclick="toggleRowMenu(this)" title="Actions">⋯</button>
+                <div class="row-menu">
+                    <button class="row-menu-item" onclick="window.location='/monitors/{{ m.id }}/edit'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Edit
+                    </button>
+                    <button class="row-menu-item" onclick="rowAction('toggle','{{ m.id }}', this)">
+                        {% if m.get('paused') %}
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        Resume
+                        {% else %}
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                        Pause
+                        {% endif %}
+                    </button>
+                    <button class="row-menu-item" onclick="rowAction('clone','{{ m.id }}', this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        Clone
+                    </button>
+                    <button class="row-menu-item" onclick="rowAction('copy','{{ m.id }}', this)" data-url="{{ m.url }}">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        Copy URL
+                    </button>
+                    <hr class="row-menu-divider">
+                    <button class="row-menu-item row-menu-danger" onclick="rowAction('delete','{{ m.id }}', this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        Delete
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <!-- Response time -->
-        <div class="monitor-response-col">
+        <!-- Secondary Line: type + URL + response/SSL/heartbeat + last checked -->
+        <div class="d-row-secondary">
+            <span class="monitor-type-label type-{{ m.get('monitor_type', 'http') }}">{% if m.get('monitor_type') == 'heartbeat' %}Heartbeat{% elif m.get('monitor_type') == 'json_api' %}JSON/API{% elif m.get('monitor_type') == 'ssl' %}SSL{% else %}HTTP{% endif %}</span>
+            <span class="monitor-url-text" title="{{ m.url }}">{{ m.url | replace('https://', '') | replace('http://', '') | truncate(50, True, '…') }}</span>
+            <span class="d-secondary-sep">·</span>
             {% if m.get('monitor_type') == 'heartbeat' %}
                 {% set lhb = m.get('last_heartbeat') %}
-                <span class="response-value">{{ 'Never' if not lhb else '✓' }}</span>
+                <span class="d-secondary-stat">{{ 'No ping yet' if not lhb else '✓ Pinged' }}</span>
             {% elif m.get('monitor_type') == 'ssl' %}
                 {% set days_left = m.get('ssl_days_remaining') %}
-                <span class="response-value {% if days_left is not none and days_left <= 14 %}text-red{% elif days_left is not none and days_left <= 30 %}text-yellow{% endif %}">{{ (days_left|string + 'd') if days_left is not none else '—' }}</span>
+                <span class="d-secondary-stat {% if days_left is not none and days_left <= 14 %}text-red{% elif days_left is not none and days_left <= 30 %}text-yellow{% endif %}">{{ (days_left|string + 'd remaining') if days_left is not none else '—' }}</span>
             {% else %}
-                <span class="response-value" title="{{ m.get('last_response_ms', 0)|int }}ms">{{ m.get('last_response_ms', 0)|int }}<span class="response-unit">ms</span></span>
+                <span class="d-secondary-stat" title="{{ m.get('last_response_ms', 0)|int }}ms">{{ m.get('last_response_ms', 0)|int }}ms</span>
             {% endif %}
-        </div>
-
-        <!-- Last checked (live countdown) -->
-        <div class="monitor-checked-col">
+            <span class="d-secondary-sep">·</span>
             {% set lc = m.get('last_checked') %}
             {% if lc %}
                 {% set lc_iso = lc.isoformat() if lc.isoformat is defined else lc|string %}
                 {% if '+' not in lc_iso|string and 'Z' not in lc_iso|string %}
                     {% set lc_iso = lc_iso ~ 'Z' %}
                 {% endif %}
-                <span class="checked-value last-checked-tick" data-last-checked="{{ lc_iso }}" title="Last checked: {{ lc.strftime('%Y-%m-%d %H:%M:%S UTC') if lc.strftime is defined else lc }}"></span>
+                <span class="d-secondary-stat last-checked-tick" data-last-checked="{{ lc_iso }}" title="Last checked: {{ lc.strftime('%Y-%m-%d %H:%M:%S UTC') if lc.strftime is defined else lc }}"></span>
             {% else %}
-                <span class="checked-value checked-never">Never</span>
+                <span class="d-secondary-stat">Never checked</span>
             {% endif %}
-        </div>
-
-        <!-- ⋯ menu -->
-        <div class="row-menu-wrap" onclick="event.stopPropagation()">
-            <button class="row-menu-btn" onclick="toggleRowMenu(this)" title="Actions">⋯</button>
-            <div class="row-menu">
-                <button class="row-menu-item" onclick="window.location='/monitors/{{ m.id }}/edit'">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    Edit
-                </button>
-                <button class="row-menu-item" onclick="rowAction('toggle','{{ m.id }}', this)">
-                    {% if m.get('paused') %}
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                    Resume
-                    {% else %}
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-                    Pause
-                    {% endif %}
-                </button>
-                <button class="row-menu-item" onclick="rowAction('clone','{{ m.id }}', this)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                    Clone
-                </button>
-                <button class="row-menu-item" onclick="rowAction('copy','{{ m.id }}', this)" data-url="{{ m.url }}">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                    Copy URL
-                </button>
-                <hr class="row-menu-divider">
-                <button class="row-menu-item row-menu-danger" onclick="rowAction('delete','{{ m.id }}', this)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                    Delete
-                </button>
-            </div>
         </div>
     </div>
     {% endfor %}
 
     <!-- Add monitor row -->
-    <a href="/monitors/add" class="monitor-card monitor-card-add" style="text-decoration: none; color: inherit;">
-        <div class="row-cb-wrap"></div>
-        <div class="monitor-dot"><span class="add-monitor-plus">+</span></div>
-        <div class="monitor-info"><span class="add-monitor-label">Add monitor</span></div>
+    <a href="/monitors/add" class="monitor-card d-two-tier" style="text-decoration: none; color: inherit; border-bottom: 1px solid var(--border); border-style: dashed;">
+        <div class="d-row-primary" style="justify-content: center;">
+            <span style="color: var(--brand); font-weight: 600; font-size: 0.85rem;">+ Add monitor</span>
+        </div>
     </a>
 </div>
-
 
 </div> <!-- /.dash-single -->
 
 {% else %}
-<div class="empty-state">
-    <h2>No monitors yet</h2>
-    <p>Add your first URL to start tracking uptime, SSL, and response time.</p>
-    <br>
-    <a href="/monitors/add" class="btn btn-primary">Add your first monitor</a>
-    <p style="margin-top: 1rem; font-size: 0.85rem; color: #999;">
-        Or use the <a href="/docs/api">REST API</a> to create one programmatically.
+<!-- ═══════════════ Empty State ═══════════════ -->
+<div class="empty-state" style="text-align: center; padding: 4rem 2rem;">
+    <div style="font-size: 4rem; margin-bottom: 1rem;">🐓</div>
+    <h2 style="margin-bottom: 0.5rem;">No monitors yet</h2>
+    <p style="color: var(--text-muted); max-width: 400px; margin: 0 auto 1.5rem;">Add your first website, API, cron job, or SSL certificate to start tracking uptime.</p>
+    <a href="/monitors/add" class="btn btn-primary" style="font-size: 1rem; padding: 0.65rem 1.5rem;">+ Add your first monitor</a>
+    <p style="margin-top: 1.25rem; font-size: 0.82rem; color: var(--text-muted);">
+        Or use the <a href="/docs/api" style="color: var(--brand);">REST API</a> to create one programmatically.
     </p>
 </div>
 {% endif %}
@@ -320,7 +328,7 @@
         <h2 style="margin-bottom: 0.25rem;">Heartbeat monitor created</h2>
         <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 1.25rem;" id="hbCreatedName"></p>
 
-        <label style="font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 0.4rem;">Ping URL</label>
+        <span style="font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 0.4rem;">Ping URL</span>
         <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem;">
             <code id="hbPingUrl" style="flex: 1; padding: 0.55rem 0.75rem; background: var(--bg-secondary, #f8f9fa); border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 0.82rem; word-break: break-all; font-family: 'JetBrains Mono', monospace; color: var(--text);"></code>
             <button type="button" class="btn-copy" onclick="copyHbUrl()" id="hbCopyBtn" title="Copy URL">
@@ -328,7 +336,7 @@
             </button>
         </div>
 
-        <label style="font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 0.5rem;">Quick setup</label>
+        <span style="font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 0.5rem;">Quick setup</span>
         <div style="display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.25rem;">
             <div class="hb-snippet">
                 <span class="hb-snippet-label">Crontab (every 5 min)</span>
@@ -404,9 +412,6 @@ function copySnippet(id, btn) {
     }
 })();
 
-/* ── Prevent info tooltips from triggering sort ────────── */
-document.querySelectorAll('.th-info').forEach(el => el.addEventListener('click', e => e.stopPropagation()));
-
 /* ── Dropdowns ─────────────────────────────────────────── */
 function toggleDropdown(id) {
     document.querySelectorAll('.dropdown-menu').forEach(m => { if (m.id !== id) m.classList.remove('open'); });
@@ -417,31 +422,119 @@ document.addEventListener('click', e => {
         document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('open'));
 });
 
-/* ── Filtering (group-aware) ────────────────────────────── */
+/* ── Filter Pills ──────────────────────────────────────── */
 let currentFilter = 'all';
-function setFilter(f, label) {
+let currentGroupFilter = 'all';
+let currentTypeFilter = 'all';
+
+function setPillFilter(f, btn) {
     currentFilter = f;
-    document.querySelectorAll('#filterDropdown .dropdown-item').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
-    document.getElementById('filterDropdown').classList.remove('open');
-    const badge = document.getElementById('activeFilterBadge');
-    if (f === 'all') {
-        badge.style.display = 'none';
-    } else {
-        document.getElementById('activeFilterLabel').textContent = label;
-        badge.style.display = '';
-    }
+    document.querySelectorAll('.d-filter-pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
     filterTable();
+    updateAppliedFilters();
 }
+
+function setGroupFilter(g, label) {
+    currentGroupFilter = g;
+    const btn = document.getElementById('groupFilterBtn');
+    if (btn) btn.innerHTML = (g === 'all' ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> Group' : '📁 ' + label);
+    document.querySelectorAll('#groupDropdown .dropdown-item').forEach(b => b.classList.toggle('active', b.dataset.filter === g));
+    document.getElementById('groupDropdown').classList.remove('open');
+    filterTable();
+    updateAppliedFilters();
+}
+
+function setTypeFilter(t, label) {
+    currentTypeFilter = t;
+    const btn = document.getElementById('typeFilterBtn');
+    btn.innerHTML = (t === 'all' ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Type' : label);
+    document.querySelectorAll('#typeDropdown .dropdown-item').forEach(b => b.classList.toggle('active', b.dataset.filter === t));
+    document.getElementById('typeDropdown').classList.remove('open');
+    filterTable();
+    updateAppliedFilters();
+}
+
 function filterTable() {
     const q = document.getElementById('monitorSearch').value.toLowerCase();
-    document.querySelectorAll('#monitorList .monitor-card:not(.monitor-card-add)').forEach(card => {
-        const name = card.dataset.name.toLowerCase(), url = card.dataset.url.toLowerCase(), status = card.dataset.status;
+    document.querySelectorAll('#monitorList .monitor-card.d-two-tier:not([style*="dashed"])').forEach(card => {
+        const name = card.dataset.name.toLowerCase();
+        const url = (card.dataset.url || '').toLowerCase();
+        const status = card.dataset.status;
         const group = card.dataset.group || '';
+        const type = card.dataset.type || '';
+
         const matchSearch = !q || name.includes(q) || url.includes(q);
-        let matchFilter = currentFilter === 'all' || status === currentFilter;
-        if (currentFilter.startsWith('group:')) matchFilter = group === currentFilter.slice(6);
-        card.style.display = matchSearch && matchFilter ? '' : 'none';
+        const matchStatus = currentFilter === 'all' || status === currentFilter;
+        const matchGroup = currentGroupFilter === 'all' || group === currentGroupFilter;
+        const matchType = currentTypeFilter === 'all' || type === currentTypeFilter;
+
+        card.style.display = matchSearch && matchStatus && matchGroup && matchType ? '' : 'none';
     });
+}
+
+/* ── Applied Filter Badges ─────────────────────────────── */
+function updateAppliedFilters() {
+    const container = document.getElementById('appliedFilterBadges');
+    const wrap = document.getElementById('appliedFilters');
+    if (!container || !wrap) return;
+    let html = '';
+    const searchVal = document.getElementById('monitorSearch').value.trim();
+
+    if (currentFilter !== 'all') {
+        const labels = {up:'Up', down:'Down', warn:'Warn', paused:'Paused', pending:'Pending'};
+        html += `<span class="active-filter-badge">Status: ${labels[currentFilter] || currentFilter}<button class="clear-filter-x" onclick="removeFilter('status')" title="Remove">✕</button></span>`;
+    }
+    if (currentGroupFilter !== 'all') {
+        html += `<span class="active-filter-badge">Group: ${currentGroupFilter}<button class="clear-filter-x" onclick="removeFilter('group')" title="Remove">✕</button></span>`;
+    }
+    if (currentTypeFilter !== 'all') {
+        const labels = {http:'HTTP', json_api:'JSON/API', heartbeat:'Heartbeat', ssl:'SSL'};
+        html += `<span class="active-filter-badge">Type: ${labels[currentTypeFilter] || currentTypeFilter}<button class="clear-filter-x" onclick="removeFilter('type')" title="Remove">✕</button></span>`;
+    }
+    if (searchVal) {
+        html += `<span class="active-filter-badge">Search: "${searchVal}"<button class="clear-filter-x" onclick="removeFilter('search')" title="Remove">✕</button></span>`;
+    }
+
+    container.innerHTML = html;
+    wrap.style.display = html ? 'flex' : 'none';
+}
+
+function removeFilter(kind) {
+    if (kind === 'status') {
+        currentFilter = 'all';
+        document.querySelectorAll('.d-filter-pill').forEach(p => p.classList.toggle('active', p.dataset.filter === 'all'));
+    } else if (kind === 'group') {
+        currentGroupFilter = 'all';
+        const btn = document.getElementById('groupFilterBtn');
+        if (btn) btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> Group';
+        document.querySelectorAll('#groupDropdown .dropdown-item').forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
+    } else if (kind === 'type') {
+        currentTypeFilter = 'all';
+        const btn = document.getElementById('typeFilterBtn');
+        if (btn) btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Type';
+        document.querySelectorAll('#typeDropdown .dropdown-item').forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
+    } else if (kind === 'search') {
+        document.getElementById('monitorSearch').value = '';
+    }
+    filterTable();
+    updateAppliedFilters();
+}
+
+function clearAllFilters() {
+    currentFilter = 'all';
+    currentGroupFilter = 'all';
+    currentTypeFilter = 'all';
+    document.getElementById('monitorSearch').value = '';
+    document.querySelectorAll('.d-filter-pill').forEach(p => p.classList.toggle('active', p.dataset.filter === 'all'));
+    const groupBtn = document.getElementById('groupFilterBtn');
+    if (groupBtn) groupBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> Group';
+    document.querySelectorAll('#groupDropdown .dropdown-item').forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
+    const typeBtn = document.getElementById('typeFilterBtn');
+    if (typeBtn) typeBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Type';
+    document.querySelectorAll('#typeDropdown .dropdown-item').forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
+    filterTable();
+    updateAppliedFilters();
 }
 
 /* ── Sorting ───────────────────────────────────────────── */
@@ -456,25 +549,11 @@ function setSortMode(mode, label) {
 }
 function sortList() {
     const list = document.getElementById('monitorList');
-    const cards = Array.from(list.querySelectorAll('.monitor-card:not(.monitor-card-add)'));
-    const addCard = list.querySelector('.monitor-card-add');
+    const cards = Array.from(list.querySelectorAll('.monitor-card.d-two-tier:not([style*="dashed"])'));
+    const addCard = list.querySelector('.monitor-card[style*="dashed"]');
     const statusOrder = {down: 0, pending: 1, warn: 2, up: 3, paused: 4};
-    const typeOrder = {http: 0, json_api: 1, heartbeat: 2, ssl: 3};
 
     cards.sort((a, b) => {
-        // Column header sort takes priority if active
-        if (colSortField) {
-            let cmp = 0;
-            switch (colSortField) {
-                case 'name': cmp = a.dataset.name.localeCompare(b.dataset.name); break;
-                case 'group': cmp = (a.dataset.group||'').localeCompare(b.dataset.group||''); break;
-                case 'type': cmp = (typeOrder[a.dataset.type]||9) - (typeOrder[b.dataset.type]||9); break;
-                case 'uptime': cmp = parseFloat(a.dataset.uptime) - parseFloat(b.dataset.uptime); break;
-                case 'response': cmp = parseInt(a.dataset.response||0) - parseInt(b.dataset.response||0); break;
-            }
-            return colSortDir === 'desc' ? -cmp : cmp;
-        }
-        // Toolbar sort
         switch (currentSort) {
             case 'down-first': return (statusOrder[a.dataset.status]||9) - (statusOrder[b.dataset.status]||9);
             case 'name-asc': return a.dataset.name.localeCompare(b.dataset.name);
@@ -501,8 +580,10 @@ function updateBulkBar() {
     const selected = document.querySelectorAll('.row-cb:checked').length;
     const total = document.querySelectorAll('.row-cb').length;
     const bulkWrap = document.getElementById('bulkDropdownWrap');
+    const countEl = document.getElementById('selectCount');
     bulkWrap.style.display = selected > 0 ? '' : 'none';
-    document.getElementById('selectCount').textContent = selected + ' / ' + total;
+    countEl.style.display = selected > 0 ? '' : 'none';
+    countEl.textContent = selected + ' / ' + total;
 }
 
 /* ── Bulk Actions ──────────────────────────────────────── */
@@ -556,30 +637,6 @@ function tickLastChecked() {
 tickLastChecked();
 setInterval(tickLastChecked, 1000);
 
-/* ── Column header sort ────────────────────────────────── */
-let colSortField = null;
-let colSortDir = 'asc';
-function colSort(field) {
-    if (colSortField === field) {
-        colSortDir = colSortDir === 'asc' ? 'desc' : 'asc';
-    } else {
-        colSortField = field;
-        colSortDir = 'asc';
-    }
-    // Update arrows
-    document.querySelectorAll('.d-col-sortable').forEach(col => {
-        const arrow = col.querySelector('.sort-arrow');
-        if (col.dataset.sort === field) {
-            arrow.textContent = colSortDir === 'asc' ? '▲' : '▼';
-            col.classList.add('sort-active');
-        } else {
-            arrow.textContent = '';
-            col.classList.remove('sort-active');
-        }
-    });
-    sortList();
-}
-
 /* ── Three-dot row menu ────────────────────────────────── */
 function toggleRowMenu(btn) {
     const menu = btn.nextElementSibling;
@@ -624,7 +681,5 @@ async function rowAction(action, monitorId, btn) {
         } catch(e) { alert('Network error.'); }
     }
 }
-
-
 </script>
 {% endblock %}

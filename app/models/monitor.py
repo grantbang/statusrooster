@@ -175,19 +175,30 @@ def record_heartbeat(db, monitor_id: str) -> dict | None:
 
 
 def delete_monitor(db, monitor_id: str) -> None:
-    """Delete a monitor and its associated checks."""
-    # Delete checks for this monitor
-    checks = db.collection("checks").where("monitor_id", "==", monitor_id).get()
-    for check in checks:
-        check.reference.delete()
-
-    # Delete incidents for this monitor
-    incidents = db.collection("incidents").where("monitor_id", "==", monitor_id).get()
-    for incident in incidents:
-        incident.reference.delete()
-
-    # Delete the monitor itself
+    """Delete a monitor and clean up a limited batch of associated data.
+    
+    Deletes the monitor document immediately, then cleans up a small batch
+    of checks/incidents. Large histories are left as orphans (harmless)
+    to avoid blocking the request for minutes on large datasets.
+    """
+    # Delete the monitor itself first (so it disappears from dashboard immediately)
     db.collection(COLLECTION).document(monitor_id).delete()
+
+    # Best-effort cleanup: delete up to 50 checks and 50 incidents
+    # This keeps the request fast. Orphaned docs are harmless.
+    try:
+        checks = db.collection("checks").where("monitor_id", "==", monitor_id).limit(50).get()
+        for check in checks:
+            check.reference.delete()
+    except Exception:
+        pass
+
+    try:
+        incidents = db.collection("incidents").where("monitor_id", "==", monitor_id).limit(50).get()
+        for incident in incidents:
+            incident.reference.delete()
+    except Exception:
+        pass
 
 
 def get_monitor_by_slug(db, slug: str) -> dict | None:

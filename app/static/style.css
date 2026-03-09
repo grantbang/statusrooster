@@ -1544,6 +1544,7 @@ code {
 /* ── Dashboard Two-Column Layout ────────────────────── */
 .dash-single {
     max-width: 1200px;
+    text-align: left;
 }
 
 /* ── Status Strip (top hero bar) ──────────────────────── */
@@ -1755,6 +1756,8 @@ code {
 .monitor-card.d-two-tier {
     display: flex;
     flex-direction: column;
+    grid-template-columns: none;
+    align-items: stretch;
     gap: 0.25rem;
     padding: 0.75rem 1rem;
     background: var(--surface);
@@ -1763,6 +1766,7 @@ code {
     cursor: pointer;
     transition: all 0.15s;
     position: relative;
+    text-align: left;
 }
 .monitor-card.d-two-tier:hover {
     background: rgba(99, 102, 241, 0.03);
@@ -1919,6 +1923,36 @@ code {
         font-size: 0.68rem;
         padding: 0.2rem 0.5rem;
     }
+}
+
+/* ── Applied Filters Bar ───────────────────────────── */
+.d-applied-filters {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    flex-wrap: wrap;
+}
+.d-applied-filters .active-filter-badge {
+    animation: fadeIn 0.15s ease;
+}
+.d-clear-all-btn {
+    background: none;
+    border: none;
+    color: var(--brand);
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.25rem 0.4rem;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s;
+}
+.d-clear-all-btn:hover {
+    background: rgba(99, 102, 241, 0.08);
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.92); }
+    to { opacity: 1; transform: scale(1); }
 }
 
 /* ── Row inline stats ──────────────────────────────── */
