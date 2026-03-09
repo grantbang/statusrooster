@@ -14,12 +14,30 @@ from app.models.api_key import generate_api_key, list_api_keys, revoke_api_key
 from app.services.auth import create_access_token, decode_access_token
 from app.services.alerts import _format_duration, send_test_alert
 import os
+import re
 
 router = APIRouter(tags=["pages"], include_in_schema=False)
 
 # Templates setup
 from fastapi.templating import Jinja2Templates
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates"))
+
+
+# ---------------------------------------------------------------------------
+# Helper: normalize + validate SMS number (E.164 format)
+# Returns (normalized_str, error_str|None)
+# ---------------------------------------------------------------------------
+
+def _normalize_sms(raw: str) -> tuple[str, str | None]:
+    """Strip spaces/dashes/parens, validate E.164 format (+CC + 6-14 digits).
+    Returns (normalized, None) on success, ('', error_message) on failure."""
+    val = raw.strip()
+    if not val:
+        return ("", None)
+    normalized = re.sub(r"[\s\-\(\)]", "", val)
+    if re.match(r"^\+[1-9]\d{6,14}$", normalized):
+        return (normalized, None)
+    return ("", "Invalid SMS number. Use international format: +15551234567 or +447911123456")
 
 
 # ---------------------------------------------------------------------------
@@ -462,7 +480,7 @@ async def add_monitor(
     name = form.get("name", "")
     alert_email = form.get("alert_email", "")
     alert_slack_webhook = form.get("alert_slack_webhook", "")
-    alert_sms = form.get("alert_sms", "")
+    alert_sms_raw = form.get("alert_sms", "")
     keyword = form.get("keyword", "")
     response_threshold_ms = form.get("response_threshold_ms", "")
     webhook_url = form.get("webhook_url", "")
@@ -514,6 +532,16 @@ async def add_monitor(
             url="/dashboard?msg=Pro+plan+limited+to+250+monitors.+Contact+us+if+you+need+more.&msg_type=error",
             status_code=302,
         )
+
+    # Normalize + validate SMS (Pro only)
+    alert_sms = ""
+    if plan == "pro" and alert_sms_raw.strip():
+        alert_sms, sms_err = _normalize_sms(alert_sms_raw)
+        if sms_err:
+            return RedirectResponse(
+                url=f"/monitors/add?msg={sms_err.replace(' ', '+')}&msg_type=error",
+                status_code=302,
+            )
 
     # Validate URL (skip for heartbeat — URL is auto-generated)
     if monitor_type != "heartbeat":
@@ -741,7 +769,7 @@ async def edit_monitor_submit(
     name = form.get("name", "")
     alert_email = form.get("alert_email", "")
     alert_slack_webhook = form.get("alert_slack_webhook", "")
-    alert_sms = form.get("alert_sms", "")
+    alert_sms_raw = form.get("alert_sms", "")
     slug = form.get("slug", "")
     public = form.get("public", "")
     keyword = form.get("keyword", "")
@@ -776,12 +804,23 @@ async def edit_monitor_submit(
     if not monitor or monitor["user_id"] != user["id"]:
         return RedirectResponse(url="/dashboard?msg=Monitor+not+found&msg_type=error", status_code=302)
 
+    # Normalize + validate SMS (Pro only)
+    alert_sms = ""
+    if user.get("plan", "free") == "pro" and alert_sms_raw.strip():
+        alert_sms, sms_err = _normalize_sms(alert_sms_raw)
+        if sms_err:
+            return RedirectResponse(
+                url=f"/monitors/{monitor_id}/edit?msg={sms_err.replace(' ', '+')}&msg_type=error",
+                status_code=302,
+            )
+    elif user.get("plan", "free") != "pro":
+        alert_sms = monitor.get("alert_sms", "")  # preserve existing value, don't let Free user clear it via bypass
+
     # Validate URL (skip empty URLs — heartbeat/SSL use hidden fields)
     if url and not url.startswith(("http://", "https://")):
         url = f"https://{url}"
 
     # Clean up slug (lowercase, hyphens only)
-    import re
     if slug:
         slug = re.sub(r"[^a-z0-9\-]", "", slug.lower().replace(" ", "-")).strip("-")
     else:

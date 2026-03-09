@@ -5324,6 +5324,25 @@ details[open] .inc-headers-block .inc-headers-summary::before,
     color: var(--muted);
     stroke: currentColor;
 }
+/* SMS input validation states */
+.mf-sms-hint {
+    margin: 0.35rem 0 0;
+    font-size: 0.78rem;
+    color: var(--muted);
+    transition: color 0.15s;
+}
+.mf-sms-hint--ok { color: var(--success); }
+.mf-sms-hint--err { color: var(--danger); }
+.mf-notify-channel-input.mf-input-ok {
+    border-color: var(--success);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(34,197,94,0.12);
+}
+.mf-notify-channel-input.mf-input-err {
+    border-color: var(--danger);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(239,68,68,0.12);
+}
 .mf-notify-channel-name {
     font-weight: 600;
     font-size: 0.92rem;

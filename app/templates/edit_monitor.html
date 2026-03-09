@@ -249,8 +249,8 @@
             </div>
             {% if plan != 'free' %}
             <div id="smsWrap" style="{% if not has_sms %}display: none;{% endif %}">
-                <input type="tel" name="alert_sms" class="mf-notify-channel-input" value="{{ has_sms }}" placeholder="+15551234567">
-                <div class="hint hint-mt-sm">International format. We'll text you the moment your monitor goes down.</div>
+                <input type="tel" id="alert_sms" name="alert_sms" class="mf-notify-channel-input" value="{{ has_sms }}" placeholder="+15551234567" oninput="validateSms(this)">
+                <p id="smsHint" class="mf-sms-hint {% if has_sms %}mf-sms-hint--ok{% endif %}">{% if has_sms %}Looks good!{% else %}Enter in international format: +1 555 123 4567{% endif %}</p>
             </div>
             {% else %}
             <div class="mf-notify-channel-locked">
@@ -573,6 +573,30 @@
 
 {% block extra_js %}
 <script>
+/* ── SMS Validation ────────────────────────────────────── */
+function validateSms(input) {
+    const hint = document.getElementById('smsHint');
+    const val = input.value.trim();
+    if (!val) {
+        input.classList.remove('mf-input-ok', 'mf-input-err');
+        hint.textContent = 'Enter in international format: +1 555 123 4567';
+        hint.className = 'mf-sms-hint';
+        return true;
+    }
+    const digits = val.replace(/[\s\-\(\)]/g, '');
+    const valid = /^\+[1-9]\d{6,14}$/.test(digits);
+    if (valid) {
+        input.classList.add('mf-input-ok'); input.classList.remove('mf-input-err');
+        hint.textContent = 'Looks good!';
+        hint.className = 'mf-sms-hint mf-sms-hint--ok';
+    } else {
+        input.classList.add('mf-input-err'); input.classList.remove('mf-input-ok');
+        hint.textContent = 'Must start with + and country code, e.g. +15551234567 or +447911123456';
+        hint.className = 'mf-sms-hint mf-sms-hint--err';
+    }
+    return valid;
+}
+
 /* ── Interval Display ─────────────────────────────────── */
 function updateIntervalDisplay(val) {
     const v = parseInt(val);
@@ -773,5 +797,16 @@ function kwRender() {
         }
     }
 })();
+
+/* ── SMS submit guard ──────────────────────────────────── */
+document.getElementById('editForm').addEventListener('submit', function(e) {
+    const smsInput = document.getElementById('alert_sms');
+    if (smsInput && smsInput.closest('#smsWrap') && smsInput.closest('#smsWrap').style.display !== 'none') {
+        if (smsInput.value.trim() && !validateSms(smsInput)) {
+            e.preventDefault();
+            smsInput.focus();
+        }
+    }
+});
 </script>
 {% endblock %}
