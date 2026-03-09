@@ -4,12 +4,19 @@ import time
 import ssl
 import socket
 import json as json_lib
+import logging
 from datetime import datetime, timezone, timedelta
 from app.database import get_db
 from app.models.monitor import get_all_monitors, update_monitor
-from app.models.check import create_check
+from app.models.check import create_check, create_checks_batch
 from app.models.incident import create_incident, resolve_incident, get_open_incident
 from app.services.alerts import send_down_alert, send_recovery_alert, send_ssl_expiry_alert, send_keyword_alert, send_threshold_alert, send_webhook_notification
+
+logger = logging.getLogger(__name__)
+
+# Limit concurrent outbound connections to avoid socket exhaustion
+CHECK_CONCURRENCY = 50
+_check_semaphore = asyncio.Semaphore(CHECK_CONCURRENCY)
 
 
 async def check_url(url: str, timeout: float = 10.0, expected_status_code: int | None = None,
@@ -434,9 +441,15 @@ def _check_threshold_condition(condition_str: str, actual_ms: float) -> bool:
 
 async def _check_single_monitor(monitor: dict, now: datetime) -> dict | None:
     """
-    Perform the network check for a single monitor.
-    Returns a dict with {monitor, result, ssl_result?, new_monitor_status?} or None if skipped.
+    Perform the network check for a single monitor (with concurrency limiting).
+    Returns a dict with {monitor, result, ssl_result?, new_monitor_status?, ssl_info?} or None if skipped.
     """
+    async with _check_semaphore:
+        return await _check_single_monitor_inner(monitor, now)
+
+
+async def _check_single_monitor_inner(monitor: dict, now: datetime) -> dict | None:
+    """Inner check logic — runs inside the semaphore."""
     mtype = monitor.get("monitor_type", "http")
 
     if mtype == "heartbeat":
@@ -512,7 +525,12 @@ async def _check_single_monitor(monitor: dict, now: datetime) -> dict | None:
             monitor["url"], timeout=timeout_val, expected_status_code=expected_code,
             auth_header=auth_header, assertions=assertions,
         )
-        return {"monitor": monitor, "result": result}
+        # Grab SSL info concurrently for HTTPS URLs
+        ssl_info = {}
+        if monitor.get("url", "").startswith("https"):
+            loop = asyncio.get_event_loop()
+            ssl_info = await loop.run_in_executor(None, grab_ssl_info, monitor["url"])
+        return {"monitor": monitor, "result": result, "ssl_info": ssl_info}
 
     else:
         # HTTP monitors
@@ -528,7 +546,12 @@ async def _check_single_monitor(monitor: dict, now: datetime) -> dict | None:
             http_method=http_method, follow_redirects=follow_redir,
             basic_auth_user=ba_user, basic_auth_pass=ba_pass,
         )
-        return {"monitor": monitor, "result": result}
+        # Grab SSL info concurrently for HTTPS URLs
+        ssl_info = {}
+        if monitor.get("url", "").startswith("https"):
+            loop = asyncio.get_event_loop()
+            ssl_info = await loop.run_in_executor(None, grab_ssl_info, monitor["url"])
+        return {"monitor": monitor, "result": result, "ssl_info": ssl_info}
 
 
 async def run_checks():
@@ -571,11 +594,16 @@ async def run_checks():
 
         due_monitors.append(monitor)
 
-    # Phase 2: Run all network checks concurrently
+    # Phase 2: Run all network checks concurrently (bounded by semaphore)
+    t_start = time.monotonic()
     check_tasks = [_check_single_monitor(m, now) for m in due_monitors]
     check_results = await asyncio.gather(*check_tasks, return_exceptions=True)
+    t_checks = time.monotonic() - t_start
+    logger.info(f"[checker] Phase 2: {len(due_monitors)} checks completed in {t_checks:.1f}s (concurrency={CHECK_CONCURRENCY})")
 
-    # Phase 3: Process results sequentially (Firestore writes, alerts, incidents)
+    # Phase 3: Process results — Firestore writes, alerts, incidents
+    t_writes = time.monotonic()
+    check_batch = []  # Accumulate check records for batch write
     for cr in check_results:
         if cr is None:
             results["skipped"] += 1
@@ -589,15 +617,15 @@ async def run_checks():
         result = cr["result"]
         ssl_result = cr.get("ssl_result")
         new_monitor_status = cr.get("new_monitor_status")
+        ssl_info = cr.get("ssl_info") or {}  # Pre-fetched during Phase 2
 
-        # Record check in Firestore
-        create_check(
-            db,
-            monitor_id=monitor["id"],
-            status_code=result["status_code"],
-            response_ms=result["response_ms"],
-            is_up=result["is_up"],
-        )
+        # Accumulate check for batch write (instead of individual create_check)
+        check_batch.append({
+            "monitor_id": monitor["id"],
+            "status_code": result["status_code"],
+            "response_ms": result["response_ms"],
+            "is_up": result["is_up"],
+        })
 
         # Update monitor stats
         previous_status = monitor.get("status", "pending")
@@ -661,24 +689,17 @@ async def run_checks():
         hbars = [b for b in hbars if b["hour"] >= cutoff_hour]
         monitor_updates["hourly_uptime_bars"] = hbars
 
-        # ----- SSL Expiry Check (HTTP monitors only — auto-detect) -----
-        ssl_info = {}
-        if monitor.get("monitor_type") == "http":
-            loop = asyncio.get_event_loop()
-            ssl_info = await loop.run_in_executor(None, grab_ssl_info, monitor["url"])
-            if ssl_info["ssl_expiry"]:
-                monitor_updates["ssl_expiry"] = ssl_info["ssl_expiry"]
-                monitor_updates["ssl_issuer"] = ssl_info["ssl_issuer"]
-                monitor_updates["ssl_expiry_days"] = ssl_info["ssl_expiry_days"]
+        # ----- SSL Expiry (pre-fetched in Phase 2) — HTTP monitors -----
+        if monitor.get("monitor_type") == "http" and ssl_info.get("ssl_expiry"):
+            monitor_updates["ssl_expiry"] = ssl_info["ssl_expiry"]
+            monitor_updates["ssl_issuer"] = ssl_info["ssl_issuer"]
+            monitor_updates["ssl_expiry_days"] = ssl_info["ssl_expiry_days"]
 
-        # ----- SSL Expiry Check (JSON/API monitors — auto-detect) -----
-        if monitor.get("monitor_type") == "json_api" and monitor.get("url", "").startswith("https"):
-            loop = asyncio.get_event_loop()
-            ssl_info = await loop.run_in_executor(None, grab_ssl_info, monitor["url"])
-            if ssl_info["ssl_expiry"]:
-                monitor_updates["ssl_expiry"] = ssl_info["ssl_expiry"]
-                monitor_updates["ssl_issuer"] = ssl_info["ssl_issuer"]
-                monitor_updates["ssl_expiry_days"] = ssl_info["ssl_expiry_days"]
+        # ----- SSL Expiry (pre-fetched in Phase 2) — JSON/API monitors -----
+        if monitor.get("monitor_type") == "json_api" and ssl_info.get("ssl_expiry"):
+            monitor_updates["ssl_expiry"] = ssl_info["ssl_expiry"]
+            monitor_updates["ssl_issuer"] = ssl_info["ssl_issuer"]
+            monitor_updates["ssl_expiry_days"] = ssl_info["ssl_expiry_days"]
 
         update_monitor(db, monitor["id"], monitor_updates)
 
@@ -768,4 +789,18 @@ async def run_checks():
                 print(f"[checker] INCIDENT RESOLVED: {monitor['name']} is UP (down for {duration}s)" +
                       (" (maintenance — alerts suppressed)" if in_maintenance else ""))
 
+    # Batch-write all check records at once (much faster than individual writes)
+    if check_batch:
+        try:
+            create_checks_batch(db, check_batch)
+        except Exception as e:
+            logger.error(f"[checker] Batch check write failed, falling back to individual: {e}")
+            for c in check_batch:
+                try:
+                    create_check(db, c["monitor_id"], c["status_code"], c["response_ms"], c["is_up"])
+                except Exception:
+                    pass
+
+    t_total = time.monotonic() - t_writes
+    logger.info(f"[checker] Phase 3: writes/alerts completed in {t_total:.1f}s — results: {results}")
     return results

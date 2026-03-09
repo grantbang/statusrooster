@@ -19,6 +19,27 @@ def create_check(db, monitor_id: str, status_code: int | None,
     return check_data
 
 
+def create_checks_batch(db, checks: list[dict]) -> None:
+    """Batch-write multiple check results. Max 500 per Firestore batch.
+    
+    Each item in checks should be: {monitor_id, status_code, response_ms, is_up}
+    """
+    now = datetime.now(timezone.utc)
+    # Firestore batches are limited to 500 operations
+    for i in range(0, len(checks), 500):
+        batch = db.batch()
+        for check in checks[i:i + 500]:
+            doc_ref = db.collection(COLLECTION).document()
+            batch.set(doc_ref, {
+                "monitor_id": check["monitor_id"],
+                "timestamp": now,
+                "status_code": check.get("status_code"),
+                "response_ms": check.get("response_ms"),
+                "is_up": check["is_up"],
+            })
+        batch.commit()
+
+
 def get_recent_checks(db, monitor_id: str, limit: int = 100) -> list[dict]:
     """Get recent checks for a monitor, newest first."""
     docs = (
