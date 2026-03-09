@@ -432,9 +432,108 @@ def _check_threshold_condition(condition_str: str, actual_ms: float) -> bool:
         return False
 
 
+async def _check_single_monitor(monitor: dict, now: datetime) -> dict | None:
+    """
+    Perform the network check for a single monitor.
+    Returns a dict with {monitor, result, ssl_result?, new_monitor_status?} or None if skipped.
+    """
+    mtype = monitor.get("monitor_type", "http")
+
+    if mtype == "heartbeat":
+        heartbeat_interval = monitor.get("heartbeat_interval", 300)
+        grace_period = monitor.get("heartbeat_grace_period", 30)
+        last_hb = monitor.get("last_heartbeat")
+
+        last_hb_dt = None
+        if last_hb:
+            if isinstance(last_hb, str):
+                try:
+                    last_hb_dt = datetime.fromisoformat(last_hb.replace("Z", "+00:00"))
+                except ValueError:
+                    pass
+            elif hasattr(last_hb, 'timestamp'):
+                last_hb_dt = last_hb if last_hb.tzinfo else last_hb.replace(tzinfo=timezone.utc)
+
+        if last_hb_dt is None:
+            created = monitor.get("created_at")
+            if created:
+                created_dt = created if hasattr(created, 'timestamp') else now
+                if hasattr(created_dt, 'tzinfo') and created_dt.tzinfo is None:
+                    created_dt = created_dt.replace(tzinfo=timezone.utc)
+                age = (now - created_dt).total_seconds()
+                is_up = age < heartbeat_interval + grace_period
+            else:
+                is_up = True
+        else:
+            overdue = (now - last_hb_dt).total_seconds()
+            is_up = overdue <= heartbeat_interval + grace_period
+
+        return {
+            "monitor": monitor,
+            "result": {"status_code": 200 if is_up else None, "response_ms": 0, "is_up": is_up, "body": ""},
+        }
+
+    elif mtype == "ssl":
+        ssl_domain = monitor.get("ssl_domain", "")
+        threshold_days = monitor.get("ssl_expiry_threshold_days", 14)
+        if not ssl_domain:
+            return None  # skip
+
+        loop = asyncio.get_event_loop()
+        ssl_result = await loop.run_in_executor(None, check_ssl_certificate, ssl_domain)
+
+        if ssl_result.get("error"):
+            is_up = False
+            new_monitor_status = "down"
+        elif ssl_result["ssl_expiry_days"] is not None:
+            if ssl_result["ssl_expiry_days"] <= 0:
+                is_up, new_monitor_status = False, "down"
+            elif ssl_result["ssl_expiry_days"] <= threshold_days:
+                is_up, new_monitor_status = True, "warn"
+            else:
+                is_up, new_monitor_status = True, "up"
+        else:
+            is_up, new_monitor_status = False, "down"
+
+        return {
+            "monitor": monitor,
+            "result": {"status_code": 200 if is_up else None, "response_ms": 0, "is_up": is_up, "body": ""},
+            "ssl_result": ssl_result,
+            "new_monitor_status": new_monitor_status,
+        }
+
+    elif mtype == "json_api":
+        timeout_val = monitor.get("timeout", 10)
+        expected_code = monitor.get("expected_status_code")
+        auth_header = monitor.get("auth_header", "")
+        assertions = monitor.get("json_assertions") or []
+
+        result = await check_json_api(
+            monitor["url"], timeout=timeout_val, expected_status_code=expected_code,
+            auth_header=auth_header, assertions=assertions,
+        )
+        return {"monitor": monitor, "result": result}
+
+    else:
+        # HTTP monitors
+        timeout_val = monitor.get("timeout", 10)
+        expected_code = monitor.get("expected_status_code")
+        http_method = monitor.get("http_method", "GET")
+        follow_redir = monitor.get("follow_redirects", True)
+        ba_user = monitor.get("basic_auth_user", "")
+        ba_pass = monitor.get("basic_auth_pass", "")
+
+        result = await check_url_with_retry(
+            monitor["url"], timeout=timeout_val, expected_status_code=expected_code,
+            http_method=http_method, follow_redirects=follow_redir,
+            basic_auth_user=ba_user, basic_auth_pass=ba_pass,
+        )
+        return {"monitor": monitor, "result": result}
+
+
 async def run_checks():
     """
-    Run checks for ALL monitors. Called by the cron endpoint.
+    Run checks for ALL monitors concurrently. Called by the cron endpoint.
     Returns summary of results.
     """
     db = get_db()
@@ -444,17 +543,16 @@ async def run_checks():
 
     now = datetime.now(timezone.utc)
 
+    # Phase 1: Filter monitors that are due for checking
+    due_monitors = []
     for monitor in monitors:
-        # Skip paused monitors entirely
         if monitor.get("paused", False):
             results["skipped"] += 1
             continue
 
-        # Enforce check interval — skip if not due yet
-        check_interval = monitor.get("check_interval", 300)  # default 5min (Free)
+        check_interval = monitor.get("check_interval", 300)
         last_checked = monitor.get("last_checked")
         if last_checked:
-            # Handle Firestore DatetimeWithNanoseconds or string
             if isinstance(last_checked, str):
                 try:
                     last_checked_dt = datetime.fromisoformat(last_checked.replace("Z", "+00:00"))
@@ -471,177 +569,57 @@ async def run_checks():
                     results["skipped"] += 1
                     continue
 
-        # ----- Heartbeat monitors: check if ping is overdue -----
-        if monitor.get("monitor_type") == "heartbeat":
-            heartbeat_interval = monitor.get("heartbeat_interval", 300)
-            grace_period = monitor.get("heartbeat_grace_period", 30)
-            last_hb = monitor.get("last_heartbeat")
+        due_monitors.append(monitor)
 
-            # Parse last_heartbeat timestamp
-            last_hb_dt = None
-            if last_hb:
-                if isinstance(last_hb, str):
-                    try:
-                        last_hb_dt = datetime.fromisoformat(last_hb.replace("Z", "+00:00"))
-                    except ValueError:
-                        pass
-                elif hasattr(last_hb, 'timestamp'):
-                    last_hb_dt = last_hb if last_hb.tzinfo else last_hb.replace(tzinfo=timezone.utc)
+    # Phase 2: Run all network checks concurrently
+    check_tasks = [_check_single_monitor(m, now) for m in due_monitors]
+    check_results = await asyncio.gather(*check_tasks, return_exceptions=True)
 
-            # Determine if heartbeat is overdue
-            if last_hb_dt is None:
-                # Never received a ping — if monitor is older than the interval, mark down
-                created = monitor.get("created_at")
-                if created:
-                    created_dt = created if hasattr(created, 'timestamp') else now
-                    if hasattr(created_dt, 'tzinfo') and created_dt.tzinfo is None:
-                        created_dt = created_dt.replace(tzinfo=timezone.utc)
-                    age = (now - created_dt).total_seconds()
-                    is_up = age < heartbeat_interval + grace_period
-                else:
-                    is_up = True  # brand new, give benefit of the doubt
-            else:
-                overdue = (now - last_hb_dt).total_seconds()
-                is_up = overdue <= heartbeat_interval + grace_period
+    # Phase 3: Process results sequentially (Firestore writes, alerts, incidents)
+    for cr in check_results:
+        if cr is None:
+            results["skipped"] += 1
+            continue
+        if isinstance(cr, Exception):
+            print(f"[checker] check failed with exception: {cr}")
+            results["skipped"] += 1
+            continue
 
-            # Record as a "check"
-            create_check(
-                db,
-                monitor_id=monitor["id"],
-                status_code=200 if is_up else None,
-                response_ms=0,
-                is_up=is_up,
-            )
+        monitor = cr["monitor"]
+        result = cr["result"]
+        ssl_result = cr.get("ssl_result")
+        new_monitor_status = cr.get("new_monitor_status")
 
-            # Build result dict so the rest of the loop works
-            result = {
-                "status_code": 200 if is_up else None,
-                "response_ms": 0,
-                "is_up": is_up,
-                "body": "",
-            }
+        # Record check in Firestore
+        create_check(
+            db,
+            monitor_id=monitor["id"],
+            status_code=result["status_code"],
+            response_ms=result["response_ms"],
+            is_up=result["is_up"],
+        )
 
-        # ----- SSL monitors: check certificate expiry -----
-        elif monitor.get("monitor_type") == "ssl":
-            ssl_domain = monitor.get("ssl_domain", "")
-            threshold_days = monitor.get("ssl_expiry_threshold_days", 14)
+        # Update monitor stats
+        previous_status = monitor.get("status", "pending")
+        if monitor.get("monitor_type") == "ssl" and new_monitor_status:
+            new_status = new_monitor_status
+        else:
+            new_status = "up" if result["is_up"] else "down"
 
-            if not ssl_domain:
-                results["skipped"] += 1
-                continue
-
-            ssl_result = check_ssl_certificate(ssl_domain)
-
-            # Determine status based on expiry
-            if ssl_result.get("error"):
-                is_up = False
-                new_monitor_status = "down"
-            elif ssl_result["ssl_expiry_days"] is not None:
-                if ssl_result["ssl_expiry_days"] <= 0:
-                    is_up = False
-                    new_monitor_status = "down"
-                elif ssl_result["ssl_expiry_days"] <= threshold_days:
-                    is_up = True  # Not down, but warning
-                    new_monitor_status = "warn"
-                else:
-                    is_up = True
-                    new_monitor_status = "up"
-            else:
-                is_up = False
-                new_monitor_status = "down"
-
-            create_check(
-                db,
-                monitor_id=monitor["id"],
-                status_code=200 if is_up else None,
-                response_ms=0,
-                is_up=is_up,
-            )
-
-            result = {
-                "status_code": 200 if is_up else None,
-                "response_ms": 0,
-                "is_up": is_up,
-                "body": "",
-            }
-
-            # Update SSL fields on the monitor doc
+        # Update SSL fields if SSL monitor
+        if monitor.get("monitor_type") == "ssl" and ssl_result:
             ssl_updates = {}
-            if ssl_result["ssl_expiry"]:
+            if ssl_result.get("ssl_expiry"):
                 ssl_updates["ssl_expiry"] = ssl_result["ssl_expiry"]
                 ssl_updates["ssl_issuer"] = ssl_result["ssl_issuer"]
                 ssl_updates["ssl_expiry_days"] = ssl_result["ssl_expiry_days"]
             if ssl_updates:
                 update_monitor(db, monitor["id"], ssl_updates)
 
-        # ----- JSON/API monitors: validate JSON response + assertions -----
-        elif monitor.get("monitor_type") == "json_api":
-            timeout_val = monitor.get("timeout", 10)
-            expected_code = monitor.get("expected_status_code")
-            auth_header = monitor.get("auth_header", "")
-            assertions = monitor.get("json_assertions") or []
-
-            result = await check_json_api(
-                monitor["url"],
-                timeout=timeout_val,
-                expected_status_code=expected_code,
-                auth_header=auth_header,
-                assertions=assertions,
-            )
-
-            create_check(
-                db,
-                monitor_id=monitor["id"],
-                status_code=result["status_code"],
-                response_ms=result["response_ms"],
-                is_up=result["is_up"],
-            )
-
-        else:
-            # ----- HTTP monitors: perform the check with retry -----
-            timeout_val = monitor.get("timeout", 10)
-            expected_code = monitor.get("expected_status_code")
-            http_method = monitor.get("http_method", "GET")
-            follow_redir = monitor.get("follow_redirects", True)
-            ba_user = monitor.get("basic_auth_user", "")
-            ba_pass = monitor.get("basic_auth_pass", "")
-
-            result = await check_url_with_retry(
-                monitor["url"],
-                timeout=timeout_val,
-                expected_status_code=expected_code,
-                http_method=http_method,
-                follow_redirects=follow_redir,
-                basic_auth_user=ba_user,
-                basic_auth_pass=ba_pass,
-            )
-
-            # Record check in Firestore
-            create_check(
-                db,
-                monitor_id=monitor["id"],
-                status_code=result["status_code"],
-                response_ms=result["response_ms"],
-                is_up=result["is_up"],
-            )
-
-        # Update monitor stats
-        previous_status = monitor.get("status", "pending")
-        # SSL monitors can have "warn" status
-        if monitor.get("monitor_type") == "ssl" and 'new_monitor_status' in dir():
-            pass  # new_monitor_status already set above
-        else:
-            new_status = "up" if result["is_up"] else "down"
-
-        # For SSL monitors, use the pre-determined status
-        if monitor.get("monitor_type") == "ssl":
-            new_status = new_monitor_status
-
         checks_total = monitor.get("checks_total", 0) + 1
         checks_failed = monitor.get("checks_failed", 0) + (0 if result["is_up"] else 1)
         uptime_percent = round(((checks_total - checks_failed) / checks_total) * 100, 2)
 
-        # Track when the status last changed (for "Up for X" / "Down for X")
         status_changed = previous_status != new_status
 
         monitor_updates = {
@@ -660,14 +638,12 @@ async def run_checks():
         # ----- Incrementally update daily_uptime_bars on monitor doc -----
         today_key = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         bars = list(monitor.get("daily_uptime_bars") or [])
-        # Find or create today's entry
         if bars and bars[-1].get("date") == today_key:
             bars[-1]["total"] = bars[-1].get("total", 0) + 1
             if result["is_up"]:
                 bars[-1]["up"] = bars[-1].get("up", 0) + 1
         else:
             bars.append({"date": today_key, "total": 1, "up": 1 if result["is_up"] else 0})
-        # Prune entries older than 30 days
         cutoff_date = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d")
         bars = [b for b in bars if b["date"] >= cutoff_date]
         monitor_updates["daily_uptime_bars"] = bars
@@ -675,14 +651,12 @@ async def run_checks():
         # ----- Incrementally update hourly_uptime_bars on monitor doc -----
         hour_key = datetime.now(timezone.utc).strftime("%Y-%m-%d-%H")
         hbars = list(monitor.get("hourly_uptime_bars") or [])
-        # Find or create this hour's entry
         if hbars and hbars[-1].get("hour") == hour_key:
             hbars[-1]["total"] = hbars[-1].get("total", 0) + 1
             if result["is_up"]:
                 hbars[-1]["up"] = hbars[-1].get("up", 0) + 1
         else:
             hbars.append({"hour": hour_key, "total": 1, "up": 1 if result["is_up"] else 0})
-        # Prune entries older than 24 hours
         cutoff_hour = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%d-%H")
         hbars = [b for b in hbars if b["hour"] >= cutoff_hour]
         monitor_updates["hourly_uptime_bars"] = hbars
@@ -690,7 +664,8 @@ async def run_checks():
         # ----- SSL Expiry Check (HTTP monitors only — auto-detect) -----
         ssl_info = {}
         if monitor.get("monitor_type") == "http":
-            ssl_info = grab_ssl_info(monitor["url"])
+            loop = asyncio.get_event_loop()
+            ssl_info = await loop.run_in_executor(None, grab_ssl_info, monitor["url"])
             if ssl_info["ssl_expiry"]:
                 monitor_updates["ssl_expiry"] = ssl_info["ssl_expiry"]
                 monitor_updates["ssl_issuer"] = ssl_info["ssl_issuer"]
@@ -698,7 +673,8 @@ async def run_checks():
 
         # ----- SSL Expiry Check (JSON/API monitors — auto-detect) -----
         if monitor.get("monitor_type") == "json_api" and monitor.get("url", "").startswith("https"):
-            ssl_info = grab_ssl_info(monitor["url"])
+            loop = asyncio.get_event_loop()
+            ssl_info = await loop.run_in_executor(None, grab_ssl_info, monitor["url"])
             if ssl_info["ssl_expiry"]:
                 monitor_updates["ssl_expiry"] = ssl_info["ssl_expiry"]
                 monitor_updates["ssl_issuer"] = ssl_info["ssl_issuer"]
@@ -748,23 +724,21 @@ async def run_checks():
                     break
 
         # ----- SSL Monitor — Expiry alerts based on configured threshold -----
-        if monitor.get("monitor_type") == "ssl":
+        if monitor.get("monitor_type") == "ssl" and ssl_result:
             threshold_days = monitor.get("ssl_expiry_threshold_days", 14)
-            ssl_days = monitor.get("ssl_expiry_days") or (ssl_result.get("ssl_expiry_days") if 'ssl_result' in dir() else None)
+            ssl_days = monitor.get("ssl_expiry_days") or ssl_result.get("ssl_expiry_days")
             if ssl_days is not None:
                 last_alerted = monitor.get("ssl_expiry_alerted_days")
                 if ssl_days <= threshold_days and last_alerted != threshold_days:
                     if not in_maintenance:
-                        ssl_exp = monitor.get("ssl_expiry") or (ssl_result.get("ssl_expiry") if 'ssl_result' in dir() else None)
+                        ssl_exp = monitor.get("ssl_expiry") or ssl_result.get("ssl_expiry")
                         await send_ssl_expiry_alert(monitor, ssl_days, ssl_exp)
                         update_monitor(db, monitor["id"], {"ssl_expiry_alerted_days": threshold_days})
 
         # ----- Status change detection + Incidents + Alerts -----
         if status_changed and new_status == "down":
-            # UP → DOWN: Check for existing open incident (deduplication)
             existing = get_open_incident(db, monitor["id"])
             if existing is None:
-                # Create new incident
                 incident = create_incident(
                     db,
                     monitor_id=monitor["id"],
@@ -773,10 +747,8 @@ async def run_checks():
                     status_code=result["status_code"],
                     response_ms=result["response_ms"],
                 )
-                # Trigger down alerts (unless in maintenance)
                 if not in_maintenance:
                     await send_down_alert(monitor, incident)
-                    # Webhook notification
                     if monitor.get("webhook_url"):
                         await send_webhook_notification(monitor, "monitor.down", result)
                 print(f"[checker] INCIDENT CREATED: {monitor['name']} is DOWN" +
@@ -785,14 +757,11 @@ async def run_checks():
                 print(f"[checker] {monitor['name']} still DOWN — incident already open, skipping alert")
 
         elif status_changed and new_status == "up":
-            # DOWN → UP: Resolve open incident
             open_incident = get_open_incident(db, monitor["id"])
             if open_incident:
                 resolved = resolve_incident(db, open_incident["id"])
-                # Trigger recovery alerts (unless in maintenance)
                 if not in_maintenance:
                     await send_recovery_alert(monitor, resolved)
-                    # Webhook notification
                     if monitor.get("webhook_url"):
                         await send_webhook_notification(monitor, "monitor.up", result)
                 duration = resolved.get("duration_seconds", 0)
