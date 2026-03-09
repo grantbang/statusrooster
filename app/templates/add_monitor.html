@@ -327,11 +327,15 @@
                 <div class="mf-field-group">
                     <label for="keyword">Keyword check <span class="label-optional">(optional)</span></label>
                     <input type="hidden" id="keyword" name="keyword" value="">
-                    <div class="kw-builder" id="kwBuilder">
+                    <button type="button" class="kw-add-btn kw-add-btn-standalone" id="kwAddFirst" onclick="kwAddRow(); this.style.display='none';">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 7h5M7 4.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        Add keyword
+                    </button>
+                    <div class="kw-builder" id="kwBuilder" style="display: none;">
                         <div class="kw-rows" id="kwRows"></div>
                         <button type="button" class="kw-add-btn" onclick="kwAddRow()">
                             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 7h5M7 4.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                            Add keyword
+                            Add another keyword
                         </button>
                     </div>
                     <div class="hint">Body must contain these keywords or the monitor is marked <strong>down</strong>.</div>
@@ -579,12 +583,18 @@ function kwSync() {
 }
 function kwRender() {
     var container = document.getElementById('kwRows');
+    var builder = document.getElementById('kwBuilder');
+    var addFirst = document.getElementById('kwAddFirst');
     if (!container) return;
     if (kwRows.length === 0) {
-        container.innerHTML = '<div class="kw-empty">No keywords — click "Add keyword" to check for content in the response body</div>';
+        container.innerHTML = '';
+        builder.style.display = 'none';
+        addFirst.style.display = '';
         document.getElementById('keyword').value = '';
         return;
     }
+    builder.style.display = '';
+    addFirst.style.display = 'none';
     var html = '';
     kwRows.forEach(function(row, i) {
         if (i > 0) {
