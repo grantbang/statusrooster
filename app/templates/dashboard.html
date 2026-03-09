@@ -569,21 +569,25 @@ function setSortMode(mode, label) {
 }
 function sortList() {
     const list = document.getElementById('monitorList');
-    const cards = Array.from(list.querySelectorAll('.monitor-card.d-two-tier:not([style*="dashed"])'));
-    const addCard = list.querySelector('.monitor-card[style*="dashed"]');
+    const allCards = Array.from(list.querySelectorAll('.monitor-card.d-two-tier[data-id]'));
+    const addCard = list.querySelector('.monitor-card.d-two-tier:not([data-id])');
     const statusOrder = {down: 0, pending: 1, warn: 2, up: 3, paused: 4};
 
-    cards.sort((a, b) => {
+    allCards.sort((a, b) => {
         switch (currentSort) {
-            case 'down-first': return (statusOrder[a.dataset.status]||9) - (statusOrder[b.dataset.status]||9);
+            case 'down-first': {
+                const ao = a.dataset.status in statusOrder ? statusOrder[a.dataset.status] : 9;
+                const bo = b.dataset.status in statusOrder ? statusOrder[b.dataset.status] : 9;
+                return ao - bo;
+            }
             case 'name-asc': return a.dataset.name.localeCompare(b.dataset.name);
             case 'name-desc': return b.dataset.name.localeCompare(a.dataset.name);
-            case 'uptime-asc': return parseFloat(a.dataset.uptime) - parseFloat(b.dataset.uptime);
-            case 'uptime-desc': return parseFloat(b.dataset.uptime) - parseFloat(a.dataset.uptime);
+            case 'uptime-asc': return parseFloat(a.dataset.uptime||0) - parseFloat(b.dataset.uptime||0);
+            case 'uptime-desc': return parseFloat(b.dataset.uptime||0) - parseFloat(a.dataset.uptime||0);
             default: return 0;
         }
     });
-    cards.forEach(c => list.appendChild(c));
+    allCards.forEach(c => list.appendChild(c));
     if (addCard) list.appendChild(addCard);
 }
 sortList();
