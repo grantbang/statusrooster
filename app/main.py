@@ -4,7 +4,11 @@ from fastapi.templating import Jinja2Templates
 from app.routers import auth, monitors, cron, pages, billing, api_v1, badge, oauth, heartbeat
 from datetime import datetime
 import json
+import logging
 import os
+
+# Configure root logger so app.services.checker logs are visible
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 
 app = FastAPI(
     title="StatusRooster",

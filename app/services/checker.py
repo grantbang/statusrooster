@@ -5,6 +5,7 @@ import ssl
 import socket
 import json as json_lib
 import logging
+import random
 from datetime import datetime, timezone, timedelta
 from app.database import get_db
 from app.models.monitor import get_all_monitors, update_monitor
@@ -18,13 +19,39 @@ logger = logging.getLogger(__name__)
 CHECK_CONCURRENCY = 50
 _check_semaphore = asyncio.Semaphore(CHECK_CONCURRENCY)
 
+# Shared httpx client for connection pooling (lazily created)
+_shared_client: httpx.AsyncClient | None = None
+
+
+async def _get_client() -> httpx.AsyncClient:
+    """Get or create the shared httpx.AsyncClient with connection pooling."""
+    global _shared_client
+    if _shared_client is None or _shared_client.is_closed:
+        _shared_client = httpx.AsyncClient(
+            limits=httpx.Limits(max_connections=100, max_keepalive_connections=50),
+            timeout=httpx.Timeout(30.0),
+        )
+        logger.info("[checker] Created shared httpx.AsyncClient (pool: 100 max, 50 keepalive)")
+    return _shared_client
+
+
+async def close_client():
+    """Close the shared httpx client gracefully."""
+    global _shared_client
+    if _shared_client is not None and not _shared_client.is_closed:
+        await _shared_client.aclose()
+        _shared_client = None
+        logger.info("[checker] Closed shared httpx.AsyncClient")
+
 
 async def check_url(url: str, timeout: float = 10.0, expected_status_code: int | None = None,
                     http_method: str = "GET", follow_redirects: bool = True,
-                    basic_auth_user: str = "", basic_auth_pass: str = "") -> dict:
+                    basic_auth_user: str = "", basic_auth_pass: str = "",
+                    client: httpx.AsyncClient | None = None) -> dict:
     """
     Perform an HTTP request to the target URL.
     Returns dict with status_code, response_ms, is_up, body (first 10KB).
+    Uses shared client if provided, otherwise creates a one-off client.
     """
     try:
         headers = {}
@@ -33,7 +60,11 @@ async def check_url(url: str, timeout: float = 10.0, expected_status_code: int |
             credentials = base64.b64encode(f"{basic_auth_user}:{basic_auth_pass}".encode()).decode()
             headers["Authorization"] = f"Basic {credentials}"
 
-        async with httpx.AsyncClient() as client:
+        # Use shared client if provided, otherwise create a one-off client
+        owns_client = client is None
+        if owns_client:
+            client = httpx.AsyncClient()
+        try:
             start = time.monotonic()
             response = await client.request(
                 http_method.upper(),
@@ -54,6 +85,9 @@ async def check_url(url: str, timeout: float = 10.0, expected_status_code: int |
                 "is_up": is_up,
                 "body": response.text[:10240] if is_up else response.text[:10240],
             }
+        finally:
+            if owns_client:
+                await client.aclose()
     except (httpx.TimeoutException, httpx.ConnectError, httpx.RequestError):
         return {
             "status_code": None,
@@ -65,38 +99,52 @@ async def check_url(url: str, timeout: float = 10.0, expected_status_code: int |
 
 async def check_url_with_retry(url: str, timeout: float = 10.0, expected_status_code: int | None = None,
                                http_method: str = "GET", follow_redirects: bool = True,
-                               basic_auth_user: str = "", basic_auth_pass: str = "") -> dict:
+                               basic_auth_user: str = "", basic_auth_pass: str = "",
+                               client: httpx.AsyncClient | None = None) -> dict:
     """
     Check a URL with false positive prevention.
-    If the first check fails, wait 5 seconds and retry once.
+    If the first check fails, wait with jitter and retry once.
+    Returns result dict with added 'retried' key.
     """
     result = await check_url(url, timeout, expected_status_code,
                              http_method=http_method, follow_redirects=follow_redirects,
-                             basic_auth_user=basic_auth_user, basic_auth_pass=basic_auth_pass)
+                             basic_auth_user=basic_auth_user, basic_auth_pass=basic_auth_pass,
+                             client=client)
     if not result["is_up"]:
-        # Retry once after 5 seconds to prevent false positives
-        await asyncio.sleep(5)
+        # Jitter retry delay to prevent synchronized retry storms during outages
+        await asyncio.sleep(random.uniform(2, 8))
         result = await check_url(url, timeout, expected_status_code,
                                  http_method=http_method, follow_redirects=follow_redirects,
-                                 basic_auth_user=basic_auth_user, basic_auth_pass=basic_auth_pass)
+                                 basic_auth_user=basic_auth_user, basic_auth_pass=basic_auth_pass,
+                                 client=client)
+        result["retried"] = True
+    else:
+        result["retried"] = False
     return result
 
 
 async def check_json_api(url: str, timeout: float = 10.0, expected_status_code: int | None = None,
-                         auth_header: str = "", assertions: list | None = None) -> dict:
+                         auth_header: str = "", assertions: list | None = None,
+                         client: httpx.AsyncClient | None = None) -> dict:
     """
     Check a JSON API endpoint. Validates:
     - HTTP response status
     - JSON validity
     - Field assertions (key path + operator + expected value)
     Returns dict with status_code, response_ms, is_up, body, assertion_results.
+    Uses shared client if provided, otherwise creates a one-off client.
     """
     assertions = assertions or []
     try:
         headers = {}
         if auth_header:
             headers["Authorization"] = auth_header
-        async with httpx.AsyncClient() as client:
+
+        # Use shared client if provided, otherwise create a one-off client
+        owns_client = client is None
+        if owns_client:
+            client = httpx.AsyncClient()
+        try:
             start = time.monotonic()
             response = await client.get(url, timeout=timeout, follow_redirects=True, headers=headers)
             elapsed_ms = round((time.monotonic() - start) * 1000, 2)
@@ -157,6 +205,9 @@ async def check_json_api(url: str, timeout: float = 10.0, expected_status_code: 
                 "json_valid": json_valid,
                 "assertion_results": assertion_results,
             }
+        finally:
+            if owns_client:
+                await client.aclose()
     except (httpx.TimeoutException, httpx.ConnectError, httpx.RequestError):
         return {
             "status_code": None,
@@ -439,6 +490,15 @@ def _check_threshold_condition(condition_str: str, actual_ms: float) -> bool:
         return False
 
 
+def _percentile(sorted_values: list, pct: float) -> float:
+    """Compute a percentile from a pre-sorted list of values."""
+    if not sorted_values:
+        return 0
+    idx = int(len(sorted_values) * pct)
+    idx = min(idx, len(sorted_values) - 1)
+    return sorted_values[idx]
+
+
 async def _check_single_monitor(monitor: dict, now: datetime) -> dict | None:
     """
     Perform the network check for a single monitor (with concurrency limiting).
@@ -449,8 +509,9 @@ async def _check_single_monitor(monitor: dict, now: datetime) -> dict | None:
 
 
 async def _check_single_monitor_inner(monitor: dict, now: datetime) -> dict | None:
-    """Inner check logic — runs inside the semaphore."""
+    """Inner check logic — runs inside the semaphore. Uses shared httpx client."""
     mtype = monitor.get("monitor_type", "http")
+    client = await _get_client()
 
     if mtype == "heartbeat":
         heartbeat_interval = monitor.get("heartbeat_interval", 300)
@@ -523,7 +584,7 @@ async def _check_single_monitor_inner(monitor: dict, now: datetime) -> dict | No
 
         result = await check_json_api(
             monitor["url"], timeout=timeout_val, expected_status_code=expected_code,
-            auth_header=auth_header, assertions=assertions,
+            auth_header=auth_header, assertions=assertions, client=client,
         )
         # Grab SSL info concurrently for HTTPS URLs
         ssl_info = {}
@@ -544,7 +605,7 @@ async def _check_single_monitor_inner(monitor: dict, now: datetime) -> dict | No
         result = await check_url_with_retry(
             monitor["url"], timeout=timeout_val, expected_status_code=expected_code,
             http_method=http_method, follow_redirects=follow_redir,
-            basic_auth_user=ba_user, basic_auth_pass=ba_pass,
+            basic_auth_user=ba_user, basic_auth_pass=ba_pass, client=client,
         )
         # Grab SSL info concurrently for HTTPS URLs
         ssl_info = {}
@@ -559,6 +620,7 @@ async def run_checks():
     Run checks for ALL monitors concurrently. Called by the cron endpoint.
     Returns summary of results.
     """
+    t_cycle_start = time.monotonic()
     db = get_db()
     monitors = get_all_monitors(db)
 
@@ -604,6 +666,11 @@ async def run_checks():
     # Phase 3: Process results — Firestore writes, alerts, incidents
     t_writes = time.monotonic()
     check_batch = []  # Accumulate check records for batch write
+    # Instrumentation counters
+    response_times = []  # Collect response_ms for percentile calculation
+    retry_count = 0
+    fw_writes = 0  # Firestore write operations
+    errors_by_type = {}  # {monitor_type: down_count}
     for cr in check_results:
         if cr is None:
             results["skipped"] += 1
@@ -627,22 +694,21 @@ async def run_checks():
             "is_up": result["is_up"],
         })
 
+        # Instrumentation: collect per-check metrics
+        if result["response_ms"] is not None and result["response_ms"] > 0:
+            response_times.append(result["response_ms"])
+        if result.get("retried"):
+            retry_count += 1
+        if not result["is_up"]:
+            mtype = monitor.get("monitor_type", "http")
+            errors_by_type[mtype] = errors_by_type.get(mtype, 0) + 1
+
         # Update monitor stats
         previous_status = monitor.get("status", "pending")
         if monitor.get("monitor_type") == "ssl" and new_monitor_status:
             new_status = new_monitor_status
         else:
             new_status = "up" if result["is_up"] else "down"
-
-        # Update SSL fields if SSL monitor
-        if monitor.get("monitor_type") == "ssl" and ssl_result:
-            ssl_updates = {}
-            if ssl_result.get("ssl_expiry"):
-                ssl_updates["ssl_expiry"] = ssl_result["ssl_expiry"]
-                ssl_updates["ssl_issuer"] = ssl_result["ssl_issuer"]
-                ssl_updates["ssl_expiry_days"] = ssl_result["ssl_expiry_days"]
-            if ssl_updates:
-                update_monitor(db, monitor["id"], ssl_updates)
 
         checks_total = monitor.get("checks_total", 0) + 1
         checks_failed = monitor.get("checks_failed", 0) + (0 if result["is_up"] else 1)
@@ -701,7 +767,12 @@ async def run_checks():
             monitor_updates["ssl_issuer"] = ssl_info["ssl_issuer"]
             monitor_updates["ssl_expiry_days"] = ssl_info["ssl_expiry_days"]
 
-        update_monitor(db, monitor["id"], monitor_updates)
+        # ----- SSL cert fields for SSL monitors (merged into single update) -----
+        if monitor.get("monitor_type") == "ssl" and ssl_result:
+            if ssl_result.get("ssl_expiry"):
+                monitor_updates["ssl_expiry"] = ssl_result["ssl_expiry"]
+                monitor_updates["ssl_issuer"] = ssl_result["ssl_issuer"]
+                monitor_updates["ssl_expiry_days"] = ssl_result["ssl_expiry_days"]
 
         if result["is_up"]:
             results["up"] += 1
@@ -741,7 +812,7 @@ async def run_checks():
                 if days_left <= threshold_days and last_alerted != threshold_days:
                     if not in_maintenance:
                         await send_ssl_expiry_alert(monitor, days_left, ssl_info["ssl_expiry"])
-                        update_monitor(db, monitor["id"], {"ssl_expiry_alerted_days": threshold_days})
+                        monitor_updates["ssl_expiry_alerted_days"] = threshold_days
                     break
 
         # ----- SSL Monitor — Expiry alerts based on configured threshold -----
@@ -754,7 +825,7 @@ async def run_checks():
                     if not in_maintenance:
                         ssl_exp = monitor.get("ssl_expiry") or ssl_result.get("ssl_expiry")
                         await send_ssl_expiry_alert(monitor, ssl_days, ssl_exp)
-                        update_monitor(db, monitor["id"], {"ssl_expiry_alerted_days": threshold_days})
+                        monitor_updates["ssl_expiry_alerted_days"] = threshold_days
 
         # ----- Status change detection + Incidents + Alerts -----
         if status_changed and new_status == "down":
@@ -789,18 +860,40 @@ async def run_checks():
                 print(f"[checker] INCIDENT RESOLVED: {monitor['name']} is UP (down for {duration}s)" +
                       (" (maintenance — alerts suppressed)" if in_maintenance else ""))
 
+        # ----- Single consolidated Firestore write per monitor -----
+        update_monitor(db, monitor["id"], monitor_updates)
+        fw_writes += 1
+
     # Batch-write all check records at once (much faster than individual writes)
     if check_batch:
         try:
             create_checks_batch(db, check_batch)
+            fw_writes += 1  # Count the batch as one write operation
         except Exception as e:
             logger.error(f"[checker] Batch check write failed, falling back to individual: {e}")
             for c in check_batch:
                 try:
                     create_check(db, c["monitor_id"], c["status_code"], c["response_ms"], c["is_up"])
+                    fw_writes += 1
                 except Exception:
                     pass
 
-    t_total = time.monotonic() - t_writes
-    logger.info(f"[checker] Phase 3: writes/alerts completed in {t_total:.1f}s — results: {results}")
+    t_phase3 = time.monotonic() - t_writes
+    t_total = time.monotonic() - t_cycle_start
+
+    # ----- Instrumentation: compute percentiles and emit structured summary -----
+    due_count = len(due_monitors)
+    cps = due_count / t_checks if t_checks > 0 else 0
+    response_times.sort()
+    p50 = _percentile(response_times, 0.50) if response_times else 0
+    p95 = _percentile(response_times, 0.95) if response_times else 0
+    wpm = fw_writes / due_count if due_count > 0 else 0
+
+    logger.info(
+        f"[checker] CYCLE COMPLETE | total={t_total:.1f}s | due={due_count} | checks/sec={cps:.1f} | "
+        f"phase2={t_checks:.1f}s | phase3={t_phase3:.1f}s | p50={p50}ms | p95={p95}ms | "
+        f"retries={retry_count} | fw_writes={fw_writes} | writes/mon={wpm:.1f} | "
+        f"up={results['up']} | down={results['down']} | skipped={results['skipped']} | errors_by_type={errors_by_type}"
+    )
+
     return results

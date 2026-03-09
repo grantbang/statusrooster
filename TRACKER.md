@@ -741,6 +741,140 @@ Layout order (top to bottom):
 
 ---
 
+## Phase 10: Checker Scale Hardening
+
+> **Context:** External architecture review (see `app/screenshots/gptfeedbackapidocs.txt`) identified 7 issues in `checker.py`. Three are already fixed (concurrent checks, semaphore, batch writes — commits `779acc3`, `de0e88b`). Three more are high-ROI fixes worth doing before launch. The remaining items are deferred to post-launch (see Post-Launch Backlog → Scale Architecture).
+>
+> **Files to change:**
+> | File | What Changes |
+> |------|-------------|
+> | `app/services/checker.py` | Shared httpx client, consolidated updates, retry jitter |
+>
+> **What was already fixed (this session):**
+> - ✅ Sequential → concurrent checks via `asyncio.gather` (commit `779acc3`)
+> - ✅ `asyncio.Semaphore(50)` for connection limiting (commit `de0e88b`)
+> - ✅ `create_checks_batch()` for Firestore batch writes (commit `de0e88b`)
+> - ✅ SSL grabs run concurrently in Phase 2 via `run_in_executor` (commit `de0e88b`)
+> - ✅ Cloud Scheduler `attemptDeadline` bumped from 60s → 180s (commit `779acc3`)
+> - ✅ Tested locally: 10 real monitors in 7.3s, 200 simulated in 3.5s, 1000 simulated in 29.4s
+
+---
+
+### 10.1 — Shared `httpx.AsyncClient` (Connection Pooling)
+
+> **Problem:** `check_url()` and `check_json_api()` each create a fresh `httpx.AsyncClient()` per call via `async with httpx.AsyncClient() as client:`. This means every single monitor check opens a new TCP connection (+ TLS handshake for HTTPS), throwing away connection reuse entirely. For a monitoring app that hits the same domains repeatedly, this is the single highest-impact performance fix.
+>
+> **Impact:** Fewer TCP/TLS handshakes → lower latency per check, reduced ephemeral port pressure, better throughput under load, fewer file descriptor issues at scale.
+
+- [x] **10.1.1** Create a module-level shared `httpx.AsyncClient` instance in `checker.py`
+  - Use `httpx.AsyncClient(limits=httpx.Limits(max_connections=100, max_keepalive_connections=50), timeout=httpx.Timeout(30.0))` as defaults
+  - Store as `_shared_client: httpx.AsyncClient | None = None`
+  - Add `_get_client()` async helper that lazily creates the client on first use (avoids creating at import time when no event loop exists)
+  - Client must be created inside an async context — cannot use module-level `httpx.AsyncClient()` directly
+- [x] **10.1.2** Refactor `check_url()` to accept an optional `client` parameter
+  - If `client` is provided, use it directly (no `async with`)
+  - If `client` is None, fall back to creating a one-off client (backward compatibility)
+  - Remove the `async with httpx.AsyncClient() as client:` wrapper when shared client is used
+- [x] **10.1.3** Refactor `check_json_api()` to accept an optional `client` parameter (same pattern as 10.1.2)
+- [x] **10.1.4** Update `check_url_with_retry()` to get the shared client once and pass it to both `check_url()` calls (initial + retry)
+- [x] **10.1.5** Update `_check_single_monitor_inner()` to get the shared client and pass it through to `check_url_with_retry()` / `check_json_api()`
+- [x] **10.1.6** Add `async def close_client()` function that closes the shared client gracefully — call from FastAPI shutdown event or end of `run_checks()`
+
+#### ✅ Phase 10.1 Gate — Shared Client Tests
+- [x] **10.1.T1** Server starts without errors — no import-time event loop issues
+- [x] **10.1.T2** Run `POST /cron/check` locally — all monitors checked successfully (same results as before)
+- [x] **10.1.T3** Verify connection reuse — add a `logger.info` in `_get_client()` and confirm it's only called once per `run_checks()` cycle, not once per monitor
+- [x] **10.1.T4** Run checks twice back-to-back — client reused across cycles (no "creating new client" log on second run)
+- [x] **10.1.T5** Verify `check_url()` still works standalone (e.g., from API endpoint or tests) by calling without `client` param — fallback client created
+
+---
+
+### 10.2 — Consolidate Per-Monitor Firestore Updates
+
+> **Problem:** During Phase 3 (result processing), a single monitor can trigger `update_monitor()` up to 3 times per cycle:
+> 1. SSL fields update (line ~635) — for SSL monitors with cert data
+> 2. Main monitor stats update (line ~685) — status, uptime, bars, response time
+> 3. SSL alert tracking update (line ~740) — `ssl_expiry_alerted_days` field
+>
+> Each `update_monitor()` call is a separate Firestore write operation. At 1000 monitors, this means up to 3000 writes per cycle instead of 1000.
+>
+> **Fix:** Build a single `monitor_updates` dict throughout the processing loop and call `update_monitor()` exactly once per monitor at the end.
+
+- [x] **10.2.1** Move SSL cert field updates (currently separate `update_monitor()` for SSL monitors ~line 635) into the main `monitor_updates` dict
+  - For SSL monitors: merge `ssl_expiry`, `ssl_issuer`, `ssl_expiry_days` into `monitor_updates` instead of a separate write
+- [x] **10.2.2** Move SSL alert tracking update (currently separate `update_monitor()` ~line 740) into the main `monitor_updates` dict
+  - Set `monitor_updates["ssl_expiry_alerted_days"] = threshold_days` instead of calling `update_monitor()` separately
+  - Same for HTTP/JSON SSL expiry alerts (~line 730)
+- [x] **10.2.3** Verify that the single `update_monitor(db, monitor["id"], monitor_updates)` call (already exists ~line 685) now contains ALL fields — no other `update_monitor()` calls should exist inside the per-monitor loop
+- [x] **10.2.4** Add a log line counting total Firestore writes per cycle: `logger.info(f"[checker] Phase 3: {len(due_monitors)} monitor updates, {len(check_batch)} check batch writes")`
+
+#### ✅ Phase 10.2 Gate — Consolidated Write Tests
+- [x] **10.2.T1** Run `POST /cron/check` — all monitors update correctly (status, uptime bars, SSL fields all present)
+- [x] **10.2.T2** Grep `checker.py` for `update_monitor` — confirm only ONE call per monitor inside the processing loop (plus the batch write at the end)
+- [x] **10.2.T3** SSL monitor check — verify `ssl_expiry`, `ssl_issuer`, `ssl_expiry_days` all written in single update (check Firestore doc)
+- [x] **10.2.T4** HTTP monitor with SSL (HTTPS URL) — verify `ssl_expiry` fields written in same update as status/uptime
+
+---
+
+### 10.3 — Retry Jitter (Prevent Retry Storms)
+
+> **Problem:** When a check fails, `check_url_with_retry()` does `await asyncio.sleep(5)` before retrying. This is a fixed 5-second delay. If many monitors fail simultaneously (e.g., a cloud provider outage), all retries fire at exactly the same moment 5 seconds later, creating a synchronized burst ("retry storm") that can saturate the semaphore and delay all other checks.
+>
+> **Fix:** Add random jitter to the retry delay (2–8 seconds instead of fixed 5). This spreads retries across a time window, reducing peak concurrency pressure during outages.
+
+- [x] **10.3.1** Import `random` at the top of `checker.py`
+- [x] **10.3.2** In `check_url_with_retry()`, replace `await asyncio.sleep(5)` with `await asyncio.sleep(random.uniform(2, 8))`
+- [x] **10.3.3** Add a comment explaining the jitter: `# Jitter retry delay to prevent synchronized retry storms during outages`
+
+#### ✅ Phase 10.3 Gate — Retry Jitter Tests
+- [x] **10.3.T1** Grep for `asyncio.sleep(5)` in checker.py — should NOT exist (replaced with `random.uniform`)
+- [x] **10.3.T2** Grep for `random.uniform` in checker.py — should exist in `check_url_with_retry()`
+- [x] **10.3.T3** Run `POST /cron/check` — all monitors still check successfully (jitter doesn't break retry logic)
+
+---
+
+### 10.4 — Instrumentation (Prove the Fixes Worked)
+
+> **Problem:** We're making 3 performance changes (shared client, consolidated writes, retry jitter) but have no before/after metrics to prove they actually helped. Without instrumentation, we're improving blind.
+>
+> **Approach:** Add structured logging at the end of each `run_checks()` cycle that emits a single summary log line with all key metrics. This lets us compare Cloud Run logs before and after deploying Phase 10 changes. No external monitoring infra needed — just `logger.info` with parseable data.
+>
+> **What to track:**
+> | Metric | Why | How |
+> |--------|-----|-----|
+> | `total_duration_s` | Overall cron cycle time | `time.monotonic()` start-to-finish |
+> | `checks_per_sec` | Throughput | `due_count / phase2_duration` |
+> | `phase2_duration_s` | Network check time (shared client impact) | Already timed |
+> | `phase3_duration_s` | Write + alert time (consolidation impact) | Already timed |
+> | `p50_check_ms` / `p95_check_ms` | Per-check latency distribution | Collect `response_ms` from all results, compute percentiles |
+> | `retries_triggered` | How often retry fires (jitter impact) | Counter incremented in `check_url_with_retry()` |
+> | `firestore_writes` | Total DB writes per cycle | Count `update_monitor` calls + batch write |
+> | `writes_per_monitor` | Avg writes per monitor (consolidation proof) | `firestore_writes / due_count` |
+> | `errors_by_type` | Down monitors grouped by type | Count from results |
+
+- [x] **10.4.1** Add a `retries_triggered` counter to `check_url_with_retry()` — return it alongside the result dict (add `"retried": True/False` key to result)
+- [x] **10.4.2** Collect per-check `response_ms` values during Phase 3 result processing — build a list for percentile calculation
+- [x] **10.4.3** Add a `_percentile(sorted_list, pct)` helper function (simple: `sorted_list[int(len * pct)]`)
+- [x] **10.4.4** Count `firestore_writes` — initialize counter at 0, increment for each `update_monitor()` call and for the batch write
+- [x] **10.4.5** Count `errors_by_type` — dict tracking `{monitor_type: down_count}` during result processing
+- [x] **10.4.6** Emit a single structured summary log at the end of `run_checks()`:
+  ```
+  logger.info(f"[checker] CYCLE COMPLETE | total={total_s:.1f}s | due={due_count} | checks/sec={cps:.1f} | "
+              f"phase2={p2_s:.1f}s | phase3={p3_s:.1f}s | p50={p50}ms | p95={p95}ms | "
+              f"retries={retry_count} | fw_writes={fw_writes} | writes/mon={wpm:.1f} | "
+              f"up={up} | down={down} | skipped={skipped} | errors_by_type={errors_by_type}")
+  ```
+- [x] **10.4.7** Add a `total_duration_s` timer wrapping the entire `run_checks()` function (Phase 1 + 2 + 3)
+
+#### ✅ Phase 10.4 Gate — Instrumentation Tests
+- [x] **10.4.T1** Run `POST /cron/check` locally — look for `CYCLE COMPLETE` log line in terminal output
+- [x] **10.4.T2** Verify all metrics are present and non-null in the log line (total, due, checks/sec, p50, p95, retries, fw_writes, writes/mon)
+- [x] **10.4.T3** `p50` and `p95` are sane values (>0ms, <30000ms) — not 0 or None
+- [x] **10.4.T4** `writes/mon` should be ~1.0 after 10.2 consolidation (was ~2-3 before)
+- [x] **10.4.T5** `retries` count is an integer ≥0
+
+---
+
 ## Post-Launch Backlog (Phase 4: Days 13+)
 
 ### Days 13-14 — Bug Fixes & Growth
@@ -755,6 +889,15 @@ Layout order (top to bottom):
 - [ ] Multi-region checks (Pro — US-East, EU-West, Asia, confirm from 2+ before alerting)
 - [ ] Discord webhook (same pattern as Slack)
 - [ ] Alert confirmation threshold ("wait N fails before alerting")
+
+### Scale Architecture (deferred — revisit at trigger points)
+> Source: GPT architecture review (`app/screenshots/gptfeedbackapidocs.txt`). These are real improvements, but premature before real user volume.
+
+- [ ] **`due_at` query model** — Replace full-table `get_all_monitors()` scan with Firestore `where("due_at", "<=", now)` query. Add `due_at` field to monitor docs, update after each check. Eliminates Python-side filtering. **Trigger: >5K monitors or cron runs exceeding 60s.**
+- [ ] **Separate notifications pipeline** — Decouple alerting from checker loop. Checker emits events (`monitor.down`, `monitor.up`, `ssl.expiring`), push to Cloud Tasks or Pub/Sub, separate worker sends emails/Slack/webhooks. Prevents slow webhook targets from back-pressuring checks. **Trigger: alert delivery latency >2s or webhook hangs observed.**
+- [ ] **Move analytics off monitor doc** — Keep `daily_uptime_bars` / `hourly_uptime_bars` on monitor doc for dashboard reads (zero-query pattern), but compute long-term analytics from `checks` collection separately. Reduces monitor doc churn. **Trigger: monitor docs exceeding 100KB or Firestore write contention.**
+- [ ] **Sharded workers** — Replace single cron → single `run_checks()` with partitioned workers. Scheduler assigns monitor shards to multiple Cloud Run instances via Cloud Tasks. **Trigger: >10K monitors or single-instance Cloud Run hitting memory/CPU limits.**
+- [ ] **Retry from second region** — Instead of "same worker sleeps and retries," confirm downtime from a second region/worker before alerting. Reduces false positives from localized network issues. **Trigger: false positive complaints from users.**
 
 ### Future Backlog
 - [ ] CLI tool (`pip install statusrooster`)
@@ -782,13 +925,14 @@ Layout order (top to bottom):
 | 7 | Phase 7: Dashboard template + JS | ✅ |
 | 8 | Phase 8: Dashboard backend | ✅ |
 | 9 | Phase 9: Dashboard E2E QA | 🔲 |
-| 10 | 10B: GitHub OAuth | 🔲 |
-| 11 | 10F: Pro upsell polish | 🔲 |
-| 12 | 11B: Activity log | 🔲 |
-| 13 | 11C: Hardening | 🔲 |
-| 14 | 11E: API & API Docs QA | 🔲 |
-| 15 | 11D: Admin dashboard | 🔲 |
-| 16 | Day 12: Testing & launch | 🔲 |
+| 10 | Phase 10: Checker Scale Hardening | ✅ |
+| 11 | 10B: GitHub OAuth | 🔲 |
+| 12 | 10F: Pro upsell polish | 🔲 |
+| 13 | 11B: Activity log | 🔲 |
+| 14 | 11C: Hardening | 🔲 |
+| 15 | 11E: API & API Docs QA | 🔲 |
+| 16 | 11D: Admin dashboard | 🔲 |
+| 17 | Day 12: Testing & launch | 🔲 |
 
 **Work through Phases 1–9 sequentially. Run every Gate test before moving to the next Phase. Do not skip ahead.**
 
@@ -802,8 +946,9 @@ Layout order (top to bottom):
 - Phase 7: ~~28~~ **0** ✅
 - Phase 8: ~~9~~ **0** ✅
 - Phase 9: 10 E2E = **10**
+- Phase 10: 13 build + 10 gate + 7 build + 5 gate = **35**
 - Non-UI tasks: ~25 + 54 (11E) = **~79**
-- **Grand total: ~95 checkboxes** (was 132, 37 completed this phase)
+- **Grand total: ~130 checkboxes**
 
 ---
 
