@@ -70,26 +70,6 @@
                 </div>
                 {% endif %}
                 {% set resp_headers = incident.get('failure_response_headers', {}) %}
-                {% if resp_headers %}
-                <div class="inc-kv inc-kv-headers">
-                    <span class="inc-kv-label">Response Headers</span>
-                    <span class="inc-kv-value">
-                        <details class="inc-headers-details">
-                            <summary class="inc-headers-summary">
-                                Show {{ resp_headers | length }} header{{ 's' if resp_headers | length != 1 else '' }}
-                            </summary>
-                            <table class="inc-headers-table">
-                                {% for k, v in resp_headers.items() %}
-                                <tr>
-                                    <td class="inc-hdr-key">{{ k }}</td>
-                                    <td class="inc-hdr-val">{{ v }}</td>
-                                </tr>
-                                {% endfor %}
-                            </table>
-                        </details>
-                    </span>
-                </div>
-                {% endif %}
             </div>
         </div>
 
@@ -121,6 +101,26 @@
             </div>
         </div>
     </div>
+
+    {% if resp_headers %}
+    <!-- Response Headers — full-width block -->
+    <div class="inc-detail-section inc-headers-block" style="margin-top: 0.75rem;">
+        <details>
+            <summary class="inc-headers-summary">
+                Response headers
+                <span style="font-size:0.7rem; background:#f3f4f6; border:1px solid var(--border); border-radius:10px; padding:0 0.4rem; line-height:1.7; color:var(--muted);">{{ resp_headers | length }}</span>
+            </summary>
+            <table class="inc-headers-table">
+                {% for k, v in resp_headers.items() %}
+                <tr>
+                    <td class="inc-hdr-key">{{ k }}</td>
+                    <td class="inc-hdr-val">{{ v }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </details>
+    </div>
+    {% endif %}
 
     <!-- Activity Timeline -->
     <div class="inc-detail-section" style="margin-top: 1.5rem;">

@@ -4705,26 +4705,55 @@ a.inc-row-link:hover { text-decoration: none; }
     user-select: none;
 }
 .inc-headers-summary::-webkit-details-marker { display: none; }
+
+/* Full-width headers block — spans whole Details card, not inside kv columns */
+.inc-headers-block {
+    grid-column: 1 / -1;
+    margin-top: 0.25rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+}
+.inc-headers-block .inc-headers-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0;
+    font-size: 0.78rem;
+    color: var(--brand);
+}
+.inc-headers-block .inc-headers-summary::before {
+    content: '▶';
+    font-size: 0.55rem;
+    transition: transform 0.15s;
+    display: inline-block;
+}
+details[open] .inc-headers-block .inc-headers-summary::before,
+.inc-headers-block details[open] .inc-headers-summary::before {
+    transform: rotate(90deg);
+}
 .inc-headers-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 0.5rem;
     font-family: var(--font-mono);
     font-size: 0.75rem;
+    table-layout: fixed;
 }
 .inc-headers-table tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
 .inc-hdr-key {
     color: var(--muted);
-    padding: 0.2rem 0.5rem 0.2rem 0;
+    padding: 0.25rem 0.75rem 0.25rem 0;
     vertical-align: top;
     white-space: nowrap;
-    width: 38%;
-    word-break: break-all;
+    width: 36%;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .inc-hdr-val {
-    padding: 0.2rem 0;
+    padding: 0.25rem 0;
     vertical-align: top;
-    word-break: break-all;
+    word-break: break-word;
+    overflow-wrap: break-word;
     color: var(--text);
 }
 .inc-monitor-link { color: var(--brand); text-decoration: none; }
