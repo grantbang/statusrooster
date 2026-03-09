@@ -165,6 +165,14 @@ async def signup_page(request: Request):
 
 @router.post("/signup", response_class=HTMLResponse)
 async def signup_submit(request: Request, email: str = Form(...), password: str = Form(...), password_confirm: str = Form(...)):
+    import re as _re
+    # Validate email format
+    email = email.strip().lower()
+    if not _re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+        return templates.TemplateResponse("signup.html", {
+            "request": request, "user": None, "error": "Please enter a valid email address.", "email": email
+        })
+
     # Validate
     if password != password_confirm:
         return templates.TemplateResponse("signup.html", {
@@ -508,8 +516,15 @@ async def add_monitor(
         )
 
     # Validate URL (skip for heartbeat — URL is auto-generated)
-    if url and monitor_type != "heartbeat" and not url.startswith(("http://", "https://")):
-        url = f"https://{url}"
+    if monitor_type != "heartbeat":
+        if not url or not url.strip():
+            return templates.TemplateResponse("add_monitor.html", {
+                "request": request, "user": user,
+                "error": "URL is required.", "form": dict(await request.form()) if False else {},
+            })
+        url = url.strip()
+        if not url.startswith(("http://", "https://")):
+            url = f"https://{url}"
 
     # Build maintenance windows list (Pro only)
     maintenance_windows = []

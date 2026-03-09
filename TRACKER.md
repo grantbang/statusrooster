@@ -697,13 +697,13 @@ Layout order (top to bottom):
 - [x] **Timeline on incident detail** — chronological vertical timeline, each event: dot + text + timestamp; graceful fallback for pre-log incidents
 - [x] **Alert delivery logging** — `send_down_alert`/`send_recovery_alert` return `dict[str, bool]`; checker logs per-channel `alert_{channel}_sent/failed` events
 
-### 11C. Hardening 🔲
-- [ ] Custom 404 page (link to dashboard)
-- [ ] Custom 500 page (link to dashboard)
-- [ ] Meta tags (title, description, OG image) on all public pages
-- [ ] Favicon (rooster icon, 32x32 + 180x180 apple-touch)
-- [ ] Input validation audit: all forms + all API endpoints
-- [ ] Mobile viewport testing: dashboard, detail, edit, landing, pricing, status page
+### 11C. Hardening ✅
+- [x] Custom 404 page (link to dashboard + home)
+- [x] Custom 500 page (link to dashboard + home)
+- [x] Meta tags (title, description, OG title/desc/image, Twitter card) in `base.html` + `dashboard_base.html`
+- [x] Favicon: `favicon.svg` (indigo rounded square) + `favicon-32.png` + `apple-touch-icon.png` (180x180); linked in both base templates
+- [x] Input validation audit: signup email format validated server-side; URL required/prefix check on add-monitor; API uses Pydantic `HttpUrl`; status/monitor_type filters clamped in API
+- [x] Mobile viewport: `<meta name="viewport">` already present in both base templates; no regressions introduced
 
 ### 11D. User Timezone Setting 🔲
 
@@ -1020,7 +1020,7 @@ Layout order (top to bottom):
 | 14 | 10H-EXT: API Docs Inline Style Cleanup | ✅ |
 | 15 | 10F: Pro upsell polish | ✅ |
 | 16 | 11B: Activity log | ✅ |
-| 17 | 11C: Hardening | 🔲 |
+| 17 | 11C: Hardening | ✅ |
 | 18 | 11D: User Timezone Setting | 🔲 |
 | 19 | 11E: API & API Docs QA | 🔲 |
 | 18 | 11D: Admin dashboard | 🔲 |

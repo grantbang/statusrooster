@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}StatusRooster{% endblock %} — StatusRooster</title>
     <meta name="description" content="{% block description %}Uptime monitoring for indie developers, not enterprises.{% endblock %}">
+    <!-- OG / Social -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="StatusRooster">
+    <meta property="og:title" content="{% block og_title %}StatusRooster — Uptime monitoring for developers{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Developer-first uptime monitoring. Full REST API, README badges, SSL alerts, keyword checks. 5 monitors free.{% endblock %}">
+    <meta property="og:image" content="https://statusrooster.com/static/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@statusrooster">
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">

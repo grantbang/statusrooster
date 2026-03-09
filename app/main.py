@@ -1,6 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
+from fastapi.exceptions import HTTPException
 from app.routers import auth, monitors, cron, pages, billing, api_v1, badge, oauth, heartbeat
 from datetime import datetime
 import json
@@ -84,3 +86,24 @@ page_templates.env.filters["tojson"] = tojson_filter
 @app.get("/health", include_in_schema=False)
 async def health_check():
     return {"status": "healthy", "service": "statusrooster"}
+
+
+# ---------------------------------------------------------------------------
+# Custom error pages
+# ---------------------------------------------------------------------------
+
+@app.exception_handler(404)
+async def not_found_handler(request: Request, exc: HTTPException):
+    # Return JSON for API routes, HTML for page routes
+    if request.url.path.startswith("/api/"):
+        from fastapi.responses import JSONResponse
+        return JSONResponse({"error": "Not found"}, status_code=404)
+    return templates.TemplateResponse("404.html", {"request": request, "user": None}, status_code=404)
+
+
+@app.exception_handler(500)
+async def server_error_handler(request: Request, exc: Exception):
+    if request.url.path.startswith("/api/"):
+        from fastapi.responses import JSONResponse
+        return JSONResponse({"error": "Internal server error"}, status_code=500)
+    return templates.TemplateResponse("500.html", {"request": request, "user": None}, status_code=500)
