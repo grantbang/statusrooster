@@ -690,12 +690,12 @@ Layout order (top to bottom):
 - [x] Alert email footer for Free — covered by Pro footer bar above (same placement, same CTA)
 - [x] Gate Slack/webhook inputs in Add + Edit forms for Free users — already done in Phase 10H form polish (mf-notify-channel-locked + upgrade link)
 
-### 11B. Activity Log / Event Timeline 🔲
-- [ ] **Incident events sub-collection** — `incidents/{id}/events/{auto_id}` → `{type, timestamp, metadata}`
-  - Event types: `detected`, `alert_email_sent`, `alert_slack_sent`, `alert_webhook_sent`, `resolved`, `recovery_*_sent`
-- [ ] **Log events in checker + alert service** — write events on detection, each alert, resolve, recovery
-- [ ] **Timeline on incident detail** — chronological vertical timeline, each event: icon + text + timestamp
-- [ ] **Alert delivery logging** — store success/fail from SendGrid/Slack/webhook, show on timeline
+### 11B. Activity Log / Event Timeline ✅
+- [x] **Incident events sub-collection** — `incidents/{id}/events/{auto_id}` → `{type, timestamp, metadata}`
+  - Event types: `detected`, `alert_email_sent`, `alert_slack_sent`, `alert_sms_sent`, `alert_webhook_sent`, `resolved`, `recovery_*_sent/failed`
+- [x] **Log events in checker + alert service** — write events on detection, each alert, resolve, recovery
+- [x] **Timeline on incident detail** — chronological vertical timeline, each event: dot + text + timestamp; graceful fallback for pre-log incidents
+- [x] **Alert delivery logging** — `send_down_alert`/`send_recovery_alert` return `dict[str, bool]`; checker logs per-channel `alert_{channel}_sent/failed` events
 
 ### 11C. Hardening 🔲
 - [ ] Custom 404 page (link to dashboard)
@@ -1019,7 +1019,7 @@ Layout order (top to bottom):
 | 13 | 10H: UI/UX Polish Pass (Sonnet) | ✅ |
 | 14 | 10H-EXT: API Docs Inline Style Cleanup | ✅ |
 | 15 | 10F: Pro upsell polish | ✅ |
-| 16 | 11B: Activity log | 🔲 |
+| 16 | 11B: Activity log | ✅ |
 | 17 | 11C: Hardening | 🔲 |
 | 18 | 11D: User Timezone Setting | 🔲 |
 | 19 | 11E: API & API Docs QA | 🔲 |

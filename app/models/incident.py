@@ -3,7 +3,50 @@ from datetime import datetime, timezone, timedelta
 COLLECTION = "incidents"
 
 
-def create_incident(db, monitor_id: str, monitor_name: str, monitor_url: str,
+def log_incident_event(db, incident_id: str, event_type: str, metadata: dict | None = None) -> None:
+    """
+    Write a single event to incidents/{incident_id}/events/{auto_id}.
+    event_type: 'detected' | 'alert_email_sent' | 'alert_email_failed' |
+                'alert_slack_sent' | 'alert_slack_failed' |
+                'alert_sms_sent' | 'alert_sms_failed' |
+                'alert_webhook_sent' | 'alert_webhook_failed' |
+                'resolved' | 'recovery_email_sent' | 'recovery_slack_sent' |
+                'recovery_sms_sent'
+    """
+    try:
+        db.collection(COLLECTION).document(incident_id).collection("events").add({
+            "type": event_type,
+            "timestamp": datetime.now(timezone.utc),
+            "metadata": metadata or {},
+        })
+    except Exception as e:
+        print(f"[incident] Failed to log event '{event_type}' for incident {incident_id}: {e}")
+
+
+def get_incident_events(db, incident_id: str) -> list[dict]:
+    """
+    Return all events for an incident, sorted chronologically.
+    """
+    try:
+        docs = (
+            db.collection(COLLECTION)
+            .document(incident_id)
+            .collection("events")
+            .order_by("timestamp")
+            .get()
+        )
+        events = []
+        for doc in docs:
+            ev = doc.to_dict()
+            ev["id"] = doc.id
+            events.append(ev)
+        return events
+    except Exception as e:
+        print(f"[incident] Failed to load events for incident {incident_id}: {e}")
+        return []
+
+
+def create_incident(db, monitor_id: str, monitor_name: str = "", monitor_url: str = "",
                     status_code: int | None = None, response_ms: float | None = None) -> dict:
     """
     Create a new incident when a monitor goes DOWN.

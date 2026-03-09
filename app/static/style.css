@@ -4707,6 +4707,8 @@ a.inc-row-link:hover { text-decoration: none; }
 .inc-dot-down { background: var(--danger); border: 2px solid #fecaca; }
 .inc-dot-up { background: var(--success); border: 2px solid #bbf7d0; }
 .inc-dot-pending { background: var(--muted); border: 2px solid #e5e7eb; }
+.inc-dot-info { background: var(--brand); border: 2px solid #c7d2fe; }
+.inc-dot-warn { background: var(--warning); border: 2px solid #fde68a; }
 .inc-timeline-text { font-size: 0.88rem; line-height: 1.5; }
 .inc-timeline-time { font-size: 0.78rem; color: var(--muted); margin-top: 0.15rem; }
 

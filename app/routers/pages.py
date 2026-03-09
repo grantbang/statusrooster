@@ -9,7 +9,7 @@ from app.database import get_db
 from app.models.user import create_user, get_user_by_email, verify_password
 from app.models.monitor import list_monitors_by_user, get_monitor, get_monitor_by_slug, create_monitor, update_monitor, delete_monitor
 from app.models.check import get_recent_checks, get_daily_uptime
-from app.models.incident import list_incidents_by_monitor, list_incidents_by_user, get_incident
+from app.models.incident import list_incidents_by_monitor, list_incidents_by_user, get_incident, get_incident_events
 from app.models.api_key import generate_api_key, list_api_keys, revoke_api_key
 from app.services.auth import create_access_token, decode_access_token
 from app.services.alerts import _format_duration, send_test_alert
@@ -417,6 +417,7 @@ async def incident_detail_page(request: Request, incident_id: str):
         "user": user,
         "incident": incident,
         "monitor": monitor,
+        "events": get_incident_events(db, incident_id),
     })
 
 

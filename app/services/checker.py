@@ -10,7 +10,7 @@ from datetime import datetime, timezone, timedelta
 from app.database import get_db
 from app.models.monitor import get_all_monitors, update_monitor
 from app.models.check import create_check, create_checks_batch
-from app.models.incident import create_incident, resolve_incident, get_open_incident
+from app.models.incident import create_incident, resolve_incident, get_open_incident, log_incident_event
 from app.services.alerts import send_down_alert, send_recovery_alert, send_ssl_expiry_alert, send_keyword_alert, send_threshold_alert, send_webhook_notification
 
 logger = logging.getLogger(__name__)
@@ -875,8 +875,15 @@ async def run_checks():
                     status_code=result["status_code"],
                     response_ms=result["response_ms"],
                 )
+                log_incident_event(db, incident["id"], "detected", {
+                    "status_code": result["status_code"],
+                    "response_ms": result["response_ms"],
+                })
                 if not in_maintenance:
-                    await send_down_alert(monitor, incident)
+                    down_results = await send_down_alert(monitor, incident)
+                    for channel, ok in down_results.items():
+                        log_incident_event(db, incident["id"],
+                                           f"alert_{channel}_{'sent' if ok else 'failed'}")
                     if monitor.get("webhook_url"):
                         await send_webhook_notification(monitor, "monitor.down", result)
                 print(f"[checker] INCIDENT CREATED: {monitor['name']} is DOWN" +
@@ -888,8 +895,14 @@ async def run_checks():
             open_incident = get_open_incident(db, monitor["id"])
             if open_incident:
                 resolved = resolve_incident(db, open_incident["id"])
+                log_incident_event(db, resolved["id"], "resolved", {
+                    "duration_seconds": resolved.get("duration_seconds"),
+                })
                 if not in_maintenance:
-                    await send_recovery_alert(monitor, resolved)
+                    recovery_results = await send_recovery_alert(monitor, resolved)
+                    for channel, ok in recovery_results.items():
+                        log_incident_event(db, resolved["id"],
+                                           f"recovery_{channel}_{'sent' if ok else 'failed'}")
                     if monitor.get("webhook_url"):
                         await send_webhook_notification(monitor, "monitor.up", result)
                 duration = resolved.get("duration_seconds", 0)

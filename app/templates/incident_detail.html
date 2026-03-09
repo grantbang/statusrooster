@@ -97,30 +97,92 @@
     <div class="inc-detail-section" style="margin-top: 1.5rem;">
         <h3 class="inc-section-title">Activity</h3>
         <div class="inc-timeline">
-            <div class="inc-timeline-event">
-                <div class="inc-timeline-dot inc-dot-down"></div>
-                <div class="inc-timeline-content">
-                    <div class="inc-timeline-text">Incident detected — monitor marked <strong>down</strong></div>
-                    <div class="inc-timeline-time">
-                        {% if incident.started_at %}{{ incident.started_at.strftime('%b %-d, %H:%M:%S UTC') }}{% endif %}
+            {% if events %}
+                {% for event in events %}
+                    {% set etype = event.type %}
+                    {% if etype == 'detected' %}
+                        {% set dot_class = 'inc-dot-down' %}
+                        {% set label %}Incident detected — monitor marked <strong>down</strong>{% endset %}
+                    {% elif etype == 'resolved' %}
+                        {% set dot_class = 'inc-dot-up' %}
+                        {% set label %}Monitor recovered — incident <strong>resolved</strong>{% endset %}
+                    {% elif 'sent' in etype %}
+                        {% set dot_class = 'inc-dot-info' %}
+                        {% if 'email' in etype %}
+                            {% set label %}Email alert delivered{% endset %}
+                        {% elif 'slack' in etype %}
+                            {% set label %}Slack notification sent{% endset %}
+                        {% elif 'sms' in etype %}
+                            {% set label %}SMS alert sent{% endset %}
+                        {% elif 'webhook' in etype %}
+                            {% set label %}Webhook notification sent{% endset %}
+                        {% elif 'recovery' in etype %}
+                            {% set label %}Recovery notification sent{% endset %}
+                        {% else %}
+                            {% set label %}Alert sent{% endset %}
+                        {% endif %}
+                    {% elif 'failed' in etype %}
+                        {% set dot_class = 'inc-dot-warn' %}
+                        {% if 'email' in etype %}
+                            {% set label %}Email alert failed to deliver{% endset %}
+                        {% elif 'slack' in etype %}
+                            {% set label %}Slack notification failed{% endset %}
+                        {% elif 'sms' in etype %}
+                            {% set label %}SMS alert failed{% endset %}
+                        {% elif 'webhook' in etype %}
+                            {% set label %}Webhook notification failed{% endset %}
+                        {% else %}
+                            {% set label %}Alert delivery failed{% endset %}
+                        {% endif %}
+                    {% else %}
+                        {% set dot_class = 'inc-dot-pending' %}
+                        {% set label %}{{ etype | replace('_', ' ') | title }}{% endset %}
+                    {% endif %}
+                    <div class="inc-timeline-event">
+                        <div class="inc-timeline-dot {{ dot_class }}"></div>
+                        <div class="inc-timeline-content">
+                            <div class="inc-timeline-text">{{ label }}</div>
+                            {% if event.timestamp %}
+                            <div class="inc-timeline-time">{{ event.timestamp.strftime('%b %-d, %H:%M:%S UTC') }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+                {% if incident.status == 'open' %}
+                <div class="inc-timeline-event">
+                    <div class="inc-timeline-dot inc-dot-pending"></div>
+                    <div class="inc-timeline-content">
+                        <div class="inc-timeline-text" style="color: var(--muted);">Awaiting recovery…</div>
                     </div>
                 </div>
-            </div>
-            {% if incident.status == 'resolved' and incident.resolved_at %}
-            <div class="inc-timeline-event">
-                <div class="inc-timeline-dot inc-dot-up"></div>
-                <div class="inc-timeline-content">
-                    <div class="inc-timeline-text">Monitor recovered — incident <strong>resolved</strong></div>
-                    <div class="inc-timeline-time">{{ incident.resolved_at.strftime('%b %-d, %H:%M:%S UTC') }}</div>
+                {% endif %}
+            {% else %}
+                {# Fallback for incidents that predate event logging #}
+                <div class="inc-timeline-event">
+                    <div class="inc-timeline-dot inc-dot-down"></div>
+                    <div class="inc-timeline-content">
+                        <div class="inc-timeline-text">Incident detected — monitor marked <strong>down</strong></div>
+                        <div class="inc-timeline-time">
+                            {% if incident.started_at %}{{ incident.started_at.strftime('%b %-d, %H:%M:%S UTC') }}{% endif %}
+                        </div>
+                    </div>
                 </div>
-            </div>
-            {% elif incident.status == 'open' %}
-            <div class="inc-timeline-event">
-                <div class="inc-timeline-dot inc-dot-pending"></div>
-                <div class="inc-timeline-content">
-                    <div class="inc-timeline-text" style="color: var(--muted);">Awaiting recovery…</div>
+                {% if incident.status == 'resolved' and incident.resolved_at %}
+                <div class="inc-timeline-event">
+                    <div class="inc-timeline-dot inc-dot-up"></div>
+                    <div class="inc-timeline-content">
+                        <div class="inc-timeline-text">Monitor recovered — incident <strong>resolved</strong></div>
+                        <div class="inc-timeline-time">{{ incident.resolved_at.strftime('%b %-d, %H:%M:%S UTC') }}</div>
+                    </div>
                 </div>
-            </div>
+                {% elif incident.status == 'open' %}
+                <div class="inc-timeline-event">
+                    <div class="inc-timeline-dot inc-dot-pending"></div>
+                    <div class="inc-timeline-content">
+                        <div class="inc-timeline-text" style="color: var(--muted);">Awaiting recovery…</div>
+                    </div>
+                </div>
+                {% endif %}
             {% endif %}
         </div>
     </div>

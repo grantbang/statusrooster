@@ -196,10 +196,11 @@ def _format_duration(seconds: int) -> str:
         return f"{hours}h {minutes}m"
 
 
-async def send_down_alert(monitor: dict, incident: dict) -> None:
+async def send_down_alert(monitor: dict, incident: dict) -> dict:
     """
     Send DOWN alerts through all configured channels.
     Called when a monitor transitions from UP/pending → DOWN.
+    Returns dict of {channel: bool} indicating delivery success.
     """
     name = monitor.get("name", monitor.get("url", "Unknown"))
     url = monitor.get("url", "")
@@ -212,6 +213,8 @@ async def send_down_alert(monitor: dict, incident: dict) -> None:
     time_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     app_url = settings.APP_URL or "https://statusrooster.com"
     detail_url = f"{app_url}/monitors/{monitor_id}"
+
+    results: dict[str, bool] = {}
 
     # --- Email ---
     alert_email = monitor.get("alert_email", "")
@@ -232,7 +235,7 @@ async def send_down_alert(monitor: dict, incident: dict) -> None:
             <p style="color: #aaa; font-size: 12px;">StatusRooster 🐓 — Uptime monitoring for developers</p>
         </div>
         """
-        await send_email(alert_email, subject, html)
+        results["email"] = await send_email(alert_email, subject, html)
 
     # --- Slack (Pro only) ---
     slack_webhook = monitor.get("alert_slack_webhook", "")
@@ -245,18 +248,21 @@ async def send_down_alert(monitor: dict, incident: dict) -> None:
             f"Detected: {time_str}\n"
             f"<{detail_url}|View on StatusRooster →>"
         )
-        await send_slack(slack_webhook, message)
+        results["slack"] = await send_slack(slack_webhook, message)
 
     # --- SMS (Pro only) ---
     sms_number = monitor.get("alert_sms", "")
     if sms_number and user_plan == "pro":
-        await send_sms(sms_number, f"DOWN: {name} ({url}) — Status {status_code}")
+        results["sms"] = await send_sms(sms_number, f"DOWN: {name} ({url}) — Status {status_code}")
+
+    return results
 
 
-async def send_recovery_alert(monitor: dict, incident: dict) -> None:
+async def send_recovery_alert(monitor: dict, incident: dict) -> dict:
     """
     Send RECOVERY alerts through all configured channels.
     Called when a monitor transitions from DOWN → UP.
+    Returns dict of {channel: bool} indicating delivery success.
     """
     name = monitor.get("name", monitor.get("url", "Unknown"))
     url = monitor.get("url", "")
@@ -270,6 +276,8 @@ async def send_recovery_alert(monitor: dict, incident: dict) -> None:
     time_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     app_url = settings.APP_URL or "https://statusrooster.com"
     detail_url = f"{app_url}/monitors/{monitor_id}"
+
+    results: dict[str, bool] = {}
 
     # --- Email ---
     alert_email = monitor.get("alert_email", "")
@@ -289,7 +297,7 @@ async def send_recovery_alert(monitor: dict, incident: dict) -> None:
             <p style="color: #aaa; font-size: 12px;">StatusRooster 🐓 — Uptime monitoring for developers</p>
         </div>
         """
-        await send_email(alert_email, subject, html)
+        results["email"] = await send_email(alert_email, subject, html)
 
     # --- Slack (Pro only) ---
     slack_webhook = monitor.get("alert_slack_webhook", "")
@@ -302,12 +310,14 @@ async def send_recovery_alert(monitor: dict, incident: dict) -> None:
             f"Recovered: {time_str}\n"
             f"<{detail_url}|View on StatusRooster →>"
         )
-        await send_slack(slack_webhook, message)
+        results["slack"] = await send_slack(slack_webhook, message)
 
     # --- SMS (Pro only) ---
     sms_number = monitor.get("alert_sms", "")
     if sms_number and user_plan == "pro":
-        await send_sms(sms_number, f"UP: {name} ({url}) — back up after {duration_str}")
+        results["sms"] = await send_sms(sms_number, f"UP: {name} ({url}) — back up after {duration_str}")
+
+    return results
 
 
 # ---------------------------------------------------------------------------
