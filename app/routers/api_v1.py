@@ -260,6 +260,10 @@ class ApiCreateMonitor(BaseModel):
     basic_auth_user: str = ""            # Basic Auth username (Pro)
     basic_auth_pass: str = ""            # Basic Auth password (Pro)
     follow_redirects: bool = True        # Follow HTTP redirects
+    bearer_token: str = ""               # Bearer token auth (sent as Authorization: Bearer <token>)
+    request_body: str = ""               # Request body for POST/PUT/PATCH/DELETE
+    request_content_type: str = ""       # Content-Type for request body (e.g. application/json)
+    custom_headers: list[dict] | None = None  # [{key, value}] custom request headers (Pro)
 
 
 @router.post("/monitors", status_code=201)
@@ -298,6 +302,12 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
     basic_auth_user = req.basic_auth_user if plan != "free" else ""
     basic_auth_pass = req.basic_auth_pass if plan != "free" else ""
 
+    # Gate custom headers to Pro only
+    custom_headers = req.custom_headers if plan != "free" and req.custom_headers else []
+
+    # Bearer token available to all plans
+    bearer_token = req.bearer_token or ""
+
     monitor = create_monitor(
         db,
         user_id=user["id"],
@@ -326,6 +336,10 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
         basic_auth_user=basic_auth_user,
         basic_auth_pass=basic_auth_pass,
         follow_redirects=req.follow_redirects,
+        bearer_token=bearer_token,
+        request_body=req.request_body or "",
+        request_content_type=req.request_content_type or "",
+        custom_headers=custom_headers,
     )
     if req.monitor_type == "heartbeat":
         from app.config import settings
@@ -365,6 +379,10 @@ class ApiUpdateMonitor(BaseModel):
     basic_auth_user: str | None = None      # Basic Auth username (Pro)
     basic_auth_pass: str | None = None      # Basic Auth password (Pro)
     follow_redirects: bool | None = None    # Follow HTTP redirects
+    bearer_token: str | None = None         # Bearer token auth
+    request_body: str | None = None         # Request body for POST/PUT/PATCH/DELETE
+    request_content_type: str | None = None # Content-Type for request body
+    custom_headers: list[dict] | None = None  # [{key, value}] custom request headers (Pro)
 
 
 @router.put("/monitors/{monitor_id}")
@@ -465,6 +483,17 @@ async def api_update_monitor(
         updates["basic_auth_pass"] = req.basic_auth_pass
     if req.follow_redirects is not None:
         updates["follow_redirects"] = req.follow_redirects
+    if req.bearer_token is not None:
+        updates["bearer_token"] = req.bearer_token
+    if req.request_body is not None:
+        updates["request_body"] = req.request_body
+    if req.request_content_type is not None:
+        updates["request_content_type"] = req.request_content_type
+    if req.custom_headers is not None:
+        plan = user.get("plan", "free")
+        if plan == "free":
+            err("Custom request headers require a Pro plan.", 403)
+        updates["custom_headers"] = req.custom_headers
 
     if not updates:
         err("No fields to update. Send at least one field.", 422)

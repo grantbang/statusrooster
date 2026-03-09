@@ -226,6 +226,10 @@ headers = {<span class="code-string">"X-API-Key"</span>: API_KEY}</div>
                         <tr><td><span class="param-name">follow_redirects</span></td><td>boolean</td><td>optional</td><td>Follow HTTP 3xx redirects (default: <code>true</code>). Set to <code>false</code> to check the redirect itself.</td></tr>
                         <tr><td><span class="param-name">basic_auth_user</span></td><td>string</td><td>optional</td><td>HTTP Basic Auth username (Pro). Sent as <code>Authorization: Basic</code> header.</td></tr>
                         <tr><td><span class="param-name">basic_auth_pass</span></td><td>string</td><td>optional</td><td>HTTP Basic Auth password (Pro). Required if <code>basic_auth_user</code> is set.</td></tr>
+                        <tr><td><span class="param-name">bearer_token</span></td><td>string</td><td>optional</td><td>Bearer token auth. Sent as <code>Authorization: Bearer &lt;token&gt;</code> header. If both Bearer and Basic are set, Bearer takes precedence.</td></tr>
+                        <tr><td><span class="param-name">request_body</span></td><td>string</td><td>optional</td><td>Request body to send (for <code>POST</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code> methods)</td></tr>
+                        <tr><td><span class="param-name">request_content_type</span></td><td>string</td><td>optional</td><td>Content-Type for request body: <code>application/json</code>, <code>text/plain</code>, or <code>application/x-www-form-urlencoded</code></td></tr>
+                        <tr><td><span class="param-name">custom_headers</span></td><td>array</td><td>optional</td><td>Custom request headers (Pro). Array of <code>{"key":"X-Custom","value":"val"}</code> objects.</td></tr>
                         <tr><td><span class="param-name">keyword</span></td><td>string</td><td>optional</td><td>Mark down if missing from body. Prefix with <code>!</code> for "not contains". Supports <code>AND</code> / <code>OR</code>: <code>"Welcome AND !Error"</code></td></tr>
                         <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>optional</td><td>Response time condition: <code>&gt; 2000</code>, <code>&lt; 200</code>, <code>200-3000</code></td></tr>
                         <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>optional</td><td>Seconds between checks, 60–300 (Pro). Free locked to 300.</td></tr>
@@ -301,6 +305,10 @@ console.log(<span class="code-string">`Created ${data.id}`</span>);</div>
     "follow_redirects": true,
     "basic_auth_user": "",
     "basic_auth_pass": "",
+    "bearer_token": "",
+    "request_body": "",
+    "request_content_type": "",
+    "custom_headers": [],
     "keyword": "Welcome",
     "response_threshold_ms": null,
     "check_interval": 60,
@@ -348,6 +356,10 @@ console.log(<span class="code-string">`Created ${data.id}`</span>);</div>
                         <tr><td><span class="param-name">follow_redirects</span></td><td>boolean</td><td>Follow HTTP 3xx redirects</td></tr>
                         <tr><td><span class="param-name">basic_auth_user</span></td><td>string</td><td>HTTP Basic Auth username (Pro)</td></tr>
                         <tr><td><span class="param-name">basic_auth_pass</span></td><td>string</td><td>HTTP Basic Auth password (Pro)</td></tr>
+                        <tr><td><span class="param-name">bearer_token</span></td><td>string</td><td>Bearer token auth. Sent as <code>Authorization: Bearer &lt;token&gt;</code> header.</td></tr>
+                        <tr><td><span class="param-name">request_body</span></td><td>string</td><td>Request body for POST/PUT/PATCH/DELETE methods</td></tr>
+                        <tr><td><span class="param-name">request_content_type</span></td><td>string</td><td>Content-Type for request body</td></tr>
+                        <tr><td><span class="param-name">custom_headers</span></td><td>array</td><td>Custom request headers (Pro). Array of <code>{"key":"X-Custom","value":"val"}</code></td></tr>
                         <tr><td><span class="param-name">keyword</span></td><td>string</td><td>Body keyword expression (supports AND/OR, <code>!</code> for not-contains)</td></tr>
                         <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>Response time condition (e.g. <code>> 2000</code>, <code>200-3000</code>)</td></tr>
                         <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>Seconds between checks, 60–300 (Pro)</td></tr>
@@ -1169,6 +1181,10 @@ data.forEach(m => console.log(<span class="code-string">`${m.name} (${m.monitor_
                             <tr><td><code>follow_redirects</code></td><td class="field-type">bool</td><td>Whether to follow 3xx redirects (default <code>true</code>)</td></tr>
                             <tr><td><code>basic_auth_user</code></td><td class="field-type">string</td><td>HTTP Basic Auth username (Pro)</td></tr>
                             <tr><td><code>basic_auth_pass</code></td><td class="field-type">string</td><td>HTTP Basic Auth password (Pro)</td></tr>
+                            <tr><td><code>bearer_token</code></td><td class="field-type">string</td><td>Bearer token auth (sent as <code>Authorization: Bearer &lt;token&gt;</code>)</td></tr>
+                            <tr><td><code>request_body</code></td><td class="field-type">string</td><td>Request body for POST/PUT/PATCH/DELETE</td></tr>
+                            <tr><td><code>request_content_type</code></td><td class="field-type">string</td><td>Content-Type for request body</td></tr>
+                            <tr><td><code>custom_headers</code></td><td class="field-type">array|null</td><td>Custom request headers (Pro). Array of <code>{key, value}</code></td></tr>
 
                             <tr><td colspan="3" style="background:#eff6ff;font-weight:600;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;padding:8px 12px">JSON/API Only</td></tr>
                             <tr><td><code>json_assertions</code></td><td class="field-type">array|null</td><td>Array of <code>{path, operator, value}</code></td></tr>
@@ -1235,6 +1251,10 @@ console.log(<span class="code-string">`${data.monitor_type}: ${data.status}`</sp
     "follow_redirects": true,
     "basic_auth_user": "",
     "basic_auth_pass": "",
+    "bearer_token": "",
+    "request_body": "",
+    "request_content_type": "",
+    "custom_headers": [],
     "keyword": "Welcome",
     "response_threshold_ms": null,
     "check_interval": 60,
