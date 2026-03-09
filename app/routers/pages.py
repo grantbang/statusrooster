@@ -462,6 +462,7 @@ async def add_monitor(
     name = form.get("name", "")
     alert_email = form.get("alert_email", "")
     alert_slack_webhook = form.get("alert_slack_webhook", "")
+    alert_sms = form.get("alert_sms", "")
     keyword = form.get("keyword", "")
     response_threshold_ms = form.get("response_threshold_ms", "")
     webhook_url = form.get("webhook_url", "")
@@ -652,6 +653,7 @@ async def add_monitor(
         name=name,
         alert_email=alert_email or user.get("email", ""),
         alert_slack_webhook=alert_slack_webhook if user.get("plan", "free") != "free" else "",
+        alert_sms=alert_sms if user.get("plan", "free") != "free" else "",
         keyword=keyword,
         response_threshold_ms=response_threshold_ms.strip() if response_threshold_ms else None,
         webhook_url=webhook_url if user.get("plan", "free") != "free" else "",
@@ -739,6 +741,7 @@ async def edit_monitor_submit(
     name = form.get("name", "")
     alert_email = form.get("alert_email", "")
     alert_slack_webhook = form.get("alert_slack_webhook", "")
+    alert_sms = form.get("alert_sms", "")
     slug = form.get("slug", "")
     public = form.get("public", "")
     keyword = form.get("keyword", "")
@@ -803,6 +806,7 @@ async def edit_monitor_submit(
         "name": name,
         "alert_email": alert_email,
         "alert_slack_webhook": alert_slack_webhook if user.get("plan", "free") != "free" else monitor.get("alert_slack_webhook", ""),
+        "alert_sms": alert_sms if user.get("plan", "free") != "free" else monitor.get("alert_sms", ""),
         "slug": slug,
         "public": public == "true",
         "paused": form.get("paused") == "true",

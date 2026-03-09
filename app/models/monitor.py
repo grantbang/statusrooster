@@ -14,7 +14,8 @@ def generate_slug(name: str) -> str:
 
 
 def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
-                   alert_slack_webhook: str = "", public: bool = False,
+                   alert_slack_webhook: str = "", alert_sms: str = "",
+                   public: bool = False,
                    keyword: str = "", response_threshold_ms: str | None = None,
                    webhook_url: str = "", maintenance_windows: list | None = None,
                    paused: bool = False, check_interval: int | None = None,
@@ -89,7 +90,7 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
         "checks_failed": 0,
         "alert_email": alert_email,
         "alert_slack_webhook": alert_slack_webhook,
-        "alert_sms": "",
+        "alert_sms": alert_sms,
         # HTTP-specific fields
         "timeout": timeout,                          # Request timeout in seconds
         "expected_status_code": expected_status_code,  # Expected HTTP status code (optional)

@@ -5317,6 +5317,13 @@ details[open] .inc-headers-block .inc-headers-summary::before,
     line-height: 1;
     flex-shrink: 0;
 }
+.mf-notify-channel-icon-svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    flex-shrink: 0;
+    color: var(--muted);
+    stroke: currentColor;
+}
 .mf-notify-channel-name {
     font-weight: 600;
     font-size: 0.92rem;
