@@ -57,7 +57,9 @@ async def check_url(url: str, timeout: float = 10.0, expected_status_code: int |
     Uses shared client if provided, otherwise creates a one-off client.
     """
     try:
-        headers = {}
+        headers = {
+            "User-Agent": "Mozilla/5.0 (compatible; StatusRooster/1.0; +https://statusrooster.com)",
+        }
         # Custom headers (applied first so auth headers can override)
         if custom_headers:
             for h in custom_headers:
