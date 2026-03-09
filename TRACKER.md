@@ -639,6 +639,39 @@ Layout order (top to bottom):
 - [x] **10G-B.T5** Edit existing monitor, add request body → save → re-edit → body + content-type preserved
 - [x] **10G-B.T6** Free user sees custom headers section as Pro-gated (greyed out + upgrade CTA)
 
+### 10H. UI/UX Polish Pass (Sonnet) 🔲
+
+> **Context:** Open-ended UI/UX polish pass by Sonnet 4.6 — fresh eyes on dashboard, monitor detail, and edit pages. Goal: crisp, professional, perfectly organized UX for indie devs. Should feel perfectly natural to navigate both functionally and aesthetically.
+>
+> **Scope:** Dashboard (`dashboard.html`, `dashboard_base.html`), Monitor Detail (`monitor_detail.html`), Edit Monitor (`edit_monitor.html`), Add Monitor (`add_monitor.html`), and `style.css`. No new features — polish only.
+>
+> **Rules:**
+> - Stay within existing tech stack (Jinja2 SSR, vanilla JS, unified `style.css`)
+> - No new CSS frameworks, no JS frameworks
+> - Respect existing CSS class prefixes (`d-` dashboard, `md-` detail, `mf-` forms)
+> - Respect design system tokens (colors, radii, shadows, fonts)
+> - Mobile responsive — test at 768px and 375px breakpoints
+> - Don't break any existing functionality
+
+#### Polish Areas (open-ended — use best judgment)
+- [ ] **10H.1** **Visual hierarchy & spacing** — review padding, margins, font sizes, font weights across dashboard, detail, and form pages. Ensure consistent rhythm, clear section breaks, and proper breathing room.
+- [ ] **10H.2** **Typography & readability** — verify Inter/JetBrains Mono usage, line heights, color contrast, label-to-value relationships. Monospaced text where appropriate (URLs, IDs, response times).
+- [ ] **10H.3** **Interactive states** — hover, focus, active, disabled states on all buttons, links, cards, inputs. Transitions should feel smooth (150–200ms). Focus rings for accessibility.
+- [ ] **10H.4** **Dashboard card polish** — status indicators, uptime bars, response time display, action buttons. Cards should scan quickly left-to-right. Critical info front-and-center.
+- [ ] **10H.5** **Monitor detail page flow** — header → stats → chart → incidents. Verify the information architecture feels logical. Slicer/tab UX should be intuitive.
+- [ ] **10H.6** **Form UX** — label alignment, input sizing, helper text placement, error states, section grouping in add/edit forms. Advanced Settings disclosure should feel natural.
+- [ ] **10H.7** **Navigation & wayfinding** — sidebar active states, breadcrumbs, back links, page titles. User should always know where they are.
+- [ ] **10H.8** **Empty states & edge cases** — no monitors, no incidents, no checks yet, pending status. These should look intentional, not broken.
+- [ ] **10H.9** **Micro-interactions & feedback** — flash messages, loading states, success/error indicators, toast positioning. Polish any rough edges.
+- [ ] **10H.10** **Mobile responsiveness** — sidebar collapse, card stacking, touch targets (min 44px), table overflow handling. Verify at 768px and 375px.
+
+#### ✅ 10H Gate Tests
+- [ ] **10H.T1** Dashboard loads with all monitors displaying correctly — no visual regressions
+- [ ] **10H.T2** Monitor detail page displays all sections (stats, chart, incidents) — no layout breaks
+- [ ] **10H.T3** Add/Edit monitor forms submit correctly — all monitor types (HTTP, JSON/API, Heartbeat, SSL)
+- [ ] **10H.T4** Mobile viewport (375px) — all pages navigable, no horizontal scroll, touch targets adequate
+- [ ] **10H.T5** No console errors on any page (dashboard, detail, add, edit)
+
 ### 10F. Pro Upsell Polish 🔲
 - [ ] Check interval badge on dashboard rows: "⏱ 5min" for Free with tooltip "Upgrade for 60s →"
 - [ ] Greyed Pro-only columns with lock 🔒 icon
@@ -953,12 +986,13 @@ Layout order (top to bottom):
 | 10 | Phase 10: Checker Scale Hardening | ✅ |
 | 11 | 10B: GitHub OAuth | 🔲 |
 | 12 | 10G-B: Form Feature Gaps (Bearer auth, request body, custom headers) | ✅ |
-| 13 | 10F: Pro upsell polish | 🔲 |
-| 14 | 11B: Activity log | 🔲 |
-| 15 | 11C: Hardening | 🔲 |
-| 16 | 11E: API & API Docs QA | 🔲 |
-| 17 | 11D: Admin dashboard | 🔲 |
-| 18 | Day 12: Testing & launch | 🔲 |
+| 13 | 10H: UI/UX Polish Pass (Sonnet) | 🔲 |
+| 14 | 10F: Pro upsell polish | 🔲 |
+| 15 | 11B: Activity log | 🔲 |
+| 16 | 11C: Hardening | 🔲 |
+| 17 | 11E: API & API Docs QA | 🔲 |
+| 18 | 11D: Admin dashboard | 🔲 |
+| 19 | Day 12: Testing & launch | 🔲 |
 
 **Work through Phases 1–9 sequentially. Run every Gate test before moving to the next Phase. Do not skip ahead.**
 
