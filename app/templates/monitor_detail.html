@@ -8,7 +8,10 @@
 <!-- ── Header ── -->
 <div class="md-header">
     <div class="md-header-left">
-        <a href="/dashboard" class="md-back">← Monitoring</a>
+        <a href="/dashboard" class="md-back">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+            Monitoring
+        </a>
         <div class="md-title-row">
             <span class="status-dot-lg {% if monitor.get('paused') %}dot-paused{% elif monitor.status == 'up' %}dot-up{% elif monitor.status == 'down' %}dot-down{% else %}dot-pending{% endif %}"></span>
             <h1 class="md-name">{{ monitor.name }}</h1>
@@ -16,7 +19,7 @@
         <div class="md-subtitle">
             {% if monitor.get('monitor_type') == 'heartbeat' %}
             <span class="md-type">♥ Heartbeat monitor</span>
-            <span class="md-url" style="cursor:default;">Expected every
+            <span class="md-url md-url-static">Expected every
                 {% set hbi = monitor.get('heartbeat_interval', 300) %}
                 {% if hbi < 120 %}{{ hbi }}s{% elif hbi < 3600 %}{{ (hbi / 60)|int }}m{% elif hbi < 86400 %}{{ (hbi / 3600)|int }}h{% else %}24h{% endif %}
                 ({{ monitor.get('heartbeat_grace_period', 30) }}s grace)
@@ -26,7 +29,7 @@
             <a href="{{ monitor.url }}" target="_blank" class="md-url">{{ monitor.url }}</a>
             {% elif monitor.get('monitor_type') == 'ssl' %}
             <span class="md-type">🔒 SSL certificate monitor for</span>
-            <span class="md-url" style="cursor:default;">{{ monitor.get('ssl_domain', monitor.url) }}</span>
+            <span class="md-url md-url-static">{{ monitor.get('ssl_domain', monitor.url) }}</span>
             {% else %}
             <span class="md-type">HTTP{{ 'S' if monitor.url.startswith('https') else '' }} monitor for</span>
             <a href="{{ monitor.url }}" target="_blank" class="md-url">{{ monitor.url }}</a>
@@ -36,26 +39,26 @@
     <div class="md-header-actions">
         <form method="POST" action="/monitors/{{ monitor.id }}/test-alert" style="margin:0; display:inline;">
             <button type="submit" class="btn btn-secondary btn-sm"
-                    onclick="this.textContent='Sending...'; this.disabled=true; this.form.submit();">
-                Test Notification
+                    onclick="this.textContent='Sending…'; this.disabled=true; this.form.submit();">
+                Test alert
             </button>
         </form>
         <button class="btn btn-sm {% if monitor.get('paused') %}btn-primary{% else %}btn-secondary{% endif %}"
                 id="pauseResumeBtn"
                 onclick="togglePause('{{ monitor.id }}')">
-            {{ '▶ Resume' if monitor.get('paused') else '⏸ Pause' }}
+            {{ 'Resume' if monitor.get('paused') else 'Pause' }}
         </button>
-        <a href="/monitors/{{ monitor.id }}/edit" class="btn btn-secondary btn-sm">✎ Edit</a>
+        <a href="/monitors/{{ monitor.id }}/edit" class="btn btn-secondary btn-sm">Edit</a>
     </div>
 </div>
 
 {% if monitor.get('monitor_type') == 'heartbeat' and monitor.get('ping_url') %}
 <!-- ── Ping URL bar ── -->
-<div class="md-section" style="padding: 1rem 1.25rem; margin-bottom: 0.5rem;">
-    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-        <span style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);">Ping URL</span>
-        <code style="flex: 1; padding: 0.5rem 0.75rem; background: var(--bg-secondary, #f8f9fa); border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.82rem; word-break: break-all; font-family: 'JetBrains Mono', monospace;">{{ monitor.ping_url }}</code>
-        <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('{{ monitor.ping_url }}').then(() => { this.textContent='✓ Copied'; setTimeout(() => this.textContent='📋 Copy', 2000); })">📋 Copy</button>
+<div class="md-section md-ping-bar">
+    <div class="md-ping-bar-inner">
+        <span class="md-ping-bar-label">Ping URL</span>
+        <code class="md-ping-url">{{ monitor.ping_url }}</code>
+        <button class="btn btn-secondary btn-sm md-ping-copy" onclick="navigator.clipboard.writeText('{{ monitor.ping_url }}').then(() => { this.textContent='✓ Copied'; setTimeout(() => this.textContent='Copy', 2000); })">Copy</button>
     </div>
 </div>
 {% endif %}

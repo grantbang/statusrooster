@@ -18,13 +18,13 @@
 <h1 class="mf-heading">Edit {{ monitor.name }}<span class="mf-heading-dot">.</span></h1>
 <div class="mf-heading-sub">
     {% if is_heartbeat %}
-    <span class="mf-type-badge" style="background: #f0fdf4; color: #16a34a;">💓 Heartbeat / Cron</span>
+    <span class="mf-type-badge mf-type-badge--heartbeat">Heartbeat / Cron</span>
     {% elif is_json_api %}
-    <span class="mf-type-badge" style="background: #eff6ff; color: #2563eb;">📄 JSON / API</span>
+    <span class="mf-type-badge mf-type-badge--json">JSON / API</span>
     {% elif is_ssl %}
-    <span class="mf-type-badge" style="background: #fefce8; color: #854d0e;">🔒 SSL Certificate</span>
+    <span class="mf-type-badge mf-type-badge--ssl">SSL Certificate</span>
     {% else %}
-    <span class="mf-type-badge" style="background: #f5f3ff; color: #6366f1;">🌐 HTTP / HTTPS</span>
+    <span class="mf-type-badge mf-type-badge--http">HTTP / HTTPS</span>
     {% endif %}
 </div>
 
@@ -99,7 +99,7 @@
             <div class="mf-field-group">
                 <label for="heartbeat_grace_period">Grace period <span class="label-optional">(seconds)</span></label>
                 <input type="number" id="heartbeat_grace_period" name="heartbeat_grace_period"
-                       value="{{ monitor.get('heartbeat_grace_period', 30) }}" min="0" max="3600" style="max-width: 140px;">
+                       value="{{ monitor.get('heartbeat_grace_period', 30) }}" min="0" max="3600" class="mf-input-sm">
                 <div class="hint">Extra time before marking as down.</div>
             </div>
         </div>
@@ -123,7 +123,7 @@
             <div class="mf-field-group">
                 <label for="ssl_expiry_threshold_days">Warning threshold <span class="label-optional">(days)</span></label>
                 <input type="number" id="ssl_expiry_threshold_days" name="ssl_expiry_threshold_days"
-                       value="{{ monitor.get('ssl_expiry_threshold_days', 14) }}" min="1" max="90" style="max-width: 140px;">
+                       value="{{ monitor.get('ssl_expiry_threshold_days', 14) }}" min="1" max="90" class="mf-input-sm">
                 <div class="hint">Alert when cert expires within this many days.</div>
             </div>
         </div>
@@ -182,7 +182,7 @@
                 {% if plan == 'free' %}
                 <span class="mf-notify-pro">PRO</span>
                 {% else %}
-                <label class="mf-toggle-switch mf-toggle-switch-sm" style="margin-left: auto;">
+                <label class="mf-toggle-switch mf-toggle-switch-sm mf-toggle-ml-auto">
                     <input type="checkbox" id="slackToggle" {% if has_slack %}checked{% endif %}
                            onchange="document.getElementById('slackUrlWrap').style.display = this.checked ? 'block' : 'none'">
                     <span class="mf-toggle-slider"></span>
@@ -192,7 +192,7 @@
             {% if plan != 'free' %}
             <div id="slackUrlWrap" style="{% if not has_slack %}display: none;{% endif %}">
                 <input type="text" name="alert_slack_webhook" class="mf-notify-channel-input" value="{{ has_slack }}" placeholder="https://hooks.slack.com/services/...">
-                <div class="hint" style="margin-top: 0.25rem;">Paste your Slack incoming webhook URL.</div>
+                <div class="hint hint-mt-sm">Paste your Slack incoming webhook URL.</div>
             </div>
             {% else %}
             <div class="mf-notify-channel-locked">
@@ -211,7 +211,7 @@
                 {% if plan == 'free' %}
                 <span class="mf-notify-pro">PRO</span>
                 {% else %}
-                <label class="mf-toggle-switch mf-toggle-switch-sm" style="margin-left: auto;">
+                <label class="mf-toggle-switch mf-toggle-switch-sm mf-toggle-ml-auto">
                     <input type="checkbox" id="webhookToggle" {% if has_webhook %}checked{% endif %}
                            onchange="document.getElementById('webhookUrlWrap').style.display = this.checked ? 'block' : 'none'">
                     <span class="mf-toggle-slider"></span>
@@ -221,7 +221,7 @@
             {% if plan != 'free' %}
             <div id="webhookUrlWrap" style="{% if not has_webhook %}display: none;{% endif %}">
                 <input type="text" name="webhook_url" class="mf-notify-channel-input" value="{{ has_webhook }}" placeholder="https://your-api.com/webhook">
-                <div class="hint" style="margin-top: 0.25rem;">We'll POST JSON to this URL on status changes.</div>
+                <div class="hint hint-mt-sm">We'll POST JSON to this URL on status changes.</div>
             </div>
             {% else %}
             <div class="mf-notify-channel-locked">
@@ -247,14 +247,14 @@
             <span class="mf-interval-value" id="intervalDisplay">{% if ci < 120 %}{{ ci }}s{% else %}{{ (ci / 60)|int }}m{% endif %}</span>
         </div>
         <div class="mf-interval-labels"><span>60s</span><span>3m</span><span>5m</span></div>
-        <div class="hint" style="margin-top: 0.5rem;">Your monitor will be checked every <strong id="intervalText">{% if ci < 120 %}{{ ci }} seconds{% else %}{{ (ci / 60)|int }} minutes{% endif %}</strong>.</div>
+        <div class="hint hint-mt-md">Your monitor will be checked every <strong id="intervalText">{% if ci < 120 %}{{ ci }} seconds{% else %}{{ (ci / 60)|int }} minutes{% endif %}</strong>.</div>
         {% else %}
-        <div class="mf-interval-wrap" style="opacity: 0.5;">
-            <input type="range" class="mf-interval-slider" disabled min="60" max="300" value="300" style="cursor: not-allowed;">
-            <span class="mf-interval-value" style="color: var(--text-muted);">5m</span>
+        <div class="mf-interval-wrap mf-disabled-wrap">
+            <input type="range" class="mf-interval-slider" disabled min="60" max="300" value="300">
+            <span class="mf-interval-value mf-interval-value-muted">5m</span>
         </div>
         <input type="hidden" name="check_interval" value="300">
-        <div class="hint" style="margin-top: 0.5rem;">Checked every <strong>5 minutes</strong>. <a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a> for 60s checks. <span class="mf-notify-pro" style="vertical-align: middle;">PRO</span></div>
+        <div class="hint hint-mt-md">Checked every <strong>5 minutes</strong>. <a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a> for 60s checks. <span class="mf-notify-pro mf-pro-badge-inline">PRO</span></div>
         {% endif %}
     </div>
     {% endif %}
@@ -315,7 +315,7 @@
                 {% set has_auth_user = monitor.get('basic_auth_user', '') %}
                 {% set has_bearer = monitor.get('bearer_token', '') %}
                 {% set auth_type = 'bearer' if has_bearer else ('basic' if has_auth_user else 'none') %}
-                <div class="mf-field-group" style="margin-top: 0.75rem;">
+                <div class="mf-field-group mf-field-group-mt">
                     <label>Authentication</label>
                     <div class="mf-auth-section">
                         <select class="mf-auth-type-select" id="authTypeSelect" name="auth_type" onchange="toggleAuthFields(this.value)">
@@ -346,34 +346,34 @@
 
                 <!-- Request body (shown for POST/PUT/PATCH/DELETE) -->
                 {% set cur_method = monitor.get('http_method', 'GET') %}
-                <div class="mf-field-group" id="requestBodyGroup" style="{% if cur_method not in ['POST','PUT','PATCH','DELETE'] %}display: none;{% endif %} margin-top: 0.75rem;">
+                <div class="mf-field-group mf-field-group-mt" id="requestBodyGroup" style="{% if cur_method not in ['POST','PUT','PATCH','DELETE'] %}display: none;{% endif %}">
                     <label for="request_body">Request body <span class="label-optional">(optional)</span></label>
-                    <div style="margin-bottom: 0.4rem;">
+                    <div class="mf-content-type-wrap">
                         {% set cur_ct = monitor.get('request_content_type', 'application/json') %}
-                        <select id="request_content_type" name="request_content_type" style="max-width: 280px;">
+                        <select id="request_content_type" name="request_content_type" class="mf-content-type-select">
                             <option value="application/json" {% if cur_ct == 'application/json' %}selected{% endif %}>application/json</option>
                             <option value="text/plain" {% if cur_ct == 'text/plain' %}selected{% endif %}>text/plain</option>
                             <option value="application/x-www-form-urlencoded" {% if cur_ct == 'application/x-www-form-urlencoded' %}selected{% endif %}>application/x-www-form-urlencoded</option>
                         </select>
                     </div>
-                    <textarea id="request_body" name="request_body" rows="4" placeholder='{"key": "value"}' style="font-family: var(--font-mono); font-size: 0.85rem;">{{ monitor.get('request_body', '') }}</textarea>
+                    <textarea id="request_body" name="request_body" rows="4" placeholder='{"key": "value"}' class="mf-mono-textarea">{{ monitor.get('request_body', '') }}</textarea>
                     <div class="hint">Body sent with POST, PUT, PATCH, or DELETE requests.</div>
                 </div>
 
                 <!-- Custom headers (Pro) -->
-                <div class="mf-field-group" style="margin-top: 0.75rem;">
+                <div class="mf-field-group mf-field-group-mt">
                     <label>Custom headers {% if plan == 'free' %}<span class="mf-pro-tag">PRO</span>{% endif %} <span class="label-optional">(optional)</span></label>
                     {% if plan != 'free' %}
                     <div id="custom-headers-container">
                         {% for h in monitor.get('custom_headers', []) %}
-                        <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;">
-                            <input type="text" name="header_key[]" value="{{ h.get('key', '') }}" placeholder="X-Custom-Header" style="flex:1;min-width:120px;">
-                            <input type="text" name="header_value[]" value="{{ h.get('value', '') }}" placeholder="value" style="flex:1;min-width:120px;">
-                            <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>
+                        <div class="builder-row">
+                            <input type="text" name="header_key[]" value="{{ h.get('key', '') }}" placeholder="X-Custom-Header">
+                            <input type="text" name="header_value[]" value="{{ h.get('value', '') }}" placeholder="value">
+                            <button type="button" class="builder-remove-btn" onclick="this.parentElement.remove()" title="Remove">✕</button>
                         </div>
                         {% endfor %}
                     </div>
-                    <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; margin-top: 0.5rem;" onclick="addCustomHeader()">+ Add header</button>
+                    <button type="button" class="btn btn-secondary btn-sm mf-builder-add-btn" onclick="addCustomHeader()">+ Add header</button>
                     <div class="hint">Additional headers sent with each check request.</div>
                     {% else %}
                     <div class="mf-notify-channel-locked">
@@ -439,19 +439,19 @@
                     <label>JSON assertions <span class="label-optional">(optional)</span></label>
                     <div id="assertions-container">
                         {% for assertion in monitor.get('json_assertions', []) %}
-                        <div class="assertion-row" style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;">
-                            <input type="text" name="assertion_path[]" value="{{ assertion.get('path', '') }}" placeholder="data.status" style="flex:1;min-width:100px;">
-                            <select name="assertion_operator[]" style="flex:0 0 auto;">
+                        <div class="builder-row assertion-row">
+                            <input type="text" name="assertion_path[]" value="{{ assertion.get('path', '') }}" placeholder="data.status">
+                            <select name="assertion_operator[]" class="builder-row-flex-auto">
                                 {% for val, label in [('equals','Equals'),('not_equals','Not equals'),('contains','Contains'),('not_contains','Not contains'),('exists','Exists'),('not_exists','Not exists'),('greater_than','Greater than'),('less_than','Less than')] %}
                                 <option value="{{ val }}" {% if assertion.get('operator') == val %}selected{% endif %}>{{ label }}</option>
                                 {% endfor %}
                             </select>
-                            <input type="text" name="assertion_value[]" value="{{ assertion.get('value', '') }}" placeholder="ok" style="flex:1;min-width:80px;">
-                            <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>
+                            <input type="text" name="assertion_value[]" value="{{ assertion.get('value', '') }}" placeholder="ok">
+                            <button type="button" class="builder-remove-btn" onclick="this.parentElement.remove()" title="Remove">✕</button>
                         </div>
                         {% endfor %}
                     </div>
-                    <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; margin-top: 0.5rem;" onclick="addAssertion()">+ Add assertion</button>
+                    <button type="button" class="btn btn-secondary btn-sm mf-builder-add-btn" onclick="addAssertion()">+ Add assertion</button>
                     <div class="hint">Validate specific fields — e.g. <code>data.status</code> equals <code>ok</code>.</div>
                 </div>
                 <div class="mf-field-group">
@@ -481,7 +481,7 @@
                     <span class="mf-toggle-slider"></span>
                 </label>
             </div>
-            <div class="mf-field-group" id="slugGroup" style="{% if not monitor.public %}display: none;{% endif %} margin-top: 0.5rem;">
+            <div class="mf-field-group mf-field-group-mt" id="slugGroup" style="{% if not monitor.public %}display: none;{% endif %}">
                 <label for="slug">Status page slug <span class="label-optional">(optional)</span></label>
                 <input type="text" id="slug" name="slug" value="{{ monitor.slug }}"
                        pattern="[a-z0-9\-]+" title="Lowercase letters, numbers, and hyphens only">
@@ -509,23 +509,23 @@
                 <div id="mw-container">
                     {% if plan != 'free' %}
                     {% for mw in monitor.get('maintenance_windows', []) %}
-                    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;">
-                        <select name="maintenance_day[]" style="flex:0 0 auto;">
+                    <div class="builder-row">
+                        <select name="maintenance_day[]" class="builder-row-flex-auto">
                             <option value="">Day…</option>
                             {% for day in ['monday','tuesday','wednesday','thursday','friday','saturday','sunday','daily'] %}
                             <option value="{{ day }}" {% if mw.get('day') == day %}selected{% endif %}>{{ day | capitalize }}</option>
                             {% endfor %}
                         </select>
-                        <input type="time" name="maintenance_start[]" value="{{ mw.get('start_utc', '') }}" style="flex:0 0 auto;">
-                        <span style="color: var(--text-muted);">to</span>
-                        <input type="time" name="maintenance_end[]" value="{{ mw.get('end_utc', '') }}" style="flex:0 0 auto;">
-                        <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>
+                        <input type="time" name="maintenance_start[]" value="{{ mw.get('start_utc', '') }}" class="builder-row-flex-auto">
+                        <span class="builder-separator">to</span>
+                        <input type="time" name="maintenance_end[]" value="{{ mw.get('end_utc', '') }}" class="builder-row-flex-auto">
+                        <button type="button" class="builder-remove-btn" onclick="this.parentElement.remove()" title="Remove">✕</button>
                     </div>
                     {% endfor %}
                     {% endif %}
                 </div>
                 {% if plan != 'free' %}
-                <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; margin-top: 0.5rem;" onclick="addMaintenanceWindow()">+ Add maintenance window</button>
+                <button type="button" class="btn btn-secondary btn-sm mf-builder-add-btn" onclick="addMaintenanceWindow()">+ Add maintenance window</button>
                 <div class="hint">Suppress alerts during these windows (times in UTC).</div>
                 {% else %}
                 <div class="hint"><a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a> to suppress alerts during scheduled maintenance.</div>
@@ -585,10 +585,10 @@ function addCustomHeader(key, value) {
     const c = document.getElementById('custom-headers-container');
     if (!c) return;
     const row = document.createElement('div');
-    row.style.cssText = 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;';
-    row.innerHTML = '<input type="text" name="header_key[]" value="'+(key||'')+'" placeholder="X-Custom-Header" style="flex:1;min-width:120px;">'
-        + '<input type="text" name="header_value[]" value="'+(value||'')+'" placeholder="value" style="flex:1;min-width:120px;">'
-        + '<button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>';
+    row.className = 'builder-row';
+    row.innerHTML = '<input type="text" name="header_key[]" value="'+(key||'')+'" placeholder="X-Custom-Header">'
+        + '<input type="text" name="header_value[]" value="'+(value||'')+'" placeholder="value">'
+        + '<button type="button" class="builder-remove-btn" onclick="this.parentElement.remove()" title="Remove">✕</button>';
     c.appendChild(row);
 }
 
@@ -601,13 +601,13 @@ const MW_DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','
 function addMaintenanceWindow(day, start, end) {
     const c = document.getElementById('mw-container');
     const row = document.createElement('div');
-    row.style.cssText = 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;';
+    row.className = 'builder-row';
     const options = MW_DAYS.map(d => '<option value="'+d+'" '+(d===(day||'')?'selected':'')+'>'+d.charAt(0).toUpperCase()+d.slice(1)+'</option>').join('');
-    row.innerHTML = '<select name="maintenance_day[]" style="flex:0 0 auto;"><option value="">Day…</option>'+options+'</select>'
-        + '<input type="time" name="maintenance_start[]" value="'+(start||'')+'" style="flex:0 0 auto;">'
-        + '<span style="color:var(--text-muted);">to</span>'
-        + '<input type="time" name="maintenance_end[]" value="'+(end||'')+'" style="flex:0 0 auto;">'
-        + '<button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>';
+    row.innerHTML = '<select name="maintenance_day[]" class="builder-row-flex-auto"><option value="">Day…</option>'+options+'</select>'
+        + '<input type="time" name="maintenance_start[]" value="'+(start||'')+'" class="builder-row-flex-auto">'
+        + '<span class="builder-separator">to</span>'
+        + '<input type="time" name="maintenance_end[]" value="'+(end||'')+'" class="builder-row-flex-auto">'
+        + '<button type="button" class="builder-remove-btn" onclick="this.parentElement.remove()" title="Remove">✕</button>';
     c.appendChild(row);
 }
 
@@ -617,13 +617,12 @@ function addAssertion(path, operator, value) {
     const c = document.getElementById('assertions-container');
     if (!c) return;
     const row = document.createElement('div');
-    row.className = 'assertion-row';
-    row.style.cssText = 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;';
+    row.className = 'builder-row assertion-row';
     const options = ASSERTION_OPS.map(function(a) { return '<option value="'+a[0]+'" '+(a[0]===(operator||'equals')?'selected':'')+'>'+a[1]+'</option>'; }).join('');
-    row.innerHTML = '<input type="text" name="assertion_path[]" value="'+(path||'')+'" placeholder="data.status" style="flex:1;min-width:100px;">'
-        + '<select name="assertion_operator[]" style="flex:0 0 auto;">'+options+'</select>'
-        + '<input type="text" name="assertion_value[]" value="'+(value||'')+'" placeholder="ok" style="flex:1;min-width:80px;">'
-        + '<button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Remove">✕</button>';
+    row.innerHTML = '<input type="text" name="assertion_path[]" value="'+(path||'')+'" placeholder="data.status">'
+        + '<select name="assertion_operator[]" class="builder-row-flex-auto">'+options+'</select>'
+        + '<input type="text" name="assertion_value[]" value="'+(value||'')+'" placeholder="ok">'
+        + '<button type="button" class="builder-remove-btn" onclick="this.parentElement.remove()" title="Remove">✕</button>';
     c.appendChild(row);
 }
 
