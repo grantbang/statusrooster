@@ -157,6 +157,45 @@ uvicorn app.main:app --reload --port 8080
 - Local Firestore uses production data (same project)
 - Cloud Scheduler cron does NOT run locally — checks only happen in production
 
+## Running Gate Tests (How to Authenticate)
+
+The login cookie is set with `Secure; HttpOnly; SameSite=lax`. This means:
+- **Python `requests` library fails** — it drops `Secure` cookies over plain HTTP.
+- **curl works** — extract the token from the `set-cookie` header and pass it manually.
+
+### ✅ The correct curl-based auth pattern (use this every time):
+
+```bash
+# Step 1: Login and capture the token from the set-cookie header
+TOKEN=$(curl -s -X POST http://localhost:8080/login \
+  -d "email=testaccount1@statusrooster.com&password=password" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -D - -o /dev/null 2>&1 | grep set-cookie | grep -o 'access_token=[^;]*')
+
+# Step 2: Use it in all subsequent requests via -H "Cookie: $TOKEN"
+curl -s -H "Cookie: $TOKEN" http://localhost:8080/dashboard
+curl -s -H "Cookie: $TOKEN" http://localhost:8080/monitors/Ik6AqPcmLGzGEX0jNlGO
+curl -s -H "Cookie: $TOKEN" "http://localhost:8080/incidents?monitor_id=Ik6AqPcmLGzGEX0jNlGO"
+```
+
+### ✅ Full gate test script template:
+
+```bash
+cd /Applications/statusrooster && \
+TOKEN=$(curl -s -X POST http://localhost:8080/login \
+  -d "email=testaccount1@statusrooster.com&password=password" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -D - -o /dev/null 2>&1 | grep set-cookie | grep -o 'access_token=[^;]*') && \
+echo "Token acquired: ${TOKEN:0:30}..." && \
+BODY=$(curl -s -H "Cookie: $TOKEN" http://localhost:8080/PAGE_TO_TEST) && \
+echo "Contains expected-string: $(echo "$BODY" | grep -c 'expected-string')"
+```
+
+### ❌ Do NOT use:
+- `requests.Session()` with `allow_redirects=True` — cookies get dropped over HTTP
+- `requests.post(..., allow_redirects=False)` then follow manually — still drops `Secure` cookie
+- Any Python-based HTTP client for gate tests against localhost
+
 ### Test Account
 | Field | Value |
 |-------|-------|
