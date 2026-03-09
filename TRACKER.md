@@ -804,23 +804,23 @@ Layout order (top to bottom):
 - [x] **11F.T5** Old incidents (no `failure_response_headers`) — page renders, header table simply omitted
 - [x] **11F.T6** Response headers panel — collapsible `<details>`, stacks on mobile via `@media (max-width: 640px)`
 
-### 11G. Monitor → Incident Navigation Bridge 🔲
+### 11G. Monitor → Incident Navigation Bridge ✅
 
 > **Goal:** Make the connection between monitors and incidents obvious and fast. Right now a user has to leave the monitor detail page and hunt through the global incidents list. This phase adds clear navigation bridges in both directions.
 
 **Build items:**
-- [ ] **11G.1** Monitor detail page — "Recent Incidents" section already exists; ensure each incident row links directly to `/incidents/{id}` (verify, don't duplicate)
-- [ ] **11G.2** Monitor detail page — add a visible "View all incidents for this monitor" link that filters the incidents list page to that monitor (e.g. `/incidents?monitor_id={id}`)
-- [ ] **11G.3** Incidents list page — support `?monitor_id=` query param as a pre-applied filter; show "Filtered by: [Monitor Name] ×" badge when active
-- [ ] **11G.4** Incident detail page — "Back to incidents" link already exists; add a second breadcrumb link: "↗ View monitor" that goes to `/monitors/{id}` (already in template as "View monitor" — verify it's prominent enough)
-- [ ] **11G.5** Dashboard monitor card — ensure the existing downtime/incident count shown on cards is clickable, linking to the filtered incidents list for that monitor
+- [x] **11G.1** Monitor detail page — "Recent Incidents" section already exists; ensure each incident row links directly to `/incidents/{id}` (verify, don't duplicate)
+- [x] **11G.2** Monitor detail page — add a visible "View all incidents for this monitor" link that filters the incidents list page to that monitor (e.g. `/incidents?monitor_id={id}`)
+- [x] **11G.3** Incidents list page — support `?monitor_id=` query param as a pre-applied filter; show "Filtered by: [Monitor Name] ×" badge when active
+- [x] **11G.4** Incident detail page — "Back to incidents" link already exists; add a second breadcrumb link: "↗ View monitor" that goes to `/monitors/{id}` (already in template as "View monitor" — verify it's prominent enough)
+- [x] **11G.5** Dashboard monitor card — ensure the existing downtime/incident count shown on cards is clickable, linking to the filtered incidents list for that monitor
 
 **Gate tests:**
-- [ ] **11G.T1** From monitor detail → click incident row → lands on correct incident detail page
-- [ ] **11G.T2** From monitor detail → click "View all incidents" → incidents list pre-filtered to that monitor
-- [ ] **11G.T3** Filtered incidents list shows filter badge and clearing it removes the filter
-- [ ] **11G.T4** From incident detail → click "View monitor" → lands on correct monitor detail page
-- [ ] **11G.T5** Dashboard card incident count is clickable and links to filtered incidents list
+- [x] **11G.T1** From monitor detail → click incident row → lands on correct incident detail page
+- [x] **11G.T2** From monitor detail → click "View all incidents" → incidents list pre-filtered to that monitor
+- [x] **11G.T3** Filtered incidents list shows filter badge and clearing it removes the filter
+- [x] **11G.T4** From incident detail → click "View monitor" → lands on correct monitor detail page
+- [x] **11G.T5** Dashboard card incident count is clickable and links to filtered incidents list
 
 ### 11H. Replace Emoji with Inline SVG Icons 🔲
 

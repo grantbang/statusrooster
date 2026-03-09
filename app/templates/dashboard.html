@@ -303,6 +303,13 @@
             <span class="d-interval-badge" title="Check interval">⏱ {% if ci < 120 %}{{ ci }}s{% else %}{{ (ci / 60)|int }}m{% endif %}</span>
             {% endif %}
             {% endif %}
+            {% set inc_count = (incidents_per_monitor or {}).get(m.id, 0) %}
+            {% if inc_count > 0 %}
+            <span class="d-secondary-sep">·</span>
+            <a href="/incidents?monitor_id={{ m.id }}" class="d-inc-count-link" onclick="event.stopPropagation();" title="View incidents for this monitor">
+                {{ inc_count }} incident{{ 's' if inc_count != 1 }} today
+            </a>
+            {% endif %}
         </div>
     </div>
     {% endfor %}

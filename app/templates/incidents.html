@@ -41,6 +41,13 @@
 
 <div class="monitors-heading">
     <h2>Incidents<span class="heading-dot">.</span></h2>
+    {% if filter_monitor_name %}
+    <div class="inc-monitor-filter-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+        Filtered by: <strong>{{ filter_monitor_name }}</strong>
+        <a href="/incidents" class="inc-monitor-filter-clear" title="Clear filter">✕</a>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Toolbar: Search, Filter, Sort — mirrors dashboard exactly -->

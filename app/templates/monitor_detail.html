@@ -236,6 +236,7 @@
         <div class="md-inc-header-right">
             <span class="md-inc-count">{{ incidents|length }} total</span>
             {% if incidents %}
+            <a href="/incidents?monitor_id={{ monitor.id }}" class="btn btn-secondary btn-sm">View all incidents →</a>
             <button class="btn btn-secondary btn-sm" onclick="exportIncidents()">📥 Export CSV</button>
             {% endif %}
         </div>
@@ -249,7 +250,7 @@
             <span>Duration</span>
         </div>
         {% for inc in incidents[:20] %}
-        <div class="md-inc-row">
+        <a href="/incidents/{{ inc.id }}" class="md-inc-row md-inc-row-link">
             <span class="md-inc-status">
                 {% if inc.status == 'open' %}
                     <span class="md-inc-badge md-inc-ongoing">● Ongoing</span>
@@ -299,13 +300,22 @@
                     —
                 {% endif %}
             </span>
-        </div>
+            <span class="md-inc-chevron">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+            </span>
+        </a>
         {% endfor %}
     </div>
     {% if incidents|length > 20 %}
-    <div class="md-inc-footer">Showing 20 of {{ incidents|length }} incidents</div>
+    <div class="md-inc-footer">
+        Showing 20 of {{ incidents|length }} incidents ·
+        <a href="/incidents?monitor_id={{ monitor.id }}" class="md-inc-view-all">View all →</a>
+    </div>
     {% elif incidents|length > 0 %}
-    <div class="md-inc-footer">That's all, folks!</div>
+    <div class="md-inc-footer">
+        Showing all {{ incidents|length }} incident{{ 's' if incidents|length != 1 }} ·
+        <a href="/incidents?monitor_id={{ monitor.id }}" class="md-inc-view-all">View all →</a>
+    </div>
     {% endif %}
     {% else %}
     <div class="md-empty">No incidents recorded yet. That's a good thing! 🎉</div>

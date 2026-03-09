@@ -321,8 +321,15 @@ async def dashboard(request: Request):
         monitor_ids = [m["id"] for m in monitors]
         all_incidents = list_incidents_by_user(db, monitor_ids, hours=24, limit=50)
         incidents_today = len(all_incidents)
+        # Per-monitor incident count for dashboard cards
+        from collections import defaultdict
+        incidents_per_monitor = defaultdict(int)
+        for inc in all_incidents:
+            incidents_per_monitor[inc["monitor_id"]] += 1
+        incidents_per_monitor = dict(incidents_per_monitor)
     except Exception:
         incidents_today = 0
+        incidents_per_monitor = {}
 
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
@@ -334,6 +341,7 @@ async def dashboard(request: Request):
         "avg_response_ms": avg_response_ms,
         "overall_uptime_pct": overall_uptime_pct,
         "incidents_today": incidents_today,
+        "incidents_per_monitor": incidents_per_monitor,
     })
 
 
@@ -354,6 +362,7 @@ async def incidents_page(request: Request):
     # Query params
     hours_param = request.query_params.get("hours", "168")
     status_param = request.query_params.get("status")
+    monitor_id_param = request.query_params.get("monitor_id")
 
     try:
         hours = int(hours_param) if hours_param and hours_param != "0" else None
@@ -362,15 +371,24 @@ async def incidents_page(request: Request):
 
     status_filter = status_param if status_param in ("open", "resolved") else None
 
+    # Build monitor lookup for type info and pre-filter label
+    monitor_map = {m["id"]: m for m in monitors}
+
+    # Pre-filter by monitor_id if provided and valid
+    filter_monitor = None
+    if monitor_id_param and monitor_id_param in monitor_map:
+        filter_monitor = monitor_map[monitor_id_param]
+        query_ids = [monitor_id_param]
+    else:
+        monitor_id_param = None
+        query_ids = monitor_ids
+
     incidents = list_incidents_by_user(
-        db, monitor_ids,
+        db, query_ids,
         hours=hours if hours else 30 * 24,
         limit=200,
         status=status_filter,
-    ) if monitor_ids else []
-
-    # Build monitor lookup for type info
-    monitor_map = {m["id"]: m for m in monitors}
+    ) if query_ids else []
 
     # Extract unique group names for filter dropdown
     group_names = sorted(set(
@@ -385,6 +403,8 @@ async def incidents_page(request: Request):
         "group_names": group_names,
         "hours": hours_param,
         "status_filter": status_param or "all",
+        "filter_monitor_id": monitor_id_param,
+        "filter_monitor_name": filter_monitor.get("name") if filter_monitor else None,
     })
 
 
