@@ -777,6 +777,33 @@ Layout order (top to bottom):
 
 **Test script:** `scripts/qa_api_v1.py` — 34/34 pass.
 
+### 11F. Incident Detail — Request/Response Panel ✅
+
+> **Goal:** Show the *exact* request sent and response received when a monitor first went down — right on the incident detail page. Inspired by UptimeRobot's request/response section. Gives users instant "why did it fail?" context without hunting through check history.
+
+**Scope — what to show vs. what to store:**
+
+| Panel | Source | Notes |
+|-------|--------|-------|
+| **Request** | Already known — method, URL, keyword/assertion config | No new storage needed |
+| **Response** | `status_code`, `response_ms` already stored on incident | Add `response_headers` capture on failure |
+| **Failure reason** | `error_message` already stored | Display prominently |
+
+**Build items:**
+- [x] **11F.1** `checker.py` — capture `response_headers` dict on HTTP/JSON checks; `create_incident()` stores `failure_response_headers` + `failure_error_message` on the Firestore doc
+- [x] **11F.2** `incident_detail.html` — Request panel: method badge + URL (clickable), keyword/assertion config, auth type indicator (masked), custom headers count; heartbeat/SSL variants
+- [x] **11F.3** `incident_detail.html` — Response panel: status code pill (colored 2xx/4xx/5xx), response time, collapsible `failure_response_headers` table, error message; heartbeat/SSL variants
+- [x] **11F.4** CSS — `.id-rr-row`, `.id-rr-panel`, `.id-rr-method--*`, `.id-rr-status-pill`, `.id-rr-details` — side-by-side on desktop, stacked on mobile
+- [x] **11F.5** Graceful fallback — `{% if resp_headers %}` guard on header table; Jinja `mtype` branch renders appropriate content for all monitor types without blank cards
+
+**Gate tests:**
+- [x] **11F.T1** HTTP incident — Request panel shows correct method + URL; Response panel shows status code + response time
+- [x] **11F.T2** HTTP incident with keyword fail — keyword shown in Request panel
+- [x] **11F.T3** Heartbeat incident — panels show "Missed ping" context instead of HTTP fields
+- [x] **11F.T4** SSL incident — panels show domain + expiry threshold, no HTTP fields
+- [x] **11F.T5** Old incidents (no `failure_response_headers`) — page renders, header table simply omitted
+- [x] **11F.T6** Response headers panel — collapsible `<details>`, stacks on mobile via `@media (max-width: 640px)`
+
 ### 11D. Admin Dashboard 🔲
 - [ ] Route: `GET /admin` — guard: only your email can access
 - [ ] KPI cards: total users, Pro users, Free users, MRR, total monitors, checks today

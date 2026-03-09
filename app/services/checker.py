@@ -102,11 +102,14 @@ async def check_url(url: str, timeout: float = 10.0, expected_status_code: int |
                 is_up = response.status_code == expected_status_code
             else:
                 is_up = 200 <= response.status_code < 400
+            # Capture response headers as a plain dict (for incident storage)
+            resp_headers = dict(response.headers)
             return {
                 "status_code": response.status_code,
                 "response_ms": elapsed_ms,
                 "is_up": is_up,
                 "body": response.text[:10240] if is_up else response.text[:10240],
+                "response_headers": resp_headers,
             }
         finally:
             if owns_client:
@@ -117,6 +120,7 @@ async def check_url(url: str, timeout: float = 10.0, expected_status_code: int |
             "response_ms": None,
             "is_up": False,
             "body": "",
+            "response_headers": {},
         }
 
 
@@ -232,6 +236,7 @@ async def check_json_api(url: str, timeout: float = 10.0, expected_status_code: 
                 "body": body_text,
                 "json_valid": json_valid,
                 "assertion_results": assertion_results,
+                "response_headers": dict(response.headers),
             }
         finally:
             if owns_client:
@@ -244,6 +249,7 @@ async def check_json_api(url: str, timeout: float = 10.0, expected_status_code: 
             "body": "",
             "json_valid": False,
             "assertion_results": [],
+            "response_headers": {},
         }
 
 
@@ -874,6 +880,8 @@ async def run_checks():
                     monitor_url=monitor.get("url", ""),
                     status_code=result["status_code"],
                     response_ms=result["response_ms"],
+                    failure_response_headers=result.get("response_headers") or {},
+                    failure_error_message=result.get("error_message") or "",
                 )
                 log_incident_event(db, incident["id"], "detected", {
                     "status_code": result["status_code"],
