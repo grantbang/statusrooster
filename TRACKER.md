@@ -804,6 +804,54 @@ Layout order (top to bottom):
 - [x] **11F.T5** Old incidents (no `failure_response_headers`) — page renders, header table simply omitted
 - [x] **11F.T6** Response headers panel — collapsible `<details>`, stacks on mobile via `@media (max-width: 640px)`
 
+### 11G. Monitor → Incident Navigation Bridge 🔲
+
+> **Goal:** Make the connection between monitors and incidents obvious and fast. Right now a user has to leave the monitor detail page and hunt through the global incidents list. This phase adds clear navigation bridges in both directions.
+
+**Build items:**
+- [ ] **11G.1** Monitor detail page — "Recent Incidents" section already exists; ensure each incident row links directly to `/incidents/{id}` (verify, don't duplicate)
+- [ ] **11G.2** Monitor detail page — add a visible "View all incidents for this monitor" link that filters the incidents list page to that monitor (e.g. `/incidents?monitor_id={id}`)
+- [ ] **11G.3** Incidents list page — support `?monitor_id=` query param as a pre-applied filter; show "Filtered by: [Monitor Name] ×" badge when active
+- [ ] **11G.4** Incident detail page — "Back to incidents" link already exists; add a second breadcrumb link: "↗ View monitor" that goes to `/monitors/{id}` (already in template as "View monitor" — verify it's prominent enough)
+- [ ] **11G.5** Dashboard monitor card — ensure the existing downtime/incident count shown on cards is clickable, linking to the filtered incidents list for that monitor
+
+**Gate tests:**
+- [ ] **11G.T1** From monitor detail → click incident row → lands on correct incident detail page
+- [ ] **11G.T2** From monitor detail → click "View all incidents" → incidents list pre-filtered to that monitor
+- [ ] **11G.T3** Filtered incidents list shows filter badge and clearing it removes the filter
+- [ ] **11G.T4** From incident detail → click "View monitor" → lands on correct monitor detail page
+- [ ] **11G.T5** Dashboard card incident count is clickable and links to filtered incidents list
+
+### 11H. Replace Emoji with Inline SVG Icons 🔲
+
+> **Goal:** Remove all emoji used as UI icons (🌐 💓 📄 🔒 ♥ 📧 💬 🔗) and replace with clean inline SVG. Emoji render inconsistently across OS/browser (especially on Windows), look unprofessional in a product context, and clash with the design system. Brand icons (Slack, GitHub) get their actual brand SVG mark, not a chat bubble.
+
+**Scope — every emoji icon in the app:**
+
+| Location | Emoji | Replace with |
+|----------|-------|-------------|
+| Add/Edit monitor type selector | 🌐 HTTP, 💓 Heartbeat, 📄 JSON/API, 🔒 SSL | Clean inline SVG per type |
+| Add/Edit monitor — notification channels | 📧 Email, 💬 Slack, 🔗 Webhook | SVG: envelope, Slack brand mark, chain-link |
+| Monitor detail — type label | ♥ Heartbeat, { } JSON/API, 🔒 SSL | SVG inline (same as type selector) |
+| Monitor detail — incident table cause | ♥ (heartbeat badge) | SVG heart/pulse icon |
+| Monitor detail — config section titles | 🔒 Certificate Details, { } Assertion Rules | SVG |
+| Incident detail — type field | ♥ Heartbeat, { } JSON/API, 🔒 SSL | SVG |
+| Incidents list — cause column | ♥ (heartbeat badge) | SVG |
+
+**Build items:**
+- [ ] **11H.1** Define reusable SVG snippets for: HTTP (globe/link), Heartbeat (pulse/activity), JSON/API (curly-braces or `{}`), SSL (lock), Email (envelope), Slack (brand hash), Webhook (chain link)
+- [ ] **11H.2** `add_monitor.html` — swap type selector emoji + notification channel emoji
+- [ ] **11H.3** `edit_monitor.html` — same swaps as add form
+- [ ] **11H.4** `monitor_detail.html` — type label, incident cause badge, config section titles
+- [ ] **11H.5** `incident_detail.html` + `incidents.html` — type field and cause column
+
+**Gate tests:**
+- [ ] **11H.T1** Add monitor form — all 4 type buttons show SVG icons, no emoji
+- [ ] **11H.T2** Notification channels — Email/Slack/Webhook show proper SVG, no emoji
+- [ ] **11H.T3** Monitor detail — type label and incident cause use SVG
+- [ ] **11H.T4** Incident detail + incidents list — no emoji anywhere visible
+- [ ] **11H.T5** Spot-check on a Windows user-agent (or Chrome/Firefox) — icons render correctly
+
 ### 11D. Admin Dashboard 🔲
 - [ ] Route: `GET /admin` — guard: only your email can access
 - [ ] KPI cards: total users, Pro users, Free users, MRR, total monitors, checks today
