@@ -1647,6 +1647,280 @@ code {
     /* handled via template */
 }
 
+/* ── Dashboard Redesign — Phase 6 CSS ──────────────── */
+
+/* 6.1 — Status strip alert variant (red tint when monitors down) */
+.d-status-strip-alert {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.04), rgba(239, 68, 68, 0.08));
+    border-color: rgba(239, 68, 68, 0.2);
+}
+.d-status-strip-alert .strip-count-pill.strip-count-down {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.25);
+}
+.d-status-strip-warn {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.04), rgba(245, 158, 11, 0.06));
+    border-color: rgba(245, 158, 11, 0.2);
+}
+
+/* 6.2 — Aggregate stat pills */
+.d-agg-stats {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+.d-agg-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+}
+.d-agg-stat-value {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+}
+.d-agg-stat-label {
+    color: var(--text-muted);
+    font-weight: 500;
+    font-size: 0.7rem;
+}
+.d-agg-stat-icon {
+    display: inline-flex;
+    opacity: 0.5;
+}
+
+/* 6.3 — Filter pills container */
+.d-filter-pills {
+    display: flex;
+    gap: 0.35rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* 6.4 — Individual filter pill */
+.d-filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    user-select: none;
+}
+.d-filter-pill:hover {
+    border-color: var(--brand);
+    color: var(--brand);
+    background: rgba(99, 102, 241, 0.04);
+}
+.d-filter-pill.active {
+    background: var(--brand);
+    color: #fff;
+    border-color: var(--brand);
+    font-weight: 600;
+}
+.d-filter-pill .pill-count {
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    opacity: 0.7;
+}
+.d-filter-pill.active .pill-count {
+    opacity: 0.9;
+}
+/* Status dot inside filter pill */
+.d-filter-pill .pill-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* 6.5 — Reworked monitor card: two-tier layout */
+.monitor-card.d-two-tier {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+}
+.monitor-card.d-two-tier:hover {
+    background: rgba(99, 102, 241, 0.03);
+    border-left: 3px solid var(--brand);
+    padding-left: calc(1rem - 2px);
+}
+.monitor-card.d-two-tier:first-child { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+.monitor-card.d-two-tier:last-child { border-bottom: 1px solid var(--border); border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+.monitor-card.d-two-tier:first-child:last-child { border-radius: var(--radius-lg); }
+
+/* 6.6 — Primary row: dot + checkbox + name + mini uptime bars + uptime % + menu */
+.d-row-primary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 28px;
+}
+.d-row-primary .monitor-name {
+    flex: 1;
+    min-width: 0;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.d-row-primary .uptime-value {
+    flex-shrink: 0;
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    min-width: 58px;
+    text-align: right;
+}
+
+/* 6.7 — Secondary row: type + URL + response/SSL/heartbeat + last checked */
+.d-row-secondary {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding-left: 44px; /* align with name (checkbox 24px + dot 20px) */
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    min-height: 20px;
+}
+.d-row-secondary .monitor-type-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+}
+.d-row-secondary .monitor-url-text {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-faint);
+}
+.d-row-secondary .d-secondary-stat {
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+.d-row-secondary .d-secondary-sep {
+    color: var(--border);
+    font-size: 0.6rem;
+}
+
+/* 6.8 — Inline mini uptime bars container (30 bars) */
+.d-uptime-bars {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 1px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+/* 6.9 — Individual uptime bar segment */
+.d-uptime-bar {
+    width: 3px;
+    border-radius: 1px;
+    min-height: 4px;
+    transition: transform 0.15s;
+}
+.d-uptime-bar:hover {
+    transform: scaleY(1.3);
+}
+.d-uptime-bar.bar-up {
+    background: var(--success);
+    height: 16px;
+}
+.d-uptime-bar.bar-warn {
+    background: var(--warning);
+    height: 12px;
+}
+.d-uptime-bar.bar-down {
+    background: var(--danger);
+    height: 16px;
+}
+.d-uptime-bar.bar-partial {
+    background: linear-gradient(to top, var(--danger) 0%, var(--success) 100%);
+    height: 14px;
+}
+.d-uptime-bar.bar-nodata {
+    background: #e5e7eb;
+    height: 6px;
+}
+
+/* 6.10 — Mobile responsive for two-tier row */
+@media (max-width: 768px) {
+    .d-agg-stats {
+        flex-wrap: wrap;
+        gap: 0.3rem;
+    }
+    .d-filter-pills {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 0.25rem;
+    }
+    .d-filter-pill {
+        font-size: 0.72rem;
+        padding: 0.25rem 0.55rem;
+    }
+    .monitor-card.d-two-tier {
+        padding: 0.6rem 0.75rem;
+    }
+    .d-row-primary .d-uptime-bars {
+        display: none;
+    }
+    .d-row-secondary {
+        padding-left: 44px;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+    .d-row-secondary .monitor-url-text {
+        width: 100%;
+        flex-basis: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .d-row-secondary {
+        padding-left: 36px;
+    }
+    .d-agg-stat {
+        font-size: 0.68rem;
+        padding: 0.2rem 0.5rem;
+    }
+}
+
 /* ── Row inline stats ──────────────────────────────── */
 .monitor-row-stats {
     display: flex;

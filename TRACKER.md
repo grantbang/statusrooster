@@ -521,21 +521,21 @@ Layout order (top to bottom):
 
 ### Phase 6: Dashboard CSS
 
-- [ ] **6.1** Add `.d-status-strip-alert` — red-tinted variant when monitors are down
-- [ ] **6.2** Add `.d-agg-stat` — aggregate stat pill (e.g., "99.8% uptime", "142ms avg")
-- [ ] **6.3** Add `.d-filter-pills` — horizontal pill-style filter tabs
-- [ ] **6.4** Add `.d-filter-pill` — individual pill button with active state
-- [ ] **6.5** Rework `.monitor-card` — two-tier layout (primary + secondary line)
-- [ ] **6.6** Add `.d-row-primary` — primary line flex layout (dot + name + mini bars + uptime %)
-- [ ] **6.7** Add `.d-row-secondary` — secondary line (URL + response + last checked + type), smaller/muted
-- [ ] **6.8** Add `.d-uptime-bars` — inline mini uptime bar container (30 bars, 2px wide, 16px tall)
-- [ ] **6.9** Add `.d-uptime-bar` — individual bar segment (green/red/yellow/gray)
-- [ ] **6.10** Rework mobile responsive for two-tier row — stack gracefully at <768px
+- [x] **6.1** Add `.d-status-strip-alert` — red-tinted variant when monitors are down
+- [x] **6.2** Add `.d-agg-stat` — aggregate stat pill (e.g., "99.8% uptime", "142ms avg")
+- [x] **6.3** Add `.d-filter-pills` — horizontal pill-style filter tabs
+- [x] **6.4** Add `.d-filter-pill` — individual pill button with active state
+- [x] **6.5** Rework `.monitor-card` — two-tier layout (primary + secondary line)
+- [x] **6.6** Add `.d-row-primary` — primary line flex layout (dot + name + mini bars + uptime %)
+- [x] **6.7** Add `.d-row-secondary` — secondary line (URL + response + last checked + type), smaller/muted
+- [x] **6.8** Add `.d-uptime-bars` — inline mini uptime bar container (30 bars, 2px wide, 16px tall)
+- [x] **6.9** Add `.d-uptime-bar` — individual bar segment (green/red/yellow/gray)
+- [x] **6.10** Rework mobile responsive for two-tier row — stack gracefully at <768px
 
 #### ✅ Phase 6 Gate — Dashboard CSS Validation
-- [ ] **6.T1** Grep all new dashboard class names — confirm they exist in `style.css`
-- [ ] **6.T2** Load dashboard — confirm existing layout still renders (CSS-only, template not yet touched)
-- [ ] **6.T3** Inspect `.d-uptime-bars` with DevTools — confirm bar container dimensions correct
+- [x] **6.T1** Grep all new dashboard class names — confirm they exist in `style.css`
+- [x] **6.T2** Load dashboard — confirm existing layout still renders (CSS-only, template not yet touched)
+- [x] **6.T3** Inspect `.d-uptime-bars` with DevTools — confirm bar container dimensions correct
 
 ---
 
@@ -778,7 +778,7 @@ Layout order (top to bottom):
 | 3 | Phase 3: Edit Monitor template | ✅ |
 | 4 | Phase 4: Backend wiring | ✅ |
 | 5 | Phase 5: Form E2E QA | ✅ |
-| 6 | Phase 6: Dashboard CSS | 🔲 |
+| 6 | Phase 6: Dashboard CSS | ✅ |
 | 7 | Phase 7: Dashboard template + JS | 🔲 |
 | 8 | Phase 8: Dashboard backend | 🔲 |
 | 9 | Phase 9: Dashboard E2E QA | 🔲 |
@@ -798,12 +798,12 @@ Layout order (top to bottom):
 - Phase 3: ~~13~~ **0** ✅
 - Phase 4: ~~27~~ **0** ✅
 - Phase 5: ~~11~~ **1** (1 browser-only mobile spot-check remains)
-- Phase 6: 10 build + 3 test = **13**
+- Phase 6: ~~13~~ **0** ✅
 - Phase 7: 14 build + 14 test = **28**
 - Phase 8: 4 build + 5 test = **9**
 - Phase 9: 10 E2E = **10**
 - Non-UI tasks: ~25 + 54 (11E) = **~79**
-- **Grand total: ~145 checkboxes** (was 155, 10 completed this phase)
+- **Grand total: ~132 checkboxes** (was 145, 13 completed this phase)
 
 ---
 
