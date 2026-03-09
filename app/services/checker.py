@@ -704,12 +704,17 @@ async def check_monitor_now(monitor: dict) -> dict:
     result = cr["result"]
     ssl_info = cr.get("ssl_info") or cr.get("ssl_result") or {}
 
+    # ssl_expiry may be a datetime object — convert to ISO string for JSON serialization
+    ssl_expiry = ssl_info.get("ssl_expiry")
+    if ssl_expiry and hasattr(ssl_expiry, "isoformat"):
+        ssl_expiry = ssl_expiry.isoformat()
+
     return {
         "is_up": result.get("is_up", False),
         "status_code": result.get("status_code"),
         "response_ms": result.get("response_ms"),
         "error": result.get("error_message") or (None if result.get("is_up") else "Check failed"),
-        "ssl_expiry": ssl_info.get("ssl_expiry"),
+        "ssl_expiry": ssl_expiry,
         "ssl_expiry_days": ssl_info.get("ssl_expiry_days"),
         "monitor_type": mtype,
         "checked_at": now.isoformat(),
