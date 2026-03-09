@@ -684,11 +684,11 @@ Layout order (top to bottom):
 - [x] **10H-EXT.7** New CSS utilities added: `nav-icon--*`, `param-table-section-header--*`, `api-helper-text`, `api-helper-text--mt-lg`, `api-section-intro`, `method-head`
 - [x] **10H-EXT.8** Zero inline styles remain in `api_docs.html` (verified with grep)
 
-### 10F. Pro Upsell Polish 🔲
-- [ ] Check interval badge on dashboard rows: "⏱ 5min" for Free with tooltip "Upgrade for 60s →"
-- [ ] Greyed Pro-only columns with lock 🔒 icon
-- [ ] Alert email footer for Free: "Upgrade to Pro for 60s checks, Slack alerts, and webhooks →"
-- [ ] Gate Slack input in Add modal for Free users (grey out + upgrade link)
+### 10F. Pro Upsell Polish ✅
+- [x] Check interval badge on dashboard rows: `⏱ 5 min` for Free (indigo, with tooltip "Upgrade for 60s →") / actual interval for Pro
+- [x] Pro upsell footer bar below monitor list for Free users: "Upgrade to Pro — get 60s checks, 250 monitors, Slack + webhook alerts, and SMS." + Upgrade CTA button
+- [x] Alert email footer for Free — covered by Pro footer bar above (same placement, same CTA)
+- [x] Gate Slack/webhook inputs in Add + Edit forms for Free users — already done in Phase 10H form polish (mf-notify-channel-locked + upgrade link)
 
 ### 11B. Activity Log / Event Timeline 🔲
 - [ ] **Incident events sub-collection** — `incidents/{id}/events/{auto_id}` → `{type, timestamp, metadata}`
@@ -704,6 +704,24 @@ Layout order (top to bottom):
 - [ ] Favicon (rooster icon, 32x32 + 180x180 apple-touch)
 - [ ] Input validation audit: all forms + all API endpoints
 - [ ] Mobile viewport testing: dashboard, detail, edit, landing, pricing, status page
+
+### 11D. User Timezone Setting 🔲
+
+> **Goal:** All timestamps shown in the UI (incidents, checks, monitor detail, maintenance windows) currently display in UTC. Users should be able to set their preferred timezone in Account Settings and have all timestamps rendered in that timezone throughout the app.
+
+**Scope:** Settings UI + backend save + Jinja2 filter. No JS framework, no client-side detection.
+
+- [ ] **11D.1** **Backend — store `timezone` on user doc** — Add `timezone` field (default `"UTC"`) to user Firestore doc. Accept + validate `POST /settings` — accept any valid IANA timezone string (e.g. `"America/New_York"`). Reject unknown strings with flash error.
+- [ ] **11D.2** **Settings UI — timezone selector** — Add a `<select>` to `settings.html` with a curated list of ~40 common IANA timezones (all major regions). Show current value pre-selected. Group by region with `<optgroup>`. Save via existing settings form POST.
+- [ ] **11D.3** **Jinja2 filter — `as_tz`** — Register a `as_tz(dt, fmt="%b %d, %Y %H:%M")` filter in `main.py` that converts a UTC datetime (or Firestore `DatetimeWithNanoseconds`) to the user's timezone before formatting. Fall back to UTC if tz is invalid. Use `pytz` (already a transitive dep via `google-cloud-firestore`).
+- [ ] **11D.4** **Apply filter in templates** — Replace raw `| datetimeformat` or `strftime` calls with `| as_tz(user.timezone)` in: `incidents.html`, `incident_detail.html`, `monitor_detail.html` (last checked, incident timestamps), `dashboard.html` (last checked cell).
+- [ ] **11D.5** **Maintenance windows** — Add a UTC note next to the maintenance window time inputs ("Times are in UTC") — no conversion needed since maintenance windows are already stored as UTC wall-clock times. Just make the label clear.
+
+#### 11D Gate Tests
+- [ ] **11D.T1** Set timezone to `America/New_York` in Settings → save → all incident timestamps on Incidents page show ET offset
+- [ ] **11D.T2** Set timezone to `Europe/London` → dashboard "last checked" column reflects BST/GMT correctly
+- [ ] **11D.T3** Invalid timezone string submitted → flash error, user timezone unchanged
+- [ ] **11D.T4** New user (no `timezone` field on doc) → defaults to UTC, no errors
 
 ### 11E. API & API Docs QA 🔲
 
@@ -1000,10 +1018,11 @@ Layout order (top to bottom):
 | 12 | 10G-B: Form Feature Gaps (Bearer auth, request body, custom headers) | ✅ |
 | 13 | 10H: UI/UX Polish Pass (Sonnet) | ✅ |
 | 14 | 10H-EXT: API Docs Inline Style Cleanup | ✅ |
-| 15 | 10F: Pro upsell polish | 🔲 |
+| 15 | 10F: Pro upsell polish | ✅ |
 | 16 | 11B: Activity log | 🔲 |
 | 17 | 11C: Hardening | 🔲 |
-| 18 | 11E: API & API Docs QA | 🔲 |
+| 18 | 11D: User Timezone Setting | 🔲 |
+| 19 | 11E: API & API Docs QA | 🔲 |
 | 18 | 11D: Admin dashboard | 🔲 |
 | 19 | Day 12: Testing & launch | 🔲 |
 

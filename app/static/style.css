@@ -1935,6 +1935,50 @@ code {
     color: var(--border);
     font-size: 0.6rem;
 }
+/* 10F — Interval badge on dashboard rows */
+.d-interval-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.68rem;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+.d-interval-badge--free {
+    color: var(--brand);
+    cursor: default;
+}
+/* 10F — Pro upsell footer below monitor list */
+.d-pro-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: #f5f3ff;
+    border: 1px solid #e0e7ff;
+    border-radius: var(--radius-md);
+    font-size: 0.82rem;
+    color: #4f46e5;
+}
+.d-pro-footer-text { flex: 1; line-height: 1.45; }
+.d-pro-footer-text strong { color: #3730a3; }
+.d-pro-footer-cta {
+    flex-shrink: 0;
+    padding: 0.35rem 0.85rem;
+    background: var(--brand);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s;
+}
+.d-pro-footer-cta:hover { background: #4f46e5; }
 
 /* 6.8 — Inline mini uptime bars container (30 bars) */
 .d-uptime-bars {
