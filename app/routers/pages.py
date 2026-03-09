@@ -13,6 +13,7 @@ from app.models.incident import list_incidents_by_monitor, list_incidents_by_use
 from app.models.api_key import generate_api_key, list_api_keys, revoke_api_key
 from app.services.auth import create_access_token, decode_access_token
 from app.services.alerts import _format_duration, send_test_alert
+from app.services.checker import check_monitor_now
 import os
 import re
 
@@ -1393,6 +1394,47 @@ async def test_alert_page(request: Request, monitor_id: str):
         url=f"/monitors/{monitor_id}?msg={msg}&msg_type=success",
         status_code=302,
     )
+
+
+# ---------------------------------------------------------------------------
+# Check Now — AJAX endpoint for on-demand manual check
+# ---------------------------------------------------------------------------
+
+from fastapi.responses import JSONResponse
+import time as _time
+
+# Simple in-process rate limiter: {monitor_id: last_check_timestamp}
+_check_now_last: dict[str, float] = {}
+RATE_LIMIT_SECONDS = 30
+
+@router.post("/monitors/{monitor_id}/check-now")
+async def check_now(request: Request, monitor_id: str):
+    """On-demand check for a single monitor. Rate limited to 1 per 30s per monitor."""
+    user = get_user_from_cookie(request)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+
+    db = get_db()
+    monitor = get_monitor(db, monitor_id)
+    if not monitor or monitor["user_id"] != user["id"]:
+        return JSONResponse({"error": "Monitor not found"}, status_code=404)
+
+    if monitor.get("paused"):
+        return JSONResponse({"error": "Monitor is paused. Resume it before checking."}, status_code=400)
+
+    # Rate limit
+    now_ts = _time.monotonic()
+    last = _check_now_last.get(monitor_id, 0)
+    wait = RATE_LIMIT_SECONDS - (now_ts - last)
+    if wait > 0:
+        return JSONResponse(
+            {"error": f"Please wait {int(wait)+1}s before checking again.", "retry_after": int(wait)+1},
+            status_code=429,
+        )
+    _check_now_last[monitor_id] = now_ts
+
+    result = await check_monitor_now(monitor)
+    return JSONResponse(result)
 
 
 # ---------------------------------------------------------------------------

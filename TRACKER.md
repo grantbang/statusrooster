@@ -852,6 +852,24 @@ Layout order (top to bottom):
 - [ ] **11H.T4** Incident detail + incidents list — no emoji anywhere visible
 - [ ] **11H.T5** Spot-check on a Windows user-agent (or Chrome/Firefox) — icons render correctly
 
+### 11K. Ping On Demand ✅
+
+> **Goal:** Let users check any monitor right now, without waiting for the next scheduled cycle. Real differentiator — answers "is it actually down RIGHT NOW?" instantly. Available on all plans.
+
+**What was built:**
+- [x] **11K.1** `check_monitor_now()` in `checker.py` — calls `_check_single_monitor_inner()` directly, returns structured result dict. Handles all 4 monitor types (HTTP, JSON/API, SSL, Heartbeat).
+- [x] **11K.2** `POST /monitors/{id}/check-now` endpoint in `pages.py` — auth-gated, 30s rate limiter (in-process dict), returns JSON result.
+- [x] **11K.3** "Check now" button in `monitor_detail.html` header — indigo brand button with refresh SVG icon. Only shown when monitor is not paused.
+- [x] **11K.4** AJAX handler with 3 states: spinning/loading animation, animated result chip (green ✓ Up · 200 · 142ms or red ✗ Down), 30s countdown cooldown timer on the button after each check.
+- [x] **11K.5** Result chip auto-fades after 8s. Status dot updates instantly without page reload.
+
+#### 11K Gate Tests
+- [x] **11K.T1** Check now on a live HTTP monitor → green chip with status code + response time
+- [x] **11K.T2** Check now on a down URL → red chip with error detail
+- [x] **11K.T3** Clicking again within 30s → amber chip "Please wait Xs" + countdown on button
+- [x] **11K.T4** Paused monitor → button not shown at all
+- [x] **11K.T5** SSL monitor check → chip shows days remaining
+
 ### 11I. Landing Page Overhaul 🔲
 
 > **Goal:** Make the landing page sell the product at first glance. Current page is text-heavy with no visuals, no social proof, and a weak hero. Fix: real app screenshots, a "How it works" flow, a transparency/trust section, and tighter copy. This is the user's first touch with the product — it needs to close.
@@ -1198,8 +1216,9 @@ Layout order (top to bottom):
 | 18 | 11D: User Timezone Setting | ✅ |
 | 19 | 11E: API & API Docs QA | 🔲 |
 | 18 | 11D: Admin dashboard | 🔲 |
-| 20 | 11I: Landing page overhaul | 🔲 |
-| 21 | 11J: SMS / Twilio verification | 🔲 |
+| 20 | 11K: Ping on demand | ✅ |
+| 21 | 11I: Landing page overhaul | 🔲 |
+| 22 | 11J: SMS / Twilio verification | 🔲 |
 | 22 | Day 12: Testing & launch | 🔲 |
 
 **Work through Phases 1–9 sequentially. Run every Gate test before moving to the next Phase. Do not skip ahead.**

@@ -43,6 +43,16 @@
                 Test alert
             </button>
         </form>
+        <!-- Check Now button -->
+        {% if not monitor.get('paused') %}
+        <div class="md-check-now-wrap">
+            <button class="btn btn-check-now btn-sm" id="checkNowBtn" onclick="checkNow('{{ monitor.id }}')">
+                <svg class="btn-check-now-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+                Check now
+            </button>
+            <div class="md-check-now-result" id="checkNowResult" aria-live="polite"></div>
+        </div>
+        {% endif %}
         <button class="btn btn-sm {% if monitor.get('paused') %}btn-primary{% else %}btn-secondary{% endif %}"
                 id="pauseResumeBtn"
                 onclick="togglePause('{{ monitor.id }}')">
@@ -496,6 +506,98 @@
 <script>
 // @ts-nocheck
 const MONITOR_ID = '{{ monitor.id }}';
+
+/* ── Check Now ─────────────────────────────────── */
+let _checkNowCooldown = false;
+async function checkNow(monitorId) {
+    if (_checkNowCooldown) return;
+    const btn = document.getElementById('checkNowBtn');
+    const result = document.getElementById('checkNowResult');
+
+    // Spinning state
+    btn.disabled = true;
+    btn.classList.add('btn-check-now--loading');
+    btn.innerHTML = '<svg class="btn-check-now-icon btn-check-now-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg> Checking…';
+    result.className = 'md-check-now-result';
+    result.textContent = '';
+
+    try {
+        const resp = await fetch('/monitors/' + monitorId + '/check-now', { method: 'POST' });
+        const data = await resp.json();
+
+        if (resp.status === 429) {
+            showChip('warn', '⏳ ' + (data.error || 'Rate limited'));
+            startCooldown(btn, data.retry_after || 30);
+            return;
+        }
+        if (!resp.ok) {
+            showChip('down', data.error || 'Check failed');
+            resetBtn(btn);
+            return;
+        }
+
+        const up = data.is_up;
+        const code = data.status_code ? ' · ' + data.status_code : '';
+        const ms = data.response_ms != null ? ' · ' + data.response_ms + 'ms' : '';
+        const errTxt = data.error ? ' · ' + data.error : '';
+        const mtype = data.monitor_type || 'http';
+
+        let label = '';
+        if (mtype === 'ssl') {
+            label = up
+                ? '✓ Valid' + (data.ssl_expiry_days != null ? ' · ' + data.ssl_expiry_days + 'd left' : '')
+                : '✗ Invalid or expired';
+        } else if (mtype === 'heartbeat') {
+            label = up ? '✓ Alive' : '✗ No ping received';
+        } else {
+            label = (up ? '✓ Up' : '✗ Down') + code + ms + errTxt;
+        }
+
+        showChip(up ? 'up' : 'down', label);
+        startCooldown(btn, 30);
+
+        // Quietly refresh the status dot without full reload
+        const dot = document.querySelector('.status-dot-lg');
+        if (dot) {
+            dot.className = 'status-dot-lg ' + (up ? 'dot-up' : 'dot-down');
+        }
+    } catch(e) {
+        showChip('down', '✗ Network error');
+        resetBtn(btn);
+    }
+}
+
+function showChip(state, text) {
+    const result = document.getElementById('checkNowResult');
+    result.textContent = text;
+    result.className = 'md-check-now-result md-check-now-result--visible md-check-now-result--' + state;
+    // Auto-fade after 8s
+    setTimeout(() => { result.className = 'md-check-now-result'; }, 8000);
+}
+
+function resetBtn(btn) {
+    btn.disabled = false;
+    btn.classList.remove('btn-check-now--loading');
+    btn.innerHTML = '<svg class="btn-check-now-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg> Check now';
+}
+
+function startCooldown(btn, seconds) {
+    _checkNowCooldown = true;
+    let remaining = seconds;
+    btn.classList.remove('btn-check-now--loading');
+    btn.innerHTML = '<svg class="btn-check-now-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg> ' + remaining + 's';
+    btn.disabled = true;
+    const iv = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+            clearInterval(iv);
+            _checkNowCooldown = false;
+            resetBtn(btn);
+        } else {
+            btn.innerHTML = '<svg class="btn-check-now-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg> ' + remaining + 's';
+        }
+    }, 1000);
+}
 
 /* ── Pause/Resume ──────────────────────────────── */
 async function togglePause(monitorId) {

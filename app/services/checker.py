@@ -657,6 +657,65 @@ async def _check_single_monitor_inner(monitor: dict, now: datetime) -> dict | No
         return {"monitor": monitor, "result": result, "ssl_info": ssl_info}
 
 
+async def check_monitor_now(monitor: dict) -> dict:
+    """
+    Run an immediate on-demand check for a single monitor.
+    Bypasses the scheduler — runs the full check inline and returns a result dict.
+    Used by the "Check now" button on monitor detail.
+
+    Returns:
+        {
+            "is_up": bool,
+            "status_code": int | None,
+            "response_ms": int | None,
+            "error": str | None,
+            "ssl_expiry": str | None,
+            "ssl_expiry_days": int | None,
+            "checked_at": str (ISO),
+        }
+    """
+    now = datetime.now(timezone.utc)
+    mtype = monitor.get("monitor_type", "http")
+
+    try:
+        cr = await _check_single_monitor_inner(monitor, now)
+    except Exception as e:
+        return {
+            "is_up": False,
+            "status_code": None,
+            "response_ms": None,
+            "error": str(e),
+            "ssl_expiry": None,
+            "ssl_expiry_days": None,
+            "checked_at": now.isoformat(),
+        }
+
+    if cr is None:
+        return {
+            "is_up": False,
+            "status_code": None,
+            "response_ms": None,
+            "error": "Monitor skipped (paused or misconfigured)",
+            "ssl_expiry": None,
+            "ssl_expiry_days": None,
+            "checked_at": now.isoformat(),
+        }
+
+    result = cr["result"]
+    ssl_info = cr.get("ssl_info") or cr.get("ssl_result") or {}
+
+    return {
+        "is_up": result.get("is_up", False),
+        "status_code": result.get("status_code"),
+        "response_ms": result.get("response_ms"),
+        "error": result.get("error_message") or (None if result.get("is_up") else "Check failed"),
+        "ssl_expiry": ssl_info.get("ssl_expiry"),
+        "ssl_expiry_days": ssl_info.get("ssl_expiry_days"),
+        "monitor_type": mtype,
+        "checked_at": now.isoformat(),
+    }
+
+
 async def run_checks():
     """
     Run checks for ALL monitors concurrently. Called by the cron endpoint.
