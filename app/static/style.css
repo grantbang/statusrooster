@@ -4673,6 +4673,40 @@ a.inc-row-link:hover { text-decoration: none; }
 .inc-kv-label { font-size: 0.82rem; color: var(--muted); flex-shrink: 0; }
 .inc-kv-value { font-size: 0.85rem; font-weight: 500; text-align: right; word-break: break-all; }
 .inc-kv-mono { font-family: var(--font-mono); font-size: 0.8rem; }
+
+/* Response headers collapsible row inside Details card */
+.inc-kv-headers { align-items: flex-start; }
+.inc-headers-details { width: 100%; }
+.inc-headers-summary {
+    font-size: 0.78rem;
+    color: var(--brand);
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+.inc-headers-summary::-webkit-details-marker { display: none; }
+.inc-headers-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+}
+.inc-headers-table tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
+.inc-hdr-key {
+    color: var(--muted);
+    padding: 0.2rem 0.5rem 0.2rem 0;
+    vertical-align: top;
+    white-space: nowrap;
+    width: 38%;
+    word-break: break-all;
+}
+.inc-hdr-val {
+    padding: 0.2rem 0;
+    vertical-align: top;
+    word-break: break-all;
+    color: var(--text);
+}
 .inc-monitor-link { color: var(--brand); text-decoration: none; }
 .inc-monitor-link:hover { text-decoration: underline; }
 
@@ -5563,205 +5597,5 @@ a.inc-row-link:hover { text-decoration: none; }
     }
     .mf-interval-wrap {
         padding: 0.6rem 0.75rem;
-    }
-}
-
-/* =========================================================
-   INCIDENT DETAIL — Request / Response Panels  (11F)
-   ========================================================= */
-
-.id-rr-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-top: 1.25rem;
-}
-
-.id-rr-panel {
-    background: var(--card-bg, #fff);
-    border: 1px solid var(--border, #e5e7eb);
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-.id-rr-panel-header {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--muted);
-    background: var(--surface, #f9fafb);
-    border-bottom: 1px solid var(--border, #e5e7eb);
-    padding: 0.55rem 0.9rem;
-}
-
-.id-rr-panel-body {
-    padding: 0.75rem 0.9rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.45rem;
-}
-
-/* Key-value row inside a panel */
-.id-rr-item {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    font-size: 0.84rem;
-    line-height: 1.5;
-}
-
-.id-rr-label {
-    flex: 0 0 130px;
-    font-size: 0.78rem;
-    color: var(--muted);
-    white-space: nowrap;
-}
-
-.id-rr-value {
-    flex: 1;
-    word-break: break-all;
-}
-
-/* Method + URL line */
-.id-rr-req-line {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.3rem;
-    flex-wrap: wrap;
-}
-
-.id-rr-method {
-    flex-shrink: 0;
-    display: inline-block;
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 0.15rem 0.45rem;
-    border-radius: 4px;
-    font-family: var(--font-mono, monospace);
-}
-
-.id-rr-method--get    { background: #dbeafe; color: #1d4ed8; }
-.id-rr-method--post   { background: #dcfce7; color: #15803d; }
-.id-rr-method--put    { background: #fef9c3; color: #854d0e; }
-.id-rr-method--patch  { background: #fef3c7; color: #92400e; }
-.id-rr-method--delete { background: #fee2e2; color: #b91c1c; }
-.id-rr-method--head   { background: #f3e8ff; color: #7e22ce; }
-
-.id-rr-url-link {
-    font-size: 0.82rem;
-    color: var(--accent, #6366f1);
-    word-break: break-all;
-    text-decoration: none;
-}
-.id-rr-url-link:hover { text-decoration: underline; }
-
-.id-rr-url-text {
-    font-size: 0.82rem;
-    word-break: break-all;
-}
-
-/* Monospace value */
-.id-rr-mono {
-    font-family: var(--font-mono, 'Fira Code', 'JetBrains Mono', monospace);
-    font-size: 0.8rem;
-}
-
-/* Danger text */
-.id-rr-danger {
-    color: var(--danger, #ef4444);
-}
-
-/* Status code pill */
-.id-rr-status-pill {
-    display: inline-block;
-    font-size: 0.78rem;
-    font-weight: 700;
-    font-family: var(--font-mono, monospace);
-    padding: 0.15rem 0.5rem;
-    border-radius: 5px;
-}
-
-.id-rr-status-2xx   { background: #dcfce7; color: #15803d; }
-.id-rr-status-4xx   { background: #fef9c3; color: #854d0e; }
-.id-rr-status-5xx   { background: #fee2e2; color: #b91c1c; }
-.id-rr-status-other { background: #f3f4f6; color: #6b7280; }
-
-/* Collapsible headers details */
-.id-rr-details {
-    margin-top: 0.4rem;
-}
-
-.id-rr-details-summary {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.78rem;
-    color: var(--muted);
-    cursor: pointer;
-    user-select: none;
-    padding: 0.3rem 0;
-    list-style: none;
-}
-.id-rr-details-summary::-webkit-details-marker { display: none; }
-.id-rr-details-summary::before {
-    content: '▶';
-    font-size: 0.6rem;
-    transition: transform 0.15s;
-}
-details[open] .id-rr-details-summary::before { transform: rotate(90deg); }
-
-.id-rr-details-count {
-    background: var(--surface, #f3f4f6);
-    border: 1px solid var(--border, #e5e7eb);
-    border-radius: 10px;
-    font-size: 0.68rem;
-    font-weight: 600;
-    padding: 0 0.4rem;
-    line-height: 1.6;
-    color: var(--muted);
-}
-
-.id-rr-headers-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.78rem;
-    margin-top: 0.4rem;
-    font-family: var(--font-mono, monospace);
-}
-
-.id-rr-headers-table tr:not(:last-child) td {
-    border-bottom: 1px solid var(--border, #f3f4f6);
-}
-
-.id-rr-hdr-key {
-    color: var(--muted);
-    padding: 0.25rem 0.5rem 0.25rem 0;
-    vertical-align: top;
-    white-space: nowrap;
-    width: 40%;
-    word-break: break-all;
-}
-
-.id-rr-hdr-val {
-    padding: 0.25rem 0;
-    vertical-align: top;
-    word-break: break-all;
-    color: var(--text, #111);
-}
-
-/* Responsive: stack panels on narrow screens */
-@media (max-width: 640px) {
-    .id-rr-row {
-        grid-template-columns: 1fr;
-    }
-    .id-rr-label {
-        flex: 0 0 100px;
     }
 }

@@ -61,6 +61,33 @@
                     <span class="inc-kv-value">{{ incident.response_ms|round(1) }} ms</span>
                 </div>
                 {% endif %}
+                {% if incident.get('failure_error_message') %}
+                <div class="inc-kv">
+                    <span class="inc-kv-label">Error</span>
+                    <span class="inc-kv-value inc-kv-mono" style="color: var(--danger);">{{ incident.failure_error_message }}</span>
+                </div>
+                {% endif %}
+                {% set resp_headers = incident.get('failure_response_headers', {}) %}
+                {% if resp_headers %}
+                <div class="inc-kv inc-kv-headers">
+                    <span class="inc-kv-label">Response Headers</span>
+                    <span class="inc-kv-value">
+                        <details class="inc-headers-details">
+                            <summary class="inc-headers-summary">
+                                Show {{ resp_headers | length }} header{{ 's' if resp_headers | length != 1 else '' }}
+                            </summary>
+                            <table class="inc-headers-table">
+                                {% for k, v in resp_headers.items() %}
+                                <tr>
+                                    <td class="inc-hdr-key">{{ k }}</td>
+                                    <td class="inc-hdr-val">{{ v }}</td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                        </details>
+                    </span>
+                </div>
+                {% endif %}
             </div>
         </div>
 
@@ -92,193 +119,6 @@
             </div>
         </div>
     </div>
-
-    {% set mtype = monitor.get('monitor_type', 'http') %}
-
-    <!-- Request / Response Panels -->
-    <div class="id-rr-row">
-
-        <!-- REQUEST PANEL -->
-        <div class="id-rr-panel">
-            <div class="id-rr-panel-header">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
-                Request
-            </div>
-            <div class="id-rr-panel-body">
-                {% if mtype == 'heartbeat' %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Type</span>
-                        <span class="id-rr-value id-rr-mono">Heartbeat / Cron</span>
-                    </div>
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Expected interval</span>
-                        <span class="id-rr-value">Every {{ monitor.get('heartbeat_interval', 300) }}s</span>
-                    </div>
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Grace period</span>
-                        <span class="id-rr-value">{{ monitor.get('heartbeat_grace_period', 60) }}s after due</span>
-                    </div>
-                    {% if monitor.get('ping_url') %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Ping URL</span>
-                        <span class="id-rr-value id-rr-mono id-rr-url-text">{{ monitor.get('ping_url', '') }}</span>
-                    </div>
-                    {% endif %}
-                {% elif mtype == 'ssl' %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Type</span>
-                        <span class="id-rr-value id-rr-mono">SSL Certificate Check</span>
-                    </div>
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Domain</span>
-                        <span class="id-rr-value id-rr-mono">{{ monitor.get('ssl_domain', '') }}</span>
-                    </div>
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Warn threshold</span>
-                        <span class="id-rr-value">{{ monitor.get('ssl_expiry_threshold_days', 30) }} days before expiry</span>
-                    </div>
-                {% else %}
-                    {# HTTP / JSON/API #}
-                    <div class="id-rr-req-line">
-                        <span class="id-rr-method id-rr-method--{{ (monitor.get('http_method', 'GET') | lower) }}">{{ monitor.get('http_method', 'GET') | upper }}</span>
-                        <a href="{{ incident.monitor_url }}" target="_blank" rel="noopener" class="id-rr-url-link id-rr-mono">{{ incident.monitor_url }}</a>
-                    </div>
-                    {% if monitor.get('expected_status_code') %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Expected status</span>
-                        <span class="id-rr-value id-rr-mono">{{ monitor.get('expected_status_code') }}</span>
-                    </div>
-                    {% endif %}
-                    {% if monitor.get('timeout') %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Timeout</span>
-                        <span class="id-rr-value">{{ monitor.get('timeout') }}s</span>
-                    </div>
-                    {% endif %}
-                    {% if monitor.get('keyword') %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Keyword match</span>
-                        <span class="id-rr-value id-rr-mono">"{{ monitor.get('keyword') }}"</span>
-                    </div>
-                    {% endif %}
-                    {% if mtype == 'json_api' and monitor.get('json_assertions') %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">JSON assertions</span>
-                        <span class="id-rr-value">{{ monitor.get('json_assertions') | length }} configured</span>
-                    </div>
-                    {% endif %}
-                    {% if monitor.get('bearer_token') %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Auth</span>
-                        <span class="id-rr-value id-rr-mono">Bearer •••••</span>
-                    </div>
-                    {% elif monitor.get('basic_auth_user') %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Auth</span>
-                        <span class="id-rr-value id-rr-mono">Basic {{ monitor.get('basic_auth_user') }}:•••••</span>
-                    </div>
-                    {% elif mtype == 'json_api' and monitor.get('auth_header') %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Auth header</span>
-                        <span class="id-rr-value id-rr-mono">{{ monitor.get('auth_header')[:20] }}•••</span>
-                    </div>
-                    {% endif %}
-                    {% if monitor.get('custom_headers') %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Custom headers</span>
-                        <span class="id-rr-value">{{ monitor.get('custom_headers') | length }} header{{ 's' if monitor.get('custom_headers') | length != 1 else '' }}</span>
-                    </div>
-                    {% endif %}
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- RESPONSE PANEL -->
-        <div class="id-rr-panel">
-            <div class="id-rr-panel-header">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-                Response
-            </div>
-            <div class="id-rr-panel-body">
-                {% if mtype == 'heartbeat' %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Cause</span>
-                        <span class="id-rr-value id-rr-danger">No ping received within window</span>
-                    </div>
-                    {% if incident.started_at %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">First missed at</span>
-                        <span class="id-rr-value">{{ incident.started_at | as_tz(user.get('timezone', 'UTC'), '%b %-d, %Y %H:%M:%S') }}</span>
-                    </div>
-                    {% endif %}
-                {% elif mtype == 'ssl' %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Cause</span>
-                        <span class="id-rr-value id-rr-danger">{{ incident.root_cause }}</span>
-                    </div>
-                    {% if monitor.get('ssl_expiry') %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Cert expires</span>
-                        <span class="id-rr-value id-rr-mono">{{ monitor.get('ssl_expiry') }}</span>
-                    </div>
-                    {% endif %}
-                    {% if monitor.get('ssl_issuer') %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Issuer</span>
-                        <span class="id-rr-value">{{ monitor.get('ssl_issuer') }}</span>
-                    </div>
-                    {% endif %}
-                {% else %}
-                    {# HTTP / JSON/API #}
-                    {% if incident.status_code %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Status code</span>
-                        <span class="id-rr-value">
-                            <span class="id-rr-status-pill {% if incident.status_code >= 500 %}id-rr-status-5xx{% elif incident.status_code >= 400 %}id-rr-status-4xx{% elif incident.status_code >= 200 and incident.status_code < 300 %}id-rr-status-2xx{% else %}id-rr-status-other{% endif %}">
-                                {{ incident.status_code }}
-                            </span>
-                        </span>
-                    </div>
-                    {% else %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Status code</span>
-                        <span class="id-rr-value id-rr-danger">No response — timeout or connection error</span>
-                    </div>
-                    {% endif %}
-                    {% if incident.response_ms %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Response time</span>
-                        <span class="id-rr-value">{{ incident.response_ms | round(1) }} ms</span>
-                    </div>
-                    {% endif %}
-                    {% if incident.get('failure_error_message') %}
-                    <div class="id-rr-item">
-                        <span class="id-rr-label">Error</span>
-                        <span class="id-rr-value id-rr-mono id-rr-danger">{{ incident.failure_error_message }}</span>
-                    </div>
-                    {% endif %}
-                    {% set resp_headers = incident.get('failure_response_headers', {}) %}
-                    {% if resp_headers %}
-                    <details class="id-rr-details">
-                        <summary class="id-rr-details-summary">
-                            Response headers
-                            <span class="id-rr-details-count">{{ resp_headers | length }}</span>
-                        </summary>
-                        <table class="id-rr-headers-table">
-                            {% for k, v in resp_headers.items() %}
-                            <tr>
-                                <td class="id-rr-hdr-key">{{ k }}</td>
-                                <td class="id-rr-hdr-val">{{ v }}</td>
-                            </tr>
-                            {% endfor %}
-                        </table>
-                    </details>
-                    {% endif %}
-                {% endif %}
-            </div>
-        </div>
-
-    </div><!-- /id-rr-row -->
 
     <!-- Activity Timeline -->
     <div class="inc-detail-section" style="margin-top: 1.5rem;">
