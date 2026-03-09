@@ -52,7 +52,9 @@
                 {% if incident.status_code %}
                 <div class="inc-kv">
                     <span class="inc-kv-label">Status Code</span>
-                    <span class="inc-kv-value inc-kv-mono">{{ incident.status_code }}</span>
+                    <span class="inc-kv-value">
+                        <span class="md-http-badge {% if incident.status_code >= 500 %}md-http-badge--5xx{% elif incident.status_code >= 400 %}md-http-badge--4xx{% elif incident.status_code >= 300 %}md-http-badge--3xx{% elif incident.status_code >= 200 %}md-http-badge--2xx{% else %}md-http-badge--err{% endif %}">{{ incident.status_code }}</span>
+                    </span>
                 </div>
                 {% endif %}
                 {% if incident.response_ms %}

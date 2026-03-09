@@ -249,10 +249,10 @@
             </span>
             <span class="md-inc-cause">
                 {% if monitor.get('monitor_type') == 'heartbeat' %}
-                    <span class="md-http-badge" style="background: #fef3c7; color: #92400e;">♥</span>
+                    <span class="md-http-badge md-http-badge--err">♥</span>
                     <span class="md-http-text">Missed ping</span>
                 {% elif inc.get('status_code') %}
-                    <span class="md-http-badge">{{ inc.status_code }}</span>
+                    <span class="md-http-badge {% if inc.status_code >= 500 %}md-http-badge--5xx{% elif inc.status_code >= 400 %}md-http-badge--4xx{% elif inc.status_code >= 300 %}md-http-badge--3xx{% elif inc.status_code >= 200 %}md-http-badge--2xx{% else %}md-http-badge--err{% endif %}">{{ inc.status_code }}</span>
                     <span class="md-http-text">
                         {% if inc.status_code == 0 or inc.status_code is none %}Connection Failed
                         {% elif inc.status_code == 400 %}Bad Request

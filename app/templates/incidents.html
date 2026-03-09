@@ -159,7 +159,21 @@
 
         <!-- Root cause -->
         <div class="inc-cause-col">
-            <span class="inc-root-cause">{% if inc.status_code %}{% if inc.status_code == 0 %}Connection failed{% elif inc.status_code == -1 %}Timeout{% elif inc.status_code == -2 %}DNS failed{% else %}HTTP {{ inc.status_code }}{% endif %}{% elif mon.get('monitor_type') == 'heartbeat' %}Missed ping{% elif mon.get('monitor_type') == 'ssl' %}SSL issue{% else %}Check failed{% endif %}</span>
+            {% if inc.status_code and inc.status_code > 0 %}
+                <span class="md-http-badge {% if inc.status_code >= 500 %}md-http-badge--5xx{% elif inc.status_code >= 400 %}md-http-badge--4xx{% elif inc.status_code >= 300 %}md-http-badge--3xx{% elif inc.status_code >= 200 %}md-http-badge--2xx{% else %}md-http-badge--err{% endif %}">{{ inc.status_code }}</span>
+                <span class="inc-cause-text">{% if inc.status_code == 400 %}Bad Request{% elif inc.status_code == 401 %}Unauthorized{% elif inc.status_code == 403 %}Forbidden{% elif inc.status_code == 404 %}Not Found{% elif inc.status_code == 408 %}Request Timeout{% elif inc.status_code == 429 %}Too Many Requests{% elif inc.status_code == 500 %}Server Error{% elif inc.status_code == 502 %}Bad Gateway{% elif inc.status_code == 503 %}Unavailable{% elif inc.status_code == 504 %}Gateway Timeout{% else %}HTTP Error{% endif %}</span>
+            {% elif inc.status_code == 0 or inc.status_code == -1 or inc.status_code == -2 %}
+                <span class="md-http-badge md-http-badge--err">—</span>
+                <span class="inc-cause-text">{% if inc.status_code == -1 %}Timeout{% elif inc.status_code == -2 %}DNS failed{% else %}Connection failed{% endif %}</span>
+            {% elif mon.get('monitor_type') == 'heartbeat' %}
+                <span class="md-http-badge md-http-badge--err">♥</span>
+                <span class="inc-cause-text">Missed ping</span>
+            {% elif mon.get('monitor_type') == 'ssl' %}
+                <span class="md-http-badge md-http-badge--4xx">SSL</span>
+                <span class="inc-cause-text">Cert issue</span>
+            {% else %}
+                <span class="inc-cause-text">Check failed</span>
+            {% endif %}
         </div>
 
         <!-- Started -->
