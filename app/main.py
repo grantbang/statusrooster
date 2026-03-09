@@ -76,11 +76,35 @@ def tojson_filter(value):
     return json.dumps(value, cls=FirestoreEncoder)
 
 
+def as_tz_filter(dt, tz_name: str = "UTC", fmt: str = "%b %-d, %Y %H:%M"):
+    """Convert a UTC datetime to the given IANA timezone and format it."""
+    if dt is None:
+        return ""
+    try:
+        import pytz
+        from datetime import datetime as _dt
+        # Handle Firestore DatetimeWithNanoseconds
+        if hasattr(dt, '_seconds'):
+            dt = _dt.fromtimestamp(dt._seconds, tz=pytz.utc)
+        elif isinstance(dt, _dt) and dt.tzinfo is None:
+            dt = dt.replace(tzinfo=pytz.utc)
+        tz = pytz.timezone(tz_name or "UTC")
+        return dt.astimezone(tz).strftime(fmt)
+    except Exception:
+        # Fall back to UTC if tz is invalid or dt is malformed
+        try:
+            return dt.strftime(fmt)
+        except Exception:
+            return str(dt)
+
+
 templates.env.filters["tojson"] = tojson_filter
+templates.env.filters["as_tz"] = as_tz_filter
 
 # Also register filter in the pages router templates
 from app.routers.pages import templates as page_templates
 page_templates.env.filters["tojson"] = tojson_filter
+page_templates.env.filters["as_tz"] = as_tz_filter
 
 
 @app.get("/health", include_in_schema=False)

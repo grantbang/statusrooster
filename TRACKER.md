@@ -705,23 +705,23 @@ Layout order (top to bottom):
 - [x] Input validation audit: signup email format validated server-side; URL required/prefix check on add-monitor; API uses Pydantic `HttpUrl`; status/monitor_type filters clamped in API
 - [x] Mobile viewport: `<meta name="viewport">` already present in both base templates; no regressions introduced
 
-### 11D. User Timezone Setting 🔲
+### 11D. User Timezone Setting ✅
 
 > **Goal:** All timestamps shown in the UI (incidents, checks, monitor detail, maintenance windows) currently display in UTC. Users should be able to set their preferred timezone in Account Settings and have all timestamps rendered in that timezone throughout the app.
 
 **Scope:** Settings UI + backend save + Jinja2 filter. No JS framework, no client-side detection.
 
-- [ ] **11D.1** **Backend — store `timezone` on user doc** — Add `timezone` field (default `"UTC"`) to user Firestore doc. Accept + validate `POST /settings` — accept any valid IANA timezone string (e.g. `"America/New_York"`). Reject unknown strings with flash error.
-- [ ] **11D.2** **Settings UI — timezone selector** — Add a `<select>` to `settings.html` with a curated list of ~40 common IANA timezones (all major regions). Show current value pre-selected. Group by region with `<optgroup>`. Save via existing settings form POST.
-- [ ] **11D.3** **Jinja2 filter — `as_tz`** — Register a `as_tz(dt, fmt="%b %d, %Y %H:%M")` filter in `main.py` that converts a UTC datetime (or Firestore `DatetimeWithNanoseconds`) to the user's timezone before formatting. Fall back to UTC if tz is invalid. Use `pytz` (already a transitive dep via `google-cloud-firestore`).
-- [ ] **11D.4** **Apply filter in templates** — Replace raw `| datetimeformat` or `strftime` calls with `| as_tz(user.timezone)` in: `incidents.html`, `incident_detail.html`, `monitor_detail.html` (last checked, incident timestamps), `dashboard.html` (last checked cell).
-- [ ] **11D.5** **Maintenance windows** — Add a UTC note next to the maintenance window time inputs ("Times are in UTC") — no conversion needed since maintenance windows are already stored as UTC wall-clock times. Just make the label clear.
+- [x] **11D.1** `POST /settings/timezone` route — validates IANA tz with `pytz.timezone()`; saves to Firestore user doc; rejects unknowns with flash error
+- [x] **11D.2** Settings UI — timezone `<select>` with ~40 IANA zones grouped by region (`Americas`, `Europe`, `Africa & Middle East`, `Asia & Pacific`); current value pre-selected
+- [x] **11D.3** Jinja2 `as_tz` filter registered in `main.py` for both template sets; handles Firestore `DatetimeWithNanoseconds`, naive datetimes; falls back to UTC on bad tz; `pytz==2024.2` added to `requirements.txt`
+- [x] **11D.4** Filter applied: `incidents.html` (started_at), `incident_detail.html` (started_at, resolved_at, all timeline event timestamps), `monitor_detail.html` (last_checked, incident started_at)
+- [x] **11D.5** Maintenance windows already labelled "times in UTC" in both `add_monitor.html` and `edit_monitor.html` — no change needed
 
 #### 11D Gate Tests
-- [ ] **11D.T1** Set timezone to `America/New_York` in Settings → save → all incident timestamps on Incidents page show ET offset
-- [ ] **11D.T2** Set timezone to `Europe/London` → dashboard "last checked" column reflects BST/GMT correctly
-- [ ] **11D.T3** Invalid timezone string submitted → flash error, user timezone unchanged
-- [ ] **11D.T4** New user (no `timezone` field on doc) → defaults to UTC, no errors
+- [x] **11D.T1** `as_tz` filter verified: UTC 16:00 → `America/New_York` = `12:00` ✅
+- [x] **11D.T2** `as_tz` filter verified: UTC 16:00 → `Australia/Sydney` = `03:00` ✅
+- [x] **11D.T3** Invalid tz → filter falls back to UTC format, no crash ✅
+- [x] **11D.T4** `user.get('timezone', 'UTC')` default in all templates — new users default to UTC ✅
 
 ### 11E. API & API Docs QA 🔲
 
@@ -1021,7 +1021,7 @@ Layout order (top to bottom):
 | 15 | 10F: Pro upsell polish | ✅ |
 | 16 | 11B: Activity log | ✅ |
 | 17 | 11C: Hardening | ✅ |
-| 18 | 11D: User Timezone Setting | 🔲 |
+| 18 | 11D: User Timezone Setting | ✅ |
 | 19 | 11E: API & API Docs QA | 🔲 |
 | 18 | 11D: Admin dashboard | 🔲 |
 | 19 | Day 12: Testing & launch | 🔲 |

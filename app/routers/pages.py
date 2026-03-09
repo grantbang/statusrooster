@@ -1461,6 +1461,38 @@ async def settings_page(request: Request):
     return response
 
 
+@router.post("/settings/timezone", response_class=HTMLResponse)
+async def save_timezone(request: Request, timezone: str = Form(...)):
+    user = get_user_from_cookie(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+
+    import pytz
+    # Validate the submitted timezone string
+    try:
+        pytz.timezone(timezone)
+    except pytz.exceptions.UnknownTimeZoneError:
+        db = get_db()
+        from app.models.api_key import list_api_keys
+        api_keys = list_api_keys(db, user["id"])
+        response = templates.TemplateResponse("settings.html", {
+            "request": request,
+            "user": user,
+            "api_keys": api_keys,
+            "flash_message": f"Unknown timezone: {timezone}. Please select one from the list.",
+            "flash_type": "error",
+        })
+        return response
+
+    db = get_db()
+    update_user(db, user["id"], {"timezone": timezone})
+
+    response = RedirectResponse(url="/settings", status_code=302)
+    response.set_cookie("flash_message", "Timezone saved.", max_age=10)
+    response.set_cookie("flash_type", "success", max_age=10)
+    return response
+
+
 @router.post("/settings/api-keys/generate", response_class=HTMLResponse)
 async def generate_api_key_page(request: Request, label: str = Form("Default")):
     user = get_user_from_cookie(request)

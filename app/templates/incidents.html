@@ -164,7 +164,7 @@
 
         <!-- Started -->
         <div class="monitor-checked-col">
-            <span class="checked-value relative-time" data-ts="{{ inc.started_at.isoformat() if inc.started_at else '' }}">{{ inc.started_at.strftime('%b %-d, %H:%M') if inc.started_at else '' }}</span>
+            <span class="checked-value relative-time" data-ts="{{ inc.started_at.isoformat() if inc.started_at else '' }}">{{ inc.started_at | as_tz(user.get('timezone', 'UTC'), '%b %-d, %H:%M') if inc.started_at else '' }}</span>
         </div>
 
         <!-- Duration -->

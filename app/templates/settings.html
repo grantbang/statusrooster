@@ -31,6 +31,75 @@
     </dl>
 </div>
 
+<!-- Timezone -->
+<div class="settings-section">
+    <h2>Timezone</h2>
+    <div class="section-desc">All timestamps in the app will display in your chosen timezone.</div>
+    <form method="POST" action="/settings/timezone" style="max-width: 340px;">
+        <div class="form-group">
+            <label for="timezone">Timezone</label>
+            <select id="timezone" name="timezone" class="form-control">
+                {% set current_tz = user.get('timezone', 'UTC') %}
+                <optgroup label="UTC">
+                    <option value="UTC" {% if current_tz == 'UTC' %}selected{% endif %}>UTC</option>
+                </optgroup>
+                <optgroup label="Americas">
+                    <option value="America/New_York"      {% if current_tz == 'America/New_York' %}selected{% endif %}>Eastern Time (ET)</option>
+                    <option value="America/Chicago"       {% if current_tz == 'America/Chicago' %}selected{% endif %}>Central Time (CT)</option>
+                    <option value="America/Denver"        {% if current_tz == 'America/Denver' %}selected{% endif %}>Mountain Time (MT)</option>
+                    <option value="America/Phoenix"       {% if current_tz == 'America/Phoenix' %}selected{% endif %}>Arizona (no DST)</option>
+                    <option value="America/Los_Angeles"   {% if current_tz == 'America/Los_Angeles' %}selected{% endif %}>Pacific Time (PT)</option>
+                    <option value="America/Anchorage"     {% if current_tz == 'America/Anchorage' %}selected{% endif %}>Alaska (AKT)</option>
+                    <option value="Pacific/Honolulu"      {% if current_tz == 'Pacific/Honolulu' %}selected{% endif %}>Hawaii (HST)</option>
+                    <option value="America/Toronto"       {% if current_tz == 'America/Toronto' %}selected{% endif %}>Toronto (ET)</option>
+                    <option value="America/Vancouver"     {% if current_tz == 'America/Vancouver' %}selected{% endif %}>Vancouver (PT)</option>
+                    <option value="America/Sao_Paulo"     {% if current_tz == 'America/Sao_Paulo' %}selected{% endif %}>São Paulo (BRT)</option>
+                    <option value="America/Argentina/Buenos_Aires" {% if current_tz == 'America/Argentina/Buenos_Aires' %}selected{% endif %}>Buenos Aires (ART)</option>
+                    <option value="America/Mexico_City"   {% if current_tz == 'America/Mexico_City' %}selected{% endif %}>Mexico City (CST)</option>
+                    <option value="America/Bogota"        {% if current_tz == 'America/Bogota' %}selected{% endif %}>Bogotá (COT)</option>
+                </optgroup>
+                <optgroup label="Europe">
+                    <option value="Europe/London"         {% if current_tz == 'Europe/London' %}selected{% endif %}>London (GMT/BST)</option>
+                    <option value="Europe/Dublin"         {% if current_tz == 'Europe/Dublin' %}selected{% endif %}>Dublin (IST)</option>
+                    <option value="Europe/Lisbon"         {% if current_tz == 'Europe/Lisbon' %}selected{% endif %}>Lisbon (WET)</option>
+                    <option value="Europe/Paris"          {% if current_tz == 'Europe/Paris' %}selected{% endif %}>Paris / Berlin (CET)</option>
+                    <option value="Europe/Amsterdam"      {% if current_tz == 'Europe/Amsterdam' %}selected{% endif %}>Amsterdam (CET)</option>
+                    <option value="Europe/Stockholm"      {% if current_tz == 'Europe/Stockholm' %}selected{% endif %}>Stockholm (CET)</option>
+                    <option value="Europe/Warsaw"         {% if current_tz == 'Europe/Warsaw' %}selected{% endif %}>Warsaw (CET)</option>
+                    <option value="Europe/Helsinki"       {% if current_tz == 'Europe/Helsinki' %}selected{% endif %}>Helsinki (EET)</option>
+                    <option value="Europe/Athens"         {% if current_tz == 'Europe/Athens' %}selected{% endif %}>Athens (EET)</option>
+                    <option value="Europe/Istanbul"       {% if current_tz == 'Europe/Istanbul' %}selected{% endif %}>Istanbul (TRT)</option>
+                    <option value="Europe/Moscow"         {% if current_tz == 'Europe/Moscow' %}selected{% endif %}>Moscow (MSK)</option>
+                    <option value="Europe/Kiev"           {% if current_tz == 'Europe/Kiev' %}selected{% endif %}>Kyiv (EET)</option>
+                </optgroup>
+                <optgroup label="Africa &amp; Middle East">
+                    <option value="Africa/Cairo"          {% if current_tz == 'Africa/Cairo' %}selected{% endif %}>Cairo (EET)</option>
+                    <option value="Africa/Johannesburg"   {% if current_tz == 'Africa/Johannesburg' %}selected{% endif %}>Johannesburg (SAST)</option>
+                    <option value="Africa/Lagos"          {% if current_tz == 'Africa/Lagos' %}selected{% endif %}>Lagos (WAT)</option>
+                    <option value="Asia/Dubai"            {% if current_tz == 'Asia/Dubai' %}selected{% endif %}>Dubai (GST)</option>
+                    <option value="Asia/Riyadh"           {% if current_tz == 'Asia/Riyadh' %}selected{% endif %}>Riyadh (AST)</option>
+                </optgroup>
+                <optgroup label="Asia &amp; Pacific">
+                    <option value="Asia/Kolkata"          {% if current_tz == 'Asia/Kolkata' %}selected{% endif %}>India (IST, UTC+5:30)</option>
+                    <option value="Asia/Dhaka"            {% if current_tz == 'Asia/Dhaka' %}selected{% endif %}>Dhaka (BST, UTC+6)</option>
+                    <option value="Asia/Bangkok"          {% if current_tz == 'Asia/Bangkok' %}selected{% endif %}>Bangkok (ICT, UTC+7)</option>
+                    <option value="Asia/Singapore"        {% if current_tz == 'Asia/Singapore' %}selected{% endif %}>Singapore (SGT)</option>
+                    <option value="Asia/Shanghai"         {% if current_tz == 'Asia/Shanghai' %}selected{% endif %}>China (CST, UTC+8)</option>
+                    <option value="Asia/Hong_Kong"        {% if current_tz == 'Asia/Hong_Kong' %}selected{% endif %}>Hong Kong (HKT)</option>
+                    <option value="Asia/Taipei"           {% if current_tz == 'Asia/Taipei' %}selected{% endif %}>Taipei (CST)</option>
+                    <option value="Asia/Tokyo"            {% if current_tz == 'Asia/Tokyo' %}selected{% endif %}>Tokyo (JST)</option>
+                    <option value="Asia/Seoul"            {% if current_tz == 'Asia/Seoul' %}selected{% endif %}>Seoul (KST)</option>
+                    <option value="Australia/Sydney"      {% if current_tz == 'Australia/Sydney' %}selected{% endif %}>Sydney (AEST)</option>
+                    <option value="Australia/Melbourne"   {% if current_tz == 'Australia/Melbourne' %}selected{% endif %}>Melbourne (AEST)</option>
+                    <option value="Australia/Perth"       {% if current_tz == 'Australia/Perth' %}selected{% endif %}>Perth (AWST)</option>
+                    <option value="Pacific/Auckland"      {% if current_tz == 'Pacific/Auckland' %}selected{% endif %}>Auckland (NZST)</option>
+                </optgroup>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Save timezone</button>
+    </form>
+</div>
+
 <!-- API Keys -->
 <div class="settings-section">
     <h2>API Keys</h2>

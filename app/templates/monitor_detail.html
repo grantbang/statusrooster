@@ -96,7 +96,7 @@
                 {{ last_check_ago }}
             {% elif monitor.get('last_checked') %}
                 {% if monitor.last_checked.strftime is defined %}
-                    {{ monitor.last_checked.strftime('%H:%M UTC') }}
+                    {{ monitor.last_checked | as_tz(user.get('timezone', 'UTC'), '%H:%M') }}
                 {% else %}
                     {{ monitor.last_checked }}
                 {% endif %}
@@ -275,7 +275,7 @@
                 {% endif %}
             </span>
             <span class="md-inc-time">
-                {{ inc.started_at.strftime('%b %d, %Y %H:%M UTC') if inc.started_at and inc.started_at.strftime is defined else '' }}
+                {{ inc.started_at | as_tz(user.get('timezone', 'UTC'), '%b %d, %Y %H:%M') if inc.started_at and inc.started_at.strftime is defined else '' }}
             </span>
             <span class="md-inc-duration">
                 {% if inc.get('duration_seconds') %}

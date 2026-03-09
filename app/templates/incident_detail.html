@@ -71,7 +71,7 @@
                     <span class="inc-kv-label">Started</span>
                     <span class="inc-kv-value">
                         {% if incident.started_at %}
-                        {{ incident.started_at.strftime('%b %-d, %Y at %H:%M:%S UTC') }}
+                        {{ incident.started_at | as_tz(user.get('timezone', 'UTC'), '%b %-d, %Y at %H:%M:%S') }}
                         {% else %}—{% endif %}
                     </span>
                 </div>
@@ -79,7 +79,7 @@
                     <span class="inc-kv-label">Resolved</span>
                     <span class="inc-kv-value">
                         {% if incident.resolved_at %}
-                        {{ incident.resolved_at.strftime('%b %-d, %Y at %H:%M:%S UTC') }}
+                        {{ incident.resolved_at | as_tz(user.get('timezone', 'UTC'), '%b %-d, %Y at %H:%M:%S') }}
                         {% elif incident.status == 'open' %}
                         <span style="color: var(--danger);">Not yet resolved</span>
                         {% else %}—{% endif %}
@@ -143,7 +143,7 @@
                         <div class="inc-timeline-content">
                             <div class="inc-timeline-text">{{ label }}</div>
                             {% if event.timestamp %}
-                            <div class="inc-timeline-time">{{ event.timestamp.strftime('%b %-d, %H:%M:%S UTC') }}</div>
+                            <div class="inc-timeline-time">{{ event.timestamp | as_tz(user.get('timezone', 'UTC'), '%b %-d, %H:%M:%S') }}</div>
                             {% endif %}
                         </div>
                     </div>
@@ -163,7 +163,7 @@
                     <div class="inc-timeline-content">
                         <div class="inc-timeline-text">Incident detected — monitor marked <strong>down</strong></div>
                         <div class="inc-timeline-time">
-                            {% if incident.started_at %}{{ incident.started_at.strftime('%b %-d, %H:%M:%S UTC') }}{% endif %}
+                            {% if incident.started_at %}{{ incident.started_at | as_tz(user.get('timezone', 'UTC'), '%b %-d, %H:%M:%S') }}{% endif %}
                         </div>
                     </div>
                 </div>
@@ -172,7 +172,7 @@
                     <div class="inc-timeline-dot inc-dot-up"></div>
                     <div class="inc-timeline-content">
                         <div class="inc-timeline-text">Monitor recovered — incident <strong>resolved</strong></div>
-                        <div class="inc-timeline-time">{{ incident.resolved_at.strftime('%b %-d, %H:%M:%S UTC') }}</div>
+                        <div class="inc-timeline-time">{{ incident.resolved_at | as_tz(user.get('timezone', 'UTC'), '%b %-d, %H:%M:%S') }}</div>
                     </div>
                 </div>
                 {% elif incident.status == 'open' %}
