@@ -25,7 +25,8 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
                    heartbeat_grace_period: int | None = None,
                    group: str = "", slug: str = "",
                    http_method: str = "GET",
-                   basic_auth_user: str = "", basic_auth_pass: str = "") -> dict:
+                   basic_auth_user: str = "", basic_auth_pass: str = "",
+                   follow_redirects: bool = True) -> dict:
     """Create a new monitor. Returns monitor dict with id.
 
     monitor_type: "http" | "heartbeat" | "json_api" | "ssl"
@@ -91,6 +92,10 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
         "expected_status_code": expected_status_code,  # Expected HTTP status code (optional)
         "keyword": keyword,                          # Expected keyword in response body
         "response_threshold_ms": response_threshold_ms,  # Alert if response > this many ms
+        "http_method": http_method,                  # HTTP method (GET, POST, HEAD, etc.)
+        "basic_auth_user": basic_auth_user,          # Basic Auth username (Pro only)
+        "basic_auth_pass": basic_auth_pass,          # Basic Auth password (Pro only)
+        "follow_redirects": follow_redirects,        # Follow HTTP redirects (default True)
         # JSON/API assertion fields
         "json_assertions": json_assertions or [],    # List of {path, operator, value}
         "auth_header": auth_header,                  # Authorization header value

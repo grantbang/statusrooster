@@ -448,6 +448,15 @@ async def add_monitor(
     ssl_expiry_threshold_days_raw = form.get("ssl_expiry_threshold_days", "")
     group = form.get("group", "")
     slug = form.get("slug", "")
+    http_method = form.get("http_method", "GET").upper()
+    basic_auth_user = form.get("basic_auth_user", "")
+    basic_auth_pass = form.get("basic_auth_pass", "")
+    # Checkbox: sends "true" when checked, absent when unchecked.
+    # Default to True for non-HTTP types (where the field isn't shown).
+    if monitor_type == "http":
+        follow_redirects = form.get("follow_redirects", "") == "true"
+    else:
+        follow_redirects = True
 
     db = get_db()
 
@@ -566,6 +575,16 @@ async def add_monitor(
     if slug:
         slug = re.sub(r"[^a-z0-9\-]", "", slug.lower().replace(" ", "-")).strip("-")
 
+    # Gate basic auth to Pro only
+    if user.get("plan", "free") == "free":
+        basic_auth_user = ""
+        basic_auth_pass = ""
+
+    # Validate http_method
+    allowed_methods = {"GET", "POST", "HEAD", "PUT", "PATCH", "DELETE", "OPTIONS"}
+    if http_method not in allowed_methods:
+        http_method = "GET"
+
     monitor = create_monitor(
         db,
         user_id=user["id"],
@@ -591,6 +610,10 @@ async def add_monitor(
         ssl_expiry_threshold_days=ssl_expiry_threshold_days,
         group=group,
         slug=slug,
+        http_method=http_method,
+        basic_auth_user=basic_auth_user,
+        basic_auth_pass=basic_auth_pass,
+        follow_redirects=follow_redirects,
     )
 
     # For heartbeat monitors, set the ping URL on the monitor doc
@@ -664,6 +687,9 @@ async def edit_monitor_submit(
     ssl_domain = form.get("ssl_domain", "")
     ssl_expiry_threshold_days_raw = form.get("ssl_expiry_threshold_days", "")
     group = form.get("group", "")
+    http_method = form.get("http_method", "GET").upper()
+    basic_auth_user = form.get("basic_auth_user", "")
+    basic_auth_pass = form.get("basic_auth_pass", "")
 
     db = get_db()
     monitor = get_monitor(db, monitor_id)
@@ -708,6 +734,19 @@ async def edit_monitor_submit(
         "response_threshold_ms": response_threshold_ms.strip() if response_threshold_ms else None,
         "group": group,
     }
+
+    # HTTP-specific fields
+    if monitor.get("monitor_type") == "http":
+        allowed_methods = {"GET", "POST", "HEAD", "PUT", "PATCH", "DELETE", "OPTIONS"}
+        updates["http_method"] = http_method if http_method in allowed_methods else "GET"
+        updates["follow_redirects"] = form.get("follow_redirects", "") == "true"
+        # Gate basic auth to Pro only
+        if user.get("plan", "free") != "free":
+            updates["basic_auth_user"] = basic_auth_user
+            updates["basic_auth_pass"] = basic_auth_pass
+        else:
+            updates["basic_auth_user"] = ""
+            updates["basic_auth_pass"] = ""
     if expected_status_code_raw:
         try:
             updates["expected_status_code"] = int(expected_status_code_raw)

@@ -12,15 +12,29 @@ from app.models.incident import create_incident, resolve_incident, get_open_inci
 from app.services.alerts import send_down_alert, send_recovery_alert, send_ssl_expiry_alert, send_keyword_alert, send_threshold_alert, send_webhook_notification
 
 
-async def check_url(url: str, timeout: float = 10.0, expected_status_code: int | None = None) -> dict:
+async def check_url(url: str, timeout: float = 10.0, expected_status_code: int | None = None,
+                    http_method: str = "GET", follow_redirects: bool = True,
+                    basic_auth_user: str = "", basic_auth_pass: str = "") -> dict:
     """
-    Perform an HTTP GET to the target URL.
+    Perform an HTTP request to the target URL.
     Returns dict with status_code, response_ms, is_up, body (first 10KB).
     """
     try:
+        headers = {}
+        if basic_auth_user and basic_auth_pass:
+            import base64
+            credentials = base64.b64encode(f"{basic_auth_user}:{basic_auth_pass}".encode()).decode()
+            headers["Authorization"] = f"Basic {credentials}"
+
         async with httpx.AsyncClient() as client:
             start = time.monotonic()
-            response = await client.get(url, timeout=timeout, follow_redirects=True)
+            response = await client.request(
+                http_method.upper(),
+                url,
+                timeout=timeout,
+                follow_redirects=follow_redirects,
+                headers=headers,
+            )
             elapsed_ms = round((time.monotonic() - start) * 1000, 2)
 
             if expected_status_code:
@@ -42,16 +56,22 @@ async def check_url(url: str, timeout: float = 10.0, expected_status_code: int |
         }
 
 
-async def check_url_with_retry(url: str, timeout: float = 10.0, expected_status_code: int | None = None) -> dict:
+async def check_url_with_retry(url: str, timeout: float = 10.0, expected_status_code: int | None = None,
+                               http_method: str = "GET", follow_redirects: bool = True,
+                               basic_auth_user: str = "", basic_auth_pass: str = "") -> dict:
     """
     Check a URL with false positive prevention.
     If the first check fails, wait 5 seconds and retry once.
     """
-    result = await check_url(url, timeout, expected_status_code)
+    result = await check_url(url, timeout, expected_status_code,
+                             http_method=http_method, follow_redirects=follow_redirects,
+                             basic_auth_user=basic_auth_user, basic_auth_pass=basic_auth_pass)
     if not result["is_up"]:
         # Retry once after 5 seconds to prevent false positives
         await asyncio.sleep(5)
-        result = await check_url(url, timeout, expected_status_code)
+        result = await check_url(url, timeout, expected_status_code,
+                                 http_method=http_method, follow_redirects=follow_redirects,
+                                 basic_auth_user=basic_auth_user, basic_auth_pass=basic_auth_pass)
     return result
 
 
@@ -581,8 +601,20 @@ async def run_checks():
             # ----- HTTP monitors: perform the check with retry -----
             timeout_val = monitor.get("timeout", 10)
             expected_code = monitor.get("expected_status_code")
+            http_method = monitor.get("http_method", "GET")
+            follow_redir = monitor.get("follow_redirects", True)
+            ba_user = monitor.get("basic_auth_user", "")
+            ba_pass = monitor.get("basic_auth_pass", "")
 
-            result = await check_url_with_retry(monitor["url"], timeout=timeout_val, expected_status_code=expected_code)
+            result = await check_url_with_retry(
+                monitor["url"],
+                timeout=timeout_val,
+                expected_status_code=expected_code,
+                http_method=http_method,
+                follow_redirects=follow_redir,
+                basic_auth_user=ba_user,
+                basic_auth_pass=ba_pass,
+            )
 
             # Record check in Firestore
             create_check(

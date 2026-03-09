@@ -428,25 +428,55 @@ Layout order (top to bottom):
 
 ---
 
-### Phase 4: Backend Updates (`pages.py` + `monitor.py`)
+### Phase 4: Backend Updates (`pages.py` + `monitor.py` + `checker.py`)
 
-- [ ] **4.1** `monitor.py` → `create_monitor()`: Add `follow_redirects: bool = True` parameter, store in doc
-- [ ] **4.2** `pages.py` → `add_monitor()` POST: Parse `http_method`, `basic_auth_user`, `basic_auth_pass`, `follow_redirects`
-- [ ] **4.3** `pages.py` → `edit_monitor_submit()` POST: Parse same new fields, include in updates dict
-- [ ] **4.4** `pages.py` → `add_monitor()`: Pass new fields to `create_monitor()`
-- [ ] **4.5** `pages.py` → `edit_monitor_submit()`: Include all new fields in updates
+> **Context from audit:** The UI has fields for `http_method`, `basic_auth_user`, `basic_auth_pass`, and `follow_redirects` — but they are ghost fields. The form renders them, but `pages.py` never parses them, `monitor.py` never stores them, and `checker.py` never uses them. This phase wires all 4 fields end-to-end: form → storage → execution.
+>
+> **Audit findings (4 ghost fields on HTTP type):**
+> | Field | UI | pages.py | monitor.py | checker.py | Fix |
+> |---|---|---|---|---|---|
+> | `http_method` | ✅ hidden input | ❌ not parsed | ❌ not stored | ❌ hardcoded `client.get()` | Parse → store → use `client.request(method, ...)` |
+> | `basic_auth_user` + `basic_auth_pass` | ✅ text/password | ❌ not parsed | ❌ not stored | ❌ no auth header sent | Parse → store → encode `Basic base64(user:pass)` → send as header (Pro only) |
+> | `follow_redirects` | ✅ checkbox | ❌ not parsed | ❌ not stored | ❌ hardcoded `True` | Parse → store → pass boolean to `httpx` |
+>
+> **JSON/API, Heartbeat, SSL are fully wired** — no changes needed for those types.
+
+#### Build Items — Storage Layer (`monitor.py`)
+- [x] **4.1** `create_monitor()`: Add `follow_redirects: bool = True` parameter, store in `monitor_data` dict
+- [x] **4.2** `create_monitor()`: Store `http_method`, `basic_auth_user`, `basic_auth_pass` in `monitor_data` dict (params already exist, just not saved)
+
+#### Build Items — Form Parsing (`pages.py`)
+- [x] **4.3** `add_monitor()` POST: Parse `http_method`, `basic_auth_user`, `basic_auth_pass`, `follow_redirects` from form
+- [x] **4.4** `add_monitor()`: Pass all 4 new fields to `create_monitor()`
+- [x] **4.5** `edit_monitor_submit()` POST: Parse same 4 fields, include in `updates` dict
+- [x] **4.6** `edit_monitor_submit()`: Gate `basic_auth_user`/`basic_auth_pass` to Pro plan only (Free users get empty strings)
+
+#### Build Items — Checker Engine (`checker.py`)
+- [x] **4.7** `check_url()`: Accept `http_method` param (default `"GET"`), use `client.request(method, url, ...)` instead of `client.get(url, ...)`
+- [x] **4.8** `check_url()`: Accept `follow_redirects` param (default `True`), pass to `httpx`
+- [x] **4.9** `check_url()`: Accept `basic_auth_user` + `basic_auth_pass` params, encode as `Authorization: Basic base64(user:pass)` header when both are non-empty
+- [x] **4.10** `check_url_with_retry()`: Pass through `http_method`, `follow_redirects`, `basic_auth_user`, `basic_auth_pass` to `check_url()`
+- [x] **4.11** `run_checks()`: Read `http_method`, `follow_redirects`, `basic_auth_user`, `basic_auth_pass` from monitor doc, pass to `check_url_with_retry()` for HTTP type monitors
 
 #### ✅ Phase 4 Gate — Backend Submission Tests
-- [ ] **4.T1** Create HTTP monitor with all new fields (`http_method=POST`, `basic_auth_user=admin`, `basic_auth_pass=secret`, `follow_redirects=false`) — verify Firestore doc has all fields
-- [ ] **4.T2** Create HTTP monitor with defaults (don't send new fields) — verify `http_method=GET`, `follow_redirects=True`
-- [ ] **4.T3** Create Heartbeat monitor — verify new fields stored with defaults
-- [ ] **4.T4** Create JSON/API monitor — verify defaults stored
-- [ ] **4.T5** Create SSL monitor — verify defaults stored
-- [ ] **4.T6** Edit HTTP monitor — POST with `http_method=PUT`, `basic_auth_user=newuser` — verify Firestore updated
-- [ ] **4.T7** Edit HTTP monitor without new fields — verify existing values not clobbered
-- [ ] **4.T8** Free plan gating — `alert_slack_webhook=""`, `webhook_url=""`, `check_interval=300` regardless of input
-- [ ] **4.T9** Pro plan gating — custom interval (e.g., 120s) accepted
-- [ ] **4.T10** Server starts without errors — `uvicorn` reload completes cleanly
+- [x] **4.T1** Create HTTP monitor with all new fields (`http_method=POST`, `basic_auth_user=admin`, `basic_auth_pass=secret`, `follow_redirects=false`) — verify Firestore doc has all 4 fields
+- [x] **4.T2** Create HTTP monitor with defaults (don't send new fields) — verify `http_method=GET`, `follow_redirects=True`, `basic_auth_user=""`, `basic_auth_pass=""`
+- [x] **4.T3** Create Heartbeat monitor — verify new fields stored with defaults (GET, True, empty auth)
+- [x] **4.T4** Create JSON/API monitor — verify defaults stored
+- [x] **4.T5** Create SSL monitor — verify defaults stored
+- [x] **4.T6** Edit HTTP monitor — change `http_method=PUT`, `basic_auth_user=newuser` — verify Firestore updated
+- [x] **4.T7** Edit HTTP monitor without changing new fields — verify existing values not clobbered
+- [x] **4.T8** Free plan gating — `basic_auth_user`/`basic_auth_pass` stored as empty regardless of input
+- [x] **4.T9** Pro plan gating — custom interval (e.g., 120s) accepted, basic auth saved
+
+#### ✅ Phase 4 Gate — Checker Engine Tests
+- [x] **4.T10** Server starts without errors — `uvicorn` reload completes cleanly
+- [x] **4.T11** HTTP monitor with `http_method=HEAD` — checker sends HEAD request (verify in check result: no body expected)
+- [x] **4.T12** HTTP monitor with `follow_redirects=false` on a 301 URL — checker reports status 302 (not the redirect target)
+- [x] **4.T13** HTTP monitor with `basic_auth_user`/`basic_auth_pass` — checker sends `Authorization: Basic` header *(verified against httpbin.org/basic-auth — correct creds=200, wrong creds=401)*
+- [x] **4.T14** JSON/API monitor — unchanged, still uses `auth_header` (not basic auth), still works
+- [x] **4.T15** Heartbeat monitor — unchanged, overdue detection still works
+- [x] **4.T16** SSL monitor — unchanged, cert check still works
 
 ---
 
@@ -581,11 +611,8 @@ Layout order (top to bottom):
 - [ ] Register GitHub OAuth App, set `GITHUB_CLIENT_ID` + `GITHUB_CLIENT_SECRET` in `.env` + Cloud Run
 - [ ] Test: "Continue with GitHub" → authorize → dashboard
 
-### 10E. Add/Edit Form — Backend Fields 🔲
-> _These fields are exposed through the UI redesign (Phases 2-4 above). Listed here for reference._
-- [ ] **Request timeout field** — `timeout_seconds` on monitor doc (default 30), exposed on form, checker uses it
-- [ ] **Basic Auth fields** — `basic_auth_user` + `basic_auth_pass` (already in model), exposed on form, checker sends `Authorization: Basic` header
-- [ ] **HTTP method selector** — `http_method` (already in model), exposed on form, checker uses selected method
+### 10E. Add/Edit Form — Backend Fields ✅ *(merged into Phase 4)*
+> _Fully covered by Phase 4 build items 4.1–4.11 and gate tests 4.T1–4.T16. No separate work needed._
 
 ### 10F. Pro Upsell Polish 🔲
 - [ ] Check interval badge on dashboard rows: "⏱ 5min" for Free with tooltip "Upgrade for 60s →"
@@ -607,6 +634,72 @@ Layout order (top to bottom):
 - [ ] Favicon (rooster icon, 32x32 + 180x180 apple-touch)
 - [ ] Input validation audit: all forms + all API endpoints
 - [ ] Mobile viewport testing: dashboard, detail, edit, landing, pricing, status page
+
+### 11E. API & API Docs QA 🔲
+
+> **Goal:** The public API and its documentation are a first-class product surface. Every endpoint must work exactly as documented, every example must be copy-paste-runnable, every field reference must match reality, and the Swagger playground must stay in sync. This is a dedicated pass to verify consistency, correctness, and completeness end-to-end.
+
+#### API Backend — Functional Tests (curl against localhost:8080)
+- [ ] **11E.1** Auth — missing `X-API-Key` header → 401 + clear error message
+- [ ] **11E.2** Auth — invalid/revoked key → 401
+- [ ] **11E.3** Auth — valid key → 200 on `GET /api/v1/monitors`
+- [ ] **11E.4** List monitors — returns all monitors for authenticated user, `{data: [...], error: null, meta: {total: N}}`
+- [ ] **11E.5** Get single monitor — valid ID → 200 with full monitor object; invalid ID → 404
+- [ ] **11E.6** Create HTTP monitor — all fields accepted, response includes new fields (`http_method`, `follow_redirects`, `basic_auth_user`, `basic_auth_pass`), status 201
+- [ ] **11E.7** Create JSON/API monitor — `json_assertions` + `auth_header` stored and returned, status 201
+- [ ] **11E.8** Create Heartbeat monitor — returns `ping_url`, `heartbeat_interval`, `heartbeat_grace_period`, status 201
+- [ ] **11E.9** Create SSL monitor — `ssl_domain` + `ssl_expiry_threshold_days` stored and returned, status 201
+- [ ] **11E.10** Create monitor — plan gating: Free user at 5 monitors → 403; basic auth fields silently emptied for Free
+- [ ] **11E.11** Create monitor — validation: missing `name` → 422; invalid `monitor_type` → 422; invalid `http_method` → 400
+- [ ] **11E.12** Update monitor — partial update (send only `keyword`) → only that field changes, others preserved
+- [ ] **11E.13** Update monitor — `http_method`, `follow_redirects`, `basic_auth_user`, `basic_auth_pass` all updatable
+- [ ] **11E.14** Update monitor — can't update another user's monitor → 404
+- [ ] **11E.15** Delete monitor — 200 + monitor gone; delete again → 404
+- [ ] **11E.16** Check history — `GET /api/v1/monitors/{id}/checks` → returns recent checks with `{data: [...], meta: {total}}`
+- [ ] **11E.17** List incidents — `GET /api/v1/incidents` → `{data: [...], error: null, meta: {total}}`
+- [ ] **11E.18** Get incident — valid ID → full incident object; invalid → 404
+- [ ] **11E.19** Response shape consistency — every endpoint returns `{data, error}` or `{data, error, meta}` — no exceptions
+
+#### API Docs — Content Accuracy (`api_docs.html`)
+- [ ] **11E.20** Auth section — instructions match actual header name (`X-API-Key`), key format (`sr_...`), error responses
+- [ ] **11E.21** Client setup — curl/Python/JS snippets are copy-paste-runnable (correct base URL, headers)
+- [ ] **11E.22** HTTP Create — param table matches `ApiCreateMonitor` schema exactly (all fields, types, defaults, required/optional)
+- [ ] **11E.23** HTTP Create — response shape JSON matches actual `POST /api/v1/monitors` response (field names, types, order)
+- [ ] **11E.24** HTTP Update — param table matches `ApiUpdateMonitor` schema exactly
+- [ ] **11E.25** JSON/API Create — param table includes `json_assertions`, `auth_header`, correct types
+- [ ] **11E.26** JSON/API Update — param table matches actual accepted fields
+- [ ] **11E.27** Heartbeat Create — param table includes `heartbeat_interval`, `heartbeat_grace_period`
+- [ ] **11E.28** Heartbeat Update — param table matches
+- [ ] **11E.29** SSL Create — param table includes `ssl_domain`, `ssl_expiry_threshold_days`
+- [ ] **11E.30** SSL Update — param table matches
+- [ ] **11E.31** List All Monitors — response shape matches actual response (array of monitor objects with `meta.total`)
+- [ ] **11E.32** Get Single Monitor — response shape matches actual response
+- [ ] **11E.33** Check History — param table (query params like `limit`) matches, response shape matches
+- [ ] **11E.34** Delete Monitor — documented response matches actual
+- [ ] **11E.35** Incidents — List + Get response shapes match actual
+- [ ] **11E.36** Field reference table — every field listed exists in actual responses; no missing fields; types correct
+- [ ] **11E.37** Field reference — "HTTP Only" section lists `http_method`, `follow_redirects`, `basic_auth_user`, `basic_auth_pass`
+- [ ] **11E.38** Plan Limits section — Free/Pro limits match actual gating in code
+- [ ] **11E.39** Rate Limits section — documented limits match actual implementation (if any)
+
+#### API Docs — Code Examples & UX
+- [ ] **11E.40** All curl examples — correct method, correct URL path, correct headers, valid JSON body
+- [ ] **11E.41** All Python examples — correct `requests` usage, correct JSON keys
+- [ ] **11E.42** All JavaScript examples — correct `fetch` usage, correct JSON keys
+- [ ] **11E.43** Tab switching — clicking curl/Python/JS tabs works on every endpoint section
+- [ ] **11E.44** Copy buttons — every code block copy button copies correct content
+- [ ] **11E.45** Sidebar navigation — every sidebar link scrolls to correct section
+- [ ] **11E.46** Endpoint expand/collapse — all accordion sections open/close correctly
+- [ ] **11E.47** Swagger playground link — `/docs` loads, all endpoints listed, "Authorize" button works with API key
+- [ ] **11E.48** Webhook Payloads section — documented payload shape matches what `alerts.py` actually sends
+- [ ] **11E.49** Uptime Badges section — all 3 badge URLs work, SVG renders correctly
+
+#### API Docs — Cross-Consistency Checks
+- [ ] **11E.50** Every field in `ApiCreateMonitor` Pydantic schema appears in the corresponding docs param table
+- [ ] **11E.51** Every field in `ApiUpdateMonitor` Pydantic schema appears in the corresponding docs param table
+- [ ] **11E.52** Every field returned by `_serialize_monitor()` appears in the field reference table
+- [ ] **11E.53** No "ghost fields" — every documented field is actually parsed, stored, and returned by the backend
+- [ ] **11E.54** Pro-gated fields are consistently marked "(Pro)" in both param tables and field reference
 
 ### 11D. Admin Dashboard 🔲
 - [ ] Route: `GET /admin` — guard: only your email can access
@@ -662,7 +755,6 @@ Layout order (top to bottom):
 - [ ] Multi-region checks (Pro — US-East, EU-West, Asia, confirm from 2+ before alerting)
 - [ ] Discord webhook (same pattern as Slack)
 - [ ] Alert confirmation threshold ("wait N fails before alerting")
-- [ ] Follow redirects toggle in checker
 
 ### Future Backlog
 - [ ] CLI tool (`pip install statusrooster`)
@@ -684,7 +776,7 @@ Layout order (top to bottom):
 | 1 | Phase 1: Form CSS foundation | ✅ |
 | 2 | Phase 2: Add Monitor template | ✅ |
 | 3 | Phase 3: Edit Monitor template | ✅ |
-| 4 | Phase 4: Backend wiring | 🔲 |
+| 4 | Phase 4: Backend wiring | ✅ |
 | 5 | Phase 5: Form E2E QA | 🔲 |
 | 6 | Phase 6: Dashboard CSS | 🔲 |
 | 7 | Phase 7: Dashboard template + JS | 🔲 |
@@ -694,8 +786,9 @@ Layout order (top to bottom):
 | 11 | 10F: Pro upsell polish | 🔲 |
 | 12 | 11B: Activity log | 🔲 |
 | 13 | 11C: Hardening | 🔲 |
-| 14 | 11D: Admin dashboard | 🔲 |
-| 15 | Day 12: Testing & launch | 🔲 |
+| 14 | 11E: API & API Docs QA | 🔲 |
+| 15 | 11D: Admin dashboard | 🔲 |
+| 16 | Day 12: Testing & launch | 🔲 |
 
 **Work through Phases 1–9 sequentially. Run every Gate test before moving to the next Phase. Do not skip ahead.**
 
@@ -703,14 +796,14 @@ Layout order (top to bottom):
 - Phase 1: ~~12~~ **0** ✅
 - Phase 2: ~~25~~ **5** (5 browser-only gate tests remain)
 - Phase 3: ~~13~~ **0** ✅
-- Phase 4: 5 build + 10 test = **15**
+- Phase 4: ~~27~~ **0** ✅
 - Phase 5: 11 E2E = **11**
 - Phase 6: 10 build + 3 test = **13**
 - Phase 7: 14 build + 14 test = **28**
 - Phase 8: 4 build + 5 test = **9**
 - Phase 9: 10 E2E = **10**
-- Non-UI tasks: ~25
-- **Grand total: ~116 checkboxes** (was 161, 45 completed)
+- Non-UI tasks: ~25 + 54 (11E) = **~79**
+- **Grand total: ~155 checkboxes** (was 161, 72 completed + 54 new)
 
 ---
 

@@ -256,6 +256,10 @@ class ApiCreateMonitor(BaseModel):
     ssl_domain: str = ""
     ssl_expiry_threshold_days: int | None = None
     group: str = ""
+    http_method: str = "GET"             # GET, POST, HEAD, PUT, PATCH, DELETE, OPTIONS
+    basic_auth_user: str = ""            # Basic Auth username (Pro)
+    basic_auth_pass: str = ""            # Basic Auth password (Pro)
+    follow_redirects: bool = True        # Follow HTTP redirects
 
 
 @router.post("/monitors", status_code=201)
@@ -284,6 +288,16 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
         if public_count >= public_limit:
             err(f"{'Pro' if plan == 'pro' else 'Free'} plan limited to {public_limit} public status page{'s' if public_limit > 1 else ''}. {'Contact us if you need more.' if plan == 'pro' else 'Upgrade to Pro for up to 10.'}", 403)
 
+    # Validate http_method
+    allowed_methods = {"GET", "POST", "HEAD", "PUT", "PATCH", "DELETE", "OPTIONS"}
+    http_method = req.http_method.upper() if req.http_method else "GET"
+    if http_method not in allowed_methods:
+        err(f"Invalid http_method. Use one of: {', '.join(sorted(allowed_methods))}.", 422)
+
+    # Gate basic auth to Pro only
+    basic_auth_user = req.basic_auth_user if plan != "free" else ""
+    basic_auth_pass = req.basic_auth_pass if plan != "free" else ""
+
     monitor = create_monitor(
         db,
         user_id=user["id"],
@@ -308,6 +322,10 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
         ssl_domain=req.ssl_domain,
         ssl_expiry_threshold_days=req.ssl_expiry_threshold_days,
         group=req.group,
+        http_method=http_method,
+        basic_auth_user=basic_auth_user,
+        basic_auth_pass=basic_auth_pass,
+        follow_redirects=req.follow_redirects,
     )
     if req.monitor_type == "heartbeat":
         from app.config import settings
@@ -343,6 +361,10 @@ class ApiUpdateMonitor(BaseModel):
     ssl_domain: str | None = None
     ssl_expiry_threshold_days: int | None = None
     group: str | None = None
+    http_method: str | None = None          # GET, POST, HEAD, PUT, PATCH, DELETE, OPTIONS
+    basic_auth_user: str | None = None      # Basic Auth username (Pro)
+    basic_auth_pass: str | None = None      # Basic Auth password (Pro)
+    follow_redirects: bool | None = None    # Follow HTTP redirects
 
 
 @router.put("/monitors/{monitor_id}")
@@ -425,6 +447,24 @@ async def api_update_monitor(
         updates["ssl_expiry_threshold_days"] = max(1, min(90, req.ssl_expiry_threshold_days))
     if req.group is not None:
         updates["group"] = req.group
+    if req.http_method is not None:
+        allowed_methods = {"GET", "POST", "HEAD", "PUT", "PATCH", "DELETE", "OPTIONS"}
+        method = req.http_method.upper()
+        if method not in allowed_methods:
+            err(f"Invalid http_method. Use one of: {', '.join(sorted(allowed_methods))}.", 422)
+        updates["http_method"] = method
+    if req.basic_auth_user is not None:
+        plan = user.get("plan", "free")
+        if plan == "free":
+            err("Basic Auth requires a Pro plan.", 403)
+        updates["basic_auth_user"] = req.basic_auth_user
+    if req.basic_auth_pass is not None:
+        plan = user.get("plan", "free")
+        if plan == "free":
+            err("Basic Auth requires a Pro plan.", 403)
+        updates["basic_auth_pass"] = req.basic_auth_pass
+    if req.follow_redirects is not None:
+        updates["follow_redirects"] = req.follow_redirects
 
     if not updates:
         err("No fields to update. Send at least one field.", 422)
