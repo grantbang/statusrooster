@@ -3230,6 +3230,44 @@ code {
     flex-shrink: 0;
     border-radius: 3px;
 }
+.nav-icon--http       { background: #eef2ff; }
+.nav-icon--json       { background: #eff6ff; }
+.nav-icon--heartbeat  { background: #f0fdf4; }
+.nav-icon--ssl        { background: #fffbeb; }
+
+/* Table section-header rows */
+.param-table-section-header td {
+    font-weight: 600;
+    font-size: 0.72rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 8px 12px;
+    color: var(--text-secondary);
+}
+.param-table-section-header--core     td { background: #f3f4f6; }
+.param-table-section-header--shared   td { background: #eef2ff; }
+.param-table-section-header--http     td { background: #e8e9ff; }
+.param-table-section-header--json     td { background: #eff6ff; }
+.param-table-section-header--hb       td { background: #f0fdf4; }
+.param-table-section-header--ssl      td { background: #fffbeb; }
+
+/* Muted helper text */
+.api-helper-text {
+    margin-top: 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+}
+.api-helper-text--mt-lg { margin-top: 1rem; }
+.api-section-intro {
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    margin: -0.5rem 0 1.5rem 0;
+}
+
+/* Inline method badges with spacing */
+.method-badge + .method-badge { margin-left: 4px; }
+.method-head { background: #f3f4f6; color: var(--text-secondary); }
+
 .api-nav-divider {
     height: 1px;
     background: var(--border);

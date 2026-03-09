@@ -672,6 +672,18 @@ Layout order (top to bottom):
 - [x] **10H.T4** Mobile viewport (375px) — all pages navigable, no horizontal scroll, touch targets adequate
 - [x] **10H.T5** No console errors on any page (dashboard, detail, add, edit)
 
+### 10H-EXT. API Docs Inline Style Cleanup ✅
+> Extension of the 10H polish pass — applied same inline→CSS discipline to `api_docs.html`
+
+- [x] **10H-EXT.1** Nav icon spans — `style="background:#xxx;display:inline-block"` → `class="nav-icon nav-icon--{type}"` (4 instances)
+- [x] **10H-EXT.2** Muted helper `<p>` tags — `style="color:var(--muted);..."` → `class="api-helper-text"` (4 instances + rate limits footer note)
+- [x] **10H-EXT.3** Section intro `<p>` — `class="api-section-intro" style="..."` → inline style removed, class handles all styling
+- [x] **10H-EXT.4** Method badge spacing — removed `style="margin-left:4px"` on second badge; added `+ .method-badge { margin-left: 4px }` CSS rule
+- [x] **10H-EXT.5** HEAD badge — removed `style="background:#6b7280;..."` → `class="method-badge method-head"`
+- [x] **10H-EXT.6** Field reference table section headers — 6 `<tr><td style="...">` → `<tr class="param-table-section-header param-table-section-header--{variant}"><td colspan="3">` with CSS doing all background/typography
+- [x] **10H-EXT.7** New CSS utilities added: `nav-icon--*`, `param-table-section-header--*`, `api-helper-text`, `api-helper-text--mt-lg`, `api-section-intro`, `method-head`
+- [x] **10H-EXT.8** Zero inline styles remain in `api_docs.html` (verified with grep)
+
 ### 10F. Pro Upsell Polish 🔲
 - [ ] Check interval badge on dashboard rows: "⏱ 5min" for Free with tooltip "Upgrade for 60s →"
 - [ ] Greyed Pro-only columns with lock 🔒 icon
@@ -987,10 +999,11 @@ Layout order (top to bottom):
 | 11 | 10B: GitHub OAuth | 🔲 |
 | 12 | 10G-B: Form Feature Gaps (Bearer auth, request body, custom headers) | ✅ |
 | 13 | 10H: UI/UX Polish Pass (Sonnet) | ✅ |
-| 14 | 10F: Pro upsell polish | 🔲 |
-| 15 | 11B: Activity log | 🔲 |
-| 16 | 11C: Hardening | 🔲 |
-| 17 | 11E: API & API Docs QA | 🔲 |
+| 14 | 10H-EXT: API Docs Inline Style Cleanup | ✅ |
+| 15 | 10F: Pro upsell polish | 🔲 |
+| 16 | 11B: Activity log | 🔲 |
+| 17 | 11C: Hardening | 🔲 |
+| 18 | 11E: API & API Docs QA | 🔲 |
 | 18 | 11D: Admin dashboard | 🔲 |
 | 19 | Day 12: Testing & launch | 🔲 |
 

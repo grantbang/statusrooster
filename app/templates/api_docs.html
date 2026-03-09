@@ -40,19 +40,19 @@
     <div class="api-nav-divider"></div>
     <p class="api-nav-label">Monitor Types</p>
     <a class="api-nav-item" href="#http" onclick="scrollToSection(event,'http')">
-        <span class="nav-icon" style="background:#eef2ff;display:inline-block"></span>
+        <span class="nav-icon nav-icon--http"></span>
         HTTP / HTTPS
     </a>
     <a class="api-nav-item" href="#json-api" onclick="scrollToSection(event,'json-api')">
-        <span class="nav-icon" style="background:#eff6ff;display:inline-block"></span>
+        <span class="nav-icon nav-icon--json"></span>
         JSON / API
     </a>
     <a class="api-nav-item" href="#heartbeat" onclick="scrollToSection(event,'heartbeat')">
-        <span class="nav-icon" style="background:#f0fdf4;display:inline-block"></span>
+        <span class="nav-icon nav-icon--heartbeat"></span>
         Heartbeat / Cron
     </a>
     <a class="api-nav-item" href="#ssl" onclick="scrollToSection(event,'ssl')">
-        <span class="nav-icon" style="background:#fffbeb;display:inline-block"></span>
+        <span class="nav-icon nav-icon--ssl"></span>
         SSL Certificate
     </a>
 
@@ -118,7 +118,7 @@ r = requests.get(<span class="code-string">"{{ app_url }}/api/v1/monitors"</span
   "meta": { ... }        <span class="code-comment">// Optional — included on list endpoints (count, limit, etc.)</span>
 }</div>
 
-        <p style="margin-top:0.75rem;color:var(--muted);font-size:0.88rem;">All timestamps are UTC, formatted as ISO 8601 (<code>2026-03-03T12:30:00+00:00</code>).</p>
+        <p class="api-helper-text">All timestamps are UTC, formatted as ISO 8601 (<code>2026-03-03T12:30:00+00:00</code>).</p>
 
         <p><strong>Error codes:</strong></p>
         <table class="param-table">
@@ -150,7 +150,7 @@ r = requests.get(<span class="code-string">"{{ app_url }}/api/v1/monitors"</span
     }
   ]
 }</div>
-        <p style="color:var(--muted);font-size:0.88rem;">Pro-only fields (<code>alert_slack_webhook</code>, <code>webhook_url</code>, <code>check_interval</code>, <code>maintenance_windows</code>) return <code>403</code> if used on a Free plan — they are never silently ignored.</p>
+        <p class="api-helper-text">Pro-only fields (<code>alert_slack_webhook</code>, <code>webhook_url</code>, <code>check_interval</code>, <code>maintenance_windows</code>) return <code>403</code> if used on a Free plan — they are never silently ignored.</p>
     </div>
 </div>
 
@@ -766,7 +766,7 @@ console.log(<span class="code-string">`Ping URL: ${data.ping_url}`</span>);</div
     <div class="api-section">
         <div class="endpoint" id="ep-ping">
             <div class="endpoint-header" onclick="toggleEndpoint('ep-ping')">
-                <span class="method-badge method-get">GET</span> <span class="method-badge method-post" style="margin-left:4px">POST</span> <span class="method-badge" style="background:#6b7280;color:#fff;margin-left:4px">HEAD</span>
+                <span class="method-badge method-get">GET</span> <span class="method-badge method-post">POST</span> <span class="method-badge method-head">HEAD</span>
                 <span class="endpoint-path">/api/ping/{monitor_id}</span>
                 <span class="endpoint-desc">Record a heartbeat ping</span>
                 <span class="chevron">&#9654;</span>
@@ -1144,7 +1144,7 @@ data.forEach(m => console.log(<span class="code-string">`${m.name} (${m.monitor_
                     <table class="field-ref-table">
                         <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
                         <tbody>
-                            <tr><td colspan="3" style="background:#f3f4f6;font-weight:600;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;padding:8px 12px">Core Fields (all types)</td></tr>
+                            <tr class="param-table-section-header param-table-section-header--core"><td colspan="3">Core Fields (all types)</td></tr>
                             <tr><td><code>id</code></td><td class="field-type">string</td><td>Unique monitor ID</td></tr>
                             <tr><td><code>monitor_type</code></td><td class="field-type">string</td><td><code>"http"</code> · <code>"json_api"</code> · <code>"heartbeat"</code> · <code>"ssl"</code></td></tr>
                             <tr><td><code>name</code></td><td class="field-type">string</td><td>Display name</td></tr>
@@ -1166,7 +1166,7 @@ data.forEach(m => console.log(<span class="code-string">`${m.name} (${m.monitor_
                             <tr><td><code>slug</code></td><td class="field-type">string</td><td>Status page URL slug (<code>/s/{slug}</code>)</td></tr>
                             <tr><td><code>created_at</code></td><td class="field-type">datetime</td><td>Creation timestamp</td></tr>
 
-                            <tr><td colspan="3" style="background:#eef2ff;font-weight:600;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;padding:8px 12px">HTTP &amp; JSON/API Fields</td></tr>
+                            <tr class="param-table-section-header param-table-section-header--shared"><td colspan="3">HTTP &amp; JSON/API Fields</td></tr>
                             <tr><td><code>last_status_code</code></td><td class="field-type">int|null</td><td>HTTP status from most recent check</td></tr>
                             <tr><td><code>last_response_ms</code></td><td class="field-type">float|null</td><td>Response time in ms</td></tr>
                             <tr><td><code>expected_status_code</code></td><td class="field-type">int|null</td><td>Expected HTTP status (default 200)</td></tr>
@@ -1176,7 +1176,7 @@ data.forEach(m => console.log(<span class="code-string">`${m.name} (${m.monitor_
                             <tr><td><code>ssl_expiry</code></td><td class="field-type">datetime|null</td><td>Auto-detected SSL cert expiry</td></tr>
                             <tr><td><code>ssl_issuer</code></td><td class="field-type">string|null</td><td>Auto-detected SSL cert issuer</td></tr>
 
-                            <tr><td colspan="3" style="background:#e8e9ff;font-weight:600;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;padding:8px 12px">HTTP Only</td></tr>
+                            <tr class="param-table-section-header param-table-section-header--http"><td colspan="3">HTTP Only</td></tr>
                             <tr><td><code>http_method</code></td><td class="field-type">string</td><td>HTTP method (<code>GET</code>, <code>POST</code>, <code>HEAD</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code>, <code>OPTIONS</code>)</td></tr>
                             <tr><td><code>follow_redirects</code></td><td class="field-type">bool</td><td>Whether to follow 3xx redirects (default <code>true</code>)</td></tr>
                             <tr><td><code>basic_auth_user</code></td><td class="field-type">string</td><td>HTTP Basic Auth username (Pro)</td></tr>
@@ -1186,16 +1186,16 @@ data.forEach(m => console.log(<span class="code-string">`${m.name} (${m.monitor_
                             <tr><td><code>request_content_type</code></td><td class="field-type">string</td><td>Content-Type for request body</td></tr>
                             <tr><td><code>custom_headers</code></td><td class="field-type">array|null</td><td>Custom request headers (Pro). Array of <code>{key, value}</code></td></tr>
 
-                            <tr><td colspan="3" style="background:#eff6ff;font-weight:600;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;padding:8px 12px">JSON/API Only</td></tr>
+                            <tr class="param-table-section-header param-table-section-header--json"><td colspan="3">JSON/API Only</td></tr>
                             <tr><td><code>json_assertions</code></td><td class="field-type">array|null</td><td>Array of <code>{path, operator, value}</code></td></tr>
                             <tr><td><code>auth_header</code></td><td class="field-type">string</td><td>Authorization header value</td></tr>
 
-                            <tr><td colspan="3" style="background:#f0fdf4;font-weight:600;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;padding:8px 12px">Heartbeat Only</td></tr>
+                            <tr class="param-table-section-header param-table-section-header--hb"><td colspan="3">Heartbeat Only</td></tr>
                             <tr><td><code>ping_url</code></td><td class="field-type">string</td><td>Unique ping URL</td></tr>
                             <tr><td><code>heartbeat_interval</code></td><td class="field-type">int|null</td><td>Expected ping interval in seconds</td></tr>
                             <tr><td><code>heartbeat_grace_period</code></td><td class="field-type">int|null</td><td>Grace period before alerting</td></tr>
 
-                            <tr><td colspan="3" style="background:#fffbeb;font-weight:600;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;padding:8px 12px">SSL Only</td></tr>
+                            <tr class="param-table-section-header param-table-section-header--ssl"><td colspan="3">SSL Only</td></tr>
                             <tr><td><code>ssl_domain</code></td><td class="field-type">string</td><td>Domain being checked</td></tr>
                             <tr><td><code>ssl_expiry_threshold_days</code></td><td class="field-type">int|null</td><td>Days before expiry to trigger <code>warn</code></td></tr>
                         </tbody>
@@ -1404,7 +1404,7 @@ console.log(<span class="code-key">await</span> res.json());</div>
 <!-- ─── INCIDENTS ────────────────────────────────────────────────── -->
 <h2 class="api-group-header">Incidents</h2>
 
-<p class="api-section-intro" style="color:var(--muted);font-size:0.92rem;margin:-0.5rem 0 1.5rem 0;">
+<p class="api-section-intro">
     Incidents are <strong>automatically created</strong> when a monitor goes down and <strong>automatically resolved</strong> when it recovers. They cannot be manually created, modified, or deleted via the API. These endpoints provide read-only access to your incident history.
 </p>
 
@@ -1582,7 +1582,7 @@ console.log(<span class="code-string">`Down since ${data.started_at}, status: ${
   "error": null
 }</div>
 
-                <p style="margin-top:1rem;color:var(--muted);font-size:0.88rem;">See <a href="#list-incidents" onclick="scrollToSection(event,'list-incidents')">List Incidents</a> for the complete field reference.</p>
+                <p class="api-helper-text">See <a href="#list-incidents" onclick="scrollToSection(event,'list-incidents')">List Incidents</a> for the complete field reference.</p>
             </div>
         </div>
     </div>
@@ -1631,7 +1631,7 @@ User-Agent: StatusRooster/1.0</div>
             </table>
         </details>
 
-        <p style="margin-top:1rem;"><strong>Example receiver:</strong></p>
+        <p class="api-helper-text api-helper-text--mt-lg"><strong>Example receiver:</strong></p>
         <div class="code-tabbed" data-tabs>
             <div class="code-tab-bar">
                 <button onclick="switchTab(this,'curl')">curl</button>
@@ -1781,7 +1781,7 @@ app.post(<span class="code-string">"/webhooks/statusrooster"</span>, (req, res) 
     <div class="api-section">
         <h2>Rate Limits</h2>
         <p>No strict rate limits are enforced today. Please keep polling under <strong>60 requests per minute</strong> — once per minute is sufficient for dashboard-style polling. Abusive usage may be throttled or blocked without notice.</p>
-        <p style="color:var(--muted);font-size:0.88rem;">The heartbeat ping endpoint (<code>/api/ping/{id}</code>) is excluded from this — ping as frequently as your cron job runs.</p>
+        <p class="api-helper-text">The heartbeat ping endpoint (<code>/api/ping/{id}</code>) is excluded from this — ping as frequently as your cron job runs.</p>
     </div>
 </div>
 
