@@ -91,6 +91,14 @@ async def public_url_check(request: Request):
     # Rate limiting by client IP
     client_ip = request.client.host if request.client else "unknown"
     now_ts = time.monotonic()
+
+    # Prune stale IPs to prevent unbounded memory growth (#21)
+    if len(_url_check_rate) > 1000:
+        cutoff = now_ts - _URL_CHECK_WINDOW
+        stale = [ip for ip, ts_list in _url_check_rate.items() if not any(t > cutoff for t in ts_list)]
+        for ip in stale:
+            del _url_check_rate[ip]
+
     hits = _url_check_rate.get(client_ip, [])
     hits = [t for t in hits if now_ts - t < _URL_CHECK_WINDOW]
     if len(hits) >= _URL_CHECK_LIMIT:
