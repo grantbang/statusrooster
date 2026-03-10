@@ -225,8 +225,35 @@ def get_monitor_by_slug(db, slug: str) -> dict | None:
 
 
 def get_all_monitors(db) -> list[dict]:
-    """Get ALL monitors across all users (for cron check)."""
+    """Get ALL monitors across all users (for cron check).
+    
+    Deprecated: use get_due_monitors() for cron/checker use cases.
+    Kept for backwards compatibility with any other callers.
+    """
     docs = db.collection(COLLECTION).get()
+    monitors = []
+    for doc in docs:
+        m = doc.to_dict()
+        m["id"] = doc.id
+        monitors.append(m)
+    return monitors
+
+
+def get_due_monitors(db) -> list[dict]:
+    """Get monitors that are candidates for checking (not paused).
+    
+    Filters paused=False at the Firestore query level to avoid loading
+    every monitor into memory. The interval check (is it time to run?)
+    is still done in Python since it requires per-monitor arithmetic.
+    
+    Safety cap: .limit(500) prevents runaway memory use if the collection grows large.
+    """
+    docs = (
+        db.collection(COLLECTION)
+        .where("paused", "==", False)
+        .limit(500)
+        .get()
+    )
     monitors = []
     for doc in docs:
         m = doc.to_dict()

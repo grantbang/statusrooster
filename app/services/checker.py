@@ -8,7 +8,7 @@ import logging
 import random
 from datetime import datetime, timezone, timedelta
 from app.database import get_db
-from app.models.monitor import get_all_monitors, update_monitor
+from app.models.monitor import get_all_monitors, get_due_monitors, update_monitor
 from app.models.check import create_check, create_checks_batch
 from app.models.incident import create_incident, resolve_incident, get_open_incident, log_incident_event
 from app.services.alerts import send_down_alert, send_recovery_alert, send_ssl_expiry_alert, send_keyword_alert, send_threshold_alert, send_webhook_notification
@@ -784,19 +784,18 @@ async def run_checks():
     """
     t_cycle_start = time.monotonic()
     db = get_db()
-    monitors = get_all_monitors(db)
+    # Use get_due_monitors() — filters paused=False at Firestore level,
+    # capped at 500 monitors to prevent memory blowout as the collection grows.
+    monitors = get_due_monitors(db)
 
     results = {"total": len(monitors), "up": 0, "down": 0, "skipped": 0}
 
     now = datetime.now(timezone.utc)
 
-    # Phase 1: Filter monitors that are due for checking
+    # Phase 1: Filter monitors that are due for checking (interval elapsed)
+    # Note: paused monitors are already excluded by get_due_monitors()
     due_monitors = []
     for monitor in monitors:
-        if monitor.get("paused", False):
-            results["skipped"] += 1
-            continue
-
         check_interval = monitor.get("check_interval", 300)
         last_checked = monitor.get("last_checked")
         if last_checked:
