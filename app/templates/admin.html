@@ -20,7 +20,10 @@
       <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0;">Admin Dashboard</h1>
       <p style="color: var(--muted); margin: 0.25rem 0 0; font-size: 0.875rem;">Internal KPIs — not visible to users</p>
     </div>
-    <span style="margin-left: auto; background: var(--danger); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 4px; letter-spacing: 0.05em;">ADMIN ONLY</span>
+    <span style="margin-left: auto; display:flex; align-items:center; gap:0.75rem;">
+      <span style="color:var(--muted); font-size:0.75rem;">Refreshes in <span id="refresh-countdown">60s</span></span>
+      <span style="background: var(--danger); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 4px; letter-spacing: 0.05em;">ADMIN ONLY</span>
+    </span>
   </div>
 
   <!-- KPI Cards -->
@@ -279,5 +282,20 @@ function switchTab(name) {
     document.getElementById('tab-' + t).classList.toggle('admin-tab--active', t === name);
   });
 }
+
+// Auto-refresh the page every 60s to keep KPIs live
+// Preserve active tab across refresh
+const TAB_KEY = 'admin_active_tab';
+const activeTab = sessionStorage.getItem(TAB_KEY) || 'overview';
+switchTab(activeTab);
+['overview','users','monitors'].forEach(t => {
+  document.getElementById('tab-' + t).addEventListener('click', () => sessionStorage.setItem(TAB_KEY, t));
+});
+setTimeout(() => location.reload(), 60000);
+
+// Show countdown timer
+const timerEl = document.getElementById('refresh-countdown');
+let secs = 60;
+setInterval(() => { secs--; if (timerEl) timerEl.textContent = secs + 's'; }, 1000);
 </script>
 {% endblock %}
