@@ -215,15 +215,17 @@
             <!-- Name -->
             <span class="monitor-name" title="{{ m.name }}">{{ m.name }}</span>
 
-            <!-- 30-day uptime bars -->
+            <!-- 30-day uptime bars (oldest left → newest right) -->
+            {% set sorted_bars = daily_bars | sort(attribute='date') %}
+            {% set bars_slice = sorted_bars[-30:] %}
             <div class="d-uptime-bars" title="30-day uptime">
-                {% for bar in daily_bars[-30:] %}
+                {% for bar in bars_slice %}
                     {% set bar_total = bar.get('total', 0) %}
                     {% set bar_up = bar.get('up', 0) %}
                     {% set pct = (bar_up / bar_total * 100) if bar_total > 0 else -1 %}
                     <div class="d-uptime-bar {% if pct < 0 %}bar-nodata{% elif pct >= 99.5 %}bar-up{% elif pct >= 95 %}bar-warn{% else %}bar-down{% endif %}" title="{{ bar.get('date', '') }}: {{ '%.1f' | format(pct) if pct >= 0 else 'No data' }}%"></div>
                 {% endfor %}
-                {% for _ in range(30 - daily_bars[-30:]|length) %}
+                {% for _ in range(30 - bars_slice|length) %}
                     <div class="d-uptime-bar bar-nodata" title="No data"></div>
                 {% endfor %}
             </div>

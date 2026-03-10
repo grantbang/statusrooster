@@ -168,22 +168,36 @@
         <div class="md-uptime-bars" id="uptimeBars24h">
             {% for bar in hourly_bars %}
             <div class="md-bar {% if bar.pct is none %}bar-nodata{% elif bar.pct >= 99.5 %}bar-up{% elif bar.pct >= 50 %}bar-degraded{% else %}bar-down{% endif %}"
-                 title="{{ bar.date }}: {{ bar.pct }}%"></div>
+                 data-tip="{{ bar.date }}"
+                 data-tip-pct="{% if bar.pct is not none %}{{ '%.1f'|format(bar.pct) }}%{% else %}No data{% endif %}"
+                 data-tip-status="{% if bar.pct is none %}nodata{% elif bar.pct >= 99.5 %}up{% elif bar.pct >= 50 %}degraded{% else %}down{% endif %}"></div>
             {% endfor %}
         </div>
         <!-- 7d daily bars (last 7) -->
         <div class="md-uptime-bars" id="uptimeBars7d" style="display:none;">
             {% for bar in daily_bars[-7:] %}
             <div class="md-bar {% if bar.pct is none %}bar-nodata{% elif bar.pct >= 99.5 %}bar-up{% elif bar.pct >= 50 %}bar-degraded{% else %}bar-down{% endif %}"
-                 title="{{ bar.date }}: {{ bar.pct }}%"></div>
+                 data-tip="{{ bar.date }}"
+                 data-tip-pct="{% if bar.pct is not none %}{{ '%.1f'|format(bar.pct) }}%{% else %}No data{% endif %}"
+                 data-tip-status="{% if bar.pct is none %}nodata{% elif bar.pct >= 99.5 %}up{% elif bar.pct >= 50 %}degraded{% else %}down{% endif %}"></div>
             {% endfor %}
         </div>
         <!-- 30d daily bars -->
         <div class="md-uptime-bars" id="uptimeBars30d" style="display:none;">
             {% for bar in daily_bars %}
             <div class="md-bar {% if bar.pct is none %}bar-nodata{% elif bar.pct >= 99.5 %}bar-up{% elif bar.pct >= 50 %}bar-degraded{% else %}bar-down{% endif %}"
-                 title="{{ bar.date }}: {{ bar.pct }}%"></div>
+                 data-tip="{{ bar.date }}"
+                 data-tip-pct="{% if bar.pct is not none %}{{ '%.1f'|format(bar.pct) }}%{% else %}No data{% endif %}"
+                 data-tip-status="{% if bar.pct is none %}nodata{% elif bar.pct >= 99.5 %}up{% elif bar.pct >= 50 %}degraded{% else %}down{% endif %}"></div>
             {% endfor %}
+        </div>
+        <!-- Floating tooltip (shared) -->
+        <div class="md-bar-tooltip" id="mdBarTooltip" aria-hidden="true">
+            <div class="md-bar-tip-label" id="mdBarTipLabel"></div>
+            <div class="md-bar-tip-row">
+                <span class="md-bar-tip-dot" id="mdBarTipDot"></span>
+                <span class="md-bar-tip-pct" id="mdBarTipPct"></span>
+            </div>
         </div>
     </div>
 </div>
@@ -881,5 +895,57 @@ function exportIncidents() {
     a.click();
     URL.revokeObjectURL(url);
 }
+
+/* ── Uptime bar tooltips ─────────────────────────────── */
+(function () {
+    const tip = document.getElementById('mdBarTooltip');
+    const tipLabel = document.getElementById('mdBarTipLabel');
+    const tipDot   = document.getElementById('mdBarTipDot');
+    const tipPct   = document.getElementById('mdBarTipPct');
+    if (!tip) return;
+
+    const STATUS_COLOR = { up: '#22c55e', degraded: '#f59e0b', down: '#ef4444', nodata: '#d1d5db' };
+    const STATUS_LABEL = { up: 'Operational', degraded: 'Degraded', down: 'Down', nodata: 'No data' };
+
+    let hideTimer;
+
+    document.querySelectorAll('.md-bar[data-tip]').forEach(bar => {
+        bar.addEventListener('mouseenter', function (e) {
+            clearTimeout(hideTimer);
+            const label   = this.dataset.tip;
+            const pct     = this.dataset.tipPct;
+            const status  = this.dataset.tipStatus || 'nodata';
+
+            tipLabel.textContent = label;
+            tipDot.style.background = STATUS_COLOR[status] || '#d1d5db';
+            tipPct.textContent = pct === 'No data' ? 'No data' : `${pct} uptime — ${STATUS_LABEL[status] || ''}`;
+
+            tip.classList.add('md-bar-tooltip--visible');
+            positionTip(e);
+        });
+
+        bar.addEventListener('mousemove', function (e) {
+            positionTip(e);
+        });
+
+        bar.addEventListener('mouseleave', function () {
+            hideTimer = setTimeout(() => tip.classList.remove('md-bar-tooltip--visible'), 80);
+        });
+    });
+
+    function positionTip(e) {
+        const TIP_W = tip.offsetWidth;
+        const TIP_H = tip.offsetHeight;
+        const MARGIN = 10;
+        let x = e.clientX - TIP_W / 2;
+        let y = e.clientY - TIP_H - 12;
+        // clamp horizontally
+        x = Math.max(MARGIN, Math.min(x, window.innerWidth - TIP_W - MARGIN));
+        // flip below if not enough room above
+        if (y < MARGIN) y = e.clientY + 16;
+        tip.style.left = x + 'px';
+        tip.style.top  = y + 'px';
+    }
+})();
 </script>
 {% endblock %}
