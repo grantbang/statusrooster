@@ -758,10 +758,11 @@ async def add_monitor(
         follow_redirects=follow_redirects,
     )
 
-    # For heartbeat monitors, set the ping URL on the monitor doc
+    # For heartbeat monitors, set the ping URL (with token) on the monitor doc
     if monitor_type == "heartbeat":
         from app.config import settings
-        ping_url = f"{settings.APP_URL}/api/ping/{monitor['id']}"
+        ping_token = monitor.get("ping_token", "")
+        ping_url = f"{settings.APP_URL}/api/ping/{monitor['id']}?token={ping_token}"
         update_monitor(db, monitor["id"], {"url": ping_url, "ping_url": ping_url})
         # Redirect with ping URL so the dashboard can show the setup modal
         from urllib.parse import quote

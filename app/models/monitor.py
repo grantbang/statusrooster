@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import re
+import secrets
 import uuid
 
 COLLECTION = "monitors"
@@ -111,6 +112,7 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
         "heartbeat_interval": heartbeat_interval,    # Expected ping interval in seconds
         "heartbeat_grace_period": heartbeat_grace_period if monitor_type == "heartbeat" else None,
         "last_heartbeat": None,                      # Last ping timestamp
+        "ping_token": secrets.token_urlsafe(32) if monitor_type == "heartbeat" else None,  # Secret token for heartbeat auth
         # SSL monitor fields
         "ssl_domain": ssl_domain,                    # Domain to check SSL for (ssl type only)
         "ssl_expiry_threshold_days": ssl_expiry_threshold_days,  # Days before expiry to warn
@@ -176,7 +178,7 @@ def record_heartbeat(db, monitor_id: str) -> dict | None:
         "last_checked": now,
         "status": "up",
         "last_status_change": now if m.get("status") != "up" else m.get("last_status_change", now),
-    }, merge=True)
+    })
     m["last_heartbeat"] = now
     m["status"] = "up"
     return m
