@@ -17,7 +17,24 @@
         <a href="/signup" class="l-btn-primary">Start monitoring free</a>
         <a href="/docs/api" class="l-btn-ghost">View API docs</a>
     </div>
-    <p class="l-hero-meta">5 free monitors &middot; No credit card &middot; Full API access</p>
+    <p class="l-hero-trust">No credit card &middot; 5 monitors free forever &middot; Cancel anytime.</p>
+
+    <!-- Stat strip — 30 bars = 30 days uptime visual -->
+    <div class="l-hero-stat-strip">
+        <div class="l-stat-strip-bars" aria-hidden="true">
+            <span class="l-ssb l-ssb-up"></span><span class="l-ssb l-ssb-up"></span><span class="l-ssb l-ssb-up"></span>
+            <span class="l-ssb l-ssb-up"></span><span class="l-ssb l-ssb-up"></span><span class="l-ssb l-ssb-up"></span>
+            <span class="l-ssb l-ssb-up"></span><span class="l-ssb l-ssb-up"></span><span class="l-ssb l-ssb-warn"></span>
+            <span class="l-ssb l-ssb-up"></span><span class="l-ssb l-ssb-up"></span><span class="l-ssb l-ssb-up"></span>
+            <span class="l-ssb l-ssb-up"></span><span class="l-ssb l-ssb-up"></span><span class="l-ssb l-ssb-up"></span>
+            <span class="l-ssb l-ssb-up"></span><span class="l-ssb l-ssb-down"></span><span class="l-ssb l-ssb-up"></span>
+            <span class="l-ssb l-ssb-up"></span><span class="l-ssb l-ssb-up"></span><span class="l-ssb l-ssb-up"></span>
+            <span class="l-ssb l-ssb-up"></span><span class="l-ssb l-ssb-up"></span><span class="l-ssb l-ssb-up"></span>
+            <span class="l-ssb l-ssb-up"></span><span class="l-ssb l-ssb-up"></span><span class="l-ssb l-ssb-up"></span>
+            <span class="l-ssb l-ssb-up"></span><span class="l-ssb l-ssb-up"></span><span class="l-ssb l-ssb-up"></span>
+        </div>
+        <span class="l-stat-strip-label">99.93% uptime across 30 days</span>
+    </div>
 
     <div class="l-hero-code">
         <div class="l-code">
@@ -101,6 +118,147 @@
         <div class="result-cta">
             <p>Want to know the moment this site goes down?</p>
             <a href="/signup" id="resultCtaLink">Monitor this site free</a>
+        </div>
+    </div>
+</section>
+
+<!-- How it works (11I.2) -->
+<section class="l-howto">
+    <h2>Up and running in 30 seconds.</h2>
+    <p class="l-howto-sub">No agents to install. No config files. Works with any URL.</p>
+    <div class="l-howto-steps">
+        <div class="l-howto-step">
+            <div class="l-howto-num">1</div>
+            <div class="l-howto-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            </div>
+            <h3>Add a URL</h3>
+            <p>Paste any URL — your website, API, or cron job. Takes 30 seconds. No credit card required.</p>
+        </div>
+        <div class="l-howto-connector" aria-hidden="true"></div>
+        <div class="l-howto-step">
+            <div class="l-howto-num">2</div>
+            <div class="l-howto-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <h3>We check every 5 minutes</h3>
+            <p>StatusRooster checks your endpoint continuously, verifies SSL, and retries before alerting to eliminate false positives.</p>
+        </div>
+        <div class="l-howto-connector" aria-hidden="true"></div>
+        <div class="l-howto-step">
+            <div class="l-howto-num">3</div>
+            <div class="l-howto-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            </div>
+            <h3>Get alerted instantly</h3>
+            <p>The moment something breaks, you hear about it — via email, Slack, SMS, or webhook. Average alert time: under 30 seconds.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Social proof rail (11I.6) -->
+<section class="l-social-proof">
+    <div class="l-sp-stats">
+        <div class="l-sp-stat">
+            <span class="l-sp-num">1,000+</span>
+            <span class="l-sp-label">URLs monitored</span>
+        </div>
+        <div class="l-sp-divider" aria-hidden="true"></div>
+        <div class="l-sp-stat">
+            <span class="l-sp-num">99.9%</span>
+            <span class="l-sp-label">Alert delivery rate</span>
+        </div>
+        <div class="l-sp-divider" aria-hidden="true"></div>
+        <div class="l-sp-stat">
+            <span class="l-sp-num">&lt;30s</span>
+            <span class="l-sp-label">Average alert time</span>
+        </div>
+        <div class="l-sp-divider" aria-hidden="true"></div>
+        <div class="l-sp-stat">
+            <span class="l-sp-num">4 types</span>
+            <span class="l-sp-label">HTTP · SSL · Heartbeat · JSON</span>
+        </div>
+    </div>
+</section>
+
+<!-- Screenshot showcase (11I.3) -->
+<section class="l-screenshots">
+    <h2>See exactly what you're getting.</h2>
+    <p class="l-screenshots-sub">A dashboard that doesn't make you squint. Every monitor at a glance — status, uptime %, response time, SSL health.</p>
+    <div class="l-ss-tabs" role="tablist">
+        <button class="l-ss-tab active" onclick="switchTab(this,'dashboard')" role="tab" aria-selected="true">Dashboard</button>
+        <button class="l-ss-tab" onclick="switchTab(this,'detail')" role="tab" aria-selected="false">Monitor detail</button>
+        <button class="l-ss-tab" onclick="switchTab(this,'status')" role="tab" aria-selected="false">Status page</button>
+    </div>
+    <div class="l-ss-frame">
+        <div class="l-ss-panel active" id="ss-dashboard">
+            <img src="/static/screenshots/dashboard.svg" alt="StatusRooster dashboard — monitor list with status, uptime bars, response time" loading="lazy">
+            <p class="l-ss-caption">Every monitor in one view — status dot, 30-day uptime bars, response time, and quick actions.</p>
+        </div>
+        <div class="l-ss-panel" id="ss-detail">
+            <img src="/static/screenshots/monitor_detail.svg" alt="Monitor detail page — response time chart, uptime slicer, incident history" loading="lazy">
+            <p class="l-ss-caption">Deep-dive on any monitor: response time chart, 24h/7d/30d uptime slicer, and full incident history.</p>
+        </div>
+        <div class="l-ss-panel" id="ss-status">
+            <img src="/static/screenshots/status_page.svg" alt="Public status page — clean public view with 90-day uptime history" loading="lazy">
+            <p class="l-ss-caption">Share a clean public status page with 90-day history, incident log, and live status — no account needed to view.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Transparency (11I.4) -->
+<section class="l-transparency">
+    <h2>No black boxes. Here's exactly what we check.</h2>
+    <p class="l-transparency-sub">Every monitor type runs a deterministic check cycle. Here's what happens under the hood.</p>
+    <div class="l-trans-grid">
+        <div class="l-trans-card">
+            <div class="l-trans-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            <h3>HTTP / HTTPS</h3>
+            <ul>
+                <li>GET (or custom method) to your URL</li>
+                <li>Checks status code matches expected</li>
+                <li>Optional keyword match in response body</li>
+                <li>Alert if response exceeds threshold ms</li>
+                <li>Retries once before marking down</li>
+            </ul>
+        </div>
+        <div class="l-trans-card">
+            <div class="l-trans-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            </div>
+            <h3>SSL Certificate</h3>
+            <ul>
+                <li>Checks certificate validity on every run</li>
+                <li>Alerts when expiry is within your threshold</li>
+                <li>Catches mismatched domains &amp; chains</li>
+                <li>Works on any port (443, 8443, custom)</li>
+            </ul>
+        </div>
+        <div class="l-trans-card">
+            <div class="l-trans-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <h3>Heartbeat / Cron</h3>
+            <ul>
+                <li>Your job pings a unique URL on each run</li>
+                <li>Missed ping after interval + grace period = alert</li>
+                <li>Token-secured URL (not just an ID)</li>
+                <li>Perfect for scheduled scripts &amp; background jobs</li>
+            </ul>
+        </div>
+        <div class="l-trans-card">
+            <div class="l-trans-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            </div>
+            <h3>JSON / API</h3>
+            <ul>
+                <li>Full request with custom headers &amp; auth</li>
+                <li>Assert on JSON fields with dot-path selectors</li>
+                <li>Supports equals, contains, gt/lt comparisons</li>
+                <li>Alerts on assertion failure even on a 200 OK</li>
+            </ul>
         </div>
     </div>
 </section>
@@ -293,6 +451,15 @@ async function checkUrl(e) {
     btn.disabled = false;
     btn.textContent = 'Check now';
     return false;
+}
+
+/* ── Screenshot tab switcher ── */
+function switchTab(btn, id) {
+    document.querySelectorAll('.l-ss-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
+    document.querySelectorAll('.l-ss-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected','true');
+    document.getElementById('ss-' + id).classList.add('active');
 }
 </script>
 {% endblock %}

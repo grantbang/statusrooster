@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" width="1280" height="800">
+  <rect width="1280" height="800" fill="#f8f9fb"/>
+  <!-- Sidebar -->
+  <rect width="220" height="800" fill="#fff" stroke="#e5e7eb" stroke-width="1"/>
+  <rect x="20" y="24" width="36" height="36" rx="8" fill="#6366f1"/>
+  <text x="62" y="47" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#111827">StatusRooster</text>
+  <rect x="12" y="80" width="196" height="36" rx="8" fill="#ede9fe"/>
+  <circle cx="34" cy="98" r="7" fill="#6366f1"/>
+  <text x="48" y="102" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#6366f1">Monitoring</text>
+  <text x="28" y="138" font-family="system-ui,sans-serif" font-size="13" fill="#6b7280">Incidents</text>
+  <text x="28" y="170" font-family="system-ui,sans-serif" font-size="13" fill="#6b7280">Status Pages</text>
+  <text x="28" y="202" font-family="system-ui,sans-serif" font-size="13" fill="#6b7280">Settings</text>
+  <!-- Main content -->
+  <!-- Status strip -->
+  <rect x="236" y="24" width="1028" height="64" rx="12" fill="#f0fdf4" stroke="#86efac" stroke-width="1"/>
+  <circle cx="268" cy="56" r="7" fill="#22c55e"/>
+  <text x="284" y="61" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#15803d">All systems operational</text>
+  <text x="900" y="53" font-family="system-ui,sans-serif" font-size="12" fill="#6b7280">99.97% uptime</text>
+  <text x="1010" y="53" font-family="system-ui,sans-serif" font-size="12" fill="#6b7280">143ms avg</text>
+  <text x="1110" y="53" font-family="system-ui,sans-serif" font-size="12" fill="#6b7280">0 incidents today</text>
+  <!-- Monitors heading -->
+  <text x="236" y="118" font-family="system-ui,sans-serif" font-size="18" font-weight="800" fill="#111827">Monitors. 10</text>
+  <rect x="1150" y="100" width="114" height="32" rx="8" fill="#6366f1"/>
+  <text x="1178" y="121" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#fff">+ Add monitor</text>
+  <!-- Monitor rows -->
+  <!-- Row 1 - up -->
+  <rect x="236" y="136" width="1028" height="64" rx="10" fill="#fff" stroke="#e5e7eb" stroke-width="1"/>
+  <circle cx="276" cy="168" r="6" fill="#22c55e"/>
+  <text x="294" y="173" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#111827">CNN.com</text>
+  <text x="294" y="191" font-family="system-ui,sans-serif" font-size="11" fill="#6b7280">https://cnn.com</text>
+  <!-- bars -->
+  <g transform="translate(650,152)">
+    <rect x="0" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="5" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="10" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="15" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="20" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="25" y="4" width="3" height="12" rx="1" fill="#f59e0b"/>
+    <rect x="30" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="35" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="40" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="45" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="50" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="55" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="60" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="65" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="70" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="75" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="80" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="85" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="90" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="95" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="100" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="105" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="110" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="115" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="120" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="125" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="130" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="135" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="140" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="145" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+  </g>
+  <text x="1170" y="173" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#15803d">99.97%</text>
+  <!-- Row 2 - down -->
+  <rect x="236" y="210" width="1028" height="64" rx="10" fill="#fff" stroke="#fca5a5" stroke-width="1.5"/>
+  <circle cx="276" cy="242" r="6" fill="#ef4444"/>
+  <text x="294" y="247" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#111827">My API — Production</text>
+  <text x="294" y="265" font-family="system-ui,sans-serif" font-size="11" fill="#6b7280">https://api.myapp.com</text>
+  <g transform="translate(650,226)">
+    <rect x="0" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="5" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="10" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="15" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="20" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="25" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="30" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="35" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="40" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="45" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="50" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="55" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="60" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="65" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="70" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="75" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="80" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="85" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="90" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="95" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="100" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="105" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="110" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="115" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="120" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="125" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="130" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="135" y="0" width="3" height="16" rx="1" fill="#ef4444"/>
+    <rect x="140" y="0" width="3" height="16" rx="1" fill="#ef4444"/>
+    <rect x="145" y="0" width="3" height="16" rx="1" fill="#ef4444"/>
+  </g>
+  <text x="1178" y="247" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#ef4444">DOWN</text>
+  <!-- Row 3 - up -->
+  <rect x="236" y="284" width="1028" height="64" rx="10" fill="#fff" stroke="#e5e7eb" stroke-width="1"/>
+  <circle cx="276" cy="316" r="6" fill="#22c55e"/>
+  <text x="294" y="321" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#111827">Google</text>
+  <text x="294" y="339" font-family="system-ui,sans-serif" font-size="11" fill="#6b7280">https://google.com</text>
+  <g transform="translate(650,300)">
+    <rect x="0" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="5" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="10" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="15" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="20" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="25" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="30" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="35" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="40" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="45" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="50" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="55" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="60" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="65" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="70" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="75" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="80" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="85" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="90" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="95" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="100" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="105" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="110" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="115" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="120" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="125" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="130" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="135" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="140" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+    <rect x="145" y="0" width="3" height="16" rx="1" fill="#22c55e"/>
+  </g>
+  <text x="1165" y="321" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#15803d">100.00%</text>
+  <!-- Row 4 - warn -->
+  <rect x="236" y="358" width="1028" height="64" rx="10" fill="#fffbeb" stroke="#fde68a" stroke-width="1"/>
+  <circle cx="276" cy="390" r="6" fill="#f59e0b"/>
+  <text x="294" y="395" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#111827">SSL Check — statusrooster.com</text>
+  <text x="294" y="413" font-family="system-ui,sans-serif" font-size="11" fill="#6b7280">Expires in 28 days</text>
+  <text x="1145" y="395" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#b45309">WARN</text>
+  <!-- Row 5 - up heartbeat -->
+  <rect x="236" y="432" width="1028" height="64" rx="10" fill="#fff" stroke="#e5e7eb" stroke-width="1"/>
+  <circle cx="276" cy="464" r="6" fill="#22c55e"/>
+  <text x="294" y="469" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#111827">Daily backup cron</text>
+  <text x="294" y="487" font-family="system-ui,sans-serif" font-size="11" fill="#6b7280">Heartbeat · Expected every 24h</text>
+  <text x="1165" y="469" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#15803d">99.80%</text>
+</svg>

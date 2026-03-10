@@ -888,7 +888,7 @@ Layout order (top to bottom):
 - [x] **11K.T4** Paused monitor → button not shown at all
 - [x] **11K.T5** SSL monitor check → chip shows days remaining
 
-### 11I. Landing Page Overhaul 🔲
+### 11I. Landing Page Overhaul ✅
 
 > **Goal:** Make the landing page sell the product at first glance. Current page is text-heavy with no visuals, no social proof, and a weak hero. Fix: real app screenshots, a "How it works" flow, a transparency/trust section, and tighter copy. This is the user's first touch with the product — it needs to close.
 
@@ -909,7 +909,7 @@ Layout order (top to bottom):
 
 **Build items:**
 
-- [ ] **11I.1** Take 4 real screenshots of the live app for use in landing page:
+- [x] **11I.1** Take 4 real screenshots of the live app for use in landing page:
   - Dashboard (with monitors in various states — up, down, warning)
   - Monitor detail (response time chart visible)
   - Incident detail (timeline + details card)
@@ -917,21 +917,21 @@ Layout order (top to bottom):
   - Save as `app/static/screenshots/dashboard.png`, `monitor_detail.png`, `incident_detail.png`, `status_page.png`
   - Size: 1280×800 or 1440×900, retina-quality if possible
 
-- [ ] **11I.2** Add "How it works" section (3-step flow) to `landing.html`:
+- [x] **11I.2** Add "How it works" section (3-step flow) to `landing.html`:
   - Step 1: Add a URL (30 seconds, no credit card)
   - Step 2: We check every 5 minutes from multiple locations
   - Step 3: Get alerted the moment something breaks (email/Slack/SMS)
   - Simple numbered layout: icon + headline + one-sentence description
   - Place above the Features section
 
-- [ ] **11I.3** Add app screenshot showcase to `landing.html`:
+- [x] **11I.3** Add app screenshot showcase to `landing.html`:
   - Full-width or contained screenshot of dashboard (primary visual)
   - Caption: "Every monitor at a glance — status, uptime %, response time, SSL health"
   - Add a tabbed/clickable switcher with 3 tabs: Dashboard / Monitor Detail / Status Page
   - Use CSS tab switching (no JS framework) — tab click swaps `.active` class on screenshot panels
   - Place after "How it works"
 
-- [ ] **11I.4** Add "Transparency" section to `landing.html`:
+- [x] **11I.4** Add "Transparency" section to `landing.html`:
   - Headline: "No black boxes. Here's exactly what we check."
   - Show a simplified view of what happens on each check cycle:
     - HTTP check: what we test, what triggers an alert
@@ -941,18 +941,18 @@ Layout order (top to bottom):
   - Style: 2×2 grid of monitor type cards, each with icon + 2-3 bullet points
   - Developer-trust signal — show you're not hiding how it works
 
-- [ ] **11I.5** Strengthen hero section in `landing.html`:
+- [x] **11I.5** Strengthen hero section in `landing.html`:
   - Add a real screenshot or animated "status strip" (30 colored bars = 30 days uptime) as a visual hook next to/below the headline
   - Add a live stat line: "Currently monitoring X URLs across Y users" (can be static for now: "Monitoring 1,000+ URLs" or real if you expose an endpoint)
   - Tighten CTA — make "Start monitoring free" the dominant button; make "View API docs" secondary
   - Add trust line below CTAs: "No credit card. 5 monitors free forever. Cancel anytime."
 
-- [ ] **11I.6** Add social proof rail to `landing.html`:
+- [x] **11I.6** Add social proof rail to `landing.html`:
   - Simple section: 2-3 short testimonial quotes (real or placeholder marked as such)
   - OR: stat counter row: "1,000+ developers trust StatusRooster" / "99.9% alert delivery rate" / "< 30s alert time"
   - Place between "How it works" and the screenshot showcase
 
-- [ ] **11I.7** Add corresponding CSS to `style.css` for all new landing sections:
+- [x] **11I.7** Add corresponding CSS to `style.css` for all new landing sections:
   - `.l-howto` — 3-step row, numbered circles, responsive collapse to vertical
   - `.l-screenshots` — tab switcher, screenshot container, captions
   - `.l-transparency` — 2×2 monitor type grid, icon + bullets
@@ -960,13 +960,13 @@ Layout order (top to bottom):
   - All sections must use design tokens (`--brand`, `--text`, `--muted`, `--border`) — no hardcoded colors
 
 **Gate tests:**
-- [ ] **11I.T1** Screenshot files exist in `app/static/screenshots/` and render in the browser (no broken image icons)
-- [ ] **11I.T2** "How it works" section visible at `localhost:8080` — 3 steps, icons, correct copy
-- [ ] **11I.T3** Screenshot tabs work — clicking Dashboard/Monitor Detail/Status Page switches the visible screenshot
-- [ ] **11I.T4** Transparency section visible — 4 monitor type cards with bullets
-- [ ] **11I.T5** Hero has trust line below CTAs and at least one visual element (stat strip or screenshot)
-- [ ] **11I.T6** Mobile viewport (≤768px): all new sections stack correctly, no overflow, screenshots scale down
-- [ ] **11I.T7** Page load: screenshots are reasonable size (< 500KB each, webp preferred if possible)
+- [x] **11I.T1** Screenshot files exist in `app/static/screenshots/` and render in the browser (no broken image icons)
+- [x] **11I.T2** "How it works" section visible at `localhost:8080` — 3 steps, icons, correct copy
+- [x] **11I.T3** Screenshot tabs work — clicking Dashboard/Monitor Detail/Status Page switches the visible screenshot
+- [x] **11I.T4** Transparency section visible — 4 monitor type cards with bullets
+- [x] **11I.T5** Hero has trust line below CTAs and at least one visual element (stat strip or screenshot)
+- [x] **11I.T6** Mobile viewport (≤768px): all new sections stack correctly, no overflow, screenshots scale down
+- [x] **11I.T7** Page load: screenshots are reasonable size (< 500KB each, webp preferred if possible)
 
 ---
 
@@ -1235,7 +1235,7 @@ Layout order (top to bottom):
 | 19 | 11E: API & API Docs QA | 🔲 |
 | 18 | 11D: Admin dashboard | 🔲 |
 | 20 | 11K: Ping on demand | ✅ |
-| 21 | 11I: Landing page overhaul | 🔲 |
+| 21 | 11I: Landing page overhaul | ✅ |
 | 22 | 11J: SMS / Twilio verification | 🔲 |
 | 22 | Day 12: Testing & launch | 🔲 |
 
