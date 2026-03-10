@@ -15,15 +15,12 @@ async def cron_check(request: Request):
     Called by Cloud Scheduler every 60 seconds.
     Authenticated via shared secret in header or query param.
     """
-    # Verify request comes from Cloud Scheduler or authorized caller
+    # Verify request via shared secret only — no User-Agent fallback (security: spoofable)
     auth_header = request.headers.get("X-Cron-Secret", "")
     query_secret = request.query_params.get("secret", "")
 
     if auth_header != CRON_SECRET and query_secret != CRON_SECRET:
-        # Also accept Cloud Scheduler's OIDC token (checked via header)
-        user_agent = request.headers.get("User-Agent", "")
-        if "Google-Cloud-Scheduler" not in user_agent:
-            raise HTTPException(status_code=403, detail="Unauthorized cron request")
+        raise HTTPException(status_code=403, detail="Unauthorized cron request")
 
     results = await run_checks()
     return {"status": "completed", "results": results}

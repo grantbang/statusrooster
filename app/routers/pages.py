@@ -76,12 +76,32 @@ async def landing_page(request: Request, preview: str = None):
 # Public URL Check (landing page teaser)
 # ---------------------------------------------------------------------------
 
+# Rate limiter: max 10 requests per IP per 60 seconds
+_url_check_rate: dict[str, list] = {}
+_URL_CHECK_LIMIT = 10
+_URL_CHECK_WINDOW = 60  # seconds
+
 @router.post("/api/check-url")
 async def public_url_check(request: Request):
     """Public endpoint: check a single URL and return enriched status."""
     import httpx, time, re, ssl, socket
     from fastapi.responses import JSONResponse
     from datetime import datetime, timezone
+
+    # Rate limiting by client IP
+    client_ip = request.client.host if request.client else "unknown"
+    now_ts = time.monotonic()
+    hits = _url_check_rate.get(client_ip, [])
+    hits = [t for t in hits if now_ts - t < _URL_CHECK_WINDOW]
+    if len(hits) >= _URL_CHECK_LIMIT:
+        retry_after = int(_URL_CHECK_WINDOW - (now_ts - hits[0]))
+        return JSONResponse(
+            {"error": "Rate limit exceeded. Try again shortly.", "retry_after": retry_after},
+            status_code=429,
+            headers={"Retry-After": str(retry_after)},
+        )
+    hits.append(now_ts)
+    _url_check_rate[client_ip] = hits
 
     body = await request.json()
     url = body.get("url", "").strip()
@@ -90,6 +110,13 @@ async def public_url_check(request: Request):
         return JSONResponse({"error": "URL is required"}, status_code=400)
     if not re.match(r'^https?://', url):
         url = f"https://{url}"
+
+    # SSRF protection — block private/internal IPs
+    try:
+        from app.services.checker import validate_url_not_internal
+        validate_url_not_internal(url)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
 
     # Rich check — we do it inline to grab headers + SSL info
     result = {

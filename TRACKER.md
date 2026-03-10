@@ -311,6 +311,24 @@ uvicorn app.main:app --reload --port 8080
 
 ---
 
+## ⚠️ Security & Scalability Sprint — Work Off FEEDBACK.md
+
+> **Added Mar 9, 2026.** A full codebase audit (Claude Opus 4.6) identified 6 P1 issues that must be fixed before launch. **Work off the checklist in `FEEDBACK.md` until all P1 items (#1–#6) are marked complete, then address P2 items (#7–#13) in the post-launch sprint.** Items are ordered by severity — tackle them sequentially.
+
+| # | Priority | Issue | File(s) |
+|---|----------|-------|---------|
+| **#1** | 🔴 P1 | Cron auth bypass — remove User-Agent fallback | `routers/cron.py` |
+| **#2** | 🔴 P1 | JWT secret default — raise on startup if not set | `config.py` |
+| **#3** | 🔴 P1 | SSRF protection — block private/internal IPs | `services/checker.py`, `routers/pages.py` |
+| **#4** | 🔴 P1 | Rate limit `/api/check-url` — prevent open proxy abuse | `routers/pages.py` |
+| **#5** | 🔴 P1 | Replace `get_all_monitors()` — query only due monitors | `models/monitor.py`, `services/checker.py` |
+| **#6** | 🔴 P1 | Heartbeat ping secret — add `ping_token` validation | `routers/heartbeat.py`, `models/monitor.py` |
+| **#7–#13** | 🟡 P2 | Post-launch sprint — see `FEEDBACK.md` for details | various |
+
+---
+
+---
+
 ## UI Redesign — Add/Edit Monitor Forms
 
 > **Problem**: The current Add/Edit forms look "cheap and AI-generated" — every field is stacked identically in plain white cards with no visual hierarchy, grouping, or breathing room. The redesign organizes fields into logical **card sections** with clear headings, uses 2-column grids where natural, adds subtle visual polish (section icons, better spacing, pro badges), and makes the experience feel hand-crafted.
@@ -822,7 +840,7 @@ Layout order (top to bottom):
 - [x] **11G.T4** From incident detail → click "View monitor" → lands on correct monitor detail page
 - [x] **11G.T5** Dashboard card incident count is clickable and links to filtered incidents list
 
-### 11H. Replace Emoji with Inline SVG Icons 🔲
+### 11H. Replace Emoji with Inline SVG Icons ✅
 
 > **Goal:** Remove all emoji used as UI icons (🌐 💓 📄 🔒 ♥ 📧 💬 🔗) and replace with clean inline SVG. Emoji render inconsistently across OS/browser (especially on Windows), look unprofessional in a product context, and clash with the design system. Brand icons (Slack, GitHub) get their actual brand SVG mark, not a chat bubble.
 
@@ -839,18 +857,18 @@ Layout order (top to bottom):
 | Incidents list — cause column | ♥ (heartbeat badge) | SVG |
 
 **Build items:**
-- [ ] **11H.1** Define reusable SVG snippets for: HTTP (globe/link), Heartbeat (pulse/activity), JSON/API (curly-braces or `{}`), SSL (lock), Email (envelope), Slack (brand hash), Webhook (chain link)
-- [ ] **11H.2** `add_monitor.html` — swap type selector emoji + notification channel emoji
-- [ ] **11H.3** `edit_monitor.html` — same swaps as add form
-- [ ] **11H.4** `monitor_detail.html` — type label, incident cause badge, config section titles
-- [ ] **11H.5** `incident_detail.html` + `incidents.html` — type field and cause column
+- [x] **11H.1** Define reusable SVG snippets for: HTTP (globe/link), Heartbeat (pulse/activity), JSON/API (curly-braces or `{}`), SSL (lock), Email (envelope), Slack (brand hash), Webhook (chain link)
+- [x] **11H.2** `add_monitor.html` — swap type selector emoji + notification channel emoji
+- [x] **11H.3** `edit_monitor.html` — same swaps as add form
+- [x] **11H.4** `monitor_detail.html` — type label, incident cause badge, config section titles
+- [x] **11H.5** `incident_detail.html` + `incidents.html` — type field and cause column
 
 **Gate tests:**
-- [ ] **11H.T1** Add monitor form — all 4 type buttons show SVG icons, no emoji
-- [ ] **11H.T2** Notification channels — Email/Slack/Webhook show proper SVG, no emoji
-- [ ] **11H.T3** Monitor detail — type label and incident cause use SVG
-- [ ] **11H.T4** Incident detail + incidents list — no emoji anywhere visible
-- [ ] **11H.T5** Spot-check on a Windows user-agent (or Chrome/Firefox) — icons render correctly
+- [x] **11H.T1** Add monitor form — all 4 type buttons show SVG icons, no emoji
+- [x] **11H.T2** Notification channels — Email/Slack/Webhook show proper SVG, no emoji
+- [x] **11H.T3** Monitor detail — type label and incident cause use SVG
+- [x] **11H.T4** Incident detail + incidents list — no emoji anywhere visible
+- [x] **11H.T5** Spot-check on a Windows user-agent (or Chrome/Firefox) — icons render correctly
 
 ### 11K. Ping On Demand ✅
 

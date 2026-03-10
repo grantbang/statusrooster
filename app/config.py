@@ -45,3 +45,12 @@ class Settings:
 
 
 settings = Settings()
+
+_INSECURE_JWT_DEFAULT = "change-me-to-a-random-string"
+if settings.is_production and (
+    not settings.JWT_SECRET or settings.JWT_SECRET == _INSECURE_JWT_DEFAULT
+):
+    raise RuntimeError(
+        "JWT_SECRET must be set to a strong random value in production. "
+        "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+    )

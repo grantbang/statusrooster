@@ -15,6 +15,52 @@ from app.services.alerts import send_down_alert, send_recovery_alert, send_ssl_e
 
 logger = logging.getLogger(__name__)
 
+# ── SSRF Protection ────────────────────────────────────────────────────────────
+import ipaddress
+from urllib.parse import urlparse
+
+_PRIVATE_NETWORKS = [
+    ipaddress.ip_network("127.0.0.0/8"),      # Loopback
+    ipaddress.ip_network("10.0.0.0/8"),       # Private class A
+    ipaddress.ip_network("172.16.0.0/12"),    # Private class B
+    ipaddress.ip_network("192.168.0.0/16"),   # Private class C
+    ipaddress.ip_network("169.254.0.0/16"),   # Link-local / GCP metadata
+    ipaddress.ip_network("100.64.0.0/10"),    # Shared address space
+    ipaddress.ip_network("::1/128"),          # IPv6 loopback
+    ipaddress.ip_network("fc00::/7"),         # IPv6 unique local
+    ipaddress.ip_network("fe80::/10"),        # IPv6 link-local
+]
+
+
+def validate_url_not_internal(url: str) -> None:
+    """Raise ValueError if the URL resolves to a private/internal IP address.
+    
+    Prevents SSRF attacks where users submit internal URLs (metadata server,
+    localhost, RFC-1918 ranges) to be fetched by the checker from within Cloud Run.
+    """
+    try:
+        parsed = urlparse(url)
+        hostname = parsed.hostname
+        if not hostname:
+            raise ValueError(f"Invalid URL: no hostname in {url!r}")
+        # Resolve all addresses the hostname maps to
+        infos = socket.getaddrinfo(hostname, None, proto=socket.IPPROTO_TCP)
+        for info in infos:
+            addr = info[4][0]
+            ip = ipaddress.ip_address(addr)
+            for network in _PRIVATE_NETWORKS:
+                if ip in network:
+                    raise ValueError(
+                        f"URL resolves to a private/internal IP ({ip}) — "
+                        "monitoring internal addresses is not allowed."
+                    )
+    except ValueError:
+        raise
+    except Exception as e:
+        raise ValueError(f"Could not resolve hostname for SSRF check: {e}") from e
+
+# ──────────────────────────────────────────────────────────────────────────────
+
 # Limit concurrent outbound connections to avoid socket exhaustion
 CHECK_CONCURRENCY = 50
 _check_semaphore = asyncio.Semaphore(CHECK_CONCURRENCY)
@@ -56,6 +102,10 @@ async def check_url(url: str, timeout: float = 10.0, expected_status_code: int |
     Returns dict with status_code, response_ms, is_up, body (first 10KB).
     Uses shared client if provided, otherwise creates a one-off client.
     """
+    try:
+        validate_url_not_internal(url)
+    except ValueError as e:
+        return {"is_up": False, "status_code": None, "response_ms": None, "body": "", "error": str(e), "ssrf_blocked": True}
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (compatible; StatusRooster/1.0; +https://statusrooster.com)",
@@ -169,6 +219,10 @@ async def check_json_api(url: str, timeout: float = 10.0, expected_status_code: 
     Uses shared client if provided, otherwise creates a one-off client.
     """
     assertions = assertions or []
+    try:
+        validate_url_not_internal(url)
+    except ValueError as e:
+        return {"is_up": False, "status_code": None, "response_ms": None, "body": "", "error": str(e), "ssrf_blocked": True, "assertion_results": []}
     try:
         headers = {}
         if auth_header:
