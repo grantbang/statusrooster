@@ -1,0 +1,175 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div style="max-width: 1100px; margin: 0 auto;">
+
+  <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+    <div>
+      <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0;">Admin Dashboard</h1>
+      <p style="color: var(--muted); margin: 0.25rem 0 0; font-size: 0.875rem;">Internal KPIs — not visible to users</p>
+    </div>
+    <span style="margin-left: auto; background: var(--danger); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 4px; letter-spacing: 0.05em;">ADMIN ONLY</span>
+  </div>
+
+  <!-- KPI Cards -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+
+    <div class="card" style="padding: 1.25rem; text-align: center;">
+      <div style="font-size: 2rem; font-weight: 800; color: var(--brand);">{{ total_users }}</div>
+      <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem;">Total Users</div>
+    </div>
+
+    <div class="card" style="padding: 1.25rem; text-align: center;">
+      <div style="font-size: 2rem; font-weight: 800; color: var(--success);">{{ pro_count }}</div>
+      <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem;">Pro Users</div>
+    </div>
+
+    <div class="card" style="padding: 1.25rem; text-align: center;">
+      <div style="font-size: 2rem; font-weight: 800; color: var(--text);">{{ free_count }}</div>
+      <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem;">Free Users</div>
+    </div>
+
+    <div class="card" style="padding: 1.25rem; text-align: center;">
+      <div style="font-size: 2rem; font-weight: 800; color: var(--success);">${{ mrr }}</div>
+      <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem;">MRR</div>
+    </div>
+
+    <div class="card" style="padding: 1.25rem; text-align: center;">
+      <div style="font-size: 2rem; font-weight: 800; color: var(--brand);">{{ total_monitors }}</div>
+      <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem;">Total Monitors</div>
+    </div>
+
+    <div class="card" style="padding: 1.25rem; text-align: center;">
+      <div style="font-size: 2rem; font-weight: 800; color: var(--success);">{{ monitors_up }}</div>
+      <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem;">Monitors Up</div>
+    </div>
+
+    <div class="card" style="padding: 1.25rem; text-align: center;">
+      <div style="font-size: 2rem; font-weight: 800; color: {% if monitors_down > 0 %}var(--danger){% else %}var(--text){% endif %};">{{ monitors_down }}</div>
+      <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem;">Monitors Down</div>
+    </div>
+
+    <div class="card" style="padding: 1.25rem; text-align: center;">
+      <div style="font-size: 2rem; font-weight: 800; color: var(--brand);">{{ checks_today }}</div>
+      <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem;">Checks Today</div>
+    </div>
+
+  </div>
+
+  <!-- Cron Health -->
+  <div class="card" style="padding: 1.25rem; margin-bottom: 2rem;">
+    <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">Cron Health</h2>
+    <div style="display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;">
+      <div>
+        <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;">Last Check Run</div>
+        <div style="font-size: 0.95rem; font-weight: 600; margin-top: 0.25rem;">
+          {% if last_cron_run %}
+            {{ last_cron_run.strftime('%Y-%m-%d %H:%M:%S UTC') if last_cron_run else '—' }}
+          {% else %}
+            <span style="color: var(--muted);">No data</span>
+          {% endif %}
+        </div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;">Monitors Configured</div>
+        <div style="font-size: 0.95rem; font-weight: 600; margin-top: 0.25rem;">{{ total_monitors }}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;">Currently Down</div>
+        <div style="font-size: 0.95rem; font-weight: 600; margin-top: 0.25rem; color: {% if monitors_down > 0 %}var(--danger){% else %}var(--success){% endif %};">
+          {{ monitors_down }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Signups -->
+  <div class="card" style="padding: 1.25rem; margin-bottom: 2rem;">
+    <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">Recent Signups <span style="font-weight: 400; color: var(--muted); font-size: 0.85rem;">(last 20)</span></h2>
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Email</th>
+            <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Plan</th>
+            <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Provider</th>
+            <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Signed Up</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in recent_signups %}
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 0.6rem 0.75rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;">{{ u.get('email', '—') }}</td>
+            <td style="padding: 0.6rem 0.75rem;">
+              {% if u.get('plan') == 'pro' %}
+                <span style="background: #ede9fe; color: #6d28d9; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px;">PRO</span>
+              {% else %}
+                <span style="background: var(--surface-2, #f3f4f6); color: var(--muted); font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 4px;">FREE</span>
+              {% endif %}
+            </td>
+            <td style="padding: 0.6rem 0.75rem; color: var(--muted); font-size: 0.8rem;">{{ u.get('auth_provider', 'email') }}</td>
+            <td style="padding: 0.6rem 0.75rem; color: var(--muted); font-size: 0.8rem;">
+              {% set ca = u.get('created_at') %}
+              {% if ca %}{{ ca.strftime('%b %d, %Y') }}{% else %}—{% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" style="padding: 1rem 0.75rem; color: var(--muted);">No users yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Monitor Status Overview -->
+  <div class="card" style="padding: 1.25rem;">
+    <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">All Monitors <span style="font-weight: 400; color: var(--muted); font-size: 0.85rem;">({{ total_monitors }} total)</span></h2>
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Name</th>
+            <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Type</th>
+            <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Status</th>
+            <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Uptime</th>
+            <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Last Checked</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in all_monitors | sort(attribute='status') %}
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 0.6rem 0.75rem; font-weight: 500;">{{ m.get('name', '—') }}</td>
+            <td style="padding: 0.6rem 0.75rem; color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em;">{{ m.get('monitor_type', 'http') }}</td>
+            <td style="padding: 0.6rem 0.75rem;">
+              {% set st = m.get('status', 'pending') %}
+              {% if st == 'up' %}
+                <span style="color: var(--success); font-weight: 600;">↑ Up</span>
+              {% elif st == 'down' %}
+                <span style="color: var(--danger); font-weight: 600;">↓ Down</span>
+              {% elif st == 'warn' %}
+                <span style="color: var(--warning); font-weight: 600;">⚠ Warn</span>
+              {% else %}
+                <span style="color: var(--muted);">— Pending</span>
+              {% endif %}
+            </td>
+            <td style="padding: 0.6rem 0.75rem; color: var(--muted);">
+              {% set up = m.get('uptime_pct') %}
+              {% if up is not none %}{{ "%.1f"|format(up) }}%{% else %}—{% endif %}
+            </td>
+            <td style="padding: 0.6rem 0.75rem; color: var(--muted); font-size: 0.8rem;">
+              {% set lc = m.get('last_checked') %}
+              {% if lc %}{{ lc.strftime('%b %d %H:%M') }}{% else %}—{% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="padding: 1rem 0.75rem; color: var(--muted);">No monitors yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

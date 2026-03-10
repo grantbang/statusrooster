@@ -1681,6 +1681,86 @@ async def revoke_api_key_page(request: Request, key_id: str):
 
 
 # ---------------------------------------------------------------------------
+# Admin Dashboard
+# ---------------------------------------------------------------------------
+
+ADMIN_EMAIL = "gjbangerter@gmail.com"
+
+@router.get("/admin", response_class=HTMLResponse)
+async def admin_dashboard(request: Request):
+    user = get_user_from_cookie(request)
+    if not user or user.get("email", "").lower() != ADMIN_EMAIL:
+        raise HTTPException(status_code=404)
+
+    db = get_db()
+    from datetime import datetime, timezone, timedelta
+
+    # --- Users ---
+    all_users = [u.to_dict() | {"id": u.id} for u in db.collection("users").get()]
+    total_users = len(all_users)
+    pro_users = [u for u in all_users if u.get("plan") == "pro"]
+    free_users = [u for u in all_users if u.get("plan") != "pro"]
+    pro_count = len(pro_users)
+    free_count = len(free_users)
+    mrr = pro_count * 9
+
+    # Last 20 signups sorted by created_at desc
+    def _created_at(u):
+        ca = u.get("created_at")
+        if ca is None:
+            return datetime.min.replace(tzinfo=timezone.utc)
+        if hasattr(ca, "tzinfo") and ca.tzinfo is None:
+            return ca.replace(tzinfo=timezone.utc)
+        return ca
+
+    recent_signups = sorted(all_users, key=_created_at, reverse=True)[:20]
+
+    # --- Monitors ---
+    all_monitors = [m.to_dict() | {"id": m.id} for m in db.collection("monitors").get()]
+    total_monitors = len(all_monitors)
+    monitors_up = sum(1 for m in all_monitors if m.get("status") == "up")
+    monitors_down = sum(1 for m in all_monitors if m.get("status") == "down")
+
+    # --- Checks today ---
+    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    checks_today_docs = (
+        db.collection("checks")
+        .where("checked_at", ">=", today_start)
+        .get()
+    )
+    checks_today = len(checks_today_docs)
+
+    # --- Cron health: last 5 cron results from checks collection ---
+    # We infer from checks — get the most recent check timestamp across all monitors
+    recent_checks = (
+        db.collection("checks")
+        .order_by("checked_at", direction="DESCENDING")
+        .limit(1)
+        .get()
+    )
+    last_cron_run = None
+    for c in recent_checks:
+        cd = c.to_dict()
+        last_cron_run = cd.get("checked_at")
+
+    return templates.TemplateResponse("admin.html", {
+        "request": request,
+        "user": user,
+        "total_users": total_users,
+        "pro_count": pro_count,
+        "free_count": free_count,
+        "mrr": mrr,
+        "total_monitors": total_monitors,
+        "monitors_up": monitors_up,
+        "monitors_down": monitors_down,
+        "checks_today": checks_today,
+        "recent_signups": recent_signups,
+        "last_cron_run": last_cron_run,
+        "all_monitors": all_monitors,
+    })
+
+
+# ---------------------------------------------------------------------------
 # API Documentation Page
 # ---------------------------------------------------------------------------
 

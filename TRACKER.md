@@ -1001,11 +1001,11 @@ Layout order (top to bottom):
 
 ---
 
-### 11D. Admin Dashboard 🔲
-- [ ] Route: `GET /admin` — guard: only your email can access
-- [ ] KPI cards: total users, Pro users, Free users, MRR, total monitors, checks today
-- [ ] Signup list: last 20 signups with email + date + plan
-- [ ] Cron health: last run time, monitors checked, alerts fired, errors
+### 11D. Admin Dashboard ✅
+- [x] Route: `GET /admin` — guard: only your email can access
+- [x] KPI cards: total users, Pro users, Free users, MRR, total monitors, checks today
+- [x] Signup list: last 20 signups with email + date + plan
+- [x] Cron health: last run time, monitors checked, alerts fired, errors
 
 ### Day 12 — Testing & Launch 🔲
 
