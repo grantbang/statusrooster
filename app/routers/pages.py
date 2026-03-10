@@ -1742,6 +1742,50 @@ async def admin_dashboard(request: Request):
         cd = c.to_dict()
         last_cron_run = cd.get("timestamp")
 
+    # --- Per-user stats (built from monitor docs, no extra queries) ---
+    user_map = {u["id"]: u for u in all_users}
+    user_stats = {}
+    for m in all_monitors:
+        uid = m.get("user_id", "")
+        if uid not in user_stats:
+            user_stats[uid] = {
+                "monitors": 0, "up": 0, "down": 0, "paused": 0,
+                "checks_total": 0, "checks_failed": 0,
+                "http": 0, "heartbeat": 0, "json_api": 0, "ssl": 0,
+                "has_slack": 0, "has_sms": 0, "has_webhook": 0,
+            }
+        s = user_stats[uid]
+        s["monitors"] += 1
+        st = m.get("status", "pending")
+        if m.get("paused"):
+            s["paused"] += 1
+        elif st == "up":
+            s["up"] += 1
+        elif st == "down":
+            s["down"] += 1
+        s["checks_total"] += m.get("checks_total", 0) or 0
+        s["checks_failed"] += m.get("checks_failed", 0) or 0
+        mt = m.get("monitor_type", "http")
+        if mt in s:
+            s[mt] += 1
+        if m.get("alert_slack_webhook"):
+            s["has_slack"] += 1
+        if m.get("alert_sms"):
+            s["has_sms"] += 1
+        if m.get("webhook_url"):
+            s["has_webhook"] += 1
+
+    # Attach stats to each user, sort by monitor count desc
+    user_rows = []
+    for u in all_users:
+        uid = u["id"]
+        s = user_stats.get(uid, {})
+        ct = s.get("checks_total", 0)
+        cf = s.get("checks_failed", 0)
+        uptime = round((1 - cf / ct) * 100, 1) if ct > 0 else None
+        user_rows.append({**u, "stats": s, "uptime_pct": uptime})
+    user_rows.sort(key=lambda u: u["stats"].get("monitors", 0), reverse=True)
+
     return templates.TemplateResponse("admin.html", {
         "request": request,
         "user": user,
@@ -1756,6 +1800,7 @@ async def admin_dashboard(request: Request):
         "recent_signups": recent_signups,
         "last_cron_run": last_cron_run,
         "all_monitors": all_monitors,
+        "user_rows": user_rows,
     })
 
 

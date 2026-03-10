@@ -5,6 +5,16 @@
 {% block content %}
 <div style="max-width: 1100px; margin: 0 auto;">
 
+  <!-- Tab Nav -->
+  <div style="display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 2rem;">
+    <button onclick="switchTab('overview')" id="tab-overview" class="admin-tab admin-tab--active">Overview</button>
+    <button onclick="switchTab('users')" id="tab-users" class="admin-tab">Users</button>
+    <button onclick="switchTab('monitors')" id="tab-monitors" class="admin-tab">Monitors</button>
+  </div>
+
+  <!-- TAB: Overview -->
+  <div id="panel-overview">
+
   <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
     <div>
       <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0;">Admin Dashboard</h1>
@@ -123,53 +133,151 @@
     </div>
   </div>
 
-  <!-- Monitor Status Overview -->
-  <div class="card" style="padding: 1.25rem;">
-    <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">All Monitors <span style="font-weight: 400; color: var(--muted); font-size: 0.85rem;">({{ total_monitors }} total)</span></h2>
-    <div style="overflow-x: auto;">
-      <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
-        <thead>
-          <tr style="border-bottom: 1px solid var(--border);">
-            <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Name</th>
-            <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Type</th>
-            <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Status</th>
-            <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Uptime</th>
-            <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Last Checked</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for m in all_monitors | sort(attribute='status') %}
-          <tr style="border-bottom: 1px solid var(--border);">
-            <td style="padding: 0.6rem 0.75rem; font-weight: 500;">{{ m.get('name', '—') }}</td>
-            <td style="padding: 0.6rem 0.75rem; color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em;">{{ m.get('monitor_type', 'http') }}</td>
-            <td style="padding: 0.6rem 0.75rem;">
-              {% set st = m.get('status', 'pending') %}
-              {% if st == 'up' %}
-                <span style="color: var(--success); font-weight: 600;">↑ Up</span>
-              {% elif st == 'down' %}
-                <span style="color: var(--danger); font-weight: 600;">↓ Down</span>
-              {% elif st == 'warn' %}
-                <span style="color: var(--warning); font-weight: 600;">⚠ Warn</span>
-              {% else %}
-                <span style="color: var(--muted);">— Pending</span>
-              {% endif %}
-            </td>
-            <td style="padding: 0.6rem 0.75rem; color: var(--muted);">
-              {% set up = m.get('uptime_pct') %}
-              {% if up is not none %}{{ "%.1f"|format(up) }}%{% else %}—{% endif %}
-            </td>
-            <td style="padding: 0.6rem 0.75rem; color: var(--muted); font-size: 0.8rem;">
-              {% set lc = m.get('last_checked') %}
-              {% if lc %}{{ lc.strftime('%b %d %H:%M') }}{% else %}—{% endif %}
-            </td>
-          </tr>
-          {% else %}
-          <tr><td colspan="5" style="padding: 1rem 0.75rem; color: var(--muted);">No monitors yet.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+  </div> <!-- /panel-overview -->
+
+  <!-- TAB: Users -->
+  <div id="panel-users" style="display:none;">
+    <div class="card" style="padding: 1.25rem;">
+      <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">User Stats <span style="font-weight: 400; color: var(--muted); font-size: 0.85rem;">({{ user_rows | length }} users, sorted by monitor count)</span></h2>
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem; white-space: nowrap;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border);">
+              <th style="text-align:left; padding: 0.5rem 0.75rem; color:var(--muted); font-weight:500;">Email</th>
+              <th style="text-align:left; padding: 0.5rem 0.75rem; color:var(--muted); font-weight:500;">Plan</th>
+              <th style="text-align:center; padding: 0.5rem 0.75rem; color:var(--muted); font-weight:500;">Monitors</th>
+              <th style="text-align:center; padding: 0.5rem 0.75rem; color:var(--muted); font-weight:500;">Up</th>
+              <th style="text-align:center; padding: 0.5rem 0.75rem; color:var(--muted); font-weight:500;">Down</th>
+              <th style="text-align:center; padding: 0.5rem 0.75rem; color:var(--muted); font-weight:500;">Paused</th>
+              <th style="text-align:center; padding: 0.5rem 0.75rem; color:var(--muted); font-weight:500;">HTTP</th>
+              <th style="text-align:center; padding: 0.5rem 0.75rem; color:var(--muted); font-weight:500;">HB</th>
+              <th style="text-align:center; padding: 0.5rem 0.75rem; color:var(--muted); font-weight:500;">JSON</th>
+              <th style="text-align:center; padding: 0.5rem 0.75rem; color:var(--muted); font-weight:500;">SSL</th>
+              <th style="text-align:right; padding: 0.5rem 0.75rem; color:var(--muted); font-weight:500;">Checks</th>
+              <th style="text-align:right; padding: 0.5rem 0.75rem; color:var(--muted); font-weight:500;">Failed</th>
+              <th style="text-align:right; padding: 0.5rem 0.75rem; color:var(--muted); font-weight:500;">Uptime</th>
+              <th style="text-align:center; padding: 0.5rem 0.75rem; color:var(--muted); font-weight:500;">Slack</th>
+              <th style="text-align:center; padding: 0.5rem 0.75rem; color:var(--muted); font-weight:500;">SMS</th>
+              <th style="text-align:center; padding: 0.5rem 0.75rem; color:var(--muted); font-weight:500;">Webhook</th>
+              <th style="text-align:left; padding: 0.5rem 0.75rem; color:var(--muted); font-weight:500;">Joined</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in user_rows %}
+            {% set s = u.stats %}
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.55rem 0.75rem; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;">{{ u.get('email', '—') }}</td>
+              <td style="padding: 0.55rem 0.75rem;">
+                {% if u.get('plan') == 'pro' %}
+                  <span style="background:#ede9fe;color:#6d28d9;font-size:0.65rem;font-weight:700;padding:0.15rem 0.45rem;border-radius:4px;">PRO</span>
+                {% else %}
+                  <span style="background:var(--surface-2,#f3f4f6);color:var(--muted);font-size:0.65rem;font-weight:600;padding:0.15rem 0.45rem;border-radius:4px;">FREE</span>
+                {% endif %}
+              </td>
+              <td style="padding: 0.55rem 0.75rem; text-align:center; font-weight:600;">{{ s.get('monitors', 0) }}</td>
+              <td style="padding: 0.55rem 0.75rem; text-align:center; color:var(--success); font-weight:600;">{{ s.get('up', 0) }}</td>
+              <td style="padding: 0.55rem 0.75rem; text-align:center; color:{% if s.get('down', 0) > 0 %}var(--danger){% else %}var(--muted){% endif %}; font-weight:600;">{{ s.get('down', 0) }}</td>
+              <td style="padding: 0.55rem 0.75rem; text-align:center; color:var(--muted);">{{ s.get('paused', 0) }}</td>
+              <td style="padding: 0.55rem 0.75rem; text-align:center; color:var(--muted);">{{ s.get('http', 0) }}</td>
+              <td style="padding: 0.55rem 0.75rem; text-align:center; color:var(--muted);">{{ s.get('heartbeat', 0) }}</td>
+              <td style="padding: 0.55rem 0.75rem; text-align:center; color:var(--muted);">{{ s.get('json_api', 0) }}</td>
+              <td style="padding: 0.55rem 0.75rem; text-align:center; color:var(--muted);">{{ s.get('ssl', 0) }}</td>
+              <td style="padding: 0.55rem 0.75rem; text-align:right; color:var(--muted);">{{ "{:,}".format(s.get('checks_total', 0)) }}</td>
+              <td style="padding: 0.55rem 0.75rem; text-align:right; color:{% if s.get('checks_failed', 0) > 0 %}var(--warning){% else %}var(--muted){% endif %};">{{ "{:,}".format(s.get('checks_failed', 0)) }}</td>
+              <td style="padding: 0.55rem 0.75rem; text-align:right; font-weight:600;">
+                {% if u.uptime_pct is not none %}
+                  <span style="color:{% if u.uptime_pct >= 99 %}var(--success){% elif u.uptime_pct >= 95 %}var(--warning){% else %}var(--danger){% endif %};">{{ "%.1f"|format(u.uptime_pct) }}%</span>
+                {% else %}—{% endif %}
+              </td>
+              <td style="padding: 0.55rem 0.75rem; text-align:center;">{% if s.get('has_slack', 0) %}<span style="color:var(--success);">✓</span>{% else %}<span style="color:var(--border);">—</span>{% endif %}</td>
+              <td style="padding: 0.55rem 0.75rem; text-align:center;">{% if s.get('has_sms', 0) %}<span style="color:var(--success);">✓</span>{% else %}<span style="color:var(--border);">—</span>{% endif %}</td>
+              <td style="padding: 0.55rem 0.75rem; text-align:center;">{% if s.get('has_webhook', 0) %}<span style="color:var(--success);">✓</span>{% else %}<span style="color:var(--border);">—</span>{% endif %}</td>
+              <td style="padding: 0.55rem 0.75rem; color:var(--muted); font-size:0.75rem;">
+                {% set ca = u.get('created_at') %}{% if ca %}{{ ca.strftime('%b %d, %Y') }}{% else %}—{% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="17" style="padding:1rem 0.75rem;color:var(--muted);">No users.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
+  </div> <!-- /panel-users -->
+
+  <!-- TAB: Monitors -->
+  <div id="panel-monitors" style="display:none;">
+    <div class="card" style="padding: 1.25rem;">
+      <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">All Monitors <span style="font-weight: 400; color: var(--muted); font-size: 0.85rem;">({{ total_monitors }} total)</span></h2>
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Name</th>
+              <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Type</th>
+              <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Status</th>
+              <th style="text-align: right; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Uptime</th>
+              <th style="text-align: right; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Checks</th>
+              <th style="text-align: right; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Failed</th>
+              <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Last Checked</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in all_monitors | sort(attribute='status') %}
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.6rem 0.75rem; font-weight: 500;">{{ m.get('name', '—') }}</td>
+              <td style="padding: 0.6rem 0.75rem; color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em;">{{ m.get('monitor_type', 'http') }}</td>
+              <td style="padding: 0.6rem 0.75rem;">
+                {% set st = m.get('status', 'pending') %}
+                {% if st == 'up' %}<span style="color:var(--success);font-weight:600;">↑ Up</span>
+                {% elif st == 'down' %}<span style="color:var(--danger);font-weight:600;">↓ Down</span>
+                {% elif st == 'warn' %}<span style="color:var(--warning);font-weight:600;">⚠ Warn</span>
+                {% else %}<span style="color:var(--muted);">— Pending</span>{% endif %}
+              </td>
+              <td style="padding: 0.6rem 0.75rem; text-align:right; color:var(--muted);">
+                {% set up = m.get('uptime_percent') or m.get('uptime_pct') %}
+                {% if up is not none %}{{ "%.1f"|format(up) }}%{% else %}—{% endif %}
+              </td>
+              <td style="padding: 0.6rem 0.75rem; text-align:right; color:var(--muted);">{{ "{:,}".format(m.get('checks_total', 0) or 0) }}</td>
+              <td style="padding: 0.6rem 0.75rem; text-align:right; color:var(--muted);">{{ "{:,}".format(m.get('checks_failed', 0) or 0) }}</td>
+              <td style="padding: 0.6rem 0.75rem; color: var(--muted); font-size: 0.8rem;">
+                {% set lc = m.get('last_checked') %}{% if lc %}{{ lc.strftime('%b %d %H:%M') }}{% else %}—{% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" style="padding: 1rem 0.75rem; color: var(--muted);">No monitors yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div> <!-- /panel-monitors -->
 
 </div>
+
+<style>
+.admin-tab {
+  padding: 0.6rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  color: var(--muted);
+  transition: color 0.15s, border-color 0.15s;
+}
+.admin-tab:hover { color: var(--text); }
+.admin-tab--active { color: var(--brand); border-bottom-color: var(--brand); font-weight: 600; }
+</style>
+
+<script>
+function switchTab(name) {
+  ['overview','users','monitors'].forEach(t => {
+    document.getElementById('panel-' + t).style.display = t === name ? '' : 'none';
+    document.getElementById('tab-' + t).classList.toggle('admin-tab--active', t === name);
+  });
+}
+</script>
 {% endblock %}
