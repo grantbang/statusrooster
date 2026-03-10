@@ -1725,23 +1725,22 @@ async def admin_dashboard(request: Request):
     today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     checks_today_docs = (
         db.collection("checks")
-        .where("checked_at", ">=", today_start)
+        .where("timestamp", ">=", today_start)
         .get()
     )
     checks_today = len(checks_today_docs)
 
-    # --- Cron health: last 5 cron results from checks collection ---
-    # We infer from checks — get the most recent check timestamp across all monitors
+    # --- Cron health: get the most recent check timestamp across all monitors ---
     recent_checks = (
         db.collection("checks")
-        .order_by("checked_at", direction="DESCENDING")
+        .order_by("timestamp", direction="DESCENDING")
         .limit(1)
         .get()
     )
     last_cron_run = None
     for c in recent_checks:
         cd = c.to_dict()
-        last_cron_run = cd.get("checked_at")
+        last_cron_run = cd.get("timestamp")
 
     return templates.TemplateResponse("admin.html", {
         "request": request,
