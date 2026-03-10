@@ -17,7 +17,7 @@
 - [x] **#3** SSRF protection — block private/internal IPs (`services/checker.py`, `routers/pages.py`)
 - [x] **#4** Rate limit `/api/check-url` — prevent open proxy abuse (`routers/pages.py`)
 - [x] **#5** Replace `get_all_monitors()` — paginate or filter due monitors only (`models/monitor.py`, `services/checker.py`)
-- [ ] **#6** Heartbeat ping secret — add `ping_token` validation (`routers/heartbeat.py`, `models/monitor.py`)
+- [x] **#6** Heartbeat ping secret — add `ping_token` validation (`routers/heartbeat.py`, `models/monitor.py`)
 
 ### 🟡 P2 — Fix Soon (post-launch sprint)
 - [ ] **#7** Remove raw check queries — finish migration to pre-aggregated bars (`models/check.py`)
@@ -212,7 +212,7 @@ StatusRooster is well-structured for an indie solo project — clean separation 
   - [ ] Cron cycle still completes successfully
 
 ### 6. Heartbeat Endpoint Has No Secret
-- [ ] **Status: Not started**
+- [x] **Status: Complete** (Mar 9, 2026)
 - **Area:** Security
 - **File:** `routers/heartbeat.py`
 - **Problem:** The heartbeat ping URL is `/api/ping/{monitor_id}` where `monitor_id` is a Firestore auto-generated ID. These aren't cryptographically random — they're based on timestamp + random, but are shorter and more guessable than a proper secret. Anyone who discovers or guesses an ID can send fake "I'm alive" pings, masking real downtime.
@@ -267,4 +267,4 @@ StatusRooster is well-structured for an indie solo project — clean separation 
 | Mar 9, 2026 | #1 Cron auth bypass | Removed User-Agent fallback — secret header only |
 | Mar 9, 2026 | #2 JWT secret default | Startup RuntimeError if default used in production |
 | Mar 9, 2026 | #3 SSRF protection | `validate_url_not_internal()` in checker.py, called in check_url(), check_json_api(), public_url_check() |
-| Mar 9, 2026 | #5 get_all_monitors() | Added get_due_monitors() — filters paused=False at Firestore level, .limit(500) safety cap; removed Python-side paused skip in run_checks() |
+| Mar 9, 2026 | #6 Heartbeat ping token | `ping_token` generated at creation, validated in receive_heartbeat(), 403 on missing/wrong token, backwards-compat for legacy monitors |
