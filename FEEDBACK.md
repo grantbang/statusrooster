@@ -267,4 +267,6 @@ StatusRooster is well-structured for an indie solo project — clean separation 
 | Mar 9, 2026 | #1 Cron auth bypass | Removed User-Agent fallback — secret header only |
 | Mar 9, 2026 | #2 JWT secret default | Startup RuntimeError if default used in production |
 | Mar 9, 2026 | #3 SSRF protection | `validate_url_not_internal()` in checker.py, called in check_url(), check_json_api(), public_url_check() |
+| Mar 9, 2026 | #4 Rate limit /api/check-url | `_url_check_rate` dict — 10 req/60s per IP, returns 429 + Retry-After |
+| Mar 9, 2026 | #5 get_all_monitors() | Added get_due_monitors() — filters paused=False at Firestore level, .limit(500) safety cap; removed Python-side paused skip in run_checks() |
 | Mar 9, 2026 | #6 Heartbeat ping token | `ping_token` generated at creation, validated in receive_heartbeat(), 403 on missing/wrong token, backwards-compat for legacy monitors |
