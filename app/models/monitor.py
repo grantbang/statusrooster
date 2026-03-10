@@ -243,22 +243,37 @@ def get_all_monitors(db) -> list[dict]:
 
 def get_due_monitors(db) -> list[dict]:
     """Get monitors that are candidates for checking (not paused).
-    
+
     Filters paused=False at the Firestore query level to avoid loading
-    every monitor into memory. The interval check (is it time to run?)
-    is still done in Python since it requires per-monitor arithmetic.
-    
-    Safety cap: .limit(500) prevents runaway memory use if the collection grows large.
+    every monitor into memory. Uses Firestore cursor pagination to fetch
+    all monitors in batches of 500, so there is no hard cap on total
+    monitor count. The interval check (is it time to run?) is still done
+    in Python since it requires per-monitor arithmetic.
     """
-    docs = (
-        db.collection(COLLECTION)
-        .where("paused", "==", False)
-        .limit(500)
-        .get()
-    )
+    PAGE_SIZE = 500
     monitors = []
-    for doc in docs:
-        m = doc.to_dict()
-        m["id"] = doc.id
-        monitors.append(m)
+    last_doc = None
+
+    while True:
+        query = (
+            db.collection(COLLECTION)
+            .where("paused", "==", False)
+            .limit(PAGE_SIZE)
+        )
+        if last_doc is not None:
+            query = query.start_after(last_doc)
+
+        docs = query.get()
+        for doc in docs:
+            m = doc.to_dict()
+            m["id"] = doc.id
+            monitors.append(m)
+
+        if len(docs) < PAGE_SIZE:
+            # Fewer results than page size — we've reached the end
+            break
+
+        last_doc = docs[-1]
+        print(f"[get_due_monitors] paginating — fetched {len(monitors)} monitors so far")
+
     return monitors
