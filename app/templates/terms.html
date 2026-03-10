@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Terms of Service{% endblock %}
+{% block description %}StatusRooster Terms of Service — the rules for using our uptime monitoring service.{% endblock %}
+
+{% block content %}
+<div style="max-width: 760px; margin: 3rem auto; padding: 0 1rem;">
+    <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Terms of Service</h1>
+    <p style="color: var(--muted); margin-bottom: 2.5rem;">Last updated: March 10, 2026</p>
+
+    <div style="line-height: 1.8; color: var(--text);">
+
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">1. Acceptance of Terms</h2>
+        <p>By creating an account or using StatusRooster ("Service"), you agree to these Terms of Service. If you do not agree, do not use the Service.</p>
+
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">2. Description of Service</h2>
+        <p>StatusRooster is an uptime monitoring service that checks the availability of websites, APIs, SSL certificates, and cron jobs, and sends alerts when issues are detected. We offer Free and Pro plans.</p>
+
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">3. Accounts</h2>
+        <ul style="padding-left: 1.5rem; margin: 0.5rem 0;">
+            <li>You must provide accurate information when creating an account.</li>
+            <li>You are responsible for maintaining the security of your account credentials.</li>
+            <li>You must be at least 18 years old to use the Service.</li>
+            <li>One account per person. Do not share accounts.</li>
+        </ul>
+
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">4. Acceptable Use</h2>
+        <p>You agree not to use StatusRooster to:</p>
+        <ul style="padding-left: 1.5rem; margin: 0.5rem 0;">
+            <li>Monitor services you do not own or have permission to monitor.</li>
+            <li>Conduct denial-of-service attacks or stress tests against third-party services.</li>
+            <li>Violate any applicable laws or regulations.</li>
+            <li>Attempt to reverse-engineer or circumvent the Service's security measures.</li>
+        </ul>
+
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">5. SMS Notifications</h2>
+        <p>StatusRooster offers SMS alert notifications as a Pro plan feature. By enabling SMS alerts and providing your phone number, you consent to receive transactional text messages related to your monitors. Message frequency varies based on monitor activity. Message and data rates may apply.</p>
+        <ul style="padding-left: 1.5rem; margin: 0.5rem 0;">
+            <li><strong>To opt out:</strong> Reply <strong>STOP</strong> to any SMS or remove your phone number from your account settings.</li>
+            <li><strong>For help:</strong> Reply <strong>HELP</strong> or email <a href="mailto:support@statusrooster.com" style="color: var(--brand);">support@statusrooster.com</a>.</li>
+            <li>We do not share your phone number with third parties for marketing purposes.</li>
+        </ul>
+
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">6. Billing and Payments</h2>
+        <ul style="padding-left: 1.5rem; margin: 0.5rem 0;">
+            <li>Pro plan is $9/month, billed monthly via Stripe.</li>
+            <li>Subscriptions auto-renew unless cancelled before the next billing date.</li>
+            <li>You can cancel at any time from your account settings. Access continues until end of the billing period.</li>
+            <li>No refunds for partial months.</li>
+        </ul>
+
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">7. Uptime and SLA</h2>
+        <p>We aim for high availability but do not guarantee 100% uptime of the StatusRooster service itself. We are not liable for missed alerts due to service outages. The Free plan is provided as-is with no SLA.</p>
+
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">8. Limitation of Liability</h2>
+        <p>StatusRooster is provided "as is." We are not liable for any direct, indirect, incidental, or consequential damages arising from your use of (or inability to use) the Service, including missed downtime alerts.</p>
+
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">9. Termination</h2>
+        <p>We reserve the right to suspend or terminate accounts that violate these Terms. You may delete your account at any time by contacting <a href="mailto:support@statusrooster.com" style="color: var(--brand);">support@statusrooster.com</a>.</p>
+
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">10. Changes to Terms</h2>
+        <p>We may update these Terms. Continued use of the Service after changes constitutes acceptance. We'll notify you of material changes via email.</p>
+
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">11. Governing Law</h2>
+        <p>These Terms are governed by the laws of the United States. Disputes shall be resolved in the applicable courts.</p>
+
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">12. Contact</h2>
+        <p>Questions about these Terms? Email <a href="mailto:support@statusrooster.com" style="color: var(--brand);">support@statusrooster.com</a>.</p>
+
+    </div>
+</div>
+{% endblock %}

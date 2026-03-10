@@ -204,6 +204,18 @@ async def pricing_page(request: Request):
     return templates.TemplateResponse("pricing.html", {"request": request, "user": user})
 
 
+@router.get("/privacy", response_class=HTMLResponse)
+async def privacy_page(request: Request):
+    user = get_user_from_cookie(request)
+    return templates.TemplateResponse("privacy.html", {"request": request, "user": user})
+
+
+@router.get("/terms", response_class=HTMLResponse)
+async def terms_page(request: Request):
+    user = get_user_from_cookie(request)
+    return templates.TemplateResponse("terms.html", {"request": request, "user": user})
+
+
 # ---------------------------------------------------------------------------
 # Auth Pages
 # ---------------------------------------------------------------------------
