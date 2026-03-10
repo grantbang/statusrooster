@@ -970,7 +970,7 @@ Layout order (top to bottom):
 
 ---
 
-### 11J. SMS / Twilio Verification 🔲
+### 11J. SMS / Twilio Verification ⏳ (blocked on A2P campaign approval)
 
 > **Goal:** Confirm that SMS alerts are fully wired and working in production. Implementation is complete (code exists), but env vars may not be set in Cloud Run. Verify end-to-end before launch so we can honestly advertise SMS alerts.
 
@@ -980,20 +980,22 @@ Layout order (top to bottom):
 - ✅ `alerts.py` — SMS wired in `send_down_alert()`, `send_recovery_alert()`, and test alert flow
 - ✅ Monitor model — `alert_sms` field defined, settable via settings UI (Pro only)
 - ✅ Plan gating — SMS only sends when `user_plan == "pro"`
-- ❓ Cloud Run env vars — `TWILIO_ACCOUNT_SID/AUTH_TOKEN/FROM_NUMBER` may not be set in production
-- ❓ Twilio account — need to verify account is active, has a provisioned number, and has budget
+- ✅ Cloud Run env vars — set 2026-03-10 (SID: ACb96818..., FROM: +14793913613)
+- ✅ Twilio account — active, number +14793913613 provisioned, A2P Sole Proprietor brand registered (BN747d48e19ac57a40c8f68018c0cb1d1b)
+- ✅ A2P campaign submitted (CMdccc32aed5a1eefb2cb95d99b28cca72) — **awaiting approval (1–5 days)**
+- ✅ `/privacy` and `/terms` pages created and live (required for A2P registration)
 
 **Build items:**
-- [ ] **11J.1** Check Cloud Run service env vars: confirm `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` are set (via Cloud Console or `gcloud run services describe`)
-- [ ] **11J.2** If not set: add them via Cloud Console → Cloud Run → Edit Revision → Environment Variables; redeploy
-- [ ] **11J.3** Verify Twilio account dashboard: confirm account is active, from-number is provisioned, and has sufficient credit
-- [ ] **11J.4** Add `alert_sms` field to the test Pro account monitor (a real phone number) via the settings UI
+- [x] **11J.1** Check Cloud Run service env vars — were missing, now set
+- [x] **11J.2** Add Twilio vars to Cloud Run — done via `gcloud run services update`
+- [x] **11J.3** Twilio account active, number +14793913613 provisioned, A2P campaign in review
+- [ ] **11J.4** Add `alert_sms` field to the test Pro account monitor (a real phone number) via the settings UI — do after campaign approved
 - [ ] **11J.5** Trigger a test SMS via the "Send test alert" button in monitor settings — confirm it arrives
 
-**Gate tests:**
-- [ ] **11J.T1** `TWILIO_ACCOUNT_SID` is non-empty in production Cloud Run — confirm via `gcloud run services describe`
+**Gate tests:** (run after A2P campaign approval email arrives)
+- [x] **11J.T1** `TWILIO_ACCOUNT_SID` is non-empty in production Cloud Run ✅
 - [ ] **11J.T2** Test SMS received on phone — "Test alert from StatusRooster" message arrives within 30s
-- [ ] **11J.T3** Down alert SMS received when monitor goes down (or simulate with a test monitor pointing to a known-down URL)
+- [ ] **11J.T3** Down alert SMS received when monitor goes down
 - [ ] **11J.T4** Recovery SMS received when monitor recovers
 - [ ] **11J.T5** Free plan user does NOT receive SMS (plan gate is enforced) — verify in logs
 
