@@ -18,7 +18,8 @@
         </div>
         <div class="md-subtitle">
             {% if monitor.get('monitor_type') == 'heartbeat' %}
-            <span class="md-type">♥ Heartbeat monitor</span>
+            <span class="md-type">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:-2px;margin-right:3px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Heartbeat monitor</span>
             <span class="md-url md-url-static">Expected every
                 {% set hbi = monitor.get('heartbeat_interval', 300) %}
                 {% if hbi < 120 %}{{ hbi }}s{% elif hbi < 3600 %}{{ (hbi / 60)|int }}m{% elif hbi < 86400 %}{{ (hbi / 3600)|int }}h{% else %}24h{% endif %}
@@ -28,7 +29,8 @@
             <span class="md-type">{ } JSON/API monitor for</span>
             <a href="{{ monitor.url }}" target="_blank" class="md-url">{{ monitor.url }}</a>
             {% elif monitor.get('monitor_type') == 'ssl' %}
-            <span class="md-type">🔒 SSL certificate monitor for</span>
+            <span class="md-type">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:-2px;margin-right:3px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>SSL certificate monitor for</span>
             <span class="md-url md-url-static">{{ monitor.get('ssl_domain', monitor.url) }}</span>
             {% else %}
             <span class="md-type">HTTP{{ 'S' if monitor.url.startswith('https') else '' }} monitor for</span>
@@ -195,7 +197,8 @@
             {% if monitor.get('response_threshold_ms') %}
             <span class="md-threshold-badge">Threshold: {{ monitor.response_threshold_ms }}ms</span>
             {% else %}
-            <a href="/monitors/{{ monitor.id }}/edit" class="md-threshold-cta">⚠ Setup alerts for slow response times</a>
+            <a href="/monitors/{{ monitor.id }}/edit" class="md-threshold-cta">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="vertical-align:-2px;margin-right:3px;"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Setup alerts for slow response times</a>
             {% endif %}
             <div class="md-range-toggle">
                 <button class="range-btn active" onclick="loadChartRange(1, this)">1h</button>
@@ -237,7 +240,8 @@
             <span class="md-inc-count">{{ incidents|length }} total</span>
             {% if incidents %}
             <a href="/incidents?monitor_id={{ monitor.id }}" class="btn btn-secondary btn-sm">View all incidents →</a>
-            <button class="btn btn-secondary btn-sm" onclick="exportIncidents()">📥 Export CSV</button>
+            <button class="btn btn-secondary btn-sm" onclick="exportIncidents()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="vertical-align:-1px;margin-right:3px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export CSV</button>
             {% endif %}
         </div>
     </div>
@@ -260,7 +264,9 @@
             </span>
             <span class="md-inc-cause">
                 {% if monitor.get('monitor_type') == 'heartbeat' %}
-                    <span class="md-http-badge md-http-badge--err">♥</span>
+                    <span class="md-http-badge md-http-badge--err">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11" style="vertical-align:-1px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    </span>
                     <span class="md-http-text">Missed ping</span>
                 {% elif inc.get('status_code') %}
                     <span class="md-http-badge {% if inc.status_code >= 500 %}md-http-badge--5xx{% elif inc.status_code >= 400 %}md-http-badge--4xx{% elif inc.status_code >= 300 %}md-http-badge--3xx{% elif inc.status_code >= 200 %}md-http-badge--2xx{% else %}md-http-badge--err{% endif %}">{{ inc.status_code }}</span>
@@ -329,7 +335,8 @@
     </div>
     <div class="md-config-grid">
         <div class="md-config-card">
-            <div class="md-config-title">🔒 Certificate Details</div>
+            <div class="md-config-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="vertical-align:-1px;margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Certificate Details</div>
             <div class="md-config-row">
                 <span>Domain</span>
                 <span>{{ monitor.get('ssl_domain', '—') }}</span>
@@ -383,7 +390,8 @@
     <div class="md-config-grid">
         {% if monitor.get('ssl_expiry') or monitor.get('ssl_issuer') %}
         <div class="md-config-card">
-            <div class="md-config-title">🔒 SSL Certificate</div>
+            <div class="md-config-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="vertical-align:-1px;margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>SSL Certificate</div>
             <div class="md-config-row">
                 <span>Issuer</span>
                 <span>{{ monitor.get('ssl_issuer', '—') }}</span>
@@ -403,7 +411,8 @@
         {% endif %}
         {% if monitor.get('keyword') %}
         <div class="md-config-card">
-            <div class="md-config-title">🔍 Keyword Check</div>
+            <div class="md-config-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="vertical-align:-1px;margin-right:4px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Keyword Check</div>
             <div class="md-config-row">
                 <span>Expression</span>
                 <code>{{ monitor.keyword }}</code>
@@ -412,7 +421,8 @@
         {% endif %}
         {% if monitor.get('webhook_url') %}
         <div class="md-config-card">
-            <div class="md-config-title">🔗 Webhook</div>
+            <div class="md-config-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="vertical-align:-1px;margin-right:4px;"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>Webhook</div>
             <div class="md-config-row">
                 <span>URL</span>
                 <span class="md-config-mono">{{ monitor.webhook_url[:50] }}{{ '…' if monitor.webhook_url|length > 50 else '' }}</span>
@@ -425,7 +435,8 @@
         {% endif %}
         {% if mw_list %}
         <div class="md-config-card">
-            <div class="md-config-title">🛠 Maintenance</div>
+            <div class="md-config-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="vertical-align:-1px;margin-right:4px;"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>Maintenance</div>
             {% for mw in mw_list %}
             <div class="md-config-row">
                 <span>{{ mw.day | capitalize }}</span>
@@ -445,17 +456,23 @@
     </div>
     <div class="md-alert-channels">
         <div class="md-alert-ch {% if monitor.alert_email %}md-ch-active{% endif %}">
-            <span class="md-ch-icon">✉</span>
+            <span class="md-ch-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2 8 12 13 22 8"/></svg>
+            </span>
             <span class="md-ch-name">Email</span>
             <span class="md-ch-status">{{ monitor.alert_email if monitor.alert_email else 'Not configured' }}</span>
         </div>
         <div class="md-alert-ch {% if monitor.get('alert_slack_webhook') %}md-ch-active{% endif %}">
-            <span class="md-ch-icon">💬</span>
+            <span class="md-ch-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-label="Slack"><path d="M5.042 15.165a2.528 2.528 0 01-2.52 2.523A2.528 2.528 0 010 15.165a2.527 2.527 0 012.522-2.52h2.52v2.52zm1.271 0a2.527 2.527 0 012.521-2.52 2.527 2.527 0 012.521 2.52v6.313A2.528 2.528 0 018.834 24a2.528 2.528 0 01-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 01-2.521-2.52A2.528 2.528 0 018.834 0a2.527 2.527 0 012.521 2.522v2.52H8.834zm0 1.271a2.527 2.527 0 012.521 2.521 2.527 2.527 0 01-2.521 2.521H2.522A2.528 2.528 0 010 8.834a2.528 2.528 0 012.522-2.521h6.312zm10.122 2.521a2.528 2.528 0 012.522-2.521A2.528 2.528 0 0124 8.834a2.527 2.527 0 01-2.522 2.521h-2.522V8.834zm-1.268 0a2.527 2.527 0 01-2.523 2.521 2.527 2.527 0 01-2.52-2.521V2.522A2.527 2.527 0 0115.165 0a2.528 2.528 0 012.523 2.522v6.312zm-2.523 10.122a2.528 2.528 0 012.523 2.522A2.528 2.528 0 0115.165 24a2.527 2.527 0 01-2.52-2.522v-2.522h2.52zm0-1.268a2.527 2.527 0 01-2.52-2.523 2.527 2.527 0 012.52-2.52h6.313A2.528 2.528 0 0124 15.165a2.528 2.528 0 01-2.522 2.523h-6.313z"/></svg>
+            </span>
             <span class="md-ch-name">Slack</span>
             <span class="md-ch-status">{{ 'Connected' if monitor.get('alert_slack_webhook') else 'Not configured' }}</span>
         </div>
         <div class="md-alert-ch {% if monitor.get('alert_sms') %}md-ch-active{% endif %}">
-            <span class="md-ch-icon">📱</span>
+            <span class="md-ch-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            </span>
             <span class="md-ch-name">SMS</span>
             <span class="md-ch-status">{% if monitor.get('alert_sms') %}{{ monitor.alert_sms }}{% elif user.get('plan', 'free') != 'pro' %}Pro only{% else %}Not configured{% endif %}</span>
         </div>

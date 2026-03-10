@@ -97,11 +97,14 @@
 }
 
 
-/* Page icon (rooster emoji in h1 headings) */
+/* Page icon (brand logo in sidebar) */
 .page-icon {
-    font-size: 1.3em;
-    vertical-align: -0.05em;
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    vertical-align: -4px;
     margin-right: 0.15em;
+    object-fit: contain;
 }
 
 /* ============================================================
@@ -2763,7 +2766,7 @@ code {
     border-color: var(--success-border);
     background: var(--success-bg);
 }
-.md-ch-icon { font-size: 1rem; }
+.md-ch-icon { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; flex-shrink: 0; color: var(--text-muted, #6b7280); }
 .md-ch-name {
     font-weight: 600;
     color: var(--text);
@@ -5345,7 +5348,11 @@ details[open] .inc-headers-block .inc-headers-summary::before,
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }
 .mf-type-btn .mf-type-icon {
-    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
     line-height: 1;
 }
 .mf-type-select select {
@@ -5439,9 +5446,14 @@ details[open] .inc-headers-block .inc-headers-summary::before,
     gap: 0.6rem;
 }
 .mf-notify-channel-icon {
-    font-size: 1.15rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
     line-height: 1;
     flex-shrink: 0;
+    color: var(--text-muted, #6b7280);
 }
 .mf-notify-channel-icon-svg {
     width: 1.1rem;

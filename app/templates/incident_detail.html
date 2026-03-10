@@ -44,7 +44,7 @@
                 <div class="inc-kv">
                     <span class="inc-kv-label">Type</span>
                     <span class="inc-kv-value">
-                        {% if monitor.get('monitor_type') == 'heartbeat' %}♥ Heartbeat{% elif monitor.get('monitor_type') == 'json_api' %}{ } JSON/API{% elif monitor.get('monitor_type') == 'ssl' %}🔒 SSL{% else %}HTTP{% endif %}
+                        {% if monitor.get('monitor_type') == 'heartbeat' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="vertical-align:-1px;margin-right:2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Heartbeat{% elif monitor.get('monitor_type') == 'json_api' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="vertical-align:-1px;margin-right:2px;"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>JSON/API{% elif monitor.get('monitor_type') == 'ssl' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="vertical-align:-1px;margin-right:2px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>SSL{% else %}HTTP{% endif %}
                     </span>
                 </div>
                 <div class="inc-kv">

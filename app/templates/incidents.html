@@ -173,7 +173,9 @@
                 <span class="md-http-badge md-http-badge--err">—</span>
                 <span class="inc-cause-text">{% if inc.status_code == -1 %}Timeout{% elif inc.status_code == -2 %}DNS failed{% else %}Connection failed{% endif %}</span>
             {% elif mon.get('monitor_type') == 'heartbeat' %}
-                <span class="md-http-badge md-http-badge--err">♥</span>
+                <span class="md-http-badge md-http-badge--err">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11" style="vertical-align:-1px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                </span>
                 <span class="inc-cause-text">Missed ping</span>
             {% elif mon.get('monitor_type') == 'ssl' %}
                 <span class="md-http-badge md-http-badge--4xx">SSL</span>
