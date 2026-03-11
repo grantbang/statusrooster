@@ -125,6 +125,7 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
         "public": public,
         "slug": slug,
         "group": group,
+        "regions": [],  # Populated after checks — list of regions that checked this monitor
         "created_at": datetime.now(timezone.utc),
     }
     doc_ref.set(monitor_data)

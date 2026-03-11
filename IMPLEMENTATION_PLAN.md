@@ -18,43 +18,43 @@
 
 ### 2.1.1 — Create the checker_core package
 
-- [ ] Create directory `checker_core/`
-- [ ] Create file `checker_core/__init__.py`
+- [x] Create directory `checker_core/`
+- [x] Create file `checker_core/__init__.py`
 
 ### 2.1.2 — Move pure check functions from `app/services/checker.py` to `checker_core/__init__.py`
 
 Move these functions exactly as-is (copy, don't modify logic):
 
-- [ ] `_PRIVATE_NETWORKS` list (the ipaddress network objects)
-- [ ] `validate_url_not_internal(url: str) -> None`
-- [ ] `check_url(url, timeout, expected_status_code, http_method, follow_redirects, basic_auth_user, basic_auth_pass, bearer_token, request_body, request_content_type, custom_headers, client) -> dict`
-- [ ] `check_url_with_retry(url, timeout, expected_status_code, http_method, follow_redirects, basic_auth_user, basic_auth_pass, bearer_token, request_body, request_content_type, custom_headers, client) -> dict`
-- [ ] `check_json_api(url, timeout, expected_status_code, auth_header, assertions, client) -> dict`
-- [ ] `_resolve_json_path(data, path) -> any`
-- [ ] `_evaluate_assertion(actual, operator, expected) -> bool`
-- [ ] `check_ssl_certificate(domain) -> dict`
-- [ ] `grab_ssl_info(url) -> dict`
-- [ ] `_check_keyword_expression(expression, body) -> bool`
-- [ ] `_check_threshold_condition(condition_str, actual_ms) -> bool`
+- [x] `_PRIVATE_NETWORKS` list (the ipaddress network objects)
+- [x] `validate_url_not_internal(url: str) -> None`
+- [x] `check_url(url, timeout, expected_status_code, http_method, follow_redirects, basic_auth_user, basic_auth_pass, bearer_token, request_body, request_content_type, custom_headers, client) -> dict`
+- [x] `check_url_with_retry(url, timeout, expected_status_code, http_method, follow_redirects, basic_auth_user, basic_auth_pass, bearer_token, request_body, request_content_type, custom_headers, client) -> dict`
+- [x] `check_json_api(url, timeout, expected_status_code, auth_header, assertions, client) -> dict`
+- [x] `_resolve_json_path(data, path) -> any`
+- [x] `_evaluate_assertion(actual, operator, expected) -> bool`
+- [x] `check_ssl_certificate(domain) -> dict`
+- [x] `grab_ssl_info(url) -> dict`
+- [x] `_check_keyword_expression(expression, body) -> bool`
+- [x] `_check_threshold_condition(condition_str, actual_ms) -> bool`
 
 ### 2.1.3 — Move required imports into `checker_core/__init__.py`
 
 The checker_core module needs these imports at the top:
 
-- [ ] `import httpx`
-- [ ] `import asyncio`
-- [ ] `import time`
-- [ ] `import ssl`
-- [ ] `import socket`
-- [ ] `import ipaddress`
-- [ ] `import random`
-- [ ] `import logging`
-- [ ] `from datetime import datetime, timezone`
-- [ ] `from urllib.parse import urlparse`
+- [x] `import httpx`
+- [x] `import asyncio`
+- [x] `import time`
+- [x] `import ssl`
+- [x] `import socket`
+- [x] `import ipaddress`
+- [x] `import random`
+- [x] `import logging`
+- [x] `from datetime import datetime, timezone`
+- [x] `from urllib.parse import urlparse`
 
 ### 2.1.4 — Update `app/services/checker.py` to import from checker_core
 
-- [ ] Replace all moved function definitions with imports:
+- [x] Replace all moved function definitions with imports:
 
 ```python
 from checker_core import (
@@ -71,8 +71,8 @@ from checker_core import (
 )
 ```
 
-- [ ] Remove the moved function bodies from `app/services/checker.py`
-- [ ] Keep in `app/services/checker.py` (do NOT move these — they depend on Firestore/alerts):
+- [x] Remove the moved function bodies from `app/services/checker.py`
+- [x] Keep in `app/services/checker.py` (do NOT move these — they depend on Firestore/alerts):
   - `_get_client()` and `_shared_client` and `close_client()`
   - `CHECK_CONCURRENCY` and `_check_semaphore`
   - `_percentile()`
@@ -84,15 +84,15 @@ from checker_core import (
 
 ### 2.1.5 — Verify extraction didn't break anything
 
-- [ ] Start the app locally: `uvicorn app.main:app --reload`
-- [ ] Confirm no import errors on startup
+- [x] Start the app locally: `uvicorn app.main:app --reload`
+- [x] Confirm no import errors on startup
 - [ ] Run a manual check-now on any monitor — confirm it still works
-- [ ] Run the security tests: `pytest tests/test_e2e.py::TestSecurity -v`
-- [ ] Confirm SSRF protection still works (the `validate_url_not_internal` import chain is intact)
+- [x] Run the security tests: `pytest tests/test_e2e.py::TestSecurity -v`
+- [x] Confirm SSRF protection still works (the `validate_url_not_internal` import chain is intact)
 
 ### 2.1.6 — Create `checker_core/requirements.txt`
 
-- [ ] Create file with the dependencies checker_core needs (subset of main app):
+- [x] Create file with the dependencies checker_core needs (subset of main app):
 
 ```
 httpx>=0.27.0
@@ -112,16 +112,16 @@ cryptography>=42.0.0
 
 ### 2.2.1 — Create worker directory structure
 
-- [ ] Create `worker/` directory at project root
-- [ ] Create `worker/__init__.py` (empty)
-- [ ] Create `worker/main.py`
-- [ ] Create `worker/Dockerfile`
-- [ ] Create `worker/requirements.txt`
-- [ ] Create `worker/.dockerignore`
+- [x] Create `worker/` directory at project root
+- [x] Create `worker/__init__.py` (empty)
+- [x] Create `worker/main.py`
+- [x] Create `worker/Dockerfile`
+- [x] Create `worker/requirements.txt`
+- [x] Create `worker/.dockerignore`
 
 ### 2.2.2 — Create `worker/requirements.txt`
 
-- [ ] Contents:
+- [x] Contents:
 
 ```
 fastapi>=0.110.0
@@ -133,34 +133,34 @@ pydantic>=2.0.0
 
 ### 2.2.3 — Create `worker/main.py`
 
-- [ ] FastAPI app with exactly two endpoints: `POST /check-batch` and `GET /health`
-- [ ] Environment variables: `WORKER_REGION` (string, e.g. "us-west1") and `WORKER_SECRET` (string, shared auth secret)
-- [ ] `POST /check-batch`:
-  - [ ] Accepts JSON body: `{"monitors": [list of monitor dicts]}`
-  - [ ] Authenticates via `X-Worker-Secret` header — returns 403 if doesn't match `WORKER_SECRET` env var
-  - [ ] For each monitor in the list:
-    - [ ] Read `monitor_type` field to determine check type
-    - [ ] If `monitor_type == "http"`: call `check_url_with_retry()` from `checker_core` with all HTTP fields (url, timeout, expected_status_code, http_method, follow_redirects, basic_auth_user, basic_auth_pass, bearer_token, request_body, request_content_type, custom_headers)
-    - [ ] If `monitor_type == "json_api"`: call `check_json_api()` from `checker_core` with fields (url, timeout, expected_status_code, auth_header, json_assertions)
-    - [ ] If `monitor_type == "ssl"`: call `check_ssl_certificate()` from `checker_core` with ssl_domain. Run in executor (it's synchronous). Normalize result to `{is_up, status_code, response_ms}`
-    - [ ] If `monitor_type == "heartbeat"`: skip (heartbeats are passive, not active checks). Do not include in results.
-    - [ ] Wrap each check in try/except — if a check throws, return `{is_up: false, error: str(e)}` for that monitor
-  - [ ] Returns JSON: `{"region": WORKER_REGION, "results": [list of result dicts]}`
-  - [ ] Each result dict: `{monitor_id, region, is_up, status_code, response_ms, error}`
-- [ ] `GET /health`:
-  - [ ] Returns: `{"status": "healthy", "region": WORKER_REGION}`
-  - [ ] No auth required (used by Cloud Run health checks)
-- [ ] Create a shared `httpx.AsyncClient` with connection pooling at module level (same pattern as primary service: lazy init, 100 max connections, 50 keepalive)
-- [ ] Import all check functions from `checker_core`
+- [x] FastAPI app with exactly two endpoints: `POST /check-batch` and `GET /health`
+- [x] Environment variables: `WORKER_REGION` (string, e.g. "us-west1") and `WORKER_SECRET` (string, shared auth secret)
+- [x] `POST /check-batch`:
+  - [x] Accepts JSON body: `{"monitors": [list of monitor dicts]}`
+  - [x] Authenticates via `X-Worker-Secret` header — returns 403 if doesn't match `WORKER_SECRET` env var
+  - [x] For each monitor in the list:
+    - [x] Read `monitor_type` field to determine check type
+    - [x] If `monitor_type == "http"`: call `check_url_with_retry()` from `checker_core` with all HTTP fields (url, timeout, expected_status_code, http_method, follow_redirects, basic_auth_user, basic_auth_pass, bearer_token, request_body, request_content_type, custom_headers)
+    - [x] If `monitor_type == "json_api"`: call `check_json_api()` from `checker_core` with fields (url, timeout, expected_status_code, auth_header, json_assertions)
+    - [x] If `monitor_type == "ssl"`: call `check_ssl_certificate()` from `checker_core` with ssl_domain. Run in executor (it's synchronous). Normalize result to `{is_up, status_code, response_ms}`
+    - [x] If `monitor_type == "heartbeat"`: skip (heartbeats are passive, not active checks). Do not include in results.
+    - [x] Wrap each check in try/except — if a check throws, return `{is_up: false, error: str(e)}` for that monitor
+  - [x] Returns JSON: `{"region": WORKER_REGION, "results": [list of result dicts]}`
+  - [x] Each result dict: `{monitor_id, region, is_up, status_code, response_ms, error}`
+- [x] `GET /health`:
+  - [x] Returns: `{"status": "healthy", "region": WORKER_REGION}`
+  - [x] No auth required (used by Cloud Run health checks)
+- [x] Create a shared `httpx.AsyncClient` with connection pooling at module level (same pattern as primary service: lazy init, 100 max connections, 50 keepalive)
+- [x] Import all check functions from `checker_core`
 
 ### 2.2.4 — Create `worker/Dockerfile`
 
-- [ ] Base image: `python:3.12-slim`
-- [ ] Working directory: `/app`
-- [ ] Copy `checker_core/` into the image
-- [ ] Copy `worker/requirements.txt` and install
-- [ ] Copy `worker/main.py`
-- [ ] CMD: `uvicorn main:app --host 0.0.0.0 --port 8080`
+- [x] Base image: `python:3.12-slim`
+- [x] Working directory: `/app`
+- [x] Copy `checker_core/` into the image
+- [x] Copy `worker/requirements.txt` and install
+- [x] Copy `worker/main.py`
+- [x] CMD: `uvicorn main:app --host 0.0.0.0 --port 8080`
 
 ```dockerfile
 FROM python:3.12-slim
@@ -174,7 +174,7 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
 
 ### 2.2.5 — Create `worker/.dockerignore`
 
-- [ ] Contents: `__pycache__`, `.git`, `.env`, `venv`, `*.pyc`
+- [x] Contents: `__pycache__`, `.git`, `.env`, `venv`, `*.pyc`
 
 ### 2.2.6 — Test worker locally
 
@@ -208,7 +208,7 @@ curl -X POST http://localhost:8081/check-batch \
 
 ### 2.3.1 — Add worker config to `app/config.py`
 
-- [ ] Add environment variables:
+- [x] Add environment variables:
 
 ```python
 # Multi-region check workers
@@ -217,12 +217,11 @@ WORKER_URL_US_EAST1: str = os.getenv("WORKER_URL_US_EAST1", "")  # Primary (empt
 WORKER_URL_US_WEST1: str = os.getenv("WORKER_URL_US_WEST1", "")
 WORKER_URL_EU_WEST1: str = os.getenv("WORKER_URL_EU_WEST1", "")
 WORKER_URL_ASIA_EAST1: str = os.getenv("WORKER_URL_ASIA_EAST1", "")
-WORKER_URL_AU_SE1: str = os.getenv("WORKER_URL_AU_SE1", "")
 ```
 
 ### 2.3.2 — Add region constants to `app/services/checker.py`
 
-- [ ] Add at the top of the file, after imports:
+- [x] Add at the top of the file, after imports:
 
 ```python
 from app.config import settings
@@ -233,16 +232,15 @@ WORKER_REGIONS = {
     "us-west1": settings.WORKER_URL_US_WEST1,
     "europe-west1": settings.WORKER_URL_EU_WEST1,
     "asia-east1": settings.WORKER_URL_ASIA_EAST1,
-    "australia-southeast1": settings.WORKER_URL_AU_SE1,
 }
 
-FREE_REGIONS = ["us-east1", "us-west1", "europe-west1"]
-PRO_REGIONS = ["us-east1", "us-west1", "europe-west1", "asia-east1", "australia-southeast1"]
+# All users get the same 4 regions (australia-southeast1 dropped — GCP quota)
+CHECK_REGIONS = ["us-east1", "us-west1", "europe-west1", "asia-east1"]
 ```
 
 ### 2.3.3 — Add `.env.example` entries
 
-- [ ] Add to `.env.example`:
+- [x] Add to `.env.example`:
 
 ```
 # Multi-region workers (leave empty to disable multi-region)
@@ -251,12 +249,11 @@ WORKER_URL_US_EAST1=
 WORKER_URL_US_WEST1=
 WORKER_URL_EU_WEST1=
 WORKER_URL_ASIA_EAST1=
-WORKER_URL_AU_SE1=
 ```
 
 ### 2.3.4 — Add `regions` field to monitor model
 
-- [ ] In `app/models/monitor.py` `create_monitor()`, add to `monitor_data`:
+- [x] In `app/models/monitor.py` `create_monitor()`, add to `monitor_data`:
 
 ```python
 "regions": [],  # Populated after checks — list of regions that checked this monitor
@@ -275,7 +272,7 @@ WORKER_URL_AU_SE1=
 
 ### 2.4.1 — Create helper: serialize monitor for worker
 
-- [ ] Add to `app/services/checker.py`:
+- [x] Add to `app/services/checker.py`:
 
 ```python
 def _serialize_monitor_for_worker(monitor: dict) -> dict:
@@ -305,7 +302,7 @@ def _serialize_monitor_for_worker(monitor: dict) -> dict:
 
 ### 2.4.2 — Create helper: get user plan (cached)
 
-- [ ] The existing `_get_user_plan()` is in `app/services/alerts.py`. Either import it or create a lightweight version in checker.py:
+- [x] The existing `_get_user_plan()` is in `app/services/alerts.py`. Either import it or create a lightweight version in checker.py:
 
 ```python
 # Simple plan cache to avoid Firestore reads on every check
@@ -331,7 +328,7 @@ def _get_user_plan_cached(user_id: str) -> str:
 
 ### 2.4.3 — Create helper: dispatch to a single worker region
 
-- [ ] Add to `app/services/checker.py`:
+- [x] Add to `app/services/checker.py`:
 
 ```python
 async def _dispatch_to_worker(region: str, monitors: list[dict]) -> dict | None:
@@ -370,7 +367,7 @@ async def _dispatch_to_worker(region: str, monitors: list[dict]) -> dict | None:
 
 ### 2.4.4 — Create the aggregation function
 
-- [ ] Add to `app/services/checker.py`:
+- [x] Add to `app/services/checker.py`:
 
 ```python
 def _aggregate_multi_region_results(monitor: dict, local_result: dict, 
@@ -379,7 +376,7 @@ def _aggregate_multi_region_results(monitor: dict, local_result: dict,
     
     Aggregation rules:
     1. is_up = True if MAJORITY of regions report UP
-       (e.g., 2 of 3 regions, 3 of 5 regions)
+       (e.g., 3 of 4 regions)
        This prevents a single-region blip from triggering a false incident.
     2. response_ms = average across all regions
     3. response_ms_by_region = dict of {region: ms} for UI display
@@ -447,14 +444,14 @@ def _aggregate_multi_region_results(monitor: dict, local_result: dict,
 
 ### 2.4.5 — Create the multi-region check function
 
-- [ ] Add to `app/services/checker.py`:
+- [x] Add to `app/services/checker.py`:
 
 ```python
 async def _check_single_monitor_multi_region(monitor: dict, now: datetime) -> dict | None:
     """Check a monitor from multiple regions and aggregate results.
     
     Flow:
-    1. Determine which regions to use based on user plan (free=3, pro=5)
+    1. Determine which regions are active (all users get the same 4 regions)
     2. Run local check (us-east1) — always happens, even if workers are down
     3. Dispatch to remote workers concurrently
     4. Wait for all results (with 30s timeout per worker)
@@ -477,10 +474,8 @@ async def _check_single_monitor_multi_region(monitor: dict, now: datetime) -> di
     if not settings.WORKER_SECRET:
         return await _check_single_monitor_inner(monitor, now)
     
-    # Determine regions based on user plan
-    user_plan = _get_user_plan_cached(monitor.get("user_id", ""))
-    regions = PRO_REGIONS if user_plan == "pro" else FREE_REGIONS
-    active_regions = [r for r in regions if r == "us-east1" or WORKER_REGIONS.get(r)]
+    # Determine active regions (all users get the same 4 regions)
+    active_regions = [r for r in CHECK_REGIONS if r == "us-east1" or WORKER_REGIONS.get(r)]
     
     # If only primary region is available, fall back to local
     if len(active_regions) <= 1:
@@ -517,7 +512,7 @@ async def _check_single_monitor_multi_region(monitor: dict, now: datetime) -> di
 
 ### 2.4.6 — Wire multi-region into the check pipeline
 
-- [ ] In `app/services/checker.py`, update `_check_single_monitor()`:
+- [x] In `app/services/checker.py`, update `_check_single_monitor()`:
 
 ```python
 async def _check_single_monitor(monitor: dict, now: datetime) -> dict | None:
@@ -532,7 +527,7 @@ async def _check_single_monitor(monitor: dict, now: datetime) -> dict | None:
 
 ### 2.4.7 — Update `run_checks()` to handle multi-region result fields
 
-- [ ] In the Phase 3 processing loop in `run_checks()`, update the `monitor_updates` dict to store region data:
+- [x] In the Phase 3 processing loop in `run_checks()`, update the `monitor_updates` dict to store region data:
 
 ```python
 # After the existing monitor_updates assignments, add:
@@ -547,7 +542,7 @@ monitor_updates["last_response_by_region"] = response_by_region
 
 ### 2.4.8 — Verify multi-region works locally (without real workers)
 
-- [ ] With no `WORKER_SECRET` set, confirm the app still works exactly as before (falls back to local-only checks)
+- [x] With no `WORKER_SECRET` set, confirm the app still works exactly as before (falls back to local-only checks)
 - [ ] Run the E2E tests: `pytest tests/test_e2e.py -v --asyncio-mode=auto -k "not slow"`
 - [ ] All tests should pass — multi-region is additive, not breaking
 
@@ -562,16 +557,16 @@ monitor_updates["last_response_by_region"] = response_by_region
 
 ### 2.5.1 — Update `create_check()` in `app/models/check.py`
 
-- [ ] Add optional parameters: `regions_checked: int = 1`, `regions_up: int = 1`, `response_ms_by_region: dict | None = None`
-- [ ] Store these in the check document
+- [x] Add optional parameters: `regions_checked: int = 1`, `regions_up: int = 1`, `response_ms_by_region: dict | None = None`
+- [x] Store these in the check document
 
 ### 2.5.2 — Update `create_checks_batch()` in `app/models/check.py`
 
-- [ ] Accept and store the same regional fields in batch writes
+- [x] Accept and store the same regional fields in batch writes
 
 ### 2.5.3 — Update the batch accumulation in `run_checks()`
 
-- [ ] In `app/services/checker.py`, where `check_batch.append(...)` is called, include the region data:
+- [x] In `app/services/checker.py`, where `check_batch.append(...)` is called, include the region data:
 
 ```python
 check_batch.append({
@@ -596,7 +591,7 @@ check_batch.append({
 
 ### 2.6.1 — Pass region data to monitor detail template
 
-- [ ] In `app/routers/pages.py` `monitor_detail()`, add to the template context:
+- [x] In `app/routers/pages.py` `monitor_detail()`, add to the template context:
 
 ```python
 # Region response data (from last check)
@@ -607,14 +602,14 @@ check_batch.append({
 
 ### 2.6.2 — Add region response section to `app/templates/monitor_detail.html`
 
-- [ ] Add a "Response by Region" card below the response time chart (only shown if `last_regions_checked > 1`):
-- [ ] For each region, show:
-  - Region name (friendly: "US East", "US West", "Europe", "Asia", "Australia")
+- [x] Add a "Response by Region" card below the response time chart (only shown if `last_regions_checked > 1`):
+- [x] For each region, show:
+  - Region name (friendly: "US East", "US West", "Europe", "Asia")
   - Response time in ms
   - A simple bar visualization (width proportional to response time)
   - Green dot if that region reported UP, red if DOWN
-- [ ] For Pro-only regions not checked (asia-east1, australia-southeast1 for free users), show "Pro" badge — soft upsell
-- [ ] Show average across all regions at the bottom
+- [x] All 4 regions shown for all users (no Pro gating)
+- [x] Show average across all regions at the bottom
 
 ### 2.6.3 — Update dashboard cards (optional enhancement)
 
@@ -634,64 +629,53 @@ check_batch.append({
 
 ### 2.7.1 — Generate a strong WORKER_SECRET
 
-- [ ] Run: `python -c "import secrets; print(secrets.token_hex(32))"`
-- [ ] Save the value — you'll use it for all workers and the primary service
+- [x] Run: `python -c "import secrets; print(secrets.token_hex(32))"`
+- [x] Save the value — you'll use it for all workers and the primary service
 
 ### 2.7.2 — Deploy worker to us-west1
 
-- [ ] `cd` to project root (where `worker/` and `checker_core/` are)
-- [ ] Run:
-
-```bash
-gcloud run deploy statusrooster-worker \
-  --source=. \
-  --dockerfile=worker/Dockerfile \
-  --region=us-west1 \
-  --set-env-vars="WORKER_REGION=us-west1,WORKER_SECRET=YOUR_SECRET_HERE" \
-  --min-instances=0 \
-  --max-instances=5 \
-  --memory=512Mi \
-  --allow-unauthenticated
-```
-
-- [ ] Note the deployed URL (e.g., `https://statusrooster-worker-xxxxx-uw.a.run.app`)
-- [ ] Test: `curl https://WORKER_URL/health` → should return `{"status":"healthy","region":"us-west1"}`
+- [x] `cd` to project root (where `worker/` and `checker_core/` are)
+- [x] Built image via Cloud Build: `us-central1-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker:latest`
+- [x] Deployed from image to us-west1
+- [x] URL: `https://statusrooster-worker-286329122172.us-west1.run.app`
+- [x] Test: `curl /health` → `{"status":"healthy","region":"us-west1"}` ✅
 
 ### 2.7.3 — Deploy worker to europe-west1
 
-- [ ] Same command, change `--region=europe-west1` and `WORKER_REGION=europe-west1`
-- [ ] Note the deployed URL
-- [ ] Test health endpoint
+- [x] Deployed from same image to europe-west1
+- [x] URL: `https://statusrooster-worker-286329122172.europe-west1.run.app`
+- [x] Test health endpoint ✅
 
-### 2.7.4 — Deploy worker to asia-east1 (Pro only)
+### 2.7.4 — Deploy worker to asia-east1
 
-- [ ] Same command, change `--region=asia-east1` and `WORKER_REGION=asia-east1`
-- [ ] Note the deployed URL
-- [ ] Test health endpoint
+- [x] Deployed from same image to asia-east1
+- [x] URL: `https://statusrooster-worker-286329122172.asia-east1.run.app`
+- [x] Test health endpoint ✅
 
-### 2.7.5 — Deploy worker to australia-southeast1 (Pro only)
+### 2.7.5 — Australia region (dropped)
 
-- [ ] Same command, change `--region=australia-southeast1` and `WORKER_REGION=australia-southeast1`
-- [ ] Note the deployed URL
-- [ ] Test health endpoint
+- [x] ⚠️ Dropped — GCP quota exceeded for australia-southeast1. Decision: all users get the same 4 regions (us-east1, us-west1, europe-west1, asia-east1). No plan-based region gating.
+- [x] Removed `WORKER_URL_AU_SE1` from config.py, .env.example, and checker.py
+- [x] Replaced `FREE_REGIONS` / `PRO_REGIONS` with single `CHECK_REGIONS` list
+- [x] Removed `_get_user_plan_cached()` (no longer needed)
+- [x] Removed Australia row and "Pro" badge upsell from monitor_detail.html
 
 ### 2.7.6 — Update primary service with worker URLs
 
-- [ ] Set environment variables on the primary Cloud Run service:
-
-```bash
-gcloud run services update statusrooster \
-  --region=us-east1 \
-  --set-env-vars="WORKER_SECRET=YOUR_SECRET_HERE,WORKER_URL_US_WEST1=https://xxx-uw.a.run.app,WORKER_URL_EU_WEST1=https://xxx-ew.a.run.app,WORKER_URL_ASIA_EAST1=https://xxx-de.a.run.app,WORKER_URL_AU_SE1=https://xxx-ts.a.run.app"
-```
+- [x] Set WORKER_SECRET, WORKER_URL_US_WEST1, WORKER_URL_EU_WEST1, WORKER_URL_ASIA_EAST1 on primary Cloud Run service (us-east1)
+- [x] Verified env vars are set correctly via `gcloud run services describe`
+- [x] Verified workers reject requests without valid X-Worker-Secret (403)
+- [x] Fixed `check_monitor_now()` to route through multi-region path (was calling `_check_single_monitor_inner` directly)
+- [x] Redeployed primary service with fix
 
 ### 2.7.7 — End-to-end verification
 
-- [ ] Create a test HTTP monitor in the UI
-- [ ] Click "Check now"
-- [ ] Go to monitor detail — confirm "Response by Region" section shows data from multiple regions
-- [ ] Check Cloud Run logs for each worker — confirm they received and processed the request
-- [ ] Confirm the primary region (us-east1) still shows a result even if a worker is slow
+- [x] All 3 worker health endpoints respond correctly
+- [x] Workers execute real checks (google.com: 81ms from us-west1)
+- [x] Workers reject unauthenticated requests (403)
+- [x] SSRF protection active on workers (blocked httpstat.us → 127.0.0.1)
+- [x] Created test HTTP monitor → "Check now" → "Response by Region" shows: US East 95ms, US West 61ms, Europe 16ms, Asia 63ms. Average 58ms across 4 regions. ✅
+- [x] Fixed `check_monitor_now()` to use multi-region path + persist region data to monitor doc
 
 ---
 

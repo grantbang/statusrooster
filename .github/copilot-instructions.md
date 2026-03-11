@@ -26,7 +26,7 @@ It monitors websites, APIs, cron jobs (heartbeat monitoring), and SSL certificat
 | Templating | Jinja2 SSR (server-side rendered HTML — **NOT a SPA**) |
 | Database | Google Firestore (collections: `users`, `monitors`, `checks`, `incidents`) |
 | Hosting | Google Cloud Run (us-east1 primary + multi-region workers) |
-| Check Workers | Cloud Run services in us-west1, europe-west1, asia-east1, australia-southeast1 |
+| Check Workers | Cloud Run services in us-west1, europe-west1, asia-east1 |
 | Scheduler | Google Cloud Scheduler (60s cron → `POST /cron/check`, daily → `POST /cron/cleanup`) |
 | Email | SendGrid (`alerts@statusrooster.com`) — retry + backoff + circuit breaker |
 | SMS | Twilio (Pro only — real per-message cost) |
@@ -180,7 +180,7 @@ These are already implemented and tested. **Do not weaken or remove them:**
 | Status pages | **10** | 10 |
 | Custom branding on status pages | ❌ (shows "Powered by StatusRooster") | ✅ (custom logo, colors, hide powered-by) |
 | Aggregate status page | ❌ | ✅ |
-| Multi-region checks | **3 regions** (US-East, US-West, EU-West) | **5 regions** (+ Asia-East, Australia) |
+| Multi-region checks | **4 regions** (US-East, US-West, EU-West, Asia-East) | **4 regions** (same) |
 | Maintenance windows | **✅** | ✅ |
 | Custom headers / Basic Auth | **✅** | ✅ |
 | API access | ✅ | ✅ |
@@ -219,8 +219,8 @@ Each type has its own form section (create + edit), execution branch in `checker
 
 | Phase | Name | Status | Effort |
 |-------|------|--------|--------|
-| **2** | Multi-Region Monitoring | ⬜ Active | 15–25 hrs |
-| **6** | Infrastructure Hardening | ⬜ Next | 8–12 hrs |
+| **2** | Multi-Region Monitoring | ✅ Complete | 15–25 hrs |
+| **6** | Infrastructure Hardening | ⬜ Active | 8–12 hrs |
 | **1** | Free Tier Unlocking | ⬜ | 4–6 hrs |
 | **4** | Custom Branding (Pro) | ⬜ | 4–6 hrs |
 | **3** | Data Retention Tiers | ⬜ | 3–4 hrs |
@@ -230,13 +230,13 @@ Each type has its own form section (create + edit), execution branch in `checker
 ### Phase 2 Sub-Tasks (Multi-Region)
 | Step | What | Status |
 |------|------|--------|
-| 2.1 | Extract `checker_core/` shared module | ⬜ |
-| 2.2 | Create worker service (`worker/main.py`) | ⬜ |
-| 2.3 | Multi-region config (env vars, region lists) | ⬜ |
-| 2.4 | Build dispatcher + aggregation in `checker.py` | ⬜ |
-| 2.5 | Update check model for per-region data | ⬜ |
-| 2.6 | Monitor detail UI — per-region display | ⬜ |
-| 2.7 | Deploy workers to GCP regions | ⬜ |
+| 2.1 | Extract `checker_core/` shared module | ✅ |
+| 2.2 | Create worker service (`worker/main.py`) | ✅ |
+| 2.3 | Multi-region config (env vars, region lists) | ✅ |
+| 2.4 | Build dispatcher + aggregation in `checker.py` | ✅ |
+| 2.5 | Update check model for per-region data | ✅ |
+| 2.6 | Monitor detail UI — per-region display | ✅ |
+| 2.7 | Deploy workers to GCP regions (4 regions, all plans) | ✅ |
 
 ## Coding Conventions
 - **CSS class prefixes**: Dashboard `d-`, monitor detail `md-`, monitor forms `mf-`, incidents `inc-`
@@ -247,6 +247,8 @@ Each type has its own form section (create + edit), execution branch in `checker
 - **API responses**: `{"data": ..., "error": ..., "meta": ...}` shape on all API v1 endpoints
 - **Worker auth**: `X-Worker-Secret` header, validated against `WORKER_SECRET` env var
 - **Import rule for checker_core**: NEVER import Firestore, alerts, or app-specific modules into `checker_core/`. It must remain a pure, standalone module that workers can use without the full app.
+
+- **Tests**: After completing each implementation step, run the E2E tests: `SR_API_KEY=sr_xxx pytest tests/test_e2e.py -v --asyncio-mode=auto -k "not slow"`. If your changes break existing tests, fix them before moving on. If your changes add new behavior (new endpoints, changed plan gates, new fields), update or add tests in `tests/test_e2e.py` to cover it. Tests should stay green at every step — don't accumulate failures.
 
 ## What NOT To Do
 - ❌ Don't add mobile apps, enterprise SSO, team management, or on-call rotation
@@ -346,6 +348,7 @@ We're building StatusRooster — a free-first uptime monitoring SaaS for indie d
 1. `IMPLEMENTATION_PLAN.md` — the v2 build plan (multi-region, free tier pivot)
 2. `.github/copilot-instructions.md` — coding conventions, architecture, plan gating rules
 3. `TRACKER.md` — original project tracker (context only, v2 work is in IMPLEMENTATION_PLAN.md)
+4. Run E2E tests after each step. Fix any failures before moving on. Update tests if behavior changed.
 
 ## Strategy
 Free tier = growth weapon (100 monitors, 60s checks, Slack, webhooks, 3-region, status pages — all free).
@@ -368,6 +371,8 @@ Goal: maximize users, not revenue.
 3. Do NOT import app.database or app.models into checker_core/.
 4. Do NOT add new free-tier gates.
 5. Do NOT weaken P1 security measures.
+6. Commit after each phase with clear messages (e.g., "2.4.3: Implement result aggregation in checker.py").
+
 
 **Dev server:** `cd /Applications/statusrooster && source venv/bin/activate && uvicorn app.main:app --reload --port 8080`
 

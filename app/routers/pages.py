@@ -1339,6 +1339,10 @@ async def monitor_detail(request: Request, monitor_id: str):
         "last_check_ago": last_check_ago,
         "flash_message": flash_message,
         "flash_type": flash_type,
+        # Region response data (from last check)
+        "last_response_by_region": monitor.get("last_response_by_region", {}),
+        "last_regions_checked": monitor.get("last_regions_checked", 1),
+        "last_regions_up": monitor.get("last_regions_up", 0),
     })
 
 

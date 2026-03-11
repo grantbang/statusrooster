@@ -1,65 +1,42 @@
 import httpx
 import asyncio
 import time
-import ssl
-import socket
-import json as json_lib
 import logging
-import random
 from datetime import datetime, timezone, timedelta
 from app.database import get_db
+from app.config import settings
 from app.models.monitor import get_all_monitors, get_due_monitors, update_monitor
 from app.models.check import create_check, create_checks_batch
 from app.models.incident import create_incident, resolve_incident, get_open_incident, log_incident_event
 from app.services.alerts import send_down_alert, send_recovery_alert, send_ssl_expiry_alert, send_keyword_alert, send_threshold_alert, send_webhook_notification
 
+# Import pure check functions from checker_core (shared with regional workers)
+from checker_core import (
+    validate_url_not_internal,
+    check_url,
+    check_url_with_retry,
+    check_json_api,
+    check_ssl_certificate,
+    grab_ssl_info,
+    _check_keyword_expression,
+    _check_threshold_condition,
+    _resolve_json_path,
+    _evaluate_assertion,
+)
+
 logger = logging.getLogger(__name__)
 
-# ── SSRF Protection ────────────────────────────────────────────────────────────
-import ipaddress
-from urllib.parse import urlparse
+# ── Multi-Region Configuration ────────────────────────────────────────────────
 
-_PRIVATE_NETWORKS = [
-    ipaddress.ip_network("127.0.0.0/8"),      # Loopback
-    ipaddress.ip_network("10.0.0.0/8"),       # Private class A
-    ipaddress.ip_network("172.16.0.0/12"),    # Private class B
-    ipaddress.ip_network("192.168.0.0/16"),   # Private class C
-    ipaddress.ip_network("169.254.0.0/16"),   # Link-local / GCP metadata
-    ipaddress.ip_network("100.64.0.0/10"),    # Shared address space
-    ipaddress.ip_network("::1/128"),          # IPv6 loopback
-    ipaddress.ip_network("fc00::/7"),         # IPv6 unique local
-    ipaddress.ip_network("fe80::/10"),        # IPv6 link-local
-]
+WORKER_REGIONS = {
+    "us-east1": settings.WORKER_URL_US_EAST1,
+    "us-west1": settings.WORKER_URL_US_WEST1,
+    "europe-west1": settings.WORKER_URL_EU_WEST1,
+    "asia-east1": settings.WORKER_URL_ASIA_EAST1,
+}
 
-
-def validate_url_not_internal(url: str) -> None:
-    """Raise ValueError if the URL resolves to a private/internal IP address.
-    
-    Prevents SSRF attacks where users submit internal URLs (metadata server,
-    localhost, RFC-1918 ranges) to be fetched by the checker from within Cloud Run.
-    """
-    try:
-        parsed = urlparse(url)
-        hostname = parsed.hostname
-        if not hostname:
-            raise ValueError(f"Invalid URL: no hostname in {url!r}")
-        # Resolve all addresses the hostname maps to
-        infos = socket.getaddrinfo(hostname, None, proto=socket.IPPROTO_TCP)
-        for info in infos:
-            addr = info[4][0]
-            ip = ipaddress.ip_address(addr)
-            for network in _PRIVATE_NETWORKS:
-                if ip in network:
-                    raise ValueError(
-                        f"URL resolves to a private/internal IP ({ip}) — "
-                        "monitoring internal addresses is not allowed."
-                    )
-    except ValueError:
-        raise
-    except Exception as e:
-        raise ValueError(f"Could not resolve hostname for SSRF check: {e}") from e
-
-# ──────────────────────────────────────────────────────────────────────────────
+# All users get the same 4 regions (australia-southeast1 dropped — GCP quota)
+CHECK_REGIONS = ["us-east1", "us-west1", "europe-west1", "asia-east1"]
 
 # Limit concurrent outbound connections to avoid socket exhaustion
 CHECK_CONCURRENCY = 50
@@ -88,378 +65,6 @@ async def close_client():
         await _shared_client.aclose()
         _shared_client = None
         logger.info("[checker] Closed shared httpx.AsyncClient")
-
-
-async def check_url(url: str, timeout: float = 10.0, expected_status_code: int | None = None,
-                    http_method: str = "GET", follow_redirects: bool = True,
-                    basic_auth_user: str = "", basic_auth_pass: str = "",
-                    bearer_token: str = "",
-                    request_body: str = "", request_content_type: str = "",
-                    custom_headers: list | None = None,
-                    client: httpx.AsyncClient | None = None) -> dict:
-    """
-    Perform an HTTP request to the target URL.
-    Returns dict with status_code, response_ms, is_up, body (first 10KB).
-    Uses shared client if provided, otherwise creates a one-off client.
-    """
-    try:
-        validate_url_not_internal(url)
-    except ValueError as e:
-        return {"is_up": False, "status_code": None, "response_ms": None, "body": "", "error": str(e), "ssrf_blocked": True}
-    try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (compatible; StatusRooster/1.0; +https://statusrooster.com)",
-        }
-        # Custom headers (applied first so auth headers can override)
-        if custom_headers:
-            for h in custom_headers:
-                key = h.get("key", "").strip()
-                val = h.get("value", "").strip()
-                if key:
-                    headers[key] = val
-        # Auth: Bearer token takes priority over Basic Auth
-        if bearer_token:
-            headers["Authorization"] = f"Bearer {bearer_token}"
-        elif basic_auth_user and basic_auth_pass:
-            import base64
-            credentials = base64.b64encode(f"{basic_auth_user}:{basic_auth_pass}".encode()).decode()
-            headers["Authorization"] = f"Basic {credentials}"
-
-        # Request body for POST/PUT/PATCH/DELETE
-        content = None
-        if request_body and http_method.upper() in ("POST", "PUT", "PATCH", "DELETE"):
-            content = request_body.encode("utf-8")
-            if request_content_type:
-                headers["Content-Type"] = request_content_type
-            else:
-                headers["Content-Type"] = "application/json"
-
-        # Use shared client if provided, otherwise create a one-off client
-        owns_client = client is None
-        if owns_client:
-            client = httpx.AsyncClient()
-        try:
-            start = time.monotonic()
-            response = await client.request(
-                http_method.upper(),
-                url,
-                timeout=timeout,
-                follow_redirects=follow_redirects,
-                headers=headers,
-                content=content,
-            )
-            elapsed_ms = round((time.monotonic() - start) * 1000, 2)
-
-            if expected_status_code:
-                is_up = response.status_code == expected_status_code
-            else:
-                is_up = 200 <= response.status_code < 400
-            # Capture response headers as a plain dict (for incident storage)
-            resp_headers = dict(response.headers)
-            return {
-                "status_code": response.status_code,
-                "response_ms": elapsed_ms,
-                "is_up": is_up,
-                "body": response.text[:10240] if is_up else response.text[:10240],
-                "response_headers": resp_headers,
-            }
-        finally:
-            if owns_client:
-                await client.aclose()
-    except (httpx.TimeoutException, httpx.ConnectError, httpx.RequestError):
-        return {
-            "status_code": None,
-            "response_ms": None,
-            "is_up": False,
-            "body": "",
-            "response_headers": {},
-        }
-
-
-async def check_url_with_retry(url: str, timeout: float = 10.0, expected_status_code: int | None = None,
-                               http_method: str = "GET", follow_redirects: bool = True,
-                               basic_auth_user: str = "", basic_auth_pass: str = "",
-                               bearer_token: str = "",
-                               request_body: str = "", request_content_type: str = "",
-                               custom_headers: list | None = None,
-                               client: httpx.AsyncClient | None = None) -> dict:
-    """
-    Check a URL with false positive prevention.
-    If the first check fails, wait with jitter and retry once.
-    Returns result dict with added 'retried' key.
-    """
-    _extra = dict(bearer_token=bearer_token, request_body=request_body,
-                  request_content_type=request_content_type, custom_headers=custom_headers)
-    result = await check_url(url, timeout, expected_status_code,
-                             http_method=http_method, follow_redirects=follow_redirects,
-                             basic_auth_user=basic_auth_user, basic_auth_pass=basic_auth_pass,
-                             client=client, **_extra)
-    if not result["is_up"]:
-        # Jitter retry delay to prevent synchronized retry storms during outages
-        await asyncio.sleep(random.uniform(2, 8))
-        result = await check_url(url, timeout, expected_status_code,
-                                 http_method=http_method, follow_redirects=follow_redirects,
-                                 basic_auth_user=basic_auth_user, basic_auth_pass=basic_auth_pass,
-                                 client=client, **_extra)
-        result["retried"] = True
-    else:
-        result["retried"] = False
-    return result
-
-
-async def check_json_api(url: str, timeout: float = 10.0, expected_status_code: int | None = None,
-                         auth_header: str = "", assertions: list | None = None,
-                         client: httpx.AsyncClient | None = None) -> dict:
-    """
-    Check a JSON API endpoint. Validates:
-    - HTTP response status
-    - JSON validity
-    - Field assertions (key path + operator + expected value)
-    Returns dict with status_code, response_ms, is_up, body, assertion_results.
-    Uses shared client if provided, otherwise creates a one-off client.
-    """
-    assertions = assertions or []
-    try:
-        validate_url_not_internal(url)
-    except ValueError as e:
-        return {"is_up": False, "status_code": None, "response_ms": None, "body": "", "error": str(e), "ssrf_blocked": True, "assertion_results": []}
-    try:
-        headers = {}
-        if auth_header:
-            headers["Authorization"] = auth_header
-
-        # Use shared client if provided, otherwise create a one-off client
-        owns_client = client is None
-        if owns_client:
-            client = httpx.AsyncClient()
-        try:
-            start = time.monotonic()
-            response = await client.get(url, timeout=timeout, follow_redirects=True, headers=headers)
-            elapsed_ms = round((time.monotonic() - start) * 1000, 2)
-
-            # Check status code
-            if expected_status_code:
-                status_ok = response.status_code == expected_status_code
-            else:
-                status_ok = 200 <= response.status_code < 400
-
-            body_text = response.text[:10240]
-
-            # Try parsing JSON
-            json_data = None
-            json_valid = False
-            try:
-                json_data = response.json()
-                json_valid = True
-            except Exception:
-                pass
-
-            # Run assertions
-            assertion_results = []
-            assertions_passed = True
-            if json_valid and json_data is not None and assertions:
-                for assertion in assertions:
-                    path = assertion.get("path", "")
-                    operator = assertion.get("operator", "equals")
-                    expected = assertion.get("value", "")
-                    actual = _resolve_json_path(json_data, path)
-                    passed = _evaluate_assertion(actual, operator, expected)
-                    assertion_results.append({
-                        "path": path,
-                        "operator": operator,
-                        "expected": expected,
-                        "actual": str(actual) if actual is not None else None,
-                        "passed": passed,
-                    })
-                    if not passed:
-                        assertions_passed = False
-            elif assertions and not json_valid:
-                assertions_passed = False
-                assertion_results.append({
-                    "path": "*",
-                    "operator": "json_valid",
-                    "expected": "valid JSON",
-                    "actual": "invalid",
-                    "passed": False,
-                })
-
-            is_up = status_ok and json_valid and assertions_passed
-
-            return {
-                "status_code": response.status_code,
-                "response_ms": elapsed_ms,
-                "is_up": is_up,
-                "body": body_text,
-                "json_valid": json_valid,
-                "assertion_results": assertion_results,
-                "response_headers": dict(response.headers),
-            }
-        finally:
-            if owns_client:
-                await client.aclose()
-    except (httpx.TimeoutException, httpx.ConnectError, httpx.RequestError):
-        return {
-            "status_code": None,
-            "response_ms": None,
-            "is_up": False,
-            "body": "",
-            "json_valid": False,
-            "assertion_results": [],
-            "response_headers": {},
-        }
-
-
-def _resolve_json_path(data, path: str):
-    """Resolve a dot-notation JSON path like 'data.user.name' or 'items[0].id'."""
-    if not path:
-        return data
-    parts = path.replace("[", ".[").split(".")
-    current = data
-    for part in parts:
-        if not part:
-            continue
-        if part.startswith("[") and part.endswith("]"):
-            try:
-                idx = int(part[1:-1])
-                current = current[idx]
-            except (IndexError, TypeError, ValueError):
-                return None
-        elif isinstance(current, dict):
-            current = current.get(part)
-        else:
-            return None
-        if current is None:
-            return None
-    return current
-
-
-def _evaluate_assertion(actual, operator: str, expected: str) -> bool:
-    """Evaluate a single JSON assertion."""
-    if actual is None and operator != "not_exists":
-        return False
-    try:
-        if operator == "equals":
-            return str(actual) == str(expected)
-        elif operator == "not_equals":
-            return str(actual) != str(expected)
-        elif operator == "contains":
-            return str(expected) in str(actual)
-        elif operator == "not_contains":
-            return str(expected) not in str(actual)
-        elif operator == "exists":
-            return actual is not None
-        elif operator == "not_exists":
-            return actual is None
-        elif operator == "greater_than":
-            return float(actual) > float(expected)
-        elif operator == "less_than":
-            return float(actual) < float(expected)
-        else:
-            return str(actual) == str(expected)
-    except (ValueError, TypeError):
-        return False
-
-
-def check_ssl_certificate(domain: str) -> dict:
-    """
-    Check SSL certificate for a domain.
-    Returns {ssl_expiry, ssl_issuer, ssl_expiry_days, is_valid, error}.
-    """
-    info = {
-        "ssl_expiry": None,
-        "ssl_issuer": None,
-        "ssl_expiry_days": None,
-        "is_valid": False,
-        "error": None,
-    }
-    try:
-        from cryptography import x509
-        from cryptography.hazmat.backends import default_backend
-
-        # Clean domain (strip protocol, path, port)
-        domain = domain.strip()
-        if domain.startswith(("http://", "https://")):
-            from urllib.parse import urlparse
-            parsed = urlparse(domain)
-            domain = parsed.hostname or domain
-        domain = domain.split("/")[0].split(":")[0]
-
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        with socket.create_connection((domain, 443), timeout=10) as sock:
-            with ctx.wrap_socket(sock, server_hostname=domain) as ssock:
-                der = ssock.getpeercert(binary_form=True)
-                if der:
-                    cert = x509.load_der_x509_certificate(der, default_backend())
-                    # Issuer
-                    try:
-                        org = cert.issuer.get_attributes_for_oid(x509.oid.NameOID.ORGANIZATION_NAME)
-                        info["ssl_issuer"] = org[0].value if org else None
-                    except Exception:
-                        pass
-                    if not info["ssl_issuer"]:
-                        try:
-                            cn = cert.issuer.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)
-                            info["ssl_issuer"] = cn[0].value if cn else "Unknown"
-                        except Exception:
-                            info["ssl_issuer"] = "Unknown"
-                    # Expiry
-                    exp = cert.not_valid_after_utc
-                    info["ssl_expiry"] = exp
-                    info["ssl_expiry_days"] = (exp - datetime.now(timezone.utc)).days
-                    info["is_valid"] = info["ssl_expiry_days"] > 0
-    except Exception as e:
-        info["error"] = str(e)
-        print(f"[checker] SSL check failed for {domain}: {e}")
-    return info
-
-
-def grab_ssl_info(url: str) -> dict:
-    """
-    Grab SSL certificate info for an HTTPS URL.
-    Returns {ssl_expiry: datetime|None, ssl_issuer: str|None, ssl_expiry_days: int|None}.
-    """
-    info = {"ssl_expiry": None, "ssl_issuer": None, "ssl_expiry_days": None}
-    try:
-        from urllib.parse import urlparse
-        from cryptography import x509
-        from cryptography.hazmat.backends import default_backend
-
-        parsed = urlparse(url)
-        if parsed.scheme != "https":
-            return info
-
-        hostname = parsed.hostname
-        port = parsed.port or 443
-
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        with socket.create_connection((hostname, port), timeout=5) as sock:
-            with ctx.wrap_socket(sock, server_hostname=hostname) as ssock:
-                der = ssock.getpeercert(binary_form=True)
-                if der:
-                    cert = x509.load_der_x509_certificate(der, default_backend())
-                    # Issuer
-                    try:
-                        org = cert.issuer.get_attributes_for_oid(x509.oid.NameOID.ORGANIZATION_NAME)
-                        info["ssl_issuer"] = org[0].value if org else None
-                    except Exception:
-                        pass
-                    if not info["ssl_issuer"]:
-                        try:
-                            cn = cert.issuer.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)
-                            info["ssl_issuer"] = cn[0].value if cn else "Unknown"
-                        except Exception:
-                            info["ssl_issuer"] = "Unknown"
-                    # Expiry
-                    exp = cert.not_valid_after_utc
-                    info["ssl_expiry"] = exp
-                    info["ssl_expiry_days"] = (exp - datetime.now(timezone.utc)).days
-    except Exception as e:
-        print(f"[checker] SSL grab failed for {url}: {e}")
-    return info
 
 
 def is_in_maintenance_window(monitor: dict) -> bool:
@@ -500,86 +105,6 @@ def is_in_maintenance_window(monitor: dict) -> bool:
     return False
 
 
-def _check_keyword_expression(expression: str, body: str) -> bool:
-    """
-    Evaluate a keyword expression against page body.
-    Supports:
-      - Simple:       "Welcome"              → body contains "welcome"
-      - Negation:     "!error"               → body does NOT contain "error"
-      - AND:          "Welcome AND Login"     → body contains both
-      - OR:           "error OR failure"      → body contains at least one
-      - Mixed:        "Welcome AND !error"    → contains "welcome" AND does NOT contain "error"
-    AND has higher precedence than OR (standard boolean logic).
-    Prefix a term with ! to negate it (NOT contains).
-    """
-    expression = expression.strip()
-    if not expression:
-        return True
-
-    # Split by OR first (lower precedence)
-    or_groups = [g.strip() for g in expression.split(" OR ")]
-    for group in or_groups:
-        # Each OR group may contain ANDs
-        and_terms = [t.strip() for t in group.split(" AND ")]
-        all_match = True
-        for term in and_terms:
-            if not term:
-                continue
-            if term.startswith("!"):
-                # NOT contains — term passes if keyword is NOT in body
-                needle = term[1:].strip().lower()
-                if needle and needle in body:
-                    all_match = False
-                    break
-            else:
-                # Contains — term passes if keyword IS in body
-                if term.lower() not in body:
-                    all_match = False
-                    break
-        if all_match:
-            return True
-    return False
-
-
-def _check_threshold_condition(condition_str: str, actual_ms: float) -> bool:
-    """
-    Evaluate a response threshold condition.
-    Supports:
-      - Simple number:  "2000"       → alert if response > 2000ms
-      - Greater than:   "> 2000"     → alert if response > 2000ms
-      - Less than:      "< 200"      → alert if response < 200ms
-      - Range:          "200-3000"   → alert if response outside range
-    Returns True if the condition is VIOLATED (should alert).
-    """
-    condition_str = condition_str.strip()
-    if not condition_str:
-        return False
-
-    try:
-        # Range: "200-3000" — alert if outside range
-        if "-" in condition_str and not condition_str.startswith(("-", "<", ">")):
-            parts = condition_str.split("-", 1)
-            low = float(parts[0].strip())
-            high = float(parts[1].strip())
-            return actual_ms < low or actual_ms > high
-
-        # Less than: "< 200" — alert if too fast (possible empty response)
-        if condition_str.startswith("<"):
-            val = float(condition_str[1:].strip())
-            return actual_ms < val
-
-        # Greater than: "> 2000" or just "2000"
-        if condition_str.startswith(">"):
-            val = float(condition_str[1:].strip())
-            return actual_ms > val
-
-        # Plain number — treat as "> value"
-        val = float(condition_str)
-        return actual_ms > val
-    except (ValueError, IndexError):
-        return False
-
-
 def _percentile(sorted_values: list, pct: float) -> float:
     """Compute a percentile from a pre-sorted list of values."""
     if not sorted_values:
@@ -589,12 +114,199 @@ def _percentile(sorted_values: list, pct: float) -> float:
     return sorted_values[idx]
 
 
+# ── Multi-Region Dispatcher (Phase 2.4) ───────────────────────────────────────
+
+def _serialize_monitor_for_worker(monitor: dict) -> dict:
+    """Strip a monitor dict down to only fields needed for checking.
+    Removes Firestore metadata, user info, and stats — keeps only
+    the fields that checker_core functions need to run a check."""
+    return {
+        "id": monitor.get("id"),
+        "url": monitor.get("url", ""),
+        "monitor_type": monitor.get("monitor_type", "http"),
+        "timeout": monitor.get("timeout", 10),
+        "expected_status_code": monitor.get("expected_status_code"),
+        "http_method": monitor.get("http_method", "GET"),
+        "follow_redirects": monitor.get("follow_redirects", True),
+        "basic_auth_user": monitor.get("basic_auth_user", ""),
+        "basic_auth_pass": monitor.get("basic_auth_pass", ""),
+        "bearer_token": monitor.get("bearer_token", ""),
+        "request_body": monitor.get("request_body", ""),
+        "request_content_type": monitor.get("request_content_type", ""),
+        "custom_headers": monitor.get("custom_headers", []),
+        "auth_header": monitor.get("auth_header", ""),
+        "json_assertions": monitor.get("json_assertions", []),
+        "keyword": monitor.get("keyword", ""),
+        "ssl_domain": monitor.get("ssl_domain", ""),
+    }
+
+
+async def _dispatch_to_worker(region: str, monitors: list[dict]) -> dict | None:
+    """Send a batch of monitors to a regional worker and return results.
+    
+    Returns: {"region": str, "results": [list of result dicts]} or None on failure.
+    Timeout: 30 seconds per worker call.
+    """
+    worker_url = WORKER_REGIONS.get(region, "")
+    if not worker_url:
+        return None
+    
+    try:
+        client = await _get_client()
+        resp = await client.post(
+            f"{worker_url}/check-batch",
+            json={"monitors": monitors},
+            headers={
+                "X-Worker-Secret": settings.WORKER_SECRET,
+                "Content-Type": "application/json",
+            },
+            timeout=30.0,
+        )
+        if resp.status_code == 200:
+            return resp.json()
+        else:
+            logger.warning(f"[checker] Worker {region} returned {resp.status_code}: {resp.text[:200]}")
+            return None
+    except httpx.TimeoutException:
+        logger.warning(f"[checker] Worker {region} timed out")
+        return None
+    except Exception as e:
+        logger.warning(f"[checker] Worker {region} failed: {e}")
+        return None
+
+
+def _aggregate_multi_region_results(monitor: dict, local_result: dict, 
+                                      worker_results: list[dict]) -> dict:
+    """Combine results from local check + regional workers.
+    
+    Aggregation rules:
+    1. is_up = True if MAJORITY of regions report UP
+       (e.g., 3 of 4 regions)
+    2. response_ms = average across all regions
+    3. response_ms_by_region = dict of {region: ms} for UI display
+    4. status_code = from primary region (us-east1 / local)
+    5. regions_checked = total number of regions that responded
+    6. regions_up = number of regions that reported UP
+    """
+    all_results = []
+    response_by_region = {}
+    
+    # Add local result
+    local_is_up = local_result.get("result", {}).get("is_up", False)
+    local_ms = local_result.get("result", {}).get("response_ms")
+    all_results.append({"region": "us-east1", "is_up": local_is_up, "response_ms": local_ms})
+    if local_ms and local_ms > 0:
+        response_by_region["us-east1"] = local_ms
+    
+    # Add worker results
+    for wr in worker_results:
+        if not wr:
+            continue
+        region = wr.get("region", "unknown")
+        for r in wr.get("results", []):
+            if r.get("monitor_id") == monitor.get("id"):
+                all_results.append({
+                    "region": region,
+                    "is_up": r.get("is_up", False),
+                    "response_ms": r.get("response_ms"),
+                })
+                ms = r.get("response_ms")
+                if ms and ms > 0:
+                    response_by_region[region] = ms
+    
+    # Majority vote
+    total = len(all_results)
+    up_count = sum(1 for r in all_results if r["is_up"])
+    majority_up = up_count > (total / 2)
+    
+    # Average response time
+    response_times = [r["response_ms"] for r in all_results if r.get("response_ms") and r["response_ms"] > 0]
+    avg_ms = round(sum(response_times) / len(response_times), 2) if response_times else None
+    
+    # Build merged result — start with local_result structure, overlay multi-region data
+    merged = dict(local_result)
+    merged["result"] = dict(local_result.get("result", {}))
+    merged["result"]["is_up"] = majority_up
+    merged["result"]["response_ms"] = avg_ms
+    merged["result"]["response_ms_by_region"] = response_by_region
+    merged["result"]["regions_checked"] = total
+    merged["result"]["regions_up"] = up_count
+    
+    return merged
+
+
+async def _check_single_monitor_multi_region(monitor: dict, now: datetime) -> dict | None:
+    """Check a monitor from multiple regions and aggregate results.
+    
+    Flow:
+    1. Determine which regions are active (all users get the same 4 regions)
+    2. Run local check (us-east1) — always happens, even if workers are down
+    3. Dispatch to remote workers concurrently
+    4. Wait for all results (with 30s timeout per worker)
+    5. Aggregate using majority vote
+    6. Return merged result dict
+    
+    Falls back to local-only check if:
+    - No workers are configured (WORKER_SECRET empty or no WORKER_URLs set)
+    - Monitor type is heartbeat (passive, not active)
+    - Monitor type is ssl (certs are global, multi-region adds nothing)
+    - All workers fail (local result is still used)
+    """
+    mtype = monitor.get("monitor_type", "http")
+    
+    # Heartbeat and SSL don't benefit from multi-region
+    if mtype in ("heartbeat", "ssl"):
+        return await _check_single_monitor_inner(monitor, now)
+    
+    # Check if multi-region is configured
+    if not settings.WORKER_SECRET:
+        return await _check_single_monitor_inner(monitor, now)
+    
+    # Determine active regions (all users get the same 4 regions)
+    active_regions = [r for r in CHECK_REGIONS if r == "us-east1" or WORKER_REGIONS.get(r)]
+    
+    # If only primary region is available, fall back to local
+    if len(active_regions) <= 1:
+        return await _check_single_monitor_inner(monitor, now)
+    
+    # Step 1: Run local check (always, as baseline)
+    local_result = await _check_single_monitor_inner(monitor, now)
+    if local_result is None:
+        return None  # Monitor was skipped (paused, misconfigured, etc.)
+    
+    # Step 2: Dispatch to remote workers concurrently
+    remote_regions = [r for r in active_regions if r != "us-east1"]
+    serialized = [_serialize_monitor_for_worker(monitor)]
+    
+    worker_tasks = [_dispatch_to_worker(r, serialized) for r in remote_regions]
+    worker_results = await asyncio.gather(*worker_tasks, return_exceptions=True)
+    
+    # Filter out exceptions and None results
+    valid_worker_results = [
+        r for r in worker_results 
+        if r is not None and not isinstance(r, Exception)
+    ]
+    
+    # Step 3: Aggregate
+    if not valid_worker_results:
+        # All workers failed — use local result only, but tag it
+        local_result.setdefault("result", {})["regions_checked"] = 1
+        local_result["result"]["regions_up"] = 1 if local_result["result"].get("is_up") else 0
+        local_result["result"]["response_ms_by_region"] = {"us-east1": local_result["result"].get("response_ms")}
+        return local_result
+    
+    return _aggregate_multi_region_results(monitor, local_result, valid_worker_results)
+
+
+# ── Single Monitor Check ──────────────────────────────────────────────────────
+
 async def _check_single_monitor(monitor: dict, now: datetime) -> dict | None:
-    """
-    Perform the network check for a single monitor (with concurrency limiting).
-    Returns a dict with {monitor, result, ssl_result?, new_monitor_status?, ssl_info?} or None if skipped.
-    """
+    """Perform the network check for a single monitor (with concurrency limiting).
+    Routes to multi-region if configured, otherwise local-only."""
     async with _check_semaphore:
+        # Use multi-region if workers are configured
+        if settings.WORKER_SECRET and monitor.get("monitor_type") in ("http", "json_api"):
+            return await _check_single_monitor_multi_region(monitor, now)
         return await _check_single_monitor_inner(monitor, now)
 
 
@@ -734,7 +446,11 @@ async def check_monitor_now(monitor: dict) -> dict:
     mtype = monitor.get("monitor_type", "http")
 
     try:
-        cr = await _check_single_monitor_inner(monitor, now)
+        # Use multi-region path if workers are configured
+        if settings.WORKER_SECRET and mtype in ("http", "json_api"):
+            cr = await _check_single_monitor_multi_region(monitor, now)
+        else:
+            cr = await _check_single_monitor_inner(monitor, now)
     except Exception as e:
         return {
             "is_up": False,
@@ -759,6 +475,21 @@ async def check_monitor_now(monitor: dict) -> dict:
 
     result = cr["result"]
     ssl_info = cr.get("ssl_info") or cr.get("ssl_result") or {}
+
+    # Persist region data to the monitor doc so the detail page can display it
+    regions_checked = result.get("regions_checked", 1)
+    regions_up = result.get("regions_up", regions_checked if result.get("is_up") else 0)
+    response_by_region = result.get("response_ms_by_region", {})
+    if regions_checked > 1:
+        try:
+            db = get_db()
+            db.collection("monitors").document(monitor["id"]).update({
+                "last_regions_checked": regions_checked,
+                "last_regions_up": regions_up,
+                "last_response_by_region": response_by_region,
+            })
+        except Exception as e:
+            logger.warning(f"[checker] Failed to update region data on check-now: {e}")
 
     # ssl_expiry may be a datetime object — convert to ISO string for JSON serialization
     ssl_expiry = ssl_info.get("ssl_expiry")
@@ -853,6 +584,9 @@ async def run_checks():
             "status_code": result["status_code"],
             "response_ms": result["response_ms"],
             "is_up": result["is_up"],
+            "regions_checked": result.get("regions_checked", 1),
+            "regions_up": result.get("regions_up", 1 if result["is_up"] else 0),
+            "response_ms_by_region": result.get("response_ms_by_region", {}),
         })
 
         # Instrumentation: collect per-check metrics
@@ -886,6 +620,14 @@ async def run_checks():
             "checks_total": checks_total,
             "checks_failed": checks_failed,
         }
+
+        # Multi-region data (if present)
+        regions_checked = result.get("regions_checked", 1)
+        regions_up = result.get("regions_up", regions_checked if result["is_up"] else 0)
+        response_by_region = result.get("response_ms_by_region", {})
+        monitor_updates["last_regions_checked"] = regions_checked
+        monitor_updates["last_regions_up"] = regions_up
+        monitor_updates["last_response_by_region"] = response_by_region
 
         if status_changed:
             monitor_updates["last_status_change"] = datetime.now(timezone.utc)

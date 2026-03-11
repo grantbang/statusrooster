@@ -39,6 +39,13 @@ class Settings:
     APP_URL: str = os.getenv("APP_URL", "http://localhost:8080")
     APP_ENV: str = os.getenv("APP_ENV", "development")
 
+    # Multi-region check workers
+    WORKER_SECRET: str = os.getenv("WORKER_SECRET", "")
+    WORKER_URL_US_EAST1: str = os.getenv("WORKER_URL_US_EAST1", "")  # Primary (empty = run locally)
+    WORKER_URL_US_WEST1: str = os.getenv("WORKER_URL_US_WEST1", "")
+    WORKER_URL_EU_WEST1: str = os.getenv("WORKER_URL_EU_WEST1", "")
+    WORKER_URL_ASIA_EAST1: str = os.getenv("WORKER_URL_ASIA_EAST1", "")
+
     @property
     def is_production(self) -> bool:
         return self.APP_ENV == "production"

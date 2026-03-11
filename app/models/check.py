@@ -4,7 +4,9 @@ COLLECTION = "checks"
 
 
 def create_check(db, monitor_id: str, status_code: int | None,
-                 response_ms: float | None, is_up: bool) -> dict:
+                 response_ms: float | None, is_up: bool,
+                 regions_checked: int = 1, regions_up: int = 1,
+                 response_ms_by_region: dict | None = None) -> dict:
     """Record a check result."""
     doc_ref = db.collection(COLLECTION).document()
     check_data = {
@@ -13,6 +15,9 @@ def create_check(db, monitor_id: str, status_code: int | None,
         "status_code": status_code,
         "response_ms": response_ms,
         "is_up": is_up,
+        "regions_checked": regions_checked,
+        "regions_up": regions_up,
+        "response_ms_by_region": response_ms_by_region or {},
     }
     doc_ref.set(check_data)
     check_data["id"] = doc_ref.id
@@ -22,7 +27,8 @@ def create_check(db, monitor_id: str, status_code: int | None,
 def create_checks_batch(db, checks: list[dict]) -> None:
     """Batch-write multiple check results. Max 500 per Firestore batch.
     
-    Each item in checks should be: {monitor_id, status_code, response_ms, is_up}
+    Each item in checks should be: {monitor_id, status_code, response_ms, is_up,
+    regions_checked?, regions_up?, response_ms_by_region?}
     """
     now = datetime.now(timezone.utc)
     # Firestore batches are limited to 500 operations
@@ -36,6 +42,9 @@ def create_checks_batch(db, checks: list[dict]) -> None:
                 "status_code": check.get("status_code"),
                 "response_ms": check.get("response_ms"),
                 "is_up": check["is_up"],
+                "regions_checked": check.get("regions_checked", 1),
+                "regions_up": check.get("regions_up", 1 if check["is_up"] else 0),
+                "response_ms_by_region": check.get("response_ms_by_region", {}),
             })
         batch.commit()
 

@@ -246,6 +246,45 @@
 </div>
 {% endif %}
 
+<!-- ── Response by Region ── -->
+{% if last_regions_checked > 1 %}
+<div class="md-section md-region-section">
+    <div class="md-section-header">
+        <h2>Response by Region</h2>
+        <span class="md-region-summary">{{ last_regions_up }}/{{ last_regions_checked }} regions UP</span>
+    </div>
+    <div class="md-region-list">
+        {% set region_names = {
+            "us-east1": "US East",
+            "us-west1": "US West",
+            "europe-west1": "Europe",
+            "asia-east1": "Asia"
+        } %}
+        {% set all_regions = ["us-east1", "us-west1", "europe-west1", "asia-east1"] %}
+        {% set max_ms = last_response_by_region.values()|list|max if last_response_by_region else 1 %}
+        {% for region in all_regions %}
+            {% if region in last_response_by_region %}
+                {% set ms = last_response_by_region[region] %}
+                <div class="md-region-row">
+                    <span class="md-region-dot" style="background: var(--success);"></span>
+                    <span class="md-region-name">{{ region_names.get(region, region) }}</span>
+                    <div class="md-region-bar-wrap">
+                        <div class="md-region-bar" style="width: {{ (ms / max_ms * 100)|round }}%; background: var(--brand);"></div>
+                    </div>
+                    <span class="md-region-ms">{{ ms|round|int }} ms</span>
+                </div>
+            {% endif %}
+        {% endfor %}
+        {% if last_response_by_region.values()|list %}
+        <div class="md-region-avg">
+            <span class="md-region-avg-label">Average across {{ last_regions_checked }} regions:</span>
+            <span class="md-region-avg-value">{{ (last_response_by_region.values()|list|sum / last_response_by_region.values()|list|length)|round|int }} ms</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
 <!-- ── Latest incidents ── -->
 <div class="md-section md-incidents-section">
     <div class="md-section-header">
