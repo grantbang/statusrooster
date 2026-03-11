@@ -13,6 +13,7 @@ import re
 import asyncio
 import uuid
 import pytest
+import pytest_asyncio
 import httpx
 
 # ── Config ──────────────────────────────────────────────────────────
@@ -26,18 +27,9 @@ PRO_USER_ID = os.environ.get("SR_PRO_USER_ID", "eydllii8PyTWHyi4BlmL")
 assert PRO_USER_ID, "SR_PRO_USER_ID is required (default: eydllii8PyTWHyi4BlmL)"
 
 
-# ── Event loop ──────────────────────────────────────────────────────
-
-@pytest.fixture(scope="session")
-def event_loop():
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
-
-
 # ── Async HTTP client ───────────────────────────────────────────────
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
 async def client():
     async with httpx.AsyncClient(base_url=BASE_URL, timeout=30.0, follow_redirects=False) as c:
         yield c
@@ -58,7 +50,7 @@ def pro_headers(api_key):
 
 # ── Free user (created once per session, cleaned up at end) ─────────
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
 async def free_user(client):
     """Sign up a fresh free user and return {email, password, token, user_id}."""
     email = f"e2e-free-{uuid.uuid4().hex[:8]}@statusrooster.com"
@@ -79,7 +71,7 @@ async def free_user(client):
     }
 
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
 async def free_api_key(client, free_user):
     """
     Generate an API key for the free user.
@@ -143,7 +135,7 @@ def created_monitor_ids():
 
 # ── Pro user login cookie (for check-now and other cookie-auth endpoints) ──
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
 async def pro_cookie(client):
     """Login as the Pro test user and return the access_token cookie value."""
     resp = await client.post(
@@ -189,7 +181,7 @@ def check_and_get_result(client, pro_cookie):
 
 # ── Helper to create + cleanup a monitor ───────────────────────────
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def make_monitor(client, pro_headers, created_monitor_ids):
     """Factory fixture: create a monitor and auto-delete after test."""
     ids = []

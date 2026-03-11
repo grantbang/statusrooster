@@ -188,7 +188,7 @@ class TestSecurity:
         for i in range(11):
             resp = await client.post(
                 "/api/check-url",
-                json={"url": "https://httpstat.us/200"},
+                json={"url": "https://httpbin.org/status/200"},
             )
             results.append(resp.status_code)
             if resp.status_code == 429:
@@ -281,7 +281,7 @@ class TestAPICrud:
         """C.4 — POST /api/v1/monitors — create HTTP monitor → 201"""
         monitor = await make_monitor({
             "name": "E2E-C4-http",
-            "url": "https://httpstat.us/200",
+            "url": "https://httpbin.org/status/200",
             "monitor_type": "http",
         })
         assert monitor["name"] == "E2E-C4-http"
@@ -329,7 +329,7 @@ class TestAPICrud:
         """C.8 — GET /api/v1/monitors/{id} → 200"""
         monitor = await make_monitor({
             "name": "E2E-C8-get",
-            "url": "https://httpstat.us/200",
+            "url": "https://httpbin.org/status/200",
             "monitor_type": "http",
         })
         resp = await client.get(
@@ -353,7 +353,7 @@ class TestAPICrud:
         """C.10 — PUT /api/v1/monitors/{id} — update name → 200"""
         monitor = await make_monitor({
             "name": "E2E-C10-before",
-            "url": "https://httpstat.us/200",
+            "url": "https://httpbin.org/status/200",
             "monitor_type": "http",
         })
         resp = await client.put(
@@ -369,7 +369,7 @@ class TestAPICrud:
         """C.11 — PATCH /api/v1/monitors/{id} — pause → 200"""
         monitor = await make_monitor({
             "name": "E2E-C11-patch",
-            "url": "https://httpstat.us/200",
+            "url": "https://httpbin.org/status/200",
             "monitor_type": "http",
         })
         resp = await client.patch(
@@ -386,7 +386,7 @@ class TestAPICrud:
         # Create via make_monitor so it's tracked for cleanup on failure
         monitor = await make_monitor({
             "name": "E2E-C12-delete",
-            "url": "https://httpstat.us/200",
+            "url": "https://httpbin.org/status/200",
             "monitor_type": "http",
         })
         mid = monitor["id"]
@@ -405,7 +405,7 @@ class TestAPICrud:
         """C.14 — GET /api/v1/monitors/{id}/checks?limit=5 → 200"""
         monitor = await make_monitor({
             "name": "E2E-C14-checks",
-            "url": "https://httpstat.us/200",
+            "url": "https://httpbin.org/status/200",
             "monitor_type": "http",
         })
         resp = await client.get(
@@ -458,7 +458,7 @@ class TestMonitorTypes:
         for method in methods:
             monitor = await make_monitor({
                 "name": f"E2E-D4-{method}",
-                "url": "https://httpstat.us/200",
+                "url": "https://httpbin.org/status/200",
                 "monitor_type": "http",
                 "http_method": method,
             })
@@ -469,7 +469,7 @@ class TestMonitorTypes:
         """D.6 — Create HTTP monitor with bearer_token → stored on doc"""
         monitor = await make_monitor({
             "name": "E2E-D6-bearer",
-            "url": "https://httpstat.us/200",
+            "url": "https://httpbin.org/status/200",
             "monitor_type": "http",
             "bearer_token": "test-token-123",
         })
@@ -486,7 +486,7 @@ class TestMonitorTypes:
         """D.7 — HTTP monitor: trigger check-now → is_up=True, status_code=200"""
         monitor = await make_monitor({
             "name": "E2E-D7-http-check",
-            "url": "https://httpstat.us/200",
+            "url": "https://httpbin.org/status/200",
             "monitor_type": "http",
         })
         result = await check_and_get_result(monitor["id"])
@@ -604,12 +604,19 @@ class TestPlanEnforcement:
     @pytest.mark.asyncio
     async def test_e1_free_monitor_limit(self, client, free_headers):
         """E.1 — Free user: 6th monitor → 403"""
+        # Pre-clean: delete any leftover monitors from prior test runs so the
+        # limit test starts from a known empty state.
+        existing_resp = await client.get("/api/v1/monitors", headers=free_headers)
+        if existing_resp.status_code == 200:
+            for m in existing_resp.json().get("data", []):
+                await client.delete(f"/api/v1/monitors/{m['id']}", headers=free_headers)
+
         created = []
         try:
             for i in range(6):
                 resp = await client.post(
                     "/api/v1/monitors",
-                    json={"name": f"E2E-E1-free-{i}", "url": "https://httpstat.us/200", "monitor_type": "http"},
+                    json={"name": f"E2E-E1-free-{i}", "url": "https://httpbin.org/status/200", "monitor_type": "http", "public": False},
                     headers=free_headers,
                 )
                 if resp.status_code == 201:
@@ -638,8 +645,9 @@ class TestPlanEnforcement:
             "/api/v1/monitors",
             json={
                 "name": "E2E-E2-free-slack",
-                "url": "https://httpstat.us/200",
+                "url": "https://httpbin.org/status/200",
                 "monitor_type": "http",
+                "public": False,
                 "alert_slack_webhook": "https://hooks.slack.com/services/TEST/TEST/TEST",
             },
             headers=free_headers,
@@ -662,7 +670,7 @@ class TestPlanEnforcement:
         """E.3 — Pro user: create with slack webhook → stored"""
         monitor = await make_monitor({
             "name": "E2E-E3-pro-slack",
-            "url": "https://httpstat.us/200",
+            "url": "https://httpbin.org/status/200",
             "monitor_type": "http",
             "alert_slack_webhook": "https://hooks.slack.com/services/TEST/TEST/TEST",
         })
@@ -680,8 +688,9 @@ class TestPlanEnforcement:
             "/api/v1/monitors",
             json={
                 "name": "E2E-E4-free-webhook",
-                "url": "https://httpstat.us/200",
+                "url": "https://httpbin.org/status/200",
                 "monitor_type": "http",
+                "public": False,
                 "webhook_url": "https://example.com/webhook",
             },
             headers=free_headers,
@@ -705,8 +714,9 @@ class TestPlanEnforcement:
             "/api/v1/monitors",
             json={
                 "name": "E2E-E5-free-basic-auth",
-                "url": "https://httpstat.us/200",
+                "url": "https://httpbin.org/status/200",
                 "monitor_type": "http",
+                "public": False,
                 "basic_auth_user": "admin",
                 "basic_auth_pass": "secret",
             },
@@ -731,7 +741,7 @@ class TestPlanEnforcement:
         # Create a monitor first
         resp = await client.post(
             "/api/v1/monitors",
-            json={"name": "E2E-E6-free-update-slack", "url": "https://httpstat.us/200", "monitor_type": "http"},
+            json={"name": "E2E-E6-free-update-slack", "url": "https://httpbin.org/status/200", "monitor_type": "http", "public": False},
             headers=free_headers,
         )
         mid = None
@@ -757,7 +767,7 @@ class TestPlanEnforcement:
         """E.7 — Free user: update with webhook_url → 403"""
         resp = await client.post(
             "/api/v1/monitors",
-            json={"name": "E2E-E7-free-update-webhook", "url": "https://httpstat.us/200", "monitor_type": "http"},
+            json={"name": "E2E-E7-free-update-webhook", "url": "https://httpbin.org/status/200", "monitor_type": "http"},
             headers=free_headers,
         )
         mid = None
@@ -782,7 +792,7 @@ class TestPlanEnforcement:
         """E.8 — Free user: update check_interval → 403"""
         resp = await client.post(
             "/api/v1/monitors",
-            json={"name": "E2E-E8-free-update-interval", "url": "https://httpstat.us/200", "monitor_type": "http"},
+            json={"name": "E2E-E8-free-update-interval", "url": "https://httpbin.org/status/200", "monitor_type": "http"},
             headers=free_headers,
         )
         mid = None
@@ -807,7 +817,7 @@ class TestPlanEnforcement:
         """E.9 — Free user: update maintenance_windows → 403"""
         resp = await client.post(
             "/api/v1/monitors",
-            json={"name": "E2E-E9-free-maintenance", "url": "https://httpstat.us/200", "monitor_type": "http"},
+            json={"name": "E2E-E9-free-maintenance", "url": "https://httpbin.org/status/200", "monitor_type": "http"},
             headers=free_headers,
         )
         mid = None
@@ -832,7 +842,7 @@ class TestPlanEnforcement:
         """E.10 — Free user: update basic_auth → 403"""
         resp = await client.post(
             "/api/v1/monitors",
-            json={"name": "E2E-E10-free-basic-auth", "url": "https://httpstat.us/200", "monitor_type": "http"},
+            json={"name": "E2E-E10-free-basic-auth", "url": "https://httpbin.org/status/200", "monitor_type": "http"},
             headers=free_headers,
         )
         mid = None
@@ -860,7 +870,7 @@ class TestPlanEnforcement:
             # First public monitor should succeed
             resp = await client.post(
                 "/api/v1/monitors",
-                json={"name": "E2E-E11-free-public-1", "url": "https://httpstat.us/200", "monitor_type": "http", "public": True},
+                json={"name": "E2E-E11-free-public-1", "url": "https://httpbin.org/status/200", "monitor_type": "http", "public": True},
                 headers=free_headers,
             )
             assert resp.status_code == 201, f"E.11 FAIL: First public should succeed, got {resp.status_code}"
@@ -869,7 +879,7 @@ class TestPlanEnforcement:
             # Second public monitor should fail
             resp2 = await client.post(
                 "/api/v1/monitors",
-                json={"name": "E2E-E11-free-public-2", "url": "https://httpstat.us/200", "monitor_type": "http", "public": True},
+                json={"name": "E2E-E11-free-public-2", "url": "https://httpbin.org/status/200", "monitor_type": "http", "public": True},
                 headers=free_headers,
             )
             assert resp2.status_code == 403, f"E.11 FAIL: Second public should be 403, got {resp2.status_code}"
@@ -894,7 +904,7 @@ class TestBadges:
         """F.1 — GET /badge/{public_monitor_id}.svg → 200, SVG"""
         monitor = await make_monitor({
             "name": "E2E-F1-badge",
-            "url": "https://httpstat.us/200",
+            "url": "https://httpbin.org/status/200",
             "monitor_type": "http",
             "public": True,
         })
@@ -908,7 +918,7 @@ class TestBadges:
         """F.2 — GET /badge/{id}/status.svg → 200, SVG"""
         monitor = await make_monitor({
             "name": "E2E-F2-status-badge",
-            "url": "https://httpstat.us/200",
+            "url": "https://httpbin.org/status/200",
             "monitor_type": "http",
             "public": True,
         })
@@ -921,7 +931,7 @@ class TestBadges:
         """F.3 — GET /badge/{id}/response.svg → 200, SVG"""
         monitor = await make_monitor({
             "name": "E2E-F3-response-badge",
-            "url": "https://httpstat.us/200",
+            "url": "https://httpbin.org/status/200",
             "monitor_type": "http",
             "public": True,
         })
@@ -934,7 +944,7 @@ class TestBadges:
         """F.4 — GET /badge/{private_monitor_id}.svg → 200, 'not found' SVG"""
         monitor = await make_monitor({
             "name": "E2E-F4-private-badge",
-            "url": "https://httpstat.us/200",
+            "url": "https://httpbin.org/status/200",
             "monitor_type": "http",
             "public": False,
         })
@@ -1056,7 +1066,7 @@ class TestStatusPages:
         slug = f"e2e-test-{uuid.uuid4().hex[:8]}"
         monitor = await make_monitor({
             "name": "E2E-H1-public",
-            "url": "https://httpstat.us/200",
+            "url": "https://httpbin.org/status/200",
             "monitor_type": "http",
             "public": True,
         })
@@ -1076,7 +1086,7 @@ class TestStatusPages:
         slug = f"e2e-private-{uuid.uuid4().hex[:8]}"
         monitor = await make_monitor({
             "name": "E2E-H2-private",
-            "url": "https://httpstat.us/200",
+            "url": "https://httpbin.org/status/200",
             "monitor_type": "http",
             "public": False,
         })
@@ -1101,7 +1111,7 @@ class TestStatusPages:
         # Ensure at least one public monitor exists
         monitor = await make_monitor({
             "name": "E2E-H4-aggregate",
-            "url": "https://httpstat.us/200",
+            "url": "https://httpbin.org/status/200",
             "monitor_type": "http",
             "public": True,
         })
