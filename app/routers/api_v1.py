@@ -86,8 +86,17 @@ def _serialize(obj):
 def _serialize_monitor(m: dict) -> dict:
     """Serialize a monitor, keeping only the fields the API should expose."""
     s = _serialize(m)
-    # Remove internal fields
-    s.pop("user_id", None)
+    # Remove internal / pre-computed fields that are not part of the public API
+    _INTERNAL_FIELDS = {
+        "user_id",
+        "daily_uptime_bars",
+        "hourly_uptime_bars",
+        "ping_token",
+        "ssl_expiry_alerted_days",
+        "regions",
+    }
+    for field in _INTERNAL_FIELDS:
+        s.pop(field, None)
     return s
 
 
