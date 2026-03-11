@@ -37,6 +37,13 @@
             <a href="{{ monitor.url }}" target="_blank" class="md-url">{{ monitor.url }}</a>
             {% endif %}
         </div>
+        <div class="md-monitor-id">
+            <span class="md-monitor-id-label">ID</span>
+            <code class="md-monitor-id-value" id="monitor-id-value">{{ monitor.id }}</code>
+            <button class="md-monitor-id-copy" onclick="copyMonitorId()" title="Copy monitor ID">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+        </div>
     </div>
     <div class="md-header-actions">
         <form method="POST" action="/monitors/{{ monitor.id }}/test-alert" style="margin:0; display:inline;">
@@ -583,6 +590,18 @@
 <script>
 // @ts-nocheck
 const MONITOR_ID = '{{ monitor.id }}';
+
+/* ── Copy Monitor ID ──────────────────────────── */
+function copyMonitorId() {
+    const id = document.getElementById('monitor-id-value').textContent;
+    navigator.clipboard.writeText(id).then(() => {
+        const btn = document.querySelector('.md-monitor-id-copy');
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success, #22c55e)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+        setTimeout(() => {
+            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+        }, 1500);
+    });
+}
 
 /* ── Check Now ─────────────────────────────────── */
 let _checkNowCooldown = false;
