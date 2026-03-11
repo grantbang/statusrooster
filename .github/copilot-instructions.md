@@ -220,8 +220,8 @@ Each type has its own form section (create + edit), execution branch in `checker
 | Phase | Name | Status | Effort |
 |-------|------|--------|--------|
 | **2** | Multi-Region Monitoring | ✅ Complete | 15–25 hrs |
-| **6** | Infrastructure Hardening | ⬜ Active | 8–12 hrs |
-| **1** | Free Tier Unlocking | ⬜ | 4–6 hrs |
+| **6** | Infrastructure Hardening | ✅ Complete | 8–12 hrs |
+| **1** | Free Tier Unlocking | ⬜ Active | 4–6 hrs |
 | **4** | Custom Branding (Pro) | ⬜ | 4–6 hrs |
 | **3** | Data Retention Tiers | ⬜ | 3–4 hrs |
 | **7** | Viral Loop Optimization | ⬜ | 3–4 hrs |

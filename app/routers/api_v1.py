@@ -21,8 +21,8 @@ from datetime import datetime
 
 router = APIRouter(prefix="/api/v1", tags=["monitors"])
 
-FREE_MONITOR_LIMIT = 5
-PRO_MONITOR_LIMIT = 250
+FREE_MONITOR_LIMIT = 100
+PRO_MONITOR_LIMIT = 500
 
 # Security scheme — tells Swagger to show an "Authorize" button + lock icons
 api_key_header = APIKeyHeader(name="X-API-Key", description="Your StatusRooster API key (starts with sr_)", auto_error=False)
@@ -278,19 +278,17 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
     if plan == "pro" and len(existing) >= PRO_MONITOR_LIMIT:
         err(f"Pro plan limited to {PRO_MONITOR_LIMIT} monitors. Contact us if you need more.", 403)
 
-    # Build maintenance windows (Pro only)
+    # Build maintenance windows (all plans)
     mw_list = None
     if req.maintenance_windows:
-        if plan == "free":
-            err("Maintenance windows require a Pro plan.", 403)
         mw_list = [w.model_dump() for w in req.maintenance_windows]
 
     # Status page limit enforcement
     if req.public:
         public_count = sum(1 for m in existing if m.get("public", False))
-        public_limit = 10 if plan == "pro" else 1
+        public_limit = 10
         if public_count >= public_limit:
-            err(f"{'Pro' if plan == 'pro' else 'Free'} plan limited to {public_limit} public status page{'s' if public_limit > 1 else ''}. {'Contact us if you need more.' if plan == 'pro' else 'Upgrade to Pro for up to 10.'}", 403)
+            err(f"Limited to {public_limit} public status pages. Contact us if you need more.", 403)
 
     # Validate http_method
     allowed_methods = {"GET", "POST", "HEAD", "PUT", "PATCH", "DELETE", "OPTIONS"}
@@ -298,12 +296,12 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
     if http_method not in allowed_methods:
         err(f"Invalid http_method. Use one of: {', '.join(sorted(allowed_methods))}.", 422)
 
-    # Gate basic auth to Pro only
-    basic_auth_user = req.basic_auth_user if plan != "free" else ""
-    basic_auth_pass = req.basic_auth_pass if plan != "free" else ""
+    # Basic auth available to all plans
+    basic_auth_user = req.basic_auth_user or ""
+    basic_auth_pass = req.basic_auth_pass or ""
 
-    # Gate custom headers to Pro only
-    custom_headers = req.custom_headers if plan != "free" and req.custom_headers else []
+    # Custom headers available to all plans
+    custom_headers = req.custom_headers if req.custom_headers else []
 
     # Bearer token available to all plans
     bearer_token = req.bearer_token or ""
@@ -314,11 +312,11 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
         url=str(req.url) if req.url else "",
         name=req.name,
         alert_email=req.alert_email or user.get("email", ""),
-        alert_slack_webhook=req.alert_slack_webhook if plan != "free" else "",
+        alert_slack_webhook=req.alert_slack_webhook or "",
         public=req.public,
         keyword=req.keyword,
         response_threshold_ms=req.response_threshold_ms,
-        webhook_url=req.webhook_url if plan != "free" else "",
+        webhook_url=req.webhook_url or "",
         maintenance_windows=mw_list,
         paused=req.paused,
         check_interval=req.check_interval,
@@ -408,30 +406,21 @@ async def api_update_monitor(
     if req.alert_email is not None:
         updates["alert_email"] = req.alert_email
     if req.alert_slack_webhook is not None:
-        # Gate Slack to Pro
-        plan = user.get("plan", "free")
-        if plan == "free":
-            err("Slack alerts require a Pro plan.", 403)
         updates["alert_slack_webhook"] = req.alert_slack_webhook
     if req.keyword is not None:
         updates["keyword"] = req.keyword
     if req.response_threshold_ms is not None:
         updates["response_threshold_ms"] = req.response_threshold_ms
     if req.webhook_url is not None:
-        # Gate webhooks to Pro
-        plan = user.get("plan", "free")
-        if plan == "free":
-            err("Webhook notifications require a Pro plan.", 403)
         updates["webhook_url"] = req.webhook_url
     if req.public is not None:
         # Status page limit enforcement (only if turning public ON)
         if req.public and not monitor.get("public", False):
-            plan = user.get("plan", "free")
             all_monitors = list_monitors_by_user(db, user["id"])
             public_count = sum(1 for m in all_monitors if m.get("public", False))
-            public_limit = 10 if plan == "pro" else 1
+            public_limit = 10
             if public_count >= public_limit:
-                err(f"{'Pro' if plan == 'pro' else 'Free'} plan limited to {public_limit} public status page{'s' if public_limit > 1 else ''}. {'Contact us.' if plan == 'pro' else 'Upgrade to Pro for up to 10.'}", 403)
+                err(f"Limited to {public_limit} public status pages. Contact us if you need more.", 403)
         updates["public"] = req.public
     if req.paused is not None:
         updates["paused"] = req.paused
@@ -439,15 +428,13 @@ async def api_update_monitor(
         import re
         updates["slug"] = re.sub(r"[^a-z0-9\-]", "", req.slug.lower().replace(" ", "-")).strip("-")
     if req.maintenance_windows is not None:
-        plan = user.get("plan", "free")
-        if plan == "free":
-            err("Maintenance windows require a Pro plan.", 403)
         updates["maintenance_windows"] = [w.model_dump() for w in req.maintenance_windows]
     if req.check_interval is not None:
         plan = user.get("plan", "free")
-        if plan == "free":
-            err("Custom check intervals require a Pro plan. Free plan is fixed at 300s (5 minutes).", 403)
-        updates["check_interval"] = max(60, min(300, req.check_interval))
+        min_interval = 30 if plan == "pro" else 60
+        if req.check_interval < min_interval:
+            err(f"Minimum check interval is {min_interval}s for your plan.", 403)
+        updates["check_interval"] = max(min_interval, min(300, req.check_interval))
     if req.heartbeat_interval is not None:
         updates["heartbeat_interval"] = max(60, min(86400, req.heartbeat_interval))
     if req.heartbeat_grace_period is not None:
@@ -473,14 +460,8 @@ async def api_update_monitor(
             err(f"Invalid http_method. Use one of: {', '.join(sorted(allowed_methods))}.", 422)
         updates["http_method"] = method
     if req.basic_auth_user is not None:
-        plan = user.get("plan", "free")
-        if plan == "free":
-            err("Basic Auth requires a Pro plan.", 403)
         updates["basic_auth_user"] = req.basic_auth_user
     if req.basic_auth_pass is not None:
-        plan = user.get("plan", "free")
-        if plan == "free":
-            err("Basic Auth requires a Pro plan.", 403)
         updates["basic_auth_pass"] = req.basic_auth_pass
     if req.follow_redirects is not None:
         updates["follow_redirects"] = req.follow_redirects
@@ -491,9 +472,6 @@ async def api_update_monitor(
     if req.request_content_type is not None:
         updates["request_content_type"] = req.request_content_type
     if req.custom_headers is not None:
-        plan = user.get("plan", "free")
-        if plan == "free":
-            err("Custom request headers require a Pro plan.", 403)
         updates["custom_headers"] = req.custom_headers
 
     if not updates:

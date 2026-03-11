@@ -11,8 +11,8 @@ from app.services.alerts import send_test_alert
 
 router = APIRouter(prefix="/api/monitors", tags=["monitors-internal"], include_in_schema=False)
 
-FREE_MONITOR_LIMIT = 5
-PRO_MONITOR_LIMIT = 250
+FREE_MONITOR_LIMIT = 100
+PRO_MONITOR_LIMIT = 500
 
 
 class CreateMonitorRequest(BaseModel):
@@ -68,7 +68,7 @@ async def create(req: CreateMonitorRequest, user: dict = Depends(get_current_use
     if len(existing) >= limit:
         raise HTTPException(
             status_code=403,
-            detail=f"{'Pro' if plan == 'pro' else 'Free'} plan is limited to {limit} monitors. {'Contact us if you need more.' if plan == 'pro' else 'Upgrade to Pro for up to 250.'}"
+            detail=f"Limited to {limit} monitors.{' Contact us if you need more.' if plan == 'pro' else ' Upgrade to Pro for up to 500.'}"
         )
 
     monitor = create_monitor(
@@ -77,7 +77,7 @@ async def create(req: CreateMonitorRequest, user: dict = Depends(get_current_use
         url=str(req.url) if req.url else "",
         name=req.name,
         alert_email=req.alert_email or user.get("email", ""),
-        alert_slack_webhook=req.alert_slack_webhook if user.get("plan", "free") != "free" else "",
+        alert_slack_webhook=req.alert_slack_webhook or "",
         public=req.public,
         check_interval=req.check_interval,
         monitor_type=req.monitor_type,
@@ -97,7 +97,7 @@ async def create(req: CreateMonitorRequest, user: dict = Depends(get_current_use
         extra_fields["keyword"] = req.keyword
     if req.response_threshold_ms:
         extra_fields["response_threshold_ms"] = req.response_threshold_ms
-    if req.webhook_url and user.get("plan", "free") != "free":
+    if req.webhook_url:
         extra_fields["webhook_url"] = req.webhook_url
     if extra_fields:
         from app.models.monitor import update_monitor as update_mon
@@ -145,13 +145,10 @@ async def update(monitor_id: str, req: UpdateMonitorRequest, user: dict = Depend
         updates["url"] = str(updates["url"])
 
     # Gate Pro-only fields
-    if "webhook_url" in updates and user.get("plan", "free") == "free":
-        del updates["webhook_url"]
     if "check_interval" in updates:
-        if user.get("plan", "free") == "free":
-            del updates["check_interval"]
-        else:
-            updates["check_interval"] = max(60, min(300, updates["check_interval"]))
+        plan = user.get("plan", "free")
+        min_interval = 30 if plan == "pro" else 60
+        updates["check_interval"] = max(min_interval, min(300, updates["check_interval"]))
     if "heartbeat_interval" in updates and updates["heartbeat_interval"] is not None:
         updates["heartbeat_interval"] = max(60, min(86400, updates["heartbeat_interval"]))
     if "heartbeat_grace_period" in updates and updates["heartbeat_grace_period"] is not None:

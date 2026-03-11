@@ -1,7 +1,10 @@
 from datetime import datetime, timezone
+import logging
 import re
 import secrets
 import uuid
+
+logger = logging.getLogger(__name__)
 
 COLLECTION = "monitors"
 
@@ -42,14 +45,17 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
     plan = user_data.get("plan", "free")
 
     if plan == "pro":
-        # Pro: custom interval 60-300s, default 60
+        # Pro: custom interval 30-300s, default 30
+        if check_interval is not None:
+            check_interval = max(30, min(300, int(check_interval)))
+        else:
+            check_interval = 30
+    else:
+        # Free: custom interval 60-300s, default 60
         if check_interval is not None:
             check_interval = max(60, min(300, int(check_interval)))
         else:
             check_interval = 60
-    else:
-        # Free: locked at 300s (5 minutes)
-        check_interval = 300
 
     # Heartbeat defaults
     if monitor_type == "heartbeat":
@@ -264,7 +270,7 @@ def get_due_monitors(db) -> list[dict]:
         if last_doc is not None:
             query = query.start_after(last_doc)
 
-        docs = query.get()
+        docs = list(query.stream())  # Use .stream() for cursor support
         for doc in docs:
             m = doc.to_dict()
             m["id"] = doc.id
@@ -275,6 +281,7 @@ def get_due_monitors(db) -> list[dict]:
             break
 
         last_doc = docs[-1]
-        print(f"[get_due_monitors] paginating — fetched {len(monitors)} monitors so far")
+        logger.info(f"[monitor] get_due_monitors: fetched batch of {len(docs)}, total so far: {len(monitors)}")
 
+    logger.info(f"[monitor] get_due_monitors: loaded {len(monitors)} monitors total")
     return monitors

@@ -8,9 +8,9 @@
 
 {% block content %}
 
-{% if user.get('plan', 'free') == 'free' and monitors | length >= 4 %}
+{% if user.get('plan', 'free') == 'free' and monitors | length >= 80 %}
 <div class="upgrade-banner">
-    <p>You're using <strong>{{ monitors | length }} of 5</strong> free monitors. Upgrade to Pro for 250 monitors, 60s checks, and Slack/SMS alerts.</p>
+    <p>You're using <strong>{{ monitors | length }} of 100</strong> free monitors. Upgrade to Pro for 500 monitors, 30s checks, and SMS alerts.</p>
     <form method="POST" action="/api/billing/checkout" style="margin:0;">
         <button type="submit" class="upgrade-btn">Upgrade to Pro — $9/mo</button>
     </form>
@@ -298,12 +298,8 @@
             {% endif %}
             {% if m.get('monitor_type') != 'heartbeat' %}
             <span class="d-secondary-sep">·</span>
-            {% set ci = m.get('check_interval', 300) | int %}
-            {% if user.get('plan', 'free') == 'free' %}
-            <span class="d-interval-badge d-interval-badge--free" title="Free plan checks every 5 minutes. Upgrade to Pro for 60s intervals.">⏱ 5 min</span>
-            {% else %}
+            {% set ci = m.get('check_interval', 60) | int %}
             <span class="d-interval-badge" title="Check interval">⏱ {% if ci < 120 %}{{ ci }}s{% else %}{{ (ci / 60)|int }}m{% endif %}</span>
-            {% endif %}
             {% endif %}
             {% set inc_count = (incidents_per_monitor or {}).get(m.id, 0) %}
             {% if inc_count > 0 %}
@@ -327,7 +323,7 @@
 {% if user.get('plan', 'free') == 'free' %}
 <div class="d-pro-footer">
     <span class="d-pro-footer-text">
-        <strong>Upgrade to Pro</strong> — get 60s checks, 250 monitors, Slack + webhook alerts, and SMS.
+        <strong>Upgrade to Pro</strong> — get 30s checks, 500 monitors, and SMS alerts.
     </span>
     <form method="POST" action="/api/billing/checkout" style="margin:0;">
         <button type="submit" class="d-pro-footer-cta">Upgrade — $9/mo</button>

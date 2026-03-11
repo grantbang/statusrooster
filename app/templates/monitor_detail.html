@@ -117,11 +117,8 @@
             {% endif %}
         </div>
         <div class="md-card-sub">
-            {% set ci = monitor.get('check_interval', 300) %}
+            {% set ci = monitor.get('check_interval', 60) %}
             Checked every {% if ci < 120 %}{{ ci }}s{% elif ci < 300 %}{{ (ci / 60)|int }}m{% else %}5m{% endif %}
-            {% if user.get('plan', 'free') == 'free' and ci >= 300 %}
-            · <a href="/pricing" class="md-upsell">Get custom intervals →</a>
-            {% endif %}
         </div>
     </div>
     <div class="md-card">

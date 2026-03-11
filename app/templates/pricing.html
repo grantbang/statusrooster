@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}Pricing{% endblock %}
-{% block description %}Simple uptime monitoring. 50 monitors free, unlimited for $9/mo. No bloat, no confusion.{% endblock %}
+{% block description %}Simple uptime monitoring. 100 monitors free, 500 for $9/mo. No bloat, no confusion.{% endblock %}
 
 {% block extra_css %}
 {% endblock %}
@@ -25,8 +25,8 @@
 
             <div class="section-label">Monitoring</div>
             <ul class="price-features">
-                <li><span class="check">✓</span> Up to 5 monitors</li>
-                <li><span class="check">✓</span> 5-minute check interval</li>
+                <li><span class="check">✓</span> Up to 100 monitors</li>
+                <li><span class="check">✓</span> 60-second check interval (custom per monitor)</li>
                 <li><span class="check">✓</span> SSL certificate expiry monitoring</li>
                 <li><span class="check">✓</span> Keyword / content verification</li>
             </ul>
@@ -34,6 +34,8 @@
             <div class="section-label">Alerts</div>
             <ul class="price-features">
                 <li><span class="check">✓</span> Email notifications</li>
+                <li><span class="check">✓</span> Slack notifications</li>
+                <li><span class="check">✓</span> Webhook notifications (JSON POST)</li>
             </ul>
 
             <div class="section-label">Developer Tools</div>
@@ -45,9 +47,10 @@
 
             <div class="section-label">Status Pages</div>
             <ul class="price-features">
-                <li><span class="check">✓</span> 1 public status page</li>
+                <li><span class="check">✓</span> Up to 10 public status pages</li>
                 <li><span class="check">✓</span> 90-day uptime history</li>
                 <li><span class="check">✓</span> Incident timeline</li>
+                <li><span class="check">✓</span> Maintenance windows</li>
             </ul>
 
             {% if user and user.get('plan', 'free') == 'free' %}
@@ -67,8 +70,8 @@
 
             <div class="section-label">Everything in Free, plus</div>
             <ul class="price-features">
-                <li><span class="check">✓</span> Up to <strong>250</strong> monitors</li>
-                <li><span class="check">✓</span> <strong>Custom</strong> check interval (60s – 5m)</li>
+                <li><span class="check">✓</span> Up to <strong>500</strong> monitors</li>
+                <li><span class="check">✓</span> <strong>30-second</strong> check interval</li>
                 <li><span class="check">✓</span> Response time threshold alerts</li>
             </ul>
 
@@ -82,9 +85,9 @@
 
             <div class="section-label">Status Pages</div>
             <ul class="price-features">
-                <li><span class="check">✓</span> Unlimited public status pages</li>
+                <li><span class="check">✓</span> Up to 10 public status pages</li>
                 <li><span class="check">✓</span> Aggregate multi-monitor page</li>
-                <li><span class="check">✓</span> Scheduled maintenance windows</li>
+                <li><span class="check">✓</span> Maintenance windows</li>
             </ul>
 
             <div class="section-label">Support</div>
@@ -110,12 +113,12 @@
 
         <div class="faq-item">
             <h4>What counts as a monitor?</h4>
-            <p>Each URL you want to check = one monitor. Free gets 5, Pro gets 250.</p>
+            <p>Each URL you want to check = one monitor. Free gets 100, Pro gets 500.</p>
         </div>
 
         <div class="faq-item">
             <h4>What's the difference in check intervals?</h4>
-            <p>Free monitors are checked every 5 minutes. Pro users can set a custom interval per monitor — anywhere from 60 seconds to 5 minutes — so you pick the right cadence for each site.</p>
+            <p>Free monitors can be checked as often as every 60 seconds (custom per monitor). Pro users can set intervals as low as 30 seconds.</p>
         </div>
 
         <div class="faq-item">
@@ -125,7 +128,7 @@
 
         <div class="faq-item">
             <h4>Do I need a credit card to start?</h4>
-            <p>Nope. The free plan is genuinely free — 5 monitors, SSL monitoring, keyword checks, email alerts, full API, and uptime badges. No trial, no expiration.</p>
+            <p>Nope. The free plan is genuinely free — 100 monitors, SSL monitoring, keyword checks, email + Slack + webhook alerts, full API, and uptime badges. No trial, no expiration.</p>
         </div>
 
         <div class="faq-item">

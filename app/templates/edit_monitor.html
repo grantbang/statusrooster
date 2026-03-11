@@ -183,27 +183,16 @@
                     <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-label="Slack"><path d="M5.042 15.165a2.528 2.528 0 01-2.52 2.523A2.528 2.528 0 010 15.165a2.527 2.527 0 012.522-2.52h2.52v2.52zm1.271 0a2.527 2.527 0 012.521-2.52 2.527 2.527 0 012.521 2.52v6.313A2.528 2.528 0 018.834 24a2.528 2.528 0 01-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 01-2.521-2.52A2.528 2.528 0 018.834 0a2.527 2.527 0 012.521 2.522v2.52H8.834zm0 1.271a2.527 2.527 0 012.521 2.521 2.527 2.527 0 01-2.521 2.521H2.522A2.528 2.528 0 010 8.834a2.528 2.528 0 012.522-2.521h6.312zm10.122 2.521a2.528 2.528 0 012.522-2.521A2.528 2.528 0 0124 8.834a2.527 2.527 0 01-2.522 2.521h-2.522V8.834zm-1.268 0a2.527 2.527 0 01-2.523 2.521 2.527 2.527 0 01-2.52-2.521V2.522A2.527 2.527 0 0115.165 0a2.528 2.528 0 012.523 2.522v6.312zm-2.523 10.122a2.528 2.528 0 012.523 2.522A2.528 2.528 0 0115.165 24a2.527 2.527 0 01-2.52-2.522v-2.522h2.52zm0-1.268a2.527 2.527 0 01-2.52-2.523 2.527 2.527 0 012.52-2.52h6.313A2.528 2.528 0 0124 15.165a2.528 2.528 0 01-2.522 2.523h-6.313z"/></svg>
                 </span>
                 <span class="mf-notify-channel-name">Slack</span>
-                {% if plan == 'free' %}
-                <span class="mf-notify-pro">PRO</span>
-                {% else %}
                 <label class="mf-toggle-switch mf-toggle-switch-sm mf-toggle-ml-auto">
                     <input type="checkbox" id="slackToggle" {% if has_slack %}checked{% endif %}
                            onchange="document.getElementById('slackUrlWrap').style.display = this.checked ? 'block' : 'none'">
                     <span class="mf-toggle-slider"></span>
                 </label>
-                {% endif %}
             </div>
-            {% if plan != 'free' %}
             <div id="slackUrlWrap" style="{% if not has_slack %}display: none;{% endif %}">
                 <input type="text" name="alert_slack_webhook" class="mf-notify-channel-input" value="{{ has_slack }}" placeholder="https://hooks.slack.com/services/...">
                 <div class="hint hint-mt-sm">Paste your Slack incoming webhook URL.</div>
             </div>
-            {% else %}
-            <div class="mf-notify-channel-locked">
-                <a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a> to send alerts to Slack.
-            </div>
-            <input type="hidden" name="alert_slack_webhook" value="">
-            {% endif %}
         </div>
 
         <!-- Webhook (Pro) -->
@@ -214,27 +203,16 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
                 </span>
                 <span class="mf-notify-channel-name">Webhook</span>
-                {% if plan == 'free' %}
-                <span class="mf-notify-pro">PRO</span>
-                {% else %}
                 <label class="mf-toggle-switch mf-toggle-switch-sm mf-toggle-ml-auto">
                     <input type="checkbox" id="webhookToggle" {% if has_webhook %}checked{% endif %}
                            onchange="document.getElementById('webhookUrlWrap').style.display = this.checked ? 'block' : 'none'">
                     <span class="mf-toggle-slider"></span>
                 </label>
-                {% endif %}
             </div>
-            {% if plan != 'free' %}
             <div id="webhookUrlWrap" style="{% if not has_webhook %}display: none;{% endif %}">
                 <input type="text" name="webhook_url" class="mf-notify-channel-input" value="{{ has_webhook }}" placeholder="https://your-api.com/webhook">
                 <div class="hint hint-mt-sm">We'll POST JSON to this URL on status changes.</div>
             </div>
-            {% else %}
-            <div class="mf-notify-channel-locked">
-                <a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a> to receive webhook alerts.
-            </div>
-            <input type="hidden" name="webhook_url" value="">
-            {% endif %}
         </div>
 
         <!-- SMS (Pro) -->
@@ -274,23 +252,16 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <span class="mf-section-header-title">Monitor interval</span>
         </div>
-        {% if plan != 'free' %}
-        {% set ci = monitor.get('check_interval', 60) %}
+        {% set min_interval = 30 if plan == 'pro' else 60 %}
+        {% set ci = monitor.get('check_interval', min_interval) %}
+        {% if ci < min_interval %}{% set ci = min_interval %}{% endif %}
         <div class="mf-interval-wrap">
-            <input type="range" class="mf-interval-slider" id="check_interval" name="check_interval" min="60" max="300" step="10" value="{{ ci }}"
+            <input type="range" class="mf-interval-slider" id="check_interval" name="check_interval" min="{{ min_interval }}" max="300" step="10" value="{{ ci }}"
                    oninput="updateIntervalDisplay(this.value)">
             <span class="mf-interval-value" id="intervalDisplay">{% if ci < 120 %}{{ ci }}s{% else %}{{ (ci / 60)|int }}m{% endif %}</span>
         </div>
-        <div class="mf-interval-labels"><span>60s</span><span>3m</span><span>5m</span></div>
-        <div class="hint hint-mt-md">Your monitor will be checked every <strong id="intervalText">{% if ci < 120 %}{{ ci }} seconds{% else %}{{ (ci / 60)|int }} minutes{% endif %}</strong>.</div>
-        {% else %}
-        <div class="mf-interval-wrap mf-disabled-wrap">
-            <input type="range" class="mf-interval-slider" disabled min="60" max="300" value="300">
-            <span class="mf-interval-value mf-interval-value-muted">5m</span>
-        </div>
-        <input type="hidden" name="check_interval" value="300">
-        <div class="hint hint-mt-md">Checked every <strong>5 minutes</strong>. <a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a> for 60s checks. <span class="mf-notify-pro mf-pro-badge-inline">PRO</span></div>
-        {% endif %}
+        <div class="mf-interval-labels"><span>{{ min_interval }}s</span><span>3m</span><span>5m</span></div>
+        <div class="hint hint-mt-md">Your monitor will be checked every <strong id="intervalText">{% if ci < 120 %}{{ ci }} seconds{% else %}{{ (ci / 60)|int }} minutes{% endif %}</strong>.{% if plan != 'pro' %} <a href="/pricing" class="mf-pro-upgrade">Upgrade to Pro</a> for 30s checks.{% endif %}</div>
     </div>
     {% endif %}
 
@@ -355,8 +326,8 @@
                     <div class="mf-auth-section">
                         <select class="mf-auth-type-select" id="authTypeSelect" name="auth_type" onchange="toggleAuthFields(this.value)">
                             <option value="none" {% if auth_type == 'none' %}selected{% endif %}>None</option>
-                            <option value="basic" {% if auth_type == 'basic' %}selected{% endif %}>Basic Auth {% if plan == 'free' %}(Pro){% endif %}</option>
-                            <option value="bearer" {% if auth_type == 'bearer' %}selected{% endif %}>Bearer Token {% if plan == 'free' %}(Pro){% endif %}</option>
+                            <option value="basic" {% if auth_type == 'basic' %}selected{% endif %}>Basic Auth</option>
+                            <option value="bearer" {% if auth_type == 'bearer' %}selected{% endif %}>Bearer Token</option>
                         </select>
                         <div class="mf-auth-fields" id="authFieldsBasic" style="{% if auth_type != 'basic' %}display: none;{% else %}display: grid;{% endif %}">
                             <div class="mf-field-group">
@@ -397,7 +368,7 @@
 
                 <!-- Custom headers (Pro) -->
                 <div class="mf-field-group mf-field-group-mt">
-                    <label>Custom headers {% if plan == 'free' %}<span class="mf-pro-tag">PRO</span>{% endif %} <span class="label-optional">(optional)</span></label>
+                    <label>Custom headers <span class="label-optional">(optional)</span></label>
                     {% if plan != 'free' %}
                     <div id="custom-headers-container">
                         {% for h in monitor.get('custom_headers', []) %}
@@ -540,7 +511,7 @@
             <!-- Maintenance Windows (Pro) -->
             <hr class="form-divider">
             <div class="mf-field-group">
-                <label>Maintenance windows {% if plan == 'free' %}<span class="mf-pro-tag">PRO</span>{% endif %}</label>
+                <label>Maintenance windows</label>
                 <div id="mw-container">
                     {% if plan != 'free' %}
                     {% for mw in monitor.get('maintenance_windows', []) %}

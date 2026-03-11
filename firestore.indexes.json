@@ -1,0 +1,36 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "monitors",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "paused", "order": "ASCENDING"},
+        {"fieldPath": "created_at", "order": "ASCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "checks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "monitor_id", "order": "ASCENDING"},
+        {"fieldPath": "timestamp", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "checks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "monitor_id", "order": "ASCENDING"},
+        {"fieldPath": "timestamp", "order": "ASCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "incidents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "monitor_id", "order": "ASCENDING"},
+        {"fieldPath": "started_at", "order": "DESCENDING"}
+      ]
+    }
+  ]
+}

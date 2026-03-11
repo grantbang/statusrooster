@@ -78,6 +78,7 @@ async def landing_page(request: Request, preview: str = None):
 
 # Rate limiter: max 10 requests per IP per 60 seconds
 _url_check_rate: dict[str, list] = {}
+_url_check_cleanup_counter = 0
 _URL_CHECK_LIMIT = 10
 _URL_CHECK_WINDOW = 60  # seconds
 
@@ -92,13 +93,6 @@ async def public_url_check(request: Request):
     client_ip = request.client.host if request.client else "unknown"
     now_ts = time.monotonic()
 
-    # Prune stale IPs to prevent unbounded memory growth (#21)
-    if len(_url_check_rate) > 1000:
-        cutoff = now_ts - _URL_CHECK_WINDOW
-        stale = [ip for ip, ts_list in _url_check_rate.items() if not any(t > cutoff for t in ts_list)]
-        for ip in stale:
-            del _url_check_rate[ip]
-
     hits = _url_check_rate.get(client_ip, [])
     hits = [t for t in hits if now_ts - t < _URL_CHECK_WINDOW]
     if len(hits) >= _URL_CHECK_LIMIT:
@@ -110,6 +104,16 @@ async def public_url_check(request: Request):
         )
     hits.append(now_ts)
     _url_check_rate[client_ip] = hits
+
+    # Periodic cleanup of stale IPs to prevent memory leak
+    global _url_check_cleanup_counter
+    _url_check_cleanup_counter += 1
+    if _url_check_cleanup_counter >= 100:
+        _url_check_cleanup_counter = 0
+        stale_cutoff = now_ts - (_URL_CHECK_WINDOW * 5)
+        stale_ips = [ip for ip, h in _url_check_rate.items() if not h or h[-1] < stale_cutoff]
+        for ip in stale_ips:
+            del _url_check_rate[ip]
 
     body = await request.json()
     url = body.get("url", "").strip()
@@ -590,14 +594,10 @@ async def add_monitor(
     # Plan enforcement
     existing = list_monitors_by_user(db, user["id"])
     plan = user.get("plan", "free")
-    if plan == "free" and len(existing) >= 5:
+    limit = 500 if plan == "pro" else 100
+    if len(existing) >= limit:
         return RedirectResponse(
-            url="/dashboard?msg=Free+plan+limited+to+5+monitors.+Upgrade+to+Pro+for+up+to+250!&msg_type=error",
-            status_code=302,
-        )
-    if plan == "pro" and len(existing) >= 250:
-        return RedirectResponse(
-            url="/dashboard?msg=Pro+plan+limited+to+250+monitors.+Contact+us+if+you+need+more.&msg_type=error",
+            url=f"/dashboard?msg=Limited+to+{limit}+monitors.{'Contact+us+if+you+need+more.' if plan == 'pro' else '+Upgrade+to+Pro+for+up+to+500!'}&msg_type=error",
             status_code=302,
         )
 
@@ -622,19 +622,18 @@ async def add_monitor(
         if not url.startswith(("http://", "https://")):
             url = f"https://{url}"
 
-    # Build maintenance windows list (Pro only)
+    # Build maintenance windows list (all plans)
     maintenance_windows = []
-    if plan != "free":
-        days = form.getlist("maintenance_day[]")
-        starts = form.getlist("maintenance_start[]")
-        ends = form.getlist("maintenance_end[]")
-        for d, s, e in zip(days, starts, ends):
-            if d and s and e:
-                maintenance_windows.append({
-                    "day": d,
-                    "start_utc": s,
-                    "end_utc": e,
-                })
+    days = form.getlist("maintenance_day[]")
+    starts = form.getlist("maintenance_start[]")
+    ends = form.getlist("maintenance_end[]")
+    for d, s, e in zip(days, starts, ends):
+        if d and s and e:
+            maintenance_windows.append({
+                "day": d,
+                "start_utc": s,
+                "end_utc": e,
+            })
 
     public = form.get("public") == "true"
     paused = form.get("paused") == "true"
@@ -642,14 +641,14 @@ async def add_monitor(
     # Status page limit enforcement
     if public:
         public_count = sum(1 for m in existing if m.get("public", False))
-        public_limit = 10 if plan == "pro" else 1
+        public_limit = 10
         if public_count >= public_limit:
             return RedirectResponse(
-                url=f"/dashboard?msg={'Pro' if plan == 'pro' else 'Free'}+plan+limited+to+{public_limit}+public+status+page{'s' if public_limit > 1 else ''}.{'Contact+us+if+you+need+more.' if plan == 'pro' else '+Upgrade+to+Pro+for+up+to+10!'}&msg_type=error",
+                url=f"/dashboard?msg=Limited+to+{public_limit}+public+status+pages.+Contact+us+if+you+need+more.&msg_type=error",
                 status_code=302,
             )
 
-    # Parse check interval (Pro only, 60-300s)
+    # Parse check interval (all plans: free 60-300s, pro 30-300s)
     check_interval = None
     if check_interval_raw:
         try:
@@ -719,14 +718,7 @@ async def add_monitor(
     if slug:
         slug = re.sub(r"[^a-z0-9\-]", "", slug.lower().replace(" ", "-")).strip("-")
 
-    # Gate auth/headers to Pro only
-    if user.get("plan", "free") == "free":
-        basic_auth_user = ""
-        basic_auth_pass = ""
-        bearer_token = ""
-        custom_headers = []
-
-    # Clear auth fields based on auth type selection
+    # Auth/headers available to all plans — clear based on auth type selection only
     if auth_type == "bearer":
         basic_auth_user = ""
         basic_auth_pass = ""
@@ -748,11 +740,11 @@ async def add_monitor(
         url=url,
         name=name,
         alert_email=alert_email or user.get("email", ""),
-        alert_slack_webhook=alert_slack_webhook if user.get("plan", "free") != "free" else "",
-        alert_sms=alert_sms if user.get("plan", "free") != "free" else "",
+        alert_slack_webhook=alert_slack_webhook or "",
+        alert_sms=alert_sms if user.get("plan", "free") == "pro" else "",
         keyword=keyword,
         response_threshold_ms=response_threshold_ms.strip() if response_threshold_ms else None,
-        webhook_url=webhook_url if user.get("plan", "free") != "free" else "",
+        webhook_url=webhook_url or "",
         maintenance_windows=maintenance_windows,
         public=public,
         paused=paused,
@@ -774,7 +766,7 @@ async def add_monitor(
         bearer_token=bearer_token,
         request_body=request_body,
         request_content_type=request_content_type,
-        custom_headers=custom_headers if user.get("plan", "free") != "free" else [],
+        custom_headers=custom_headers,
         follow_redirects=follow_redirects,
     )
 
@@ -895,26 +887,25 @@ async def edit_monitor_submit(
     else:
         slug = monitor.get("slug", "")
 
-    # Build maintenance windows list (Pro only)
+    # Build maintenance windows list (all plans)
     maintenance_windows = []
-    if user.get("plan", "free") != "free":
-        days = form.getlist("maintenance_day[]")
-        starts = form.getlist("maintenance_start[]")
-        ends = form.getlist("maintenance_end[]")
-        for d, s, e in zip(days, starts, ends):
-            if d and s and e:
-                maintenance_windows.append({
-                    "day": d,
-                    "start_utc": s,
-                    "end_utc": e,
-                })
+    days = form.getlist("maintenance_day[]")
+    starts = form.getlist("maintenance_start[]")
+    ends = form.getlist("maintenance_end[]")
+    for d, s, e in zip(days, starts, ends):
+        if d and s and e:
+            maintenance_windows.append({
+                "day": d,
+                "start_utc": s,
+                "end_utc": e,
+            })
 
     updates = {
         "url": url,
         "name": name,
         "alert_email": alert_email,
-        "alert_slack_webhook": alert_slack_webhook if user.get("plan", "free") != "free" else monitor.get("alert_slack_webhook", ""),
-        "alert_sms": alert_sms if user.get("plan", "free") != "free" else monitor.get("alert_sms", ""),
+        "alert_slack_webhook": alert_slack_webhook,
+        "alert_sms": alert_sms if user.get("plan", "free") == "pro" else monitor.get("alert_sms", ""),
         "slug": slug,
         "public": public == "true",
         "paused": form.get("paused") == "true",
@@ -931,26 +922,20 @@ async def edit_monitor_submit(
         updates["request_body"] = request_body
         updates["request_content_type"] = request_content_type
 
-        # Auth: clear fields based on auth type, gate to Pro
-        if user.get("plan", "free") != "free":
-            if auth_type == "bearer":
-                updates["bearer_token"] = bearer_token
-                updates["basic_auth_user"] = ""
-                updates["basic_auth_pass"] = ""
-            elif auth_type == "basic":
-                updates["basic_auth_user"] = basic_auth_user
-                updates["basic_auth_pass"] = basic_auth_pass
-                updates["bearer_token"] = ""
-            else:
-                updates["basic_auth_user"] = ""
-                updates["basic_auth_pass"] = ""
-                updates["bearer_token"] = ""
-            updates["custom_headers"] = custom_headers
+        # Auth: clear fields based on auth type selection
+        if auth_type == "bearer":
+            updates["bearer_token"] = bearer_token
+            updates["basic_auth_user"] = ""
+            updates["basic_auth_pass"] = ""
+        elif auth_type == "basic":
+            updates["basic_auth_user"] = basic_auth_user
+            updates["basic_auth_pass"] = basic_auth_pass
+            updates["bearer_token"] = ""
         else:
             updates["basic_auth_user"] = ""
             updates["basic_auth_pass"] = ""
             updates["bearer_token"] = ""
-            updates["custom_headers"] = []
+        updates["custom_headers"] = custom_headers
     if expected_status_code_raw:
         try:
             updates["expected_status_code"] = int(expected_status_code_raw)
@@ -1014,25 +999,26 @@ async def edit_monitor_submit(
     if updates["public"] and not monitor.get("public", False):
         all_monitors = list_monitors_by_user(db, user["id"])
         public_count = sum(1 for m in all_monitors if m.get("public", False))
-        plan = user.get("plan", "free")
-        public_limit = 10 if plan == "pro" else 1
+        public_limit = 10
         if public_count >= public_limit:
             return RedirectResponse(
-                url=f"/dashboard?msg={'Pro' if plan == 'pro' else 'Free'}+plan+limited+to+{public_limit}+public+status+page{'s' if public_limit > 1 else ''}.+{'Contact+us.' if plan == 'pro' else 'Upgrade+to+Pro+for+up+to+10!'}&msg_type=error",
+                url=f"/dashboard?msg=Limited+to+{public_limit}+public+status+pages.+Contact+us+if+you+need+more.&msg_type=error",
                 status_code=302,
             )
 
-    # Pro-only fields
-    if user.get("plan", "free") != "free":
-        updates["webhook_url"] = webhook_url
-        updates["maintenance_windows"] = maintenance_windows
-        # Custom check interval (Pro: 60-300s)
-        if check_interval_raw:
-            try:
-                ci = max(60, min(300, int(check_interval_raw)))
-                updates["check_interval"] = ci
-            except (ValueError, TypeError):
-                pass
+    # Webhook URL and maintenance windows (all plans)
+    updates["webhook_url"] = webhook_url
+    updates["maintenance_windows"] = maintenance_windows
+
+    # Custom check interval (free: 60-300s, pro: 30-300s)
+    if check_interval_raw:
+        try:
+            plan = user.get("plan", "free")
+            min_interval = 30 if plan == "pro" else 60
+            ci = max(min_interval, min(300, int(check_interval_raw)))
+            updates["check_interval"] = ci
+        except (ValueError, TypeError):
+            pass
 
     update_monitor(db, monitor_id, updates)
 
@@ -1083,7 +1069,7 @@ async def clone_monitor(request: Request, monitor_id: str):
     from app.models.monitor import list_monitors_by_user
     existing = list_monitors_by_user(db, user["id"])
     plan = user.get("plan", "free")
-    limit = 250 if plan == "pro" else 5
+    limit = 500 if plan == "pro" else 100
     if len(existing) >= limit:
         return JSONResponse({"error": "Monitor limit reached"}, status_code=403)
 

@@ -686,7 +686,9 @@ check_batch.append({
 
 ## 6.1 — Cursor Pagination for get_due_monitors()
 
-- [ ] In `app/models/monitor.py`, replace the current `get_due_monitors()` with:
+- [x] In `app/models/monitor.py`, replace the current `get_due_monitors()` with cursor-paginated version using `.stream()` and `start_after`
+- [x] Add `import logging` and `logger = logging.getLogger(__name__)` at top of file
+- [x] Verify: restart app, trigger a cron cycle, confirm monitors are still checked
 
 ```python
 def get_due_monitors(db) -> list[dict]:
@@ -737,7 +739,8 @@ def get_due_monitors(db) -> list[dict]:
 
 ## 6.2 — Rate Limiter Memory Leak Fix
 
-- [ ] In `app/routers/pages.py`, add a cleanup counter near the `_url_check_rate` dict:
+- [x] In `app/routers/pages.py`, add a cleanup counter near the `_url_check_rate` dict
+- [x] Inside `public_url_check()`, add periodic cleanup that runs every 100 requests and removes IPs whose last hit is older than 5 minutes
 
 ```python
 _url_check_rate: dict[str, list] = {}
@@ -769,7 +772,9 @@ if _url_check_cleanup_counter >= 100:
 
 ## 6.3 — Backfill Heartbeat Ping Tokens
 
-- [ ] Create `scripts/backfill_ping_tokens.py`:
+- [x] Create `scripts/backfill_ping_tokens.py` (already existed — supports --dry-run default and --execute)
+- [x] Test dry run: `python scripts/backfill_ping_tokens.py`
+- [x] Execute: `python scripts/backfill_ping_tokens.py --execute`
 
 ```python
 """
@@ -833,7 +838,8 @@ if __name__ == "__main__":
 
 ## 6.4 — Firestore Composite Indexes
 
-- [ ] Create `firestore.indexes.json` at project root (or update if exists):
+- [x] Create `firestore.indexes.json` at project root
+- [ ] Deploy indexes: `firebase deploy --only firestore:indexes` (or via GCP console)
 
 ```json
 {
@@ -885,10 +891,10 @@ if __name__ == "__main__":
 
 ## 1.1 — Update Plan Limit Constants
 
-- [ ] `app/routers/api_v1.py`: change `FREE_MONITOR_LIMIT = 5` → `100`, `PRO_MONITOR_LIMIT = 250` → `500`
-- [ ] `app/routers/monitors.py`: change `FREE_MONITOR_LIMIT = 5` → `100`, `PRO_MONITOR_LIMIT = 250` → `500`
-- [ ] Search entire codebase for any other hardcoded `5` in plan limit contexts or `250` for Pro
-- [ ] Verify: `grep -rn "FREE_MONITOR_LIMIT\|PRO_MONITOR_LIMIT\|plan.*5\|limit.*250" app/`
+- [x] `app/routers/api_v1.py`: change `FREE_MONITOR_LIMIT = 5` → `100`, `PRO_MONITOR_LIMIT = 250` → `500`
+- [x] `app/routers/monitors.py`: change `FREE_MONITOR_LIMIT = 5` → `100`, `PRO_MONITOR_LIMIT = 250` → `500`
+- [x] Search entire codebase for any other hardcoded `5` in plan limit contexts or `250` for Pro
+- [x] Verify: `grep -rn "FREE_MONITOR_LIMIT\|PRO_MONITOR_LIMIT\|plan.*5\|limit.*250" app/`
 
 ---
 
@@ -898,29 +904,29 @@ For each file below, find every `if plan == "free"` or `if user.get("plan", "fre
 
 ### Features to UNLOCK for free:
 
-- [ ] **Slack webhooks** — `app/routers/api_v1.py`: in `api_create_monitor()`, remove the `if plan != "free"` gate on `alert_slack_webhook`. Let all plans set it.
-- [ ] **Slack webhooks** — `app/routers/monitors.py`: in `create()`, remove `if user.get("plan", "free") != "free" else ""` on `alert_slack_webhook`. Pass it through for all plans.
-- [ ] **Slack webhooks** — `app/routers/pages.py`: in `add_monitor()`, same — remove the free gate on `alert_slack_webhook`
-- [ ] **Slack webhooks** — `app/routers/api_v1.py`: in `api_update_monitor()`, remove the 403 on updating `alert_slack_webhook` for free users
-- [ ] **Slack webhooks** — `app/routers/pages.py`: in `edit_monitor_submit()`, remove the free gate on `alert_slack_webhook`
-- [ ] **Webhook URL** — same pattern across all 5 locations (api_v1 create, api_v1 update, monitors create, pages add, pages edit)
-- [ ] **Maintenance windows** — same pattern across all locations (api_v1 create, api_v1 update, pages add, pages edit)
-- [ ] **Custom headers** — same pattern across all locations
-- [ ] **Basic Auth** — same pattern across all locations
-- [ ] **Custom check interval** — UPDATE the logic (don't just remove the gate):
+- [x] **Slack webhooks** — `app/routers/api_v1.py`: in `api_create_monitor()`, remove the `if plan != "free"` gate on `alert_slack_webhook`. Let all plans set it.
+- [x] **Slack webhooks** — `app/routers/monitors.py`: in `create()`, remove `if user.get("plan", "free") != "free" else ""` on `alert_slack_webhook`. Pass it through for all plans.
+- [x] **Slack webhooks** — `app/routers/pages.py`: in `add_monitor()`, same — remove the free gate on `alert_slack_webhook`
+- [x] **Slack webhooks** — `app/routers/api_v1.py`: in `api_update_monitor()`, remove the 403 on updating `alert_slack_webhook` for free users
+- [x] **Slack webhooks** — `app/routers/pages.py`: in `edit_monitor_submit()`, remove the free gate on `alert_slack_webhook`
+- [x] **Webhook URL** — same pattern across all 5 locations (api_v1 create, api_v1 update, monitors create, pages add, pages edit)
+- [x] **Maintenance windows** — same pattern across all locations (api_v1 create, api_v1 update, pages add, pages edit)
+- [x] **Custom headers** — same pattern across all locations
+- [x] **Basic Auth** — same pattern across all locations
+- [x] **Custom check interval** — UPDATE the logic (don't just remove the gate):
   - Free: 60s–300s, default 60s
   - Pro: 30s–300s, default 30s
   - Update in `app/models/monitor.py` `create_monitor()` and in `api_v1.py` `api_update_monitor()` and `pages.py` `edit_monitor_submit()`
 
 ### Features to KEEP as Pro-only:
 
-- [ ] **SMS alerts** — keep all existing gates on `alert_sms`. Twilio costs real money per message.
-- [ ] **Aggregate status page** — keep the `if plan == "free": raise 404` in `app/routers/pages.py` `aggregate_status_page()`
-- [ ] **Check interval < 60s** — Pro can go to 30s, free minimum is 60s
+- [x] **SMS alerts** — keep all existing gates on `alert_sms`. Twilio costs real money per message.
+- [x] **Aggregate status page** — keep the `if plan == "free": raise 404` in `app/routers/pages.py` `aggregate_status_page()`
+- [x] **Check interval < 60s** — Pro can go to 30s, free minimum is 60s
 
 ### Status page limit update:
 
-- [ ] Change `public_limit = 10 if plan == "pro" else 1` to `public_limit = 10` everywhere:
+- [x] Change `public_limit = 10 if plan == "pro" else 1` to `public_limit = 10` everywhere:
   - `app/routers/api_v1.py` — `api_create_monitor()` and `api_update_monitor()`
   - `app/routers/pages.py` — `add_monitor()` and `edit_monitor_submit()`
 
@@ -933,29 +939,29 @@ For each file below, find every `if plan == "free"` or `if user.get("plan", "fre
 
 ## 1.3 — Update UI Templates
 
-- [ ] `app/templates/pricing.html` — rewrite with new tier comparison (100 free monitors, all features)
-- [ ] `app/templates/add_monitor.html` — remove all "PRO" badges and disabled states on: Slack, webhooks, maintenance windows, custom headers, auth. Keep "PRO" only on SMS and 30s interval.
-- [ ] `app/templates/edit_monitor.html` — same removals
-- [ ] `app/templates/dashboard.html` — remove upgrade CTAs for features that are now free
-- [ ] `app/templates/settings.html` — update plan description text
+- [x] `app/templates/pricing.html` — rewrite with new tier comparison (100 free monitors, all features)
+- [x] `app/templates/add_monitor.html` — remove all "PRO" badges and disabled states on: Slack, webhooks, maintenance windows, custom headers, auth. Keep "PRO" only on SMS and 30s interval.
+- [x] `app/templates/edit_monitor.html` — same removals
+- [x] `app/templates/dashboard.html` — remove upgrade CTAs for features that are now free
+- [x] `app/templates/settings.html` — update plan description text (reviewed: no changes needed, upgrade link points to updated pricing page)
 
 ---
 
 ## 1.4 — Update Tests
 
-- [ ] Update `tests/test_e2e.py` `TestPlanEnforcement`:
-  - [ ] E.2 (free slack stripped) — should now PASS (slack allowed on free). Change assertion to expect webhook IS stored.
-  - [ ] E.4 (free webhook stripped) — same, expect it's stored now
-  - [ ] E.5 (free basic auth stripped) — same, expect it's stored now
-  - [ ] E.6 (free update slack 403) — should now succeed (200). Change assertion.
-  - [ ] E.7 (free update webhook 403) — should now succeed (200). Change assertion.
-  - [ ] E.9 (free update maintenance 403) — should now succeed (200). Change assertion.
-  - [ ] E.10 (free update basic auth 403) — should now succeed (200). Change assertion.
-  - [ ] E.1 (free 6th monitor limit) — change to test 101st monitor limit
-  - [ ] E.8 (free update interval 403) — update: free can set 60s+ but not below 60s. Test that setting 30s on free is rejected.
-  - [ ] Add new test: free user can set check_interval=60 (should succeed)
-  - [ ] Add new test: free user cannot set check_interval=30 (should fail)
-  - [ ] E.11 (free 2nd public page) — change to test 11th public page
+- [x] Update `tests/test_e2e.py` `TestPlanEnforcement`:
+  - [x] E.2 (free slack stripped) — should now PASS (slack allowed on free). Change assertion to expect webhook IS stored.
+  - [x] E.4 (free webhook stripped) — same, expect it's stored now
+  - [x] E.5 (free basic auth stripped) — same, expect it's stored now
+  - [x] E.6 (free update slack 403) — should now succeed (200). Change assertion.
+  - [x] E.7 (free update webhook 403) — should now succeed (200). Change assertion.
+  - [x] E.9 (free update maintenance 403) — should now succeed (200). Change assertion.
+  - [x] E.10 (free update basic auth 403) — should now succeed (200). Change assertion.
+  - [x] E.1 (free 6th monitor limit) — change to test 101st monitor limit
+  - [x] E.8 (free update interval 403) — update: free can set 60s+ but not below 60s. Test that setting 30s on free is rejected.
+  - [x] Add new test: free user can set check_interval=60 (should succeed)
+  - [x] Add new test: free user cannot set check_interval=30 (should fail)
+  - [x] E.11 (free 2nd public page) — change to test 11th public page
 
 ---
 
