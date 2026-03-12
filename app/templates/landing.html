@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}Uptime Monitoring for Developers{% endblock %}
-{% block description %}Developer-first uptime monitoring. Full REST API, uptime badges for your README, SSL alerts, keyword checks. 5 monitors free, no credit card.{% endblock %}
+{% block description %}Developer-first uptime monitoring. 100 monitors free. 60-second checks. Multi-region. Full REST API. Slack, webhooks, status pages — all free. No credit card.{% endblock %}
 
 {% block extra_css %}
 {% endblock %}
@@ -11,13 +11,13 @@
 <!-- Hero -->
 <section class="l-hero">
     <h1>Uptime monitoring<br>built for developers.</h1>
-    <p class="l-hero-sub">Full REST API on every plan. Uptime badges for your README. SSL &amp; keyword monitoring. Set up a monitor in 30 seconds.</p>
+    <p class="l-hero-sub">100 monitors free. 60-second checks from 4 regions. Email, Slack &amp; webhooks on every plan. Set up in 30 seconds.</p>
 
     <div class="l-hero-actions">
         <a href="/signup" class="l-btn-primary">Start monitoring free</a>
         <a href="/docs/api" class="l-btn-ghost">View API docs</a>
     </div>
-    <p class="l-hero-trust">No credit card &middot; 100 monitors free forever &middot; Cancel anytime.</p>
+    <p class="l-hero-trust">No credit card &middot; 100 monitors free &middot; Multi-region checks included</p>
 
     <!-- Stat strip — 30 bars = 30 days uptime visual -->
     <div class="l-hero-stat-strip">
@@ -55,6 +55,10 @@
         <span>30s on Pro</span>
     </div>
     <div class="l-prop">
+        <strong>4 regions</strong>
+        <span>US, EU, Asia</span>
+    </div>
+    <div class="l-prop">
         <strong>Full REST API</strong>
         <span>Every plan</span>
     </div>
@@ -63,12 +67,8 @@
         <span>Live SVG</span>
     </div>
     <div class="l-prop">
-        <strong>SSL monitoring</strong>
-        <span>Expiry alerts</span>
-    </div>
-    <div class="l-prop">
         <strong>Status pages</strong>
-        <span>Public &amp; free</span>
+        <span>10 free</span>
     </div>
 </section>
 
@@ -141,8 +141,8 @@
             <div class="l-howto-icon">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
-            <h3>We check every 5 minutes</h3>
-            <p>StatusRooster checks your endpoint continuously, verifies SSL, and retries before alerting to eliminate false positives.</p>
+            <h3>We check every 60 seconds</h3>
+            <p>From 4 regions worldwide. StatusRooster verifies SSL, retries from another location before alerting, and eliminates false positives.</p>
         </div>
         <div class="l-howto-connector" aria-hidden="true"></div>
         <div class="l-howto-step">
@@ -281,7 +281,7 @@
     <div class="l-feature">
         <div class="l-feature-content">
             <h2>Uptime badges for your README.</h2>
-            <p>Embed live uptime badges in your GitHub README, docs, or landing page. Three styles: uptime percentage, status, and response time. Updates every 5 minutes, zero config.</p>
+            <p>Embed live uptime badges in your GitHub README, docs, or landing page. Three styles: uptime percentage, status, and response time. Always up to date, zero config.</p>
             <div class="l-code l-code-sm">
 <pre>![Uptime](https://statusrooster.com/badge/m_8f3k.svg)</pre>
             </div>
@@ -320,8 +320,8 @@
             <p>Share a clean public status page with 90-day history, incident log, and live status.</p>
         </div>
         <div class="l-feature-card">
-            <h3>False positive prevention</h3>
-            <p>Failed check? We retry from another location before alerting. You only hear about real downtime.</p>
+            <h3>Multi-region checks</h3>
+            <p>Every check runs from 4 regions (US-East, US-West, EU, Asia). Majority vote prevents false positives from regional blips.</p>
         </div>
     </div>
 </section>
@@ -336,11 +336,11 @@
             <div class="l-price">$0 <span>/ forever</span></div>
             <ul>
                 <li>100 monitors</li>
-                <li>60-second checks</li>
+                <li>60-second checks, 4 regions</li>
                 <li>Email, Slack &amp; webhook alerts</li>
-                <li>SSL &amp; keyword monitoring</li>
-                <li>Full REST API</li>
-                <li>Uptime badges</li>
+                <li>SSL, keyword &amp; JSON/API monitoring</li>
+                <li>Maintenance windows</li>
+                <li>Full REST API &amp; uptime badges</li>
                 <li>10 status pages</li>
             </ul>
             <a href="/signup" class="l-price-cta">Get started free</a>
@@ -353,10 +353,10 @@
                 <li>500 monitors</li>
                 <li>30-second checks</li>
                 <li>Everything in Free, plus:</li>
-                <li>SMS alerts</li>
-                <li>Response time alerts</li>
+                <li>SMS alerts (Twilio)</li>
+                <li>Custom status page branding</li>
                 <li>Aggregate status page</li>
-                <li>Priority support</li>
+                <li>90-day data retention</li>
             </ul>
             <a href="/pricing" class="l-price-cta l-price-cta-pro">Upgrade to Pro</a>
         </div>
