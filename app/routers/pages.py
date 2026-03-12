@@ -1526,12 +1526,25 @@ async def aggregate_status_page(request: Request, user_id: str):
     # Overall status
     all_up = all(m.get("status") == "up" for m in public_monitors)
 
+    # Branding (Pro only)
+    branding = {}
+    if owner.get("plan", "free") == "pro":
+        branding = {
+            "brand_name": owner.get("status_page_brand_name", ""),
+            "logo_url": owner.get("status_page_logo_url", ""),
+            "accent_color": owner.get("status_page_accent_color", ""),
+            "show_powered_by": not owner.get("hide_powered_by", False),
+        }
+    else:
+        branding = {"brand_name": "", "logo_url": "", "accent_color": "", "show_powered_by": True}
+
     return templates.TemplateResponse("aggregate_status.html", {
         "request": request,
         "owner": owner,
         "monitors": public_monitors,
         "all_up": all_up,
         "format_duration": _format_duration,
+        "branding": branding,
     })
 
 
@@ -1557,12 +1570,24 @@ async def public_status_page(request: Request, slug: str):
     # Get recent incidents
     incidents = list_incidents_by_monitor(db, monitor["id"], limit=10)
 
+    # Branding (Pro only)
+    owner = get_user_by_id(db, monitor.get("user_id", ""))
+    branding = {"brand_name": "", "logo_url": "", "accent_color": "", "show_powered_by": True}
+    if owner and owner.get("plan", "free") == "pro":
+        branding = {
+            "brand_name": owner.get("status_page_brand_name", ""),
+            "logo_url": owner.get("status_page_logo_url", ""),
+            "accent_color": owner.get("status_page_accent_color", ""),
+            "show_powered_by": not owner.get("hide_powered_by", False),
+        }
+
     return templates.TemplateResponse("status_page.html", {
         "request": request,
         "monitor": monitor,
         "daily_uptime": daily_uptime,
         "incidents": incidents,
         "format_duration": _format_duration,
+        "branding": branding,
     })
 
 
@@ -1631,6 +1656,50 @@ async def save_timezone(request: Request, timezone: str = Form(...)):
 
     response = RedirectResponse(url="/settings", status_code=302)
     response.set_cookie("flash_message", "Timezone saved.", max_age=10)
+    response.set_cookie("flash_type", "success", max_age=10)
+    return response
+
+
+@router.post("/settings/branding", response_class=HTMLResponse)
+async def save_branding(request: Request):
+    user = get_user_from_cookie(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+
+    # Pro-only feature
+    if user.get("plan", "free") != "pro":
+        response = RedirectResponse(url="/settings", status_code=302)
+        response.set_cookie("flash_message", "Custom branding is a Pro feature.", max_age=10)
+        response.set_cookie("flash_type", "error", max_age=10)
+        return response
+
+    form = await request.form()
+    brand_name = form.get("status_page_brand_name", "").strip()[:100]
+    logo_url = form.get("status_page_logo_url", "").strip()[:500]
+    accent_color = form.get("status_page_accent_color", "").strip()
+    hide_powered_by = form.get("hide_powered_by") == "true"
+
+    # Validate accent color (hex only)
+    if accent_color and not re.match(r'^#[0-9a-fA-F]{6}$', accent_color):
+        accent_color = ""
+
+    # Validate logo URL (must be https or empty)
+    if logo_url and not logo_url.startswith("https://"):
+        response = RedirectResponse(url="/settings", status_code=302)
+        response.set_cookie("flash_message", "Logo URL must use HTTPS.", max_age=10)
+        response.set_cookie("flash_type", "error", max_age=10)
+        return response
+
+    db = get_db()
+    update_user(db, user["id"], {
+        "status_page_brand_name": brand_name,
+        "status_page_logo_url": logo_url,
+        "status_page_accent_color": accent_color,
+        "hide_powered_by": hide_powered_by,
+    })
+
+    response = RedirectResponse(url="/settings", status_code=302)
+    response.set_cookie("flash_message", "Branding settings saved.", max_age=10)
     response.set_cookie("flash_type", "success", max_age=10)
     return response
 

@@ -16,7 +16,8 @@
             display: flex;
             flex-direction: column;
         }
-        a { color: #6366f1; text-decoration: none; }
+        {% set accent = branding.accent_color if branding.accent_color else '#6366f1' %}
+        a { color: {{ accent }}; text-decoration: none; }
         a:hover { text-decoration: underline; }
 
         /* Header */
@@ -161,7 +162,10 @@
 <body>
 
 <div class="status-header">
-    <h1>System Status</h1>
+    {% if branding.logo_url %}
+    <img src="{{ branding.logo_url }}" alt="{{ branding.brand_name or 'Status' }}" style="max-height: 48px; max-width: 200px; margin-bottom: 1rem;">
+    {% endif %}
+    <h1>{{ branding.brand_name or 'System Status' }}</h1>
     {% if all_up %}
         <span class="status-badge status-all-up">
             All Systems Operational
@@ -203,9 +207,11 @@
     {% endfor %}
 </div>
 
+{% if branding.show_powered_by %}
 <div class="powered-by">
     Powered by <a href="https://statusrooster.com" target="_blank">StatusRooster</a>
 </div>
+{% endif %}
 
 </body>
 </html>

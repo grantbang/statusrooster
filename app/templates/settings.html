@@ -100,6 +100,49 @@
     </form>
 </div>
 
+<!-- Status Page Branding (Pro) -->
+{% if user.get('plan', 'free') == 'pro' %}
+<div class="settings-section">
+    <h2>Status Page Branding</h2>
+    <div class="section-desc">Customize how your public status pages look. These settings apply to all your status pages.</div>
+    <form method="POST" action="/settings/branding" style="max-width: 420px;">
+        <div class="form-group">
+            <label for="status_page_brand_name">Brand name</label>
+            <input type="text" id="status_page_brand_name" name="status_page_brand_name"
+                   value="{{ user.get('status_page_brand_name', '') }}" placeholder="e.g. Acme Inc"
+                   maxlength="100" class="form-control">
+            <div class="hint">Replaces "System Status" in the header.</div>
+        </div>
+        <div class="form-group">
+            <label for="status_page_logo_url">Logo URL</label>
+            <input type="url" id="status_page_logo_url" name="status_page_logo_url"
+                   value="{{ user.get('status_page_logo_url', '') }}" placeholder="https://example.com/logo.png"
+                   maxlength="500" class="form-control">
+            <div class="hint">Displayed above the page title. Must be HTTPS.</div>
+        </div>
+        <div class="form-group">
+            <label for="status_page_accent_color">Accent color</label>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <input type="color" id="status_page_accent_color" name="status_page_accent_color"
+                       value="{{ user.get('status_page_accent_color', '#6366f1') }}"
+                       style="width: 44px; height: 36px; border: 1px solid #ddd; border-radius: 6px; padding: 2px; cursor: pointer;">
+                <span style="font-size: 0.85rem; color: #888;" id="accentHex">{{ user.get('status_page_accent_color', '#6366f1') }}</span>
+            </div>
+            <div class="hint">Used for links and status badges on your status pages.</div>
+        </div>
+        <div class="form-group" style="margin-top: 1rem;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 400;">
+                <input type="checkbox" name="hide_powered_by" value="true"
+                       {% if user.get('hide_powered_by', False) %}checked{% endif %}
+                       style="width: 18px; height: 18px;">
+                Hide "Powered by StatusRooster" footer
+            </label>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Save branding</button>
+    </form>
+</div>
+{% endif %}
+
 <!-- API Keys -->
 <div class="settings-section">
     <h2>API Keys</h2>
@@ -190,6 +233,12 @@
 
 {% block extra_js %}
 <script>
+var colorInput = document.getElementById('status_page_accent_color');
+if (colorInput) {
+    colorInput.addEventListener('input', function() {
+        document.getElementById('accentHex').textContent = this.value;
+    });
+}
 function copyKey() {
     var keyEl = document.getElementById('newKeyValue');
     if (keyEl) {

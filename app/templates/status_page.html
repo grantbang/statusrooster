@@ -16,7 +16,8 @@
             display: flex;
             flex-direction: column;
         }
-        a { color: #6366f1; text-decoration: none; }
+        {% set accent = branding.accent_color if branding.accent_color else '#6366f1' %}
+        a { color: {{ accent }}; text-decoration: none; }
         a:hover { text-decoration: underline; }
 
         /* Header */
@@ -244,6 +245,9 @@
 
     <!-- Header -->
     <div class="status-header">
+        {% if branding.logo_url %}
+        <img src="{{ branding.logo_url }}" alt="{{ branding.brand_name or monitor.name }}" style="max-height: 48px; max-width: 200px; margin-bottom: 1rem;">
+        {% endif %}
         <h1>{{ monitor.name }}</h1>
         {% if monitor.status == "up" %}
             <div class="status-badge status-up">
@@ -364,10 +368,12 @@
     </div>
 
     <!-- Footer -->
+    {% if branding.show_powered_by %}
     <div class="status-footer">
         <p>Powered by <a href="https://statusrooster.com">StatusRooster</a></p>
         <p style="margin-top: 0.25rem;">Free uptime monitoring — <a href="https://statusrooster.com/signup">Sign up</a></p>
     </div>
+    {% endif %}
 
 </body>
 </html>
