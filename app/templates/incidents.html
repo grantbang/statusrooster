@@ -123,7 +123,13 @@
 <div class="monitor-list" id="incList">
     {% for inc in incidents %}
     {% set mon = monitor_map.get(inc.monitor_id, {}) %}
-    <a href="/incidents/{{ inc.id }}" class="monitor-card inc-grid inc-row-link"
+    {% set sev_class = '' %}
+    {% if inc.status_code and inc.status_code >= 500 %}{% set sev_class = 'inc-severity-5xx' %}
+    {% elif inc.status_code and inc.status_code >= 400 %}{% set sev_class = 'inc-severity-4xx' %}
+    {% elif inc.status_code is not none and inc.status_code <= 0 %}{% set sev_class = 'inc-severity-timeout' %}
+    {% elif mon.get('monitor_type') == 'heartbeat' %}{% set sev_class = 'inc-severity-timeout' %}
+    {% endif %}
+    <a href="/incidents/{{ inc.id }}" class="monitor-card inc-grid inc-row-link {{ sev_class }}"
        data-name="{{ inc.monitor_name|lower }}"
        data-url="{{ (inc.monitor_url or '')|lower }}"
        data-status="{{ inc.status }}"
@@ -197,7 +203,7 @@
                 {% set m = (inc.duration_seconds % 3600) // 60 %}
                 <span class="response-value">{% if h %}{{ h }}h {{ m }}m{% else %}{{ m }}m{% endif %}</span>
             {% elif inc.status == 'open' %}
-                <span class="response-value text-red">Ongoing</span>
+                <span class="response-value text-red inc-ongoing-timer" data-started="{{ inc.started_at.isoformat() if inc.started_at else '' }}">Ongoing</span>
             {% else %}
                 <span class="response-value">—</span>
             {% endif %}
@@ -316,5 +322,29 @@ function updateRelativeTimes() {
 }
 updateRelativeTimes();
 setInterval(updateRelativeTimes, 30000);
+
+/* ── Ongoing incident elapsed timers ──────────────────── */
+function formatElapsed(secs) {
+    if (secs < 60) return '< 1m';
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    if (h > 0) return h + 'h ' + m + 'm';
+    return m + 'm';
+}
+function updateOngoingTimers() {
+    const now = Date.now();
+    document.querySelectorAll('.inc-ongoing-timer').forEach(el => {
+        const iso = el.dataset.started;
+        if (!iso) return;
+        try {
+            const d = new Date(iso);
+            if (isNaN(d.getTime())) return;
+            const secs = Math.floor((now - d.getTime()) / 1000);
+            el.textContent = 'Ongoing (' + formatElapsed(secs) + ')';
+        } catch(e) {}
+    });
+}
+updateOngoingTimers();
+setInterval(updateOngoingTimers, 60000);
 </script>
 {% endblock %}

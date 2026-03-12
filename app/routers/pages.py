@@ -523,12 +523,25 @@ async def incident_detail_page(request: Request, incident_id: str):
         else:
             incident["root_cause"] = "Check failed"
 
+    # Count failed checks during incident window
+    failed_check_count = 0
+    try:
+        q = db.collection("checks").where("monitor_id", "==", incident["monitor_id"]).where("is_up", "==", False)
+        if incident.get("started_at"):
+            q = q.where("timestamp", ">=", incident["started_at"])
+        if incident.get("resolved_at"):
+            q = q.where("timestamp", "<=", incident["resolved_at"])
+        failed_check_count = len(q.get())
+    except Exception:
+        pass
+
     return templates.TemplateResponse("incident_detail.html", {
         "request": request,
         "user": user,
         "incident": incident,
         "monitor": monitor,
         "events": get_incident_events(db, incident_id),
+        "failed_check_count": failed_check_count,
     })
 
 
@@ -625,8 +638,8 @@ async def add_monitor(
                 status_code=302,
             )
 
-    # Validate URL (skip for heartbeat — URL is auto-generated)
-    if monitor_type != "heartbeat":
+    # Validate URL (skip for heartbeat — auto-generated, and SSL — uses ssl_domain)
+    if monitor_type not in ("heartbeat", "ssl"):
         if not url or not url.strip():
             return templates.TemplateResponse("add_monitor.html", {
                 "request": request, "user": user,
@@ -1380,12 +1393,15 @@ async def monitor_checks_api(request: Request, monitor_id: str, hours: int = 24)
     checks = []
     for doc in docs:
         c = doc.to_dict()
-        checks.append({
+        check_data = {
             "timestamp": c["timestamp"].isoformat() if hasattr(c.get("timestamp"), 'isoformat') else str(c.get("timestamp", "")),
             "response_ms": c.get("response_ms"),
             "is_up": c.get("is_up"),
             "status_code": c.get("status_code"),
-        })
+        }
+        if c.get("response_ms_by_region"):
+            check_data["response_ms_by_region"] = c["response_ms_by_region"]
+        checks.append(check_data)
 
     # Response stats
     vals = [c["response_ms"] for c in checks if c.get("response_ms")]

@@ -49,7 +49,9 @@ def get_incident_events(db, incident_id: str) -> list[dict]:
 def create_incident(db, monitor_id: str, monitor_name: str = "", monitor_url: str = "",
                     status_code: int | None = None, response_ms: float | None = None,
                     failure_response_headers: dict | None = None,
-                    failure_error_message: str | None = None) -> dict:
+                    failure_error_message: str | None = None,
+                    regions_checked: int | None = None,
+                    regions_up: int | None = None) -> dict:
     """
     Create a new incident when a monitor goes DOWN.
     Returns incident dict with id.
@@ -67,6 +69,8 @@ def create_incident(db, monitor_id: str, monitor_name: str = "", monitor_url: st
         "duration_seconds": None,
         "failure_response_headers": failure_response_headers or {},
         "failure_error_message": failure_error_message or "",
+        "regions_checked": regions_checked,
+        "regions_up": regions_up,
     }
     doc_ref.set(incident_data)
     incident_data["id"] = doc_ref.id

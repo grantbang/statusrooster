@@ -69,6 +69,18 @@
                     <span class="inc-kv-value">{{ incident.response_ms|round(1) }} ms</span>
                 </div>
                 {% endif %}
+                {% if failed_check_count is defined and failed_check_count > 0 %}
+                <div class="inc-kv">
+                    <span class="inc-kv-label">Failed Checks</span>
+                    <span class="inc-kv-value">{{ failed_check_count }}</span>
+                </div>
+                {% endif %}
+                {% if incident.get('regions_checked') %}
+                <div class="inc-kv">
+                    <span class="inc-kv-label">Regions</span>
+                    <span class="inc-kv-value">{{ incident.get('regions_up', 0) }}/{{ incident.regions_checked }} regions UP</span>
+                </div>
+                {% endif %}
                 {% if incident.get('failure_error_message') %}
                 <div class="inc-kv">
                     <span class="inc-kv-label">Error</span>

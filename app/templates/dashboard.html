@@ -200,15 +200,15 @@
             <!-- Status dot -->
             <div class="monitor-dot">
                 {% if m.get('paused') %}
-                    <span class="dot dot-paused">⏸</span>
+                    <span class="dot dot-paused" aria-label="Paused">⏸</span>
                 {% elif m.status == 'up' %}
-                    <span class="dot dot-up"></span>
+                    <span class="dot dot-up" aria-label="Up"></span>
                 {% elif m.status == 'warn' %}
-                    <span class="dot dot-warn"></span>
+                    <span class="dot dot-warn" aria-label="Warning"></span>
                 {% elif m.status == 'down' %}
-                    <span class="dot dot-down"></span>
+                    <span class="dot dot-down" aria-label="Down"></span>
                 {% else %}
-                    <span class="dot dot-pending"></span>
+                    <span class="dot dot-pending" aria-label="Pending"></span>
                 {% endif %}
             </div>
 
@@ -274,6 +274,9 @@
         <!-- Secondary Line: type + URL + response/SSL/heartbeat + last checked -->
         <div class="d-row-secondary">
             <span class="monitor-type-label type-{{ m.get('monitor_type', 'http') }}">{% if m.get('monitor_type') == 'heartbeat' %}Heartbeat{% elif m.get('monitor_type') == 'json_api' %}JSON/API{% elif m.get('monitor_type') == 'ssl' %}SSL{% else %}HTTP{% endif %}</span>
+            {% if m.get('group') %}
+            <span class="d-group-badge">{{ m.group }}</span>
+            {% endif %}
             <span class="monitor-url-text" title="{{ m.url }}">{{ m.url | replace('https://', '') | replace('http://', '') | truncate(50, True, '…') }}</span>
             <span class="d-secondary-sep">·</span>
             {% if m.get('monitor_type') == 'heartbeat' %}
@@ -296,10 +299,15 @@
             {% else %}
                 <span class="d-secondary-stat">Never checked</span>
             {% endif %}
-            {% if m.get('monitor_type') != 'heartbeat' %}
+            {% if m.get('monitor_type') not in ('heartbeat', 'ssl') %}
             <span class="d-secondary-sep">·</span>
             {% set ci = m.get('check_interval', 60) | int %}
             <span class="d-interval-badge" title="Check interval">⏱ {% if ci < 120 %}{{ ci }}s{% else %}{{ (ci / 60)|int }}m{% endif %}</span>
+            {% endif %}
+            {% set lsc = m.get('last_status_change') %}
+            {% if lsc and not m.get('paused') %}
+            <span class="d-secondary-sep">·</span>
+            <span class="d-status-duration" data-status-since="{{ lsc.isoformat() if lsc.isoformat is defined else lsc }}" data-status="{{ m.status|default('pending') }}"></span>
             {% endif %}
             {% set inc_count = (incidents_per_monitor or {}).get(m.id, 0) %}
             {% if inc_count > 0 %}
@@ -622,6 +630,8 @@ async function bulkAction(action) {
     const ids = Array.from(document.querySelectorAll('.row-cb:checked')).map(cb => cb.value);
     if (!ids.length) return;
     if (action === 'delete' && !confirm(`Delete ${ids.length} monitor(s)? This cannot be undone.`)) return;
+    const btns = document.querySelectorAll('.bulk-item');
+    btns.forEach(b => { b.disabled = true; b.style.opacity = '0.5'; });
     try {
         const resp = await fetch('/monitors/bulk', {
             method: 'POST',
@@ -629,8 +639,8 @@ async function bulkAction(action) {
             body: JSON.stringify({action, monitor_ids: ids})
         });
         if (resp.ok) window.location.reload();
-        else alert('Action failed — please try again.');
-    } catch(e) { alert('Network error.'); }
+        else { alert('Action failed — please try again.'); btns.forEach(b => { b.disabled = false; b.style.opacity = ''; }); }
+    } catch(e) { alert('Network error.'); btns.forEach(b => { b.disabled = false; b.style.opacity = ''; }); }
 }
 
 /* ── Live "last checked" ticker (every 1s) ─────────────── */
@@ -667,6 +677,35 @@ function tickLastChecked() {
 }
 tickLastChecked();
 setInterval(tickLastChecked, 1000);
+
+/* ── Status duration ("Up for 3d 2h") ─────────────────── */
+function formatStatusDuration(secs) {
+    if (secs < 60) return 'just now';
+    if (secs < 3600) return Math.floor(secs / 60) + 'm';
+    const h = Math.floor(secs / 3600);
+    if (h < 24) return h + 'h ' + Math.floor((secs % 3600) / 60) + 'm';
+    const d = Math.floor(h / 24);
+    const rh = h % 24;
+    return rh > 0 ? d + 'd ' + rh + 'h' : d + 'd';
+}
+function tickStatusDurations() {
+    const now = Date.now();
+    document.querySelectorAll('.d-status-duration').forEach(el => {
+        const iso = el.dataset.statusSince;
+        const status = el.dataset.status;
+        if (!iso) return;
+        try {
+            let d = new Date(iso);
+            if (isNaN(d.getTime())) d = new Date(iso + 'Z');
+            if (isNaN(d.getTime())) { el.textContent = ''; return; }
+            const secs = Math.floor((now - d.getTime()) / 1000);
+            const prefix = status === 'up' ? 'Up for ' : status === 'down' ? 'Down for ' : '';
+            el.textContent = prefix + formatStatusDuration(secs);
+        } catch(e) { el.textContent = ''; }
+    });
+}
+tickStatusDurations();
+setInterval(tickStatusDurations, 60000);
 
 /* ── Three-dot row menu ────────────────────────────────── */
 function toggleRowMenu(btn) {

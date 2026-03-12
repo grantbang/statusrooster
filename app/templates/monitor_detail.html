@@ -8,10 +8,16 @@
 <!-- ── Header ── -->
 <div class="md-header">
     <div class="md-header-left">
-        <a href="/dashboard" class="md-back">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-            Monitoring
-        </a>
+        <div class="md-breadcrumb">
+            <a href="/dashboard" class="md-back">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+                Monitoring
+            </a>
+            {% if monitor.get('group') %}
+            <span class="md-breadcrumb-sep">/</span>
+            <a href="/dashboard?group={{ monitor.group }}" class="md-breadcrumb-group">{{ monitor.group }}</a>
+            {% endif %}
+        </div>
         <div class="md-title-row">
             <span class="status-dot-lg {% if monitor.get('paused') %}dot-paused{% elif monitor.status == 'up' %}dot-up{% elif monitor.status == 'down' %}dot-down{% else %}dot-pending{% endif %}"></span>
             <h1 class="md-name">{{ monitor.name }}</h1>
@@ -27,6 +33,9 @@
             </span>
             {% elif monitor.get('monitor_type') == 'json_api' %}
             <span class="md-type">{ } JSON/API monitor for</span>
+            {% if monitor.get('http_method', 'GET') != 'GET' %}
+            <span class="md-method-badge">{{ monitor.get('http_method', 'GET') }}</span>
+            {% endif %}
             <a href="{{ monitor.url }}" target="_blank" class="md-url">{{ monitor.url }}</a>
             {% elif monitor.get('monitor_type') == 'ssl' %}
             <span class="md-type">
@@ -34,7 +43,14 @@
             <span class="md-url md-url-static">{{ monitor.get('ssl_domain', monitor.url) }}</span>
             {% else %}
             <span class="md-type">HTTP{{ 'S' if monitor.url.startswith('https') else '' }} monitor for</span>
+            {% if monitor.get('http_method', 'GET') != 'GET' %}
+            <span class="md-method-badge">{{ monitor.get('http_method', 'GET') }}</span>
+            {% endif %}
             <a href="{{ monitor.url }}" target="_blank" class="md-url">{{ monitor.url }}</a>
+            {% endif %}
+            {% if monitor.get('last_status_code') and monitor.get('monitor_type', 'http') in ('http', 'json_api') %}
+            {% set sc = monitor.last_status_code %}
+            <span class="md-status-code-badge {% if sc >= 500 %}md-sc-5xx{% elif sc >= 400 %}md-sc-4xx{% elif sc >= 300 %}md-sc-3xx{% else %}md-sc-2xx{% endif %}">{{ sc }}</span>
             {% endif %}
         </div>
         <div class="md-monitor-id">
@@ -52,8 +68,8 @@
                 Test alert
             </button>
         </form>
-        <!-- Check Now button -->
-        {% if not monitor.get('paused') %}
+        <!-- Check Now button (not shown for heartbeat — passive monitors) -->
+        {% if not monitor.get('paused') and monitor.get('monitor_type') != 'heartbeat' %}
         <div class="md-check-now-wrap">
             <button class="btn btn-check-now btn-sm" id="checkNowBtn" onclick="checkNow('{{ monitor.id }}')">
                 <svg class="btn-check-now-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
@@ -124,8 +140,15 @@
             {% endif %}
         </div>
         <div class="md-card-sub">
-            {% set ci = monitor.get('check_interval', 60) %}
-            Checked every {% if ci < 120 %}{{ ci }}s{% elif ci < 300 %}{{ (ci / 60)|int }}m{% else %}5m{% endif %}
+            {% if monitor.get('monitor_type') == 'heartbeat' %}
+                {% set hbi = monitor.get('heartbeat_interval', 300) %}
+                Expected every {% if hbi < 120 %}{{ hbi }}s{% elif hbi < 3600 %}{{ (hbi / 60)|int }}m{% elif hbi < 86400 %}{{ (hbi / 3600)|int }}h{% else %}24h{% endif %}
+            {% elif monitor.get('monitor_type') == 'ssl' %}
+                Certificate checked periodically
+            {% else %}
+                {% set ci = monitor.get('check_interval', 60) %}
+                Checked every {% if ci < 120 %}{{ ci }}s{% elif ci < 300 %}{{ (ci / 60)|int }}m{% else %}5m{% endif %}
+            {% endif %}
         </div>
     </div>
     <div class="md-card">
@@ -218,6 +241,12 @@
             <a href="/monitors/{{ monitor.id }}/edit" class="md-threshold-cta">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="vertical-align:-2px;margin-right:3px;"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Setup alerts for slow response times</a>
             {% endif %}
+            {% if last_regions_checked is defined and last_regions_checked > 1 %}
+            <button class="btn btn-secondary btn-sm md-region-toggle-btn" id="regionToggleBtn" onclick="toggleRegionOverlay()" title="Show per-region response times">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                Regions
+            </button>
+            {% endif %}
             <div class="md-range-toggle">
                 <button class="range-btn active" onclick="loadChartRange(1, this)">1h</button>
                 <button class="range-btn" onclick="loadChartRange(6, this)">6h</button>
@@ -227,8 +256,15 @@
             </div>
         </div>
     </div>
-    <div class="md-chart-wrap">
-        <canvas id="responseChart" height="80"></canvas>
+    <div class="md-chart-wrap" style="position:relative;">
+        <div class="md-chart-loading" id="chartLoading" style="display:none;">
+            <div class="md-spinner"></div>
+        </div>
+        <div class="md-chart-empty" id="chartEmpty" {% if checks %}style="display:none;"{% endif %}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            <span>Waiting for first check…</span>
+        </div>
+        <canvas id="responseChart" height="80" aria-label="Response time chart" {% if not checks %}style="display:none;"{% endif %}></canvas>
     </div>
     <div class="md-response-stats">
         <div class="md-resp-stat">
@@ -827,8 +863,24 @@ function switchUptimePeriod(period, btn) {
 {% if monitor.get('monitor_type', 'http') in ('http', 'json_api') %}
 const initialChecks = {{ checks | tojson | safe }};
 let chart = null;
+let showRegions = false;
+const REGION_COLORS = {
+    'us-east1': {border: '#6366f1', bg: 'rgba(99,102,241,0.06)', name: 'US East'},
+    'us-west1': {border: '#22c55e', bg: 'rgba(34,197,94,0.06)', name: 'US West'},
+    'europe-west1': {border: '#f59e0b', bg: 'rgba(245,158,11,0.06)', name: 'Europe'},
+    'asia-east1': {border: '#a855f7', bg: 'rgba(168,85,247,0.06)', name: 'Asia'},
+};
 
 function buildChart(checks) {
+    const emptyEl = document.getElementById('chartEmpty');
+    const canvasEl = document.getElementById('responseChart');
+    if (!checks || checks.length === 0) {
+        if (emptyEl) emptyEl.style.display = 'flex';
+        if (canvasEl) canvasEl.style.display = 'none';
+        return;
+    }
+    if (emptyEl) emptyEl.style.display = 'none';
+    if (canvasEl) canvasEl.style.display = '';
     const sorted = checks.slice().reverse();
     const labels = sorted.map(c => {
         if (!c.timestamp) return '';
@@ -853,27 +905,78 @@ function buildChart(checks) {
 
     const ctx = document.getElementById('responseChart').getContext('2d');
     if (chart) chart.destroy();
+
+    const datasets = [{
+        label: 'Response Time (ms)',
+        data: s.data,
+        borderColor: '#6366f1',
+        backgroundColor: 'rgba(99, 102, 241, 0.06)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        pointHitRadius: 10,
+    }];
+
+    {% if monitor.get('response_threshold_ms') %}
+    const thresholdVal = {{ monitor.response_threshold_ms }};
+    datasets.push({
+        label: 'Threshold',
+        data: s.labels.map(() => thresholdVal),
+        borderColor: 'rgba(239, 68, 68, 0.5)',
+        borderWidth: 1.5,
+        borderDash: [6, 4],
+        pointRadius: 0,
+        pointHitRadius: 0,
+        fill: false,
+    });
+    {% endif %}
+
+    if (showRegions) {
+        const regions = {};
+        sorted.forEach(c => {
+            if (c.response_ms_by_region) {
+                for (const [r, ms] of Object.entries(c.response_ms_by_region)) {
+                    if (!regions[r]) regions[r] = [];
+                    regions[r].push(ms);
+                }
+            } else {
+                for (const r of Object.keys(regions)) regions[r].push(null);
+            }
+        });
+        // Downsample region data the same way
+        for (const [region, vals] of Object.entries(regions)) {
+            const dsVals = vals.length <= 120 ? vals : vals.filter((_, i) => i % Math.ceil(vals.length / 120) === 0);
+            const rc = REGION_COLORS[region] || {border: '#888', bg: 'rgba(136,136,136,0.06)', name: region};
+            datasets.push({
+                label: rc.name,
+                data: dsVals,
+                borderColor: rc.border,
+                backgroundColor: 'transparent',
+                borderWidth: 1.5,
+                fill: false,
+                tension: 0.3,
+                pointRadius: 0,
+                pointHitRadius: 8,
+                borderDash: [3, 2],
+            });
+        }
+        // Make main dataset semi-transparent when regions shown
+        datasets[0].borderWidth = 2.5;
+        datasets[0].borderColor = 'rgba(99,102,241,0.3)';
+    }
+
     chart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: s.labels,
-            datasets: [{
-                label: 'Response Time (ms)',
-                data: s.data,
-                borderColor: '#6366f1',
-                backgroundColor: 'rgba(99, 102, 241, 0.06)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.3,
-                pointRadius: 0,
-                pointHitRadius: 10,
-            }]
+            datasets: datasets,
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false },
+                legend: { display: showRegions, position: 'bottom', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } },
                 tooltip: {
                     callbacks: {
                         label: ctx => ctx.parsed.y ? `${ctx.parsed.y}ms` : 'Timeout'
@@ -897,6 +1000,14 @@ function buildChart(checks) {
 }
 
 buildChart(initialChecks);
+
+function toggleRegionOverlay() {
+    showRegions = !showRegions;
+    const btn = document.getElementById('regionToggleBtn');
+    if (btn) btn.classList.toggle('active', showRegions);
+    buildChart(lastChecksData || initialChecks);
+}
+let lastChecksData = null;
 {% endif %}
 
 /* ── Chart time range switching ──────────────── */
@@ -904,11 +1015,14 @@ buildChart(initialChecks);
 async function loadChartRange(hours, btn) {
     document.querySelectorAll('.md-range-toggle .range-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    const loader = document.getElementById('chartLoading');
+    if (loader) loader.style.display = 'flex';
 
     try {
         const resp = await fetch(`/api/monitors/${MONITOR_ID}/checks?hours=${hours}`);
         if (!resp.ok) return;
         const json = await resp.json();
+        lastChecksData = json.checks;
         buildChart(json.checks);
 
         document.getElementById('statAvg').textContent = (json.stats.avg || '—') + ' ms';
@@ -916,6 +1030,8 @@ async function loadChartRange(hours, btn) {
         document.getElementById('statMax').textContent = (json.stats.max || '—') + ' ms';
     } catch(e) {
         console.error('Failed to load chart data:', e);
+    } finally {
+        if (loader) loader.style.display = 'none';
     }
 }
 {% endif %}

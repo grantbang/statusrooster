@@ -245,8 +245,8 @@
         </div>
     </div>
 
-    <!-- Monitor Interval (hidden for heartbeat) -->
-    {% if not is_heartbeat %}
+    <!-- Monitor Interval (hidden for heartbeat & SSL) -->
+    {% if not is_heartbeat and monitor.get('monitor_type') != 'ssl' %}
     <div class="mf-section" id="intervalSection">
         <div class="mf-section-header">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>

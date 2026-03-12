@@ -6609,4 +6609,156 @@ details[open] .inc-headers-block .inc-headers-summary::before,
     .mf-interval-wrap {
         padding: 0.6rem 0.75rem;
     }
+    /* 4.3 — Dashboard responsiveness at <480px */
+    .d-uptime-bars { display: none; }
+    .md-header { flex-direction: column; }
+    .md-header-actions { flex-wrap: wrap; gap: 0.5rem; }
+    .inc-grid {
+        grid-template-columns: 24px 60px minmax(0, 1fr) 0 0 0 70px 60px 24px !important;
+    }
+    .inc-grid .monitor-group-col,
+    .inc-grid .monitor-type-col,
+    .inc-grid .inc-cause-col { display: none; }
+}
+
+/* ============================================================
+   SPRINT 1-4 POLISH STYLES
+   ============================================================ */
+
+/* 1.1 — Status code badge in monitor detail subtitle */
+.md-status-code-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--radius-sm);
+    line-height: 1.4;
+    margin-left: 0.25rem;
+}
+.md-sc-2xx { background: #dcfce7; color: #166534; }
+.md-sc-3xx { background: #dbeafe; color: #1e40af; }
+.md-sc-4xx { background: #fff3cd; color: #92400e; }
+.md-sc-5xx { background: #fef2f2; color: #991b1b; }
+
+/* 1.2 — HTTP method badge */
+.md-method-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.68rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--radius-sm);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* 1.3 — Group name in breadcrumb */
+.md-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-bottom: var(--space-sm);
+}
+.md-breadcrumb .md-back {
+    margin-bottom: 0;
+}
+.md-breadcrumb-sep {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+}
+.md-breadcrumb-group {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.15s;
+}
+.md-breadcrumb-group:hover {
+    color: var(--brand);
+}
+
+/* 1.4 — Group badge on dashboard cards */
+.d-group-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.62rem;
+    font-weight: 600;
+    padding: 0.05rem 0.4rem;
+    border-radius: var(--radius-pill);
+    background: var(--brand-light);
+    color: var(--brand);
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 0.2px;
+}
+
+/* 1.6 — Incident severity left-border color */
+.inc-severity-5xx { border-left: 3px solid var(--danger) !important; }
+.inc-severity-4xx { border-left: 3px solid var(--warning) !important; }
+.inc-severity-timeout { border-left: 3px solid #9ca3af !important; }
+
+/* 1.7 — Status duration on dashboard */
+.d-status-duration {
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* 2.2 — Region toggle button active state */
+.md-region-toggle-btn.active {
+    background: var(--brand-light);
+    color: var(--brand);
+    border-color: var(--brand);
+}
+
+/* 4.1 — Chart loading spinner overlay */
+.md-chart-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.8);
+    z-index: 5;
+    border-radius: var(--radius-md);
+}
+.md-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--border);
+    border-top-color: var(--brand);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 4.2 — Chart empty state */
+.md-chart-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 2rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* 4.3 — Mobile responsive: incident grid stacking at 768px */
+@media (max-width: 768px) {
+    .inc-grid {
+        grid-template-columns: 24px 70px minmax(0,1fr) 0 0 minmax(0,0.8fr) 80px 70px 24px !important;
+    }
+    .inc-grid .monitor-group-col { display: none; }
+    .inc-grid .monitor-type-col { display: none; }
+    .md-header { flex-direction: column; }
+    .md-header-actions { flex-wrap: wrap; }
 }

@@ -527,7 +527,12 @@ async def run_checks():
     # Note: paused monitors are already excluded by get_due_monitors()
     due_monitors = []
     for monitor in monitors:
-        check_interval = monitor.get("check_interval", 300)
+        # SSL monitors only need infrequent checks (hourly) — cert expiry doesn't change by the second
+        mtype = monitor.get("monitor_type", "http")
+        if mtype == "ssl":
+            check_interval = 3600  # 1 hour
+        else:
+            check_interval = monitor.get("check_interval", 300)
         last_checked = monitor.get("last_checked")
         if last_checked:
             if isinstance(last_checked, str):
@@ -743,6 +748,8 @@ async def run_checks():
                     response_ms=result["response_ms"],
                     failure_response_headers=result.get("response_headers") or {},
                     failure_error_message=result.get("error_message") or "",
+                    regions_checked=regions_checked,
+                    regions_up=regions_up,
                 )
                 log_incident_event(db, incident["id"], "detected", {
                     "status_code": result["status_code"],

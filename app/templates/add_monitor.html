@@ -523,7 +523,7 @@ function setMonitorType(type) {
         syncFieldNames('heartbeat');
     } else if (type === 'ssl') {
         document.getElementById('sslSection').style.display = '';
-        interval.style.display = '';
+        interval.style.display = 'none';
         syncFieldNames('ssl');
     }
 }
