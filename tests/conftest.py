@@ -151,6 +151,22 @@ async def pro_cookie(client):
     pytest.fail("Could not log in as Pro test user — no access_token cookie")
 
 
+@pytest_asyncio.fixture(scope="session")
+async def free_cookie(client, free_user):
+    """Login as the Free test user and return the access_token cookie value."""
+    resp = await client.post(
+        "/login",
+        data={"email": free_user["email"], "password": free_user["password"]},
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    for header_val in resp.headers.get_list("set-cookie"):
+        if "access_token=" in header_val:
+            match = re.search(r"access_token=([^;]+)", header_val)
+            if match:
+                return match.group(1)
+    pytest.fail("Could not log in as Free test user — no access_token cookie")
+
+
 # ── Check-now helper ───────────────────────────────────────────────
 
 @pytest.fixture(scope="session")

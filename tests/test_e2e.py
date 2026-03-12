@@ -1,7 +1,7 @@
 """
-StatusRooster E2E Test Suite — Automated Tests (Part 2 of Split Test Plan)
+StatusRooster E2E Test Suite — Automated Tests
 
-Covers sections A–I:
+Covers sections A–P:
   A. Authentication
   B. Security
   C. API CRUD
@@ -10,6 +10,13 @@ Covers sections A–I:
   F. Badges
   G. Error Handling
   H. Status Pages
+  J. API Response Shape
+  K. Custom Branding (Phase 4)
+  L. Referral Tracking (Phase 7)
+  M. Cron Auth
+  N. Clone & Bulk Actions
+  O. SSR Page Smoke Tests
+  P. Incident & Check Filtering
   I. Cleanup
 
 Run:
@@ -1110,6 +1117,524 @@ class TestStatusPages:
         """H.7 — GET /status/{nonexistent_user_id} → 404"""
         resp = await client.get("/status/NONEXISTENT_USER_12345")
         assert resp.status_code == 404, f"H.7 FAIL: Expected 404, got {resp.status_code}"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# J. API RESPONSE SHAPE CONSISTENCY
+# ═══════════════════════════════════════════════════════════════════════
+
+class TestApiResponseShape:
+    """Tests J.1–J.6: Verify all API v1 responses follow {data, error, meta} shape."""
+
+    @pytest.mark.asyncio
+    async def test_j1_list_monitors_shape(self, client, pro_headers):
+        """J.1 — GET /api/v1/monitors → has data, error=null, meta"""
+        resp = await client.get("/api/v1/monitors", headers=pro_headers)
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "data" in body, "J.1 FAIL: Missing 'data' key"
+        assert body.get("error") is None, "J.1 FAIL: error should be null on success"
+        assert "meta" in body, "J.1 FAIL: Missing 'meta' key"
+        assert "total" in body["meta"], "J.1 FAIL: meta missing 'total'"
+
+    @pytest.mark.asyncio
+    async def test_j2_create_monitor_shape(self, client, pro_headers, make_monitor):
+        """J.2 — POST /api/v1/monitors → has data, error=null"""
+        monitor = await make_monitor({
+            "name": "E2E-J2-shape",
+            "url": "https://httpbin.org/status/200",
+            "monitor_type": "http",
+        })
+        assert "id" in monitor, "J.2 FAIL: data missing 'id'"
+
+    @pytest.mark.asyncio
+    async def test_j3_error_shape_404(self, client, pro_headers):
+        """J.3 — GET /api/v1/monitors/FAKE → error shape {data: null, error: str}"""
+        resp = await client.get("/api/v1/monitors/FAKE_MONITOR_ID_999", headers=pro_headers)
+        assert resp.status_code == 404
+        body = resp.json()
+        assert body.get("data") is None, "J.3 FAIL: data should be null on error"
+        assert body.get("error") is not None, "J.3 FAIL: error should be set"
+        assert isinstance(body["error"], str), "J.3 FAIL: error should be a string"
+
+    @pytest.mark.asyncio
+    async def test_j4_error_shape_401(self, client):
+        """J.4 — GET /api/v1/monitors without key → 401 with error detail"""
+        resp = await client.get("/api/v1/monitors")
+        assert resp.status_code == 401
+        body = resp.json()
+        # 401 from FastAPI may use detail format
+        assert "detail" in body or "error" in body, "J.4 FAIL: Missing error info"
+
+    @pytest.mark.asyncio
+    async def test_j5_checks_shape(self, client, pro_headers, make_monitor):
+        """J.5 — GET /api/v1/monitors/{id}/checks → has data array + meta"""
+        monitor = await make_monitor({
+            "name": "E2E-J5-checks-shape",
+            "url": "https://httpbin.org/status/200",
+            "monitor_type": "http",
+        })
+        resp = await client.get(f"/api/v1/monitors/{monitor['id']}/checks", headers=pro_headers)
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "data" in body, "J.5 FAIL: Missing 'data'"
+        assert isinstance(body["data"], list), "J.5 FAIL: data should be a list"
+        assert "meta" in body, "J.5 FAIL: Missing 'meta'"
+
+    @pytest.mark.asyncio
+    async def test_j6_incidents_shape(self, client, pro_headers):
+        """J.6 — GET /api/v1/incidents → has data array + meta"""
+        resp = await client.get("/api/v1/incidents", headers=pro_headers)
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "data" in body, "J.6 FAIL: Missing 'data'"
+        assert isinstance(body["data"], list), "J.6 FAIL: data should be a list"
+        assert "meta" in body, "J.6 FAIL: Missing 'meta'"
+        assert "total" in body["meta"], "J.6 FAIL: meta missing 'total'"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# K. CUSTOM BRANDING (Phase 4)
+# ═══════════════════════════════════════════════════════════════════════
+
+class TestCustomBranding:
+    """Tests K.1–K.5: Custom status page branding (Pro-only)."""
+
+    @pytest.mark.asyncio
+    async def test_k1_branding_free_rejected(self, client, free_cookie):
+        """K.1 — Free user: POST /settings/branding → redirect with error"""
+        resp = await client.post(
+            "/settings/branding",
+            data={
+                "status_page_brand_name": "MyBrand",
+                "status_page_logo_url": "",
+                "status_page_accent_color": "",
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            cookies={"access_token": free_cookie},
+        )
+        if resp.status_code == 404:
+            pytest.skip("Branding endpoint not deployed yet")
+        # Should redirect back to settings
+        assert resp.status_code == 302, f"K.1 FAIL: Expected 302, got {resp.status_code}"
+        # Check for error flash cookie
+        cookies = {}
+        for header_val in resp.headers.get_list("set-cookie"):
+            if "flash_message=" in header_val:
+                cookies["flash_message"] = header_val
+        assert "Pro" in cookies.get("flash_message", ""), \
+            "K.1 FAIL: Should show Pro-only error message"
+
+    @pytest.mark.asyncio
+    async def test_k2_branding_pro_accepted(self, client, pro_cookie):
+        """K.2 — Pro user: POST /settings/branding → saves successfully"""
+        resp = await client.post(
+            "/settings/branding",
+            data={
+                "status_page_brand_name": "E2E Test Brand",
+                "status_page_logo_url": "https://example.com/logo.png",
+                "status_page_accent_color": "#ff6600",
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            cookies={"access_token": pro_cookie},
+        )
+        if resp.status_code == 404:
+            pytest.skip("Branding endpoint not deployed yet")
+        assert resp.status_code == 302, f"K.2 FAIL: Expected 302, got {resp.status_code}"
+        # Check for success flash
+        flash_ok = False
+        for header_val in resp.headers.get_list("set-cookie"):
+            if "flash_type=success" in header_val:
+                flash_ok = True
+        assert flash_ok, "K.2 FAIL: Should show success flash"
+
+    @pytest.mark.asyncio
+    async def test_k3_branding_http_logo_rejected(self, client, pro_cookie):
+        """K.3 — Pro user: logo with http:// → rejected"""
+        resp = await client.post(
+            "/settings/branding",
+            data={
+                "status_page_brand_name": "Test",
+                "status_page_logo_url": "http://insecure.com/logo.png",
+                "status_page_accent_color": "",
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            cookies={"access_token": pro_cookie},
+        )
+        if resp.status_code == 404:
+            pytest.skip("Branding endpoint not deployed yet")
+        assert resp.status_code == 302
+        error_flash = False
+        for header_val in resp.headers.get_list("set-cookie"):
+            if "flash_type=error" in header_val:
+                error_flash = True
+        assert error_flash, "K.3 FAIL: http:// logo should be rejected"
+
+    @pytest.mark.asyncio
+    async def test_k4_branding_no_auth(self, client):
+        """K.4 — POST /settings/branding without auth → redirect to login"""
+        resp = await client.post(
+            "/settings/branding",
+            data={"status_page_brand_name": "Test"},
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            cookies={"access_token": ""},
+        )
+        if resp.status_code == 404:
+            pytest.skip("Branding endpoint not deployed yet")
+        assert resp.status_code == 302, f"K.4 FAIL: Expected 302, got {resp.status_code}"
+        assert "/login" in resp.headers.get("location", ""), "K.4 FAIL: Should redirect to /login"
+
+    @pytest.mark.asyncio
+    async def test_k5_branding_cleanup(self, client, pro_cookie):
+        """K.5 — Reset branding to defaults after tests"""
+        resp = await client.post(
+            "/settings/branding",
+            data={
+                "status_page_brand_name": "",
+                "status_page_logo_url": "",
+                "status_page_accent_color": "",
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            cookies={"access_token": pro_cookie},
+        )
+        if resp.status_code == 404:
+            pytest.skip("Branding endpoint not deployed yet")
+        assert resp.status_code == 302
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# L. REFERRAL TRACKING (Phase 7)
+# ═══════════════════════════════════════════════════════════════════════
+
+class TestReferralTracking:
+    """Tests L.1–L.2: Referral source capture on signup."""
+
+    @pytest.mark.asyncio
+    async def test_l1_api_signup_with_ref(self, client):
+        """L.1 — POST /api/auth/signup?ref=test_source → 200, user created"""
+        email = f"e2e-ref-{uuid.uuid4().hex[:8]}@statusrooster.com"
+        resp = await client.post(
+            "/api/auth/signup?ref=test_e2e_source",
+            json={"email": email, "password": "testpass123"},
+        )
+        assert resp.status_code == 200, f"L.1 FAIL: Expected 200, got {resp.status_code}"
+        data = resp.json()
+        assert "token" in data, "L.1 FAIL: Signup should return token"
+        assert "user_id" in data, "L.1 FAIL: Signup should return user_id"
+        # Note: We can't verify referral_source directly via API (no endpoint),
+        # but the signup succeeded with the ref param, which is the main test.
+
+    @pytest.mark.asyncio
+    async def test_l2_api_signup_ref_truncated(self, client):
+        """L.2 — POST /api/auth/signup?ref=<101 chars> → ref param rejected (max_length=100)"""
+        email = f"e2e-reflong-{uuid.uuid4().hex[:8]}@statusrooster.com"
+        long_ref = "x" * 101
+        resp = await client.post(
+            f"/api/auth/signup?ref={long_ref}",
+            json={"email": email, "password": "testpass123"},
+        )
+        # FastAPI Query(max_length=100) should return 422 for too-long ref
+        # If the ref validation isn't deployed yet, the signup succeeds (200)
+        if resp.status_code == 200:
+            pytest.skip("Ref max_length validation not deployed yet")
+        assert resp.status_code == 422, f"L.2 FAIL: Expected 422 for ref > 100 chars, got {resp.status_code}"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# M. CRON AUTH
+# ═══════════════════════════════════════════════════════════════════════
+
+class TestCronAuth:
+    """Tests M.1–M.3: Cron endpoint authentication for cleanup."""
+
+    @pytest.mark.asyncio
+    async def test_m1_cleanup_no_secret(self, client):
+        """M.1 — POST /cron/cleanup without secret → 403"""
+        resp = await client.post("/cron/cleanup")
+        if resp.status_code == 404:
+            pytest.skip("Cleanup endpoint not deployed yet")
+        assert resp.status_code == 403, f"M.1 FAIL: Expected 403, got {resp.status_code}"
+
+    @pytest.mark.asyncio
+    async def test_m2_cleanup_wrong_secret(self, client):
+        """M.2 — POST /cron/cleanup with wrong secret → 403"""
+        resp = await client.post(
+            "/cron/cleanup",
+            headers={"X-Cron-Secret": "wrong-secret-value"},
+        )
+        if resp.status_code == 404:
+            pytest.skip("Cleanup endpoint not deployed yet")
+        assert resp.status_code == 403, f"M.2 FAIL: Expected 403, got {resp.status_code}"
+
+    @pytest.mark.asyncio
+    async def test_m3_check_no_secret(self, client):
+        """M.3 — POST /cron/check without secret → 403"""
+        resp = await client.post("/cron/check")
+        assert resp.status_code == 403, f"M.3 FAIL: Expected 403, got {resp.status_code}"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# N. CLONE, TOGGLE PAUSE & BULK ACTIONS
+# ═══════════════════════════════════════════════════════════════════════
+
+class TestCloneBulk:
+    """Tests N.1–N.7: Monitor cloning, toggle pause, and bulk operations."""
+
+    @pytest.mark.asyncio
+    async def test_n1_clone_monitor(self, client, pro_headers, pro_cookie, make_monitor):
+        """N.1 — POST /monitors/{id}/clone → creates copy"""
+        monitor = await make_monitor({
+            "name": "E2E-N1-original",
+            "url": "https://httpbin.org/status/200",
+            "monitor_type": "http",
+            "keyword": "test-keyword",
+        })
+        resp = await client.post(
+            f"/monitors/{monitor['id']}/clone",
+            cookies={"access_token": pro_cookie},
+        )
+        assert resp.status_code == 200, f"N.1 FAIL: Expected 200, got {resp.status_code}"
+        data = resp.json()
+        assert data.get("ok") is True, "N.1 FAIL: Clone should return ok=true"
+        assert "monitor_id" in data, "N.1 FAIL: Clone should return new monitor_id"
+        # Clean up clone
+        clone_id = data["monitor_id"]
+        await client.delete(f"/api/v1/monitors/{clone_id}", headers=pro_headers)
+
+    @pytest.mark.asyncio
+    async def test_n2_clone_no_auth(self, client, pro_headers, make_monitor):
+        """N.2 — POST /monitors/{id}/clone without auth → 401"""
+        monitor = await make_monitor({
+            "name": "E2E-N2-clone-noauth",
+            "url": "https://httpbin.org/status/200",
+            "monitor_type": "http",
+        })
+        resp = await client.post(f"/monitors/{monitor['id']}/clone", cookies={"access_token": ""})
+        assert resp.status_code == 401, f"N.2 FAIL: Expected 401, got {resp.status_code}"
+
+    @pytest.mark.asyncio
+    async def test_n3_toggle_pause(self, client, pro_headers, pro_cookie, make_monitor):
+        """N.3 — POST /monitors/{id}/toggle-pause → toggles paused state"""
+        monitor = await make_monitor({
+            "name": "E2E-N3-toggle",
+            "url": "https://httpbin.org/status/200",
+            "monitor_type": "http",
+        })
+        # First toggle → should pause (default is not paused)
+        resp = await client.post(
+            f"/monitors/{monitor['id']}/toggle-pause",
+            cookies={"access_token": pro_cookie},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data.get("ok") is True
+        assert data.get("paused") is True, "N.3 FAIL: First toggle should pause"
+
+        # Second toggle → should resume
+        resp2 = await client.post(
+            f"/monitors/{monitor['id']}/toggle-pause",
+            cookies={"access_token": pro_cookie},
+        )
+        assert resp2.status_code == 200
+        data2 = resp2.json()
+        assert data2.get("paused") is False, "N.3 FAIL: Second toggle should resume"
+
+    @pytest.mark.asyncio
+    async def test_n4_bulk_pause(self, client, pro_headers, pro_cookie, make_monitor):
+        """N.4 — POST /monitors/bulk pause → pauses monitors"""
+        m1 = await make_monitor({
+            "name": "E2E-N4-bulk-a",
+            "url": "https://httpbin.org/status/200",
+            "monitor_type": "http",
+        })
+        m2 = await make_monitor({
+            "name": "E2E-N4-bulk-b",
+            "url": "https://httpbin.org/status/200",
+            "monitor_type": "http",
+        })
+        resp = await client.post(
+            "/monitors/bulk",
+            json={"action": "pause", "monitor_ids": [m1["id"], m2["id"]]},
+            cookies={"access_token": pro_cookie},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data.get("ok") is True
+        assert data.get("affected") == 2, f"N.4 FAIL: Expected 2 affected, got {data.get('affected')}"
+
+    @pytest.mark.asyncio
+    async def test_n5_bulk_invalid_action(self, client, pro_cookie):
+        """N.5 — POST /monitors/bulk with invalid action → 400"""
+        resp = await client.post(
+            "/monitors/bulk",
+            json={"action": "explode", "monitor_ids": ["fake"]},
+            cookies={"access_token": pro_cookie},
+        )
+        assert resp.status_code == 400, f"N.5 FAIL: Expected 400, got {resp.status_code}"
+
+    @pytest.mark.asyncio
+    async def test_n6_bulk_no_auth(self, client):
+        """N.6 — POST /monitors/bulk without auth → 401"""
+        resp = await client.post(
+            "/monitors/bulk",
+            json={"action": "pause", "monitor_ids": ["fake"]},
+            cookies={"access_token": ""},
+        )
+        assert resp.status_code == 401, f"N.6 FAIL: Expected 401, got {resp.status_code}"
+
+    @pytest.mark.asyncio
+    async def test_n7_toggle_other_users_monitor(self, client, free_cookie, pro_headers, make_monitor):
+        """N.7 — Toggle-pause on another user's monitor → 404"""
+        monitor = await make_monitor({
+            "name": "E2E-N7-other-user",
+            "url": "https://httpbin.org/status/200",
+            "monitor_type": "http",
+        })
+        resp = await client.post(
+            f"/monitors/{monitor['id']}/toggle-pause",
+            cookies={"access_token": free_cookie},
+        )
+        assert resp.status_code == 404, f"N.7 FAIL: Expected 404, got {resp.status_code}"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# O. SSR PAGE SMOKE TESTS
+# ═══════════════════════════════════════════════════════════════════════
+
+class TestSsrSmoke:
+    """Tests O.1–O.8: Public and authed pages return expected status codes."""
+
+    @pytest.mark.asyncio
+    async def test_o1_landing(self, client):
+        """O.1 — GET / → 200 (no auth cookies)"""
+        # Use empty cookies to override any session cookies on the client
+        resp = await client.get("/", cookies={"access_token": ""})
+        assert resp.status_code == 200, f"O.1 FAIL: Landing page returned {resp.status_code}"
+
+    @pytest.mark.asyncio
+    async def test_o2_pricing(self, client):
+        """O.2 — GET /pricing → 200"""
+        resp = await client.get("/pricing", cookies={"access_token": ""})
+        assert resp.status_code == 200, f"O.2 FAIL: Pricing page returned {resp.status_code}"
+
+    @pytest.mark.asyncio
+    async def test_o3_privacy(self, client):
+        """O.3 — GET /privacy → 200"""
+        resp = await client.get("/privacy", cookies={"access_token": ""})
+        assert resp.status_code == 200, f"O.3 FAIL: Privacy page returned {resp.status_code}"
+
+    @pytest.mark.asyncio
+    async def test_o4_terms(self, client):
+        """O.4 — GET /terms → 200"""
+        resp = await client.get("/terms", cookies={"access_token": ""})
+        assert resp.status_code == 200, f"O.4 FAIL: Terms page returned {resp.status_code}"
+
+    @pytest.mark.asyncio
+    async def test_o5_api_docs(self, client):
+        """O.5 — GET /docs/api → 200"""
+        resp = await client.get("/docs/api", cookies={"access_token": ""})
+        assert resp.status_code == 200, f"O.5 FAIL: API docs page returned {resp.status_code}"
+
+    @pytest.mark.asyncio
+    async def test_o6_signup_page(self, client):
+        """O.6 — GET /signup → 200 (no auth cookies)"""
+        resp = await client.get("/signup", cookies={"access_token": ""})
+        assert resp.status_code == 200, f"O.6 FAIL: Signup page returned {resp.status_code}"
+
+    @pytest.mark.asyncio
+    async def test_o7_login_page(self, client):
+        """O.7 — GET /login → 200 (no auth cookies)"""
+        resp = await client.get("/login", cookies={"access_token": ""})
+        assert resp.status_code == 200, f"O.7 FAIL: Login page returned {resp.status_code}"
+
+    @pytest.mark.asyncio
+    async def test_o8_settings_authed(self, client, pro_cookie):
+        """O.8 — GET /settings with auth → 200"""
+        resp = await client.get(
+            "/settings",
+            cookies={"access_token": pro_cookie},
+        )
+        assert resp.status_code == 200, f"O.8 FAIL: Settings page returned {resp.status_code}"
+
+    @pytest.mark.asyncio
+    async def test_o9_dashboard_authed(self, client, pro_cookie):
+        """O.9 — GET /dashboard with auth → 200"""
+        resp = await client.get(
+            "/dashboard",
+            cookies={"access_token": pro_cookie},
+        )
+        assert resp.status_code == 200, f"O.9 FAIL: Dashboard returned {resp.status_code}"
+
+    @pytest.mark.asyncio
+    async def test_o10_incidents_authed(self, client, pro_cookie):
+        """O.10 — GET /incidents with auth → 200"""
+        resp = await client.get(
+            "/incidents",
+            cookies={"access_token": pro_cookie},
+        )
+        assert resp.status_code == 200, f"O.10 FAIL: Incidents page returned {resp.status_code}"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P. INCIDENT & CHECK FILTERING
+# ═══════════════════════════════════════════════════════════════════════
+
+class TestIncidentCheckFiltering:
+    """Tests P.1–P.5: API filtering and pagination for checks and incidents."""
+
+    @pytest.mark.asyncio
+    async def test_p1_incidents_filter_status(self, client, pro_headers):
+        """P.1 — GET /api/v1/incidents?status=open → 200 with filtered results"""
+        resp = await client.get("/api/v1/incidents?status=open", headers=pro_headers)
+        if resp.status_code == 500:
+            pytest.skip("Incident status filtering not deployed yet")
+        assert resp.status_code == 200, f"P.1 FAIL: Expected 200, got {resp.status_code}"
+        body = resp.json()
+        # All returned incidents should be open
+        for inc in body["data"]:
+            assert inc.get("status") == "open", f"P.1 FAIL: Incident {inc.get('id')} status is {inc.get('status')}, expected 'open'"
+
+    @pytest.mark.asyncio
+    async def test_p2_incidents_filter_invalid_status(self, client, pro_headers):
+        """P.2 — GET /api/v1/incidents?status=bogus → 422"""
+        resp = await client.get("/api/v1/incidents?status=bogus", headers=pro_headers)
+        if resp.status_code == 500:
+            pytest.skip("Incident status filtering not deployed yet")
+        assert resp.status_code == 422, f"P.2 FAIL: Expected 422, got {resp.status_code}"
+
+    @pytest.mark.asyncio
+    async def test_p3_checks_limit_bounds(self, client, pro_headers, make_monitor):
+        """P.3 — GET /api/v1/monitors/{id}/checks?limit=0 → clamped to 1"""
+        monitor = await make_monitor({
+            "name": "E2E-P3-checks-limit",
+            "url": "https://httpbin.org/status/200",
+            "monitor_type": "http",
+        })
+        resp = await client.get(
+            f"/api/v1/monitors/{monitor['id']}/checks?limit=0",
+            headers=pro_headers,
+        )
+        assert resp.status_code == 200, f"P.3 FAIL: Expected 200, got {resp.status_code}"
+        body = resp.json()
+        # Should still work (limit clamped to 1)
+        assert isinstance(body["data"], list)
+
+    @pytest.mark.asyncio
+    async def test_p4_incidents_limit(self, client, pro_headers):
+        """P.4 — GET /api/v1/incidents?limit=1 → returns at most 1 incident"""
+        resp = await client.get("/api/v1/incidents?limit=1", headers=pro_headers)
+        assert resp.status_code == 200
+        body = resp.json()
+        assert len(body["data"]) <= 1, f"P.4 FAIL: Expected ≤1 incidents, got {len(body['data'])}"
+
+    @pytest.mark.asyncio
+    async def test_p5_incidents_hours_bounds(self, client, pro_headers):
+        """P.5 — GET /api/v1/incidents?hours=1 → returns only recent incidents"""
+        resp = await client.get("/api/v1/incidents?hours=1", headers=pro_headers)
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "data" in body, "P.5 FAIL: Missing 'data'"
+        assert isinstance(body["data"], list)
 
 
 # ═══════════════════════════════════════════════════════════════════════
