@@ -19,6 +19,13 @@ import re
 
 router = APIRouter(tags=["pages"], include_in_schema=False)
 
+
+def _set_flash(response, message: str, flash_type: str = "success"):
+    """Set flash message cookies with security flags."""
+    cookie_opts = dict(max_age=10, httponly=True, secure=True, samesite="lax")
+    response.set_cookie("flash_message", message, **cookie_opts)
+    response.set_cookie("flash_type", flash_type, **cookie_opts)
+
 # Templates setup
 from fastapi.templating import Jinja2Templates
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates"))
@@ -1662,8 +1669,7 @@ async def save_timezone(request: Request, timezone: str = Form(...)):
     update_user(db, user["id"], {"timezone": timezone})
 
     response = RedirectResponse(url="/settings", status_code=302)
-    response.set_cookie("flash_message", "Timezone saved.", max_age=10)
-    response.set_cookie("flash_type", "success", max_age=10)
+    _set_flash(response, "Timezone saved.")
     return response
 
 
@@ -1676,8 +1682,7 @@ async def save_branding(request: Request):
     # Pro-only feature
     if user.get("plan", "free") != "pro":
         response = RedirectResponse(url="/settings", status_code=302)
-        response.set_cookie("flash_message", "Custom branding is a Pro feature.", max_age=10)
-        response.set_cookie("flash_type", "error", max_age=10)
+        _set_flash(response, "Custom branding is a Pro feature.", "error")
         return response
 
     form = await request.form()
@@ -1693,8 +1698,7 @@ async def save_branding(request: Request):
     # Validate logo URL (must be https or empty)
     if logo_url and not logo_url.startswith("https://"):
         response = RedirectResponse(url="/settings", status_code=302)
-        response.set_cookie("flash_message", "Logo URL must use HTTPS.", max_age=10)
-        response.set_cookie("flash_type", "error", max_age=10)
+        _set_flash(response, "Logo URL must use HTTPS.", "error")
         return response
 
     db = get_db()
@@ -1706,8 +1710,7 @@ async def save_branding(request: Request):
     })
 
     response = RedirectResponse(url="/settings", status_code=302)
-    response.set_cookie("flash_message", "Branding settings saved.", max_age=10)
-    response.set_cookie("flash_type", "success", max_age=10)
+    _set_flash(response, "Branding settings saved.")
     return response
 
 
@@ -1721,9 +1724,8 @@ async def generate_api_key_page(request: Request, label: str = Form("Default")):
     key_data = generate_api_key(db, user["id"], label=label.strip() or "Default")
 
     response = RedirectResponse(url="/settings", status_code=302)
-    response.set_cookie("flash_message", "API key created! Copy it now -- you won't see it again.", max_age=10)
-    response.set_cookie("flash_type", "success", max_age=10)
-    response.set_cookie("new_api_key", key_data["raw_key"], max_age=10)
+    _set_flash(response, "API key created! Copy it now -- you won't see it again.")
+    response.set_cookie("new_api_key", key_data["raw_key"], max_age=10, httponly=True, secure=True, samesite="lax")
     return response
 
 
@@ -1738,11 +1740,9 @@ async def revoke_api_key_page(request: Request, key_id: str):
 
     response = RedirectResponse(url="/settings", status_code=302)
     if success:
-        response.set_cookie("flash_message", "API key revoked.", max_age=10)
-        response.set_cookie("flash_type", "success", max_age=10)
+        _set_flash(response, "API key revoked.")
     else:
-        response.set_cookie("flash_message", "Could not revoke key.", max_age=10)
-        response.set_cookie("flash_type", "error", max_age=10)
+        _set_flash(response, "Could not revoke key.", "error")
     return response
 
 

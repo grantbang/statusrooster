@@ -107,9 +107,63 @@ page_templates.env.filters["tojson"] = tojson_filter
 page_templates.env.filters["as_tz"] = as_tz_filter
 
 
+# ---------------------------------------------------------------------------
+# Security headers middleware
+# ---------------------------------------------------------------------------
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    # HSTS — Cloud Run terminates TLS but this protects direct access
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
+
 @app.get("/health", include_in_schema=False)
 async def health_check():
     return {"status": "healthy", "service": "statusrooster"}
+
+
+@app.get("/robots.txt", include_in_schema=False)
+async def robots_txt():
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse(
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Disallow: /api/\n"
+        "Disallow: /admin\n"
+        "Disallow: /settings\n"
+        "Disallow: /dashboard\n"
+        "Disallow: /monitors/\n"
+        "Disallow: /incidents\n"
+        "Disallow: /cron/\n"
+        "\n"
+        "Sitemap: https://statusrooster.com/sitemap.xml\n"
+    )
+
+
+@app.get("/sitemap.xml", include_in_schema=False)
+async def sitemap_xml():
+    from fastapi.responses import Response
+    urls = [
+        ("https://statusrooster.com/", "weekly", "1.0"),
+        ("https://statusrooster.com/pricing", "monthly", "0.8"),
+        ("https://statusrooster.com/docs/api", "monthly", "0.7"),
+        ("https://statusrooster.com/signup", "monthly", "0.6"),
+        ("https://statusrooster.com/login", "monthly", "0.5"),
+        ("https://statusrooster.com/privacy", "yearly", "0.3"),
+        ("https://statusrooster.com/terms", "yearly", "0.3"),
+    ]
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    for loc, freq, priority in urls:
+        xml += f"  <url><loc>{loc}</loc><changefreq>{freq}</changefreq><priority>{priority}</priority></url>\n"
+    xml += "</urlset>\n"
+    return Response(content=xml, media_type="application/xml")
 
 
 # ---------------------------------------------------------------------------
