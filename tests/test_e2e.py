@@ -82,7 +82,9 @@ class TestAuth:
             json={"email": TEST_EMAIL, "password": "testpass123"},
         )
         assert resp.status_code == 400, f"A.4 FAIL: Expected 400, got {resp.status_code}"
-        assert "already registered" in resp.json().get("detail", "").lower()
+        body = resp.json()
+        msg = (body.get("detail") or body.get("error") or "").lower()
+        assert "already registered" in msg
 
     @pytest.mark.asyncio
     async def test_a5_signup_short_password(self, client):
@@ -92,7 +94,9 @@ class TestAuth:
             json={"email": f"short-{uuid.uuid4().hex[:6]}@test.com", "password": "abc"},
         )
         assert resp.status_code == 400, f"A.5 FAIL: Expected 400, got {resp.status_code}"
-        assert "8 characters" in resp.json().get("detail", "")
+        body = resp.json()
+        msg = body.get("detail") or body.get("error") or ""
+        assert "8 characters" in msg
 
     @pytest.mark.asyncio
     async def test_a6_dashboard_no_auth(self, client):
@@ -237,16 +241,16 @@ class TestSecurity:
             "heartbeat_interval": 300,
             "heartbeat_grace_period": 60,
         })
-        # Get the ping_token from the monitor detail
+        # ping_token is stripped from API responses; extract token from ping_url
         detail_resp = await client.get(
             f"/api/v1/monitors/{monitor['id']}",
             headers=pro_headers,
         )
         detail = detail_resp.json()["data"]
-        ping_token = detail.get("ping_token", "")
-        assert ping_token, "B.10 FAIL: Monitor has no ping_token"
-
-        resp = await client.get(f"/api/ping/{monitor['id']}?token={ping_token}")
+        ping_url = detail.get("ping_url", "")
+        assert ping_url, "B.10 FAIL: Monitor has no ping_url"
+        # ping_url is a full URL; just GET it directly
+        resp = await client.get(ping_url.replace("https://statusrooster.com", ""))
         assert resp.status_code == 200, f"B.10 FAIL: Expected 200, got {resp.status_code}"
         body = resp.json()
         assert body.get("ok") is True
@@ -558,15 +562,15 @@ class TestMonitorTypes:
             "heartbeat_interval": 300,
             "heartbeat_grace_period": 60,
         })
-        # Get ping_token
+        # ping_token is stripped from API responses; extract from ping_url
         detail = await client.get(
             f"/api/v1/monitors/{monitor['id']}",
             headers=pro_headers,
         )
-        ping_token = detail.json()["data"].get("ping_token", "")
-        assert ping_token, "D.12 FAIL: No ping_token on monitor"
+        ping_url = detail.json()["data"].get("ping_url", "")
+        assert ping_url, "D.12 FAIL: No ping_url on monitor"
 
-        resp = await client.get(f"/api/ping/{monitor['id']}?token={ping_token}")
+        resp = await client.get(ping_url.replace("https://statusrooster.com", ""))
         assert resp.status_code == 200, f"D.12 FAIL: Expected 200, got {resp.status_code}"
         assert resp.json()["ok"] is True
 

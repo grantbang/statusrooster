@@ -366,7 +366,8 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
     )
     if req.monitor_type == "heartbeat":
         from app.config import settings
-        ping_url = f"{settings.APP_URL}/api/ping/{monitor['id']}"
+        ping_token = monitor.get("ping_token", "")
+        ping_url = f"{settings.APP_URL}/api/ping/{monitor['id']}?token={ping_token}"
         update_monitor(db, monitor["id"], {"url": ping_url, "ping_url": ping_url})
         monitor["url"] = ping_url
         monitor["ping_url"] = ping_url
