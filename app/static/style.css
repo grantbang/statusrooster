@@ -696,7 +696,8 @@ code {
     padding: var(--space-xs);
     line-height: 1;
 }
-.password-toggle:hover { color: var(--text-label); }
+.password-toggle:hover,
+.password-toggle:focus-visible { color: var(--text-label); outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
 
 /* Password strength meter (signup) */
 .strength-meter { margin-top: var(--space-sm); }
@@ -1028,9 +1029,11 @@ code {
     line-height: 1;
     font-family: inherit;
 }
-.range-btn:hover {
+.range-btn:hover,
+.range-btn:focus-visible {
     border-color: var(--brand);
     color: var(--brand);
+    outline: none;
 }
 .range-btn.active {
     background: var(--brand);
@@ -1103,7 +1106,8 @@ code {
     background: none; border: none; text-align: left;
     font-size: 0.85rem; color: var(--text); cursor: pointer;
 }
-.dropdown-item:hover { background: var(--divider); }
+.dropdown-item:hover,
+.dropdown-item:focus-visible { background: var(--divider); outline: none; }
 .dropdown-item.active { color: var(--brand); font-weight: 600; }
 .dropdown-check {
     display: flex; align-items: center; gap: 0.5rem;
@@ -2656,7 +2660,7 @@ code {
 /* ── Uptime bar tooltip ── */
 .md-bar-tooltip {
     position: fixed;
-    z-index: 9999;
+    z-index: 150;
     background: #111827;
     color: #f9fafb;
     border-radius: 8px;
@@ -2757,9 +2761,11 @@ code {
     font-weight: 500;
     transition: all 0.15s;
 }
-.md-range-toggle .range-btn:hover {
+.md-range-toggle .range-btn:hover,
+.range-btn:focus-visible {
     border-color: var(--brand);
     color: var(--brand);
+    outline: none;
 }
 .md-range-toggle .range-btn.active {
     background: var(--brand);
@@ -5421,9 +5427,11 @@ code {
     transition: color 0.15s, border-color 0.15s;
 }
 
-.btn-copy:hover {
+.btn-copy:hover,
+.btn-copy:focus-visible {
     color: var(--brand);
     border-color: var(--brand);
+    outline: none;
 }
 
 .badge-extra {
