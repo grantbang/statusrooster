@@ -799,9 +799,18 @@ requests.get(<span class="code-string">"{{ app_url }}/api/ping/hb_abc789"</span>
 
                 <p><strong>Response</strong> (200 OK)<strong>:</strong></p>
                 <div class="response-shape">{
-  "status": "ok",
-  "monitor_id": "hb_abc789",
-  "pinged_at": "2026-03-03T12:30:00+00:00"
+  "ok": true,
+  "status": "up",
+  "monitor": "Nightly Backup Job",
+  "next_expected_before": 1709471700.0
+}</div>
+                <p class="api-note"><code>next_expected_before</code> is a Unix timestamp — if no ping arrives before this time (plus grace period), the monitor goes down.</p>
+
+                <p><strong>Response when paused</strong> (200 OK)<strong>:</strong></p>
+                <div class="response-shape">{
+  "ok": true,
+  "status": "paused",
+  "message": "Monitor is paused — ping recorded but not tracked"
 }</div>
                 <p class="api-note">💡 <strong>Tip:</strong> Use <code>curl -fsS --retry 3</code> for silent operation with automatic retries on transient network errors.</p>
             </div>
@@ -1333,7 +1342,10 @@ data.forEach(c => console.log(<span class="code-string">`${c.timestamp}: ${c.res
       "timestamp": "2026-03-03T12:30:00+00:00",
       "status_code": 200,
       "response_ms": 245.3,
-      "is_up": true
+      "is_up": true,
+      "regions_checked": ["us-east1", "us-west1", "europe-west1"],
+      "regions_up": ["us-east1", "us-west1", "europe-west1"],
+      "response_ms_by_region": {"us-east1": 120.5, "us-west1": 245.3, "europe-west1": 310.1}
     }
   ],
   "error": null,
@@ -1350,6 +1362,9 @@ data.forEach(c => console.log(<span class="code-string">`${c.timestamp}: ${c.res
                             <tr><td><code>status_code</code></td><td class="field-type">int|null</td><td>HTTP status (null for heartbeat/SSL or connection failure)</td></tr>
                             <tr><td><code>response_ms</code></td><td class="field-type">float|null</td><td>Response time in ms (null for heartbeat/SSL or timeout)</td></tr>
                             <tr><td><code>is_up</code></td><td class="field-type">bool</td><td>Whether the check passed</td></tr>
+                            <tr><td><code>regions_checked</code></td><td class="field-type">list|null</td><td>Regions that ran this check (e.g. <code>["us-east1", "us-west1"]</code>)</td></tr>
+                            <tr><td><code>regions_up</code></td><td class="field-type">list|null</td><td>Regions where the check passed</td></tr>
+                            <tr><td><code>response_ms_by_region</code></td><td class="field-type">object|null</td><td>Response time per region (e.g. <code>{"us-east1": 120.5}</code>)</td></tr>
                         </tbody>
                     </table>
                 </details>

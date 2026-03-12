@@ -517,12 +517,12 @@ code {
     outline: none;
     border-color: var(--brand);
 }
-.form-group .hint {
+.hint {
     font-size: var(--text-sm);
     color: var(--text-faint);
     margin-top: 0.3rem;
 }
-.form-group .hint strong { font-weight: 600; }
+.hint strong { font-weight: 600; }
 
 .form-row {
     display: flex;

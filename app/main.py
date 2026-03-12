@@ -116,13 +116,21 @@ async def health_check():
 # Custom error pages
 # ---------------------------------------------------------------------------
 
-@app.exception_handler(404)
-async def not_found_handler(request: Request, exc: HTTPException):
-    # Return JSON for API routes, HTML for page routes
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    from fastapi.responses import JSONResponse
+    # API routes: return {"data": null, "error": "..."} shape directly (not wrapped in "detail")
     if request.url.path.startswith("/api/"):
-        from fastapi.responses import JSONResponse
-        return JSONResponse({"error": "Not found"}, status_code=404)
-    return templates.TemplateResponse("404.html", {"request": request, "user": None}, status_code=404)
+        if isinstance(exc.detail, dict):
+            return JSONResponse(exc.detail, status_code=exc.status_code)
+        return JSONResponse({"data": None, "error": str(exc.detail)}, status_code=exc.status_code)
+    # HTML routes: custom error pages
+    if exc.status_code == 404:
+        return templates.TemplateResponse("404.html", {"request": request, "user": None}, status_code=404)
+    # For other HTML errors, return FastAPI's default JSON (these are rare — most HTML
+    # errors are redirects, not HTTPExceptions)
+    from fastapi.responses import JSONResponse
+    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
 
 
 @app.exception_handler(500)
