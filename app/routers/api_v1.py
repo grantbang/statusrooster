@@ -315,13 +315,21 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
     # Bearer token available to all plans
     bearer_token = req.bearer_token or ""
 
-    # Validate check_interval bounds
+    # Validate check_interval bounds (apply plan-appropriate default if omitted)
     check_interval = req.check_interval
+    min_interval = 30 if plan == "pro" else 60
     if check_interval is not None:
-        min_interval = 30 if plan == "pro" else 60
         if check_interval < min_interval:
             err(f"Minimum check interval is {min_interval}s for your plan.", 403)
         check_interval = max(min_interval, min(300, check_interval))
+    else:
+        check_interval = min_interval
+
+    # Clamp optional numeric fields to valid bounds (consistent with update)
+    timeout = max(1, min(60, req.timeout)) if req.timeout is not None else None
+    heartbeat_interval = max(60, min(86400, req.heartbeat_interval)) if req.heartbeat_interval is not None else None
+    heartbeat_grace_period = max(0, min(3600, req.heartbeat_grace_period)) if req.heartbeat_grace_period is not None else None
+    ssl_expiry_threshold_days = max(1, min(90, req.ssl_expiry_threshold_days)) if req.ssl_expiry_threshold_days is not None else None
 
     monitor = create_monitor(
         db,
@@ -338,14 +346,14 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
         paused=req.paused,
         check_interval=check_interval,
         monitor_type=req.monitor_type,
-        heartbeat_interval=req.heartbeat_interval,
-        heartbeat_grace_period=req.heartbeat_grace_period,
+        heartbeat_interval=heartbeat_interval,
+        heartbeat_grace_period=heartbeat_grace_period,
         expected_status_code=req.expected_status_code,
-        timeout=req.timeout,
+        timeout=timeout,
         json_assertions=req.json_assertions,
         auth_header=req.auth_header,
         ssl_domain=req.ssl_domain,
-        ssl_expiry_threshold_days=req.ssl_expiry_threshold_days,
+        ssl_expiry_threshold_days=ssl_expiry_threshold_days,
         group=req.group,
         http_method=http_method,
         basic_auth_user=basic_auth_user,

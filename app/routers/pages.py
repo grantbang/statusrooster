@@ -1535,7 +1535,7 @@ async def aggregate_status_page(request: Request, user_id: str):
 
     # Get daily uptime for each monitor
     for mon in public_monitors:
-        mon["daily_uptime"] = get_daily_uptime(db, mon["id"], days=90)
+        mon["daily_uptime"] = get_daily_uptime(db, mon["id"], days=90, plan=owner.get("plan", "free"))
 
     # Overall status
     all_up = all(m.get("status") == "up" for m in public_monitors)
@@ -1579,13 +1579,14 @@ async def public_status_page(request: Request, slug: str):
         raise HTTPException(status_code=404, detail="Status page not found")
 
     # Get 90-day uptime data for the bar chart
-    daily_uptime = get_daily_uptime(db, monitor["id"], days=90)
+    # Branding (Pro only)
+    owner = get_user_by_id(db, monitor.get("user_id", ""))
+    owner_plan = owner.get("plan", "free") if owner else "free"
+
+    daily_uptime = get_daily_uptime(db, monitor["id"], days=90, plan=owner_plan)
 
     # Get recent incidents
     incidents = list_incidents_by_monitor(db, monitor["id"], limit=10)
-
-    # Branding (Pro only)
-    owner = get_user_by_id(db, monitor.get("user_id", ""))
     branding = {"brand_name": "", "logo_url": "", "accent_color": "", "show_powered_by": True}
     if owner and owner.get("plan", "free") == "pro":
         branding = {

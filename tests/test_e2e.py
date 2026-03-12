@@ -1,7 +1,7 @@
 """
 StatusRooster E2E Test Suite — Automated Tests
 
-Covers sections A–P:
+Covers sections A–Q:
   A. Authentication
   B. Security
   C. API CRUD
@@ -17,6 +17,7 @@ Covers sections A–P:
   N. Clone & Bulk Actions
   O. SSR Page Smoke Tests
   P. Incident & Check Filtering
+  Q. API Documentation Accuracy
   I. Cleanup
 
 Run:
@@ -1635,6 +1636,379 @@ class TestIncidentCheckFiltering:
         body = resp.json()
         assert "data" in body, "P.5 FAIL: Missing 'data'"
         assert isinstance(body["data"], list)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Q. API DOCUMENTATION ACCURACY
+#    Verifies that actual API responses match the documented fields,
+#    types, defaults, bounds, and error shapes in /docs/api.
+# ═══════════════════════════════════════════════════════════════════════
+
+class TestApiDocsAccuracy:
+    """Tests Q.1–Q.20: API documentation accuracy — every documented
+    field, default, bound, and error shape must match reality."""
+
+    # -- Q.1 Monitor response fields match docs --
+
+    @pytest.mark.asyncio
+    async def test_q1_monitor_fields_present(self, client, pro_headers):
+        """Q.1 — Monitor response contains all documented core fields"""
+        # Create a monitor to inspect
+        resp = await client.post("/api/v1/monitors", json={
+            "url": "https://httpbin.org/status/200",
+            "name": "E2E-DocFieldTest",
+        }, headers=pro_headers)
+        assert resp.status_code == 201, f"Q.1 FAIL: create {resp.status_code}"
+        mon = resp.json()["data"]
+
+        # Documented core fields (every monitor should have these)
+        core_fields = {
+            "id", "monitor_type", "name", "url", "status",
+            "check_interval", "alert_email", "public", "paused",
+            "created_at", "slug",
+        }
+        for f in core_fields:
+            assert f in mon, f"Q.1 FAIL: missing documented field '{f}'"
+
+    @pytest.mark.asyncio
+    async def test_q2_internal_fields_stripped(self, client, pro_headers):
+        """Q.2 — Internal fields (user_id, daily_uptime_bars, ping_token, etc.)
+        are NOT present in API responses"""
+        resp = await client.get("/api/v1/monitors", headers=pro_headers)
+        assert resp.status_code == 200
+        monitors = resp.json()["data"]
+        if not monitors:
+            pytest.skip("No monitors to check")
+
+        internal_fields = {
+            "user_id", "daily_uptime_bars", "hourly_uptime_bars",
+            "ping_token", "ssl_expiry_alerted_days", "regions",
+        }
+        for mon in monitors:
+            for f in internal_fields:
+                assert f not in mon, f"Q.2 FAIL: internal field '{f}' leaked in monitor {mon.get('id')}"
+
+    # -- Q.3 Check response fields --
+
+    @pytest.mark.asyncio
+    async def test_q3_check_fields(self, client, pro_headers):
+        """Q.3 — Check response has documented fields, not monitor_id"""
+        resp = await client.get("/api/v1/monitors", headers=pro_headers)
+        monitors = resp.json()["data"]
+        target = None
+        for m in monitors:
+            if m.get("checks_total", 0) > 0:
+                target = m
+                break
+        if not target:
+            pytest.skip("No monitors with checks")
+
+        resp = await client.get(
+            f"/api/v1/monitors/{target['id']}/checks?limit=1",
+            headers=pro_headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "data" in body and "meta" in body
+        if body["data"]:
+            check = body["data"][0]
+            documented_fields = {"id", "timestamp", "is_up"}
+            for f in documented_fields:
+                assert f in check, f"Q.3 FAIL: missing check field '{f}'"
+            assert "monitor_id" not in check, "Q.3 FAIL: monitor_id should be stripped"
+
+    # -- Q.4 Incident response fields --
+
+    @pytest.mark.asyncio
+    async def test_q4_incident_fields(self, client, pro_headers):
+        """Q.4 — Incident response has all documented fields"""
+        resp = await client.get("/api/v1/incidents?limit=1", headers=pro_headers)
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "data" in body and "meta" in body
+        if not body["data"]:
+            pytest.skip("No incidents to verify")
+
+        inc = body["data"][0]
+        documented_fields = {
+            "id", "monitor_id", "monitor_name", "status", "started_at",
+        }
+        for f in documented_fields:
+            assert f in inc, f"Q.4 FAIL: missing incident field '{f}'"
+        assert inc["status"] in ("open", "resolved"), f"Q.4 FAIL: unexpected status '{inc['status']}'"
+
+    # -- Q.5 Response envelope shape --
+
+    @pytest.mark.asyncio
+    async def test_q5_envelope_shape_on_list(self, client, pro_headers):
+        """Q.5 — List endpoints return {data: [], error: null, meta: {}}"""
+        resp = await client.get("/api/v1/monitors", headers=pro_headers)
+        body = resp.json()
+        assert "data" in body, "Q.5 FAIL: missing 'data'"
+        assert "error" in body, "Q.5 FAIL: missing 'error'"
+        assert body["error"] is None, "Q.5 FAIL: error should be null on success"
+        assert "meta" in body, "Q.5 FAIL: missing 'meta'"
+        assert "total" in body["meta"], "Q.5 FAIL: meta missing 'total'"
+
+    @pytest.mark.asyncio
+    async def test_q6_envelope_shape_on_create(self, client, pro_headers):
+        """Q.6 — POST /monitors returns 201 with {data: {monitor}, error: null}"""
+        resp = await client.post("/api/v1/monitors", json={
+            "url": "https://httpbin.org/status/200",
+            "name": "E2E-EnvelopeTest",
+        }, headers=pro_headers)
+        assert resp.status_code == 201
+        body = resp.json()
+        assert body["error"] is None, "Q.6 FAIL: error should be null on success"
+        assert isinstance(body["data"], dict), "Q.6 FAIL: data should be a dict"
+        assert "id" in body["data"], "Q.6 FAIL: data should contain monitor id"
+
+    # -- Q.7 Error response shape --
+
+    @pytest.mark.asyncio
+    async def test_q7_error_response_404(self, client, pro_headers):
+        """Q.7 — 404 error returns {data: null, error: 'message'}"""
+        resp = await client.get("/api/v1/monitors/nonexistent_id_999", headers=pro_headers)
+        assert resp.status_code == 404
+        body = resp.json()
+        assert body.get("data") is None, "Q.7 FAIL: data should be null on error"
+        assert isinstance(body.get("error"), str), "Q.7 FAIL: error should be a string"
+
+    @pytest.mark.asyncio
+    async def test_q8_error_response_401(self, client):
+        """Q.8 — 401 error on missing API key"""
+        resp = await client.get("/api/v1/monitors", cookies={"access_token": ""})
+        assert resp.status_code == 401
+        body = resp.json()
+        assert body.get("data") is None or "error" in body, "Q.8 FAIL: should return error shape"
+
+    # -- Q.9 Check interval defaults and bounds --
+
+    @pytest.mark.asyncio
+    async def test_q9_check_interval_default_applied(self, client, pro_headers):
+        """Q.9 — Creating a monitor without check_interval applies plan default"""
+        resp = await client.post("/api/v1/monitors", json={
+            "url": "https://httpbin.org/status/200",
+            "name": "E2E-IntervalDefault",
+        }, headers=pro_headers)
+        assert resp.status_code == 201
+        mon = resp.json()["data"]
+        # Pro default should be 30
+        assert mon.get("check_interval") == 30, \
+            f"Q.9 FAIL: expected default 30 for Pro, got {mon.get('check_interval')}"
+
+    @pytest.mark.asyncio
+    async def test_q10_check_interval_default_free(self, client, free_headers):
+        """Q.10 — Free user: check_interval defaults to 60"""
+        resp = await client.post("/api/v1/monitors", json={
+            "url": "https://httpbin.org/status/200",
+            "name": "E2E-IntervalDefaultFree",
+        }, headers=free_headers)
+        assert resp.status_code == 201
+        mon = resp.json()["data"]
+        assert mon.get("check_interval") == 60, \
+            f"Q.10 FAIL: expected default 60 for Free, got {mon.get('check_interval')}"
+
+    @pytest.mark.asyncio
+    async def test_q11_check_interval_below_plan_min_rejected(self, client, free_headers):
+        """Q.11 — Free user: check_interval=30 returns 403 (doc says min is 60)"""
+        resp = await client.post("/api/v1/monitors", json={
+            "url": "https://httpbin.org/status/200",
+            "name": "E2E-IntervalTooLow",
+            "check_interval": 30,
+        }, headers=free_headers)
+        assert resp.status_code == 403, \
+            f"Q.11 FAIL: expected 403 for interval below plan min, got {resp.status_code}"
+
+    # -- Q.12 Value clamping (documented behavior) --
+
+    @pytest.mark.asyncio
+    async def test_q12_value_clamping_timeout(self, client, pro_headers):
+        """Q.12 — timeout value clamped to 1-60, not rejected"""
+        # Create with timeout=999 (should be clamped to 60)
+        resp = await client.post("/api/v1/monitors", json={
+            "url": "https://httpbin.org/status/200",
+            "name": "E2E-ClampTimeout",
+            "timeout": 999,
+        }, headers=pro_headers)
+        assert resp.status_code == 201, f"Q.12 FAIL: should accept and clamp, got {resp.status_code}"
+        mon = resp.json()["data"]
+        assert mon.get("timeout") == 60, \
+            f"Q.12 FAIL: expected timeout clamped to 60, got {mon.get('timeout')}"
+
+    @pytest.mark.asyncio
+    async def test_q13_value_clamping_heartbeat_interval(self, client, pro_headers):
+        """Q.13 — heartbeat_interval clamped to 60-86400"""
+        resp = await client.post("/api/v1/monitors", json={
+            "name": "E2E-ClampHeartbeat",
+            "monitor_type": "heartbeat",
+            "heartbeat_interval": 10,  # below min of 60
+        }, headers=pro_headers)
+        assert resp.status_code == 201
+        mon = resp.json()["data"]
+        assert mon.get("heartbeat_interval") == 60, \
+            f"Q.13 FAIL: expected clamped to 60, got {mon.get('heartbeat_interval')}"
+
+    @pytest.mark.asyncio
+    async def test_q14_value_clamping_ssl_threshold(self, client, pro_headers):
+        """Q.14 — ssl_expiry_threshold_days clamped to 1-90"""
+        resp = await client.post("/api/v1/monitors", json={
+            "name": "E2E-ClampSSL",
+            "monitor_type": "ssl",
+            "ssl_domain": "example.com",
+            "ssl_expiry_threshold_days": 200,  # above max of 90
+        }, headers=pro_headers)
+        assert resp.status_code == 201
+        mon = resp.json()["data"]
+        assert mon.get("ssl_expiry_threshold_days") == 90, \
+            f"Q.14 FAIL: expected clamped to 90, got {mon.get('ssl_expiry_threshold_days')}"
+
+    # -- Q.15 Checks endpoint query param bounds --
+
+    @pytest.mark.asyncio
+    async def test_q15_checks_limit_clamped(self, client, pro_headers):
+        """Q.15 — GET /checks?limit=9999 → clamped to 500 in meta"""
+        resp = await client.get("/api/v1/monitors", headers=pro_headers)
+        monitors = resp.json()["data"]
+        if not monitors:
+            pytest.skip("No monitors")
+        mid = monitors[0]["id"]
+        resp = await client.get(f"/api/v1/monitors/{mid}/checks?limit=9999", headers=pro_headers)
+        assert resp.status_code == 200
+        meta = resp.json().get("meta", {})
+        assert meta.get("limit") <= 500, \
+            f"Q.15 FAIL: limit should be clamped to 500, got {meta.get('limit')}"
+
+    # -- Q.16 Incidents query param validation --
+
+    @pytest.mark.asyncio
+    async def test_q16_incidents_invalid_status(self, client, pro_headers):
+        """Q.16 — GET /incidents?status=banana → 422"""
+        resp = await client.get("/api/v1/incidents?status=banana", headers=pro_headers)
+        assert resp.status_code == 422, \
+            f"Q.16 FAIL: expected 422 for invalid status, got {resp.status_code}"
+
+    @pytest.mark.asyncio
+    async def test_q17_incidents_meta_fields(self, client, pro_headers):
+        """Q.17 — Incidents meta has documented fields: total, limit, hours"""
+        resp = await client.get("/api/v1/incidents", headers=pro_headers)
+        assert resp.status_code == 200
+        meta = resp.json().get("meta", {})
+        for f in ("total", "limit", "hours"):
+            assert f in meta, f"Q.17 FAIL: meta missing documented field '{f}'"
+        assert meta["limit"] == 50, f"Q.17 FAIL: default limit should be 50, got {meta['limit']}"
+        assert meta["hours"] == 720, f"Q.17 FAIL: default hours should be 720, got {meta['hours']}"
+
+    # -- Q.18 HTTP methods documented correctly --
+
+    @pytest.mark.asyncio
+    async def test_q18_invalid_http_method_rejected(self, client, pro_headers):
+        """Q.18 — Invalid http_method returns 422"""
+        resp = await client.post("/api/v1/monitors", json={
+            "url": "https://httpbin.org/status/200",
+            "name": "E2E-BadMethod",
+            "http_method": "YEET",
+        }, headers=pro_headers)
+        assert resp.status_code == 422, \
+            f"Q.18 FAIL: expected 422 for invalid method, got {resp.status_code}"
+
+    # -- Q.19 Delete response shape --
+
+    @pytest.mark.asyncio
+    async def test_q19_delete_response_shape(self, client, pro_headers):
+        """Q.19 — DELETE returns {data: {deleted: true, monitor_id: ...}}"""
+        # Create then delete
+        cr = await client.post("/api/v1/monitors", json={
+            "url": "https://httpbin.org/status/200",
+            "name": "E2E-DeleteShape",
+        }, headers=pro_headers)
+        assert cr.status_code == 201
+        mid = cr.json()["data"]["id"]
+
+        dr = await client.delete(f"/api/v1/monitors/{mid}", headers=pro_headers)
+        assert dr.status_code == 200
+        body = dr.json()
+        assert body["data"]["deleted"] is True, "Q.19 FAIL: data.deleted should be true"
+        assert body["data"]["monitor_id"] == mid, "Q.19 FAIL: data.monitor_id should match"
+
+    # -- Q.20 Heartbeat monitor creates ping_url --
+
+    @pytest.mark.asyncio
+    async def test_q20_heartbeat_ping_url(self, client, pro_headers):
+        """Q.20 — Heartbeat monitor response includes ping_url field"""
+        resp = await client.post("/api/v1/monitors", json={
+            "name": "E2E-HeartbeatPingUrl",
+            "monitor_type": "heartbeat",
+            "heartbeat_interval": 300,
+        }, headers=pro_headers)
+        assert resp.status_code == 201
+        mon = resp.json()["data"]
+        assert "ping_url" in mon, "Q.20 FAIL: heartbeat monitor should have ping_url"
+        assert "/api/ping/" in mon["ping_url"], "Q.20 FAIL: ping_url should contain /api/ping/"
+
+    # -- Q.21 Plan limits table accuracy --
+
+    @pytest.mark.asyncio
+    async def test_q21_plan_limits_documented(self, client, pro_headers):
+        """Q.21 — Plan limits from API docs: Free=100 monitors, Pro=500"""
+        # Check that Pro user can set check_interval=30 (documented Pro min)
+        resp = await client.post("/api/v1/monitors", json={
+            "url": "https://httpbin.org/status/200",
+            "name": "E2E-ProInterval30",
+            "check_interval": 30,
+        }, headers=pro_headers)
+        assert resp.status_code == 201, \
+            f"Q.21 FAIL: Pro should allow 30s interval, got {resp.status_code}"
+        mon = resp.json()["data"]
+        assert mon["check_interval"] == 30
+
+    # -- Q.22 Update (PATCH) response matches docs --
+
+    @pytest.mark.asyncio
+    async def test_q22_update_returns_full_monitor(self, client, pro_headers):
+        """Q.22 — PATCH returns the full updated monitor, not partial"""
+        # Create
+        cr = await client.post("/api/v1/monitors", json={
+            "url": "https://httpbin.org/status/200",
+            "name": "E2E-UpdateShape",
+        }, headers=pro_headers)
+        assert cr.status_code == 201
+        mid = cr.json()["data"]["id"]
+
+        # Update just the name
+        ur = await client.patch(f"/api/v1/monitors/{mid}", json={
+            "name": "E2E-UpdateShape-Renamed",
+        }, headers=pro_headers)
+        assert ur.status_code == 200
+        body = ur.json()
+        assert body["error"] is None
+        assert body["data"]["name"] == "E2E-UpdateShape-Renamed"
+        # Should still have all core fields
+        assert "id" in body["data"]
+        assert "url" in body["data"]
+        assert "status" in body["data"]
+
+    # -- Q.23 OpenAPI spec is accessible --
+
+    @pytest.mark.asyncio
+    async def test_q23_openapi_spec(self, client):
+        """Q.23 — /openapi.json is accessible and valid JSON"""
+        resp = await client.get("/openapi.json", cookies={"access_token": ""})
+        assert resp.status_code == 200
+        spec = resp.json()
+        assert "paths" in spec, "Q.23 FAIL: OpenAPI spec should have 'paths'"
+        assert "/api/v1/monitors" in spec["paths"], "Q.23 FAIL: /api/v1/monitors not in spec"
+
+    # -- Q.24 Docs page renders --
+
+    @pytest.mark.asyncio
+    async def test_q24_api_docs_page_renders(self, client):
+        """Q.24 — /docs/api page renders with key sections"""
+        resp = await client.get("/docs/api", cookies={"access_token": ""})
+        assert resp.status_code == 200
+        html = resp.text
+        assert "Authentication" in html, "Q.24 FAIL: missing Authentication section"
+        assert "Monitor Types" in html or "monitor_type" in html, "Q.24 FAIL: missing monitor types"
 
 
 # ═══════════════════════════════════════════════════════════════════════

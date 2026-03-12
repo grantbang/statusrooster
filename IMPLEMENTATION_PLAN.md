@@ -975,34 +975,34 @@ For each file below, find every `if plan == "free"` or `if user.get("plan", "fre
 
 ## Phase 4 Checklist — Custom Branding
 
-- [ ] 4.1 Add branding fields to user model: `status_page_logo_url`, `status_page_brand_name`, `status_page_accent_color`, `hide_powered_by` (default False)
-- [ ] 4.2 Add "Status Page Branding" section to `/settings` (Pro only): logo URL input, brand name input, accent color picker, "hide powered by" toggle
-- [ ] 4.3 Create POST endpoint for saving branding settings
-- [ ] 4.4 In `public_status_page()` and `aggregate_status_page()`: look up owner's branding settings, pass to template
-- [ ] 4.5 Update `status_page.html`: use branding.brand_name, branding.accent_color, branding.logo_url. Only show "Powered by StatusRooster" if `branding.show_powered_by` is True.
-- [ ] 4.6 Update `aggregate_status.html`: same branding logic
-- [ ] 4.7 Verify: free user sees "Powered by" always. Pro user can toggle it off.
+- [x] 4.1 Add branding fields to user model: `status_page_logo_url`, `status_page_brand_name`, `status_page_accent_color`, `hide_powered_by` (default False)
+- [x] 4.2 Add "Status Page Branding" section to `/settings` (Pro only): logo URL input, brand name input, accent color picker, "hide powered by" toggle
+- [x] 4.3 Create POST endpoint for saving branding settings
+- [x] 4.4 In `public_status_page()` and `aggregate_status_page()`: look up owner's branding settings, pass to template
+- [x] 4.5 Update `status_page.html`: use branding.brand_name, branding.accent_color, branding.logo_url. Only show "Powered by StatusRooster" if `branding.show_powered_by` is True.
+- [x] 4.6 Update `aggregate_status.html`: same branding logic
+- [x] 4.7 Verify: free user sees "Powered by" always. Pro user can toggle it off.
 
 ---
 
 ## Phase 3 Checklist — Data Retention
 
-- [ ] 3.1 Add to `app/config.py`: `FREE_DATA_RETENTION_DAYS = 30`, `PRO_DATA_RETENTION_DAYS = 90`
-- [ ] 3.2 Create helper `get_retention_cutoff(plan: str) -> datetime` in `app/models/check.py`
-- [ ] 3.3 In `get_recent_checks()`, `get_daily_uptime()`, and `monitor_checks_api()`: apply retention cutoff based on the monitor owner's plan
-- [ ] 3.4 Create `scripts/cleanup_old_checks.py`: query all monitors, determine owner plan, delete checks older than retention. Use Firestore batch deletes (500 per batch).
-- [ ] 3.5 Add `/cron/cleanup` endpoint in `app/routers/cron.py` (same auth as `/cron/check`)
+- [x] 3.1 Add to `app/config.py`: `FREE_DATA_RETENTION_DAYS = 30`, `PRO_DATA_RETENTION_DAYS = 90`
+- [x] 3.2 Create helper `get_retention_cutoff(plan: str) -> datetime` in `app/models/check.py`
+- [x] 3.3 In `get_recent_checks()`, `get_daily_uptime()`, and `monitor_checks_api()`: apply retention cutoff based on the monitor owner's plan
+- [x] 3.4 Create `scripts/cleanup_old_checks.py`: query all monitors, determine owner plan, delete checks older than retention. Use Firestore batch deletes (500 per batch).
+- [x] 3.5 Add `/cron/cleanup` endpoint in `app/routers/cron.py` (same auth as `/cron/check`)
 - [ ] 3.6 Schedule in Cloud Scheduler: `POST /cron/cleanup` once daily at 3am UTC
 
 ---
 
 ## Phase 7 Checklist — Viral Loop
 
-- [ ] 7.1 Update "Powered by" footer in `status_page.html`: make it a clear bar with "Free uptime monitoring by StatusRooster — Create your status page →". Include `?ref=status-page&monitor={monitor_id}` in the link.
-- [ ] 7.2 Add `referral_source` field to user model
-- [ ] 7.3 In signup (both form and API): capture `ref` query param, store as `referral_source` on user doc
-- [ ] 7.4 In `dashboard.html`: when user has 0 monitors, show onboarding card with "Add your first monitor" CTA and "You have 100 free monitors. No credit card required."
-- [ ] 7.5 In admin dashboard: add a simple count of signups by referral source (status-page vs direct vs other)
+- [x] 7.1 Update "Powered by" footer in `status_page.html`: make it a clear bar with "Free uptime monitoring by StatusRooster — Create your status page →". Include `?ref=status-page&monitor={monitor_id}` in the link.
+- [x] 7.2 Add `referral_source` field to user model
+- [x] 7.3 In signup (both form and API): capture `ref` query param, store as `referral_source` on user doc
+- [x] 7.4 In `dashboard.html`: when user has 0 monitors, show onboarding card with "Add your first monitor" CTA and "You have 100 free monitors. No credit card required."
+- [x] 7.5 In admin dashboard: add a simple count of signups by referral source (status-page vs direct vs other)
 
 ---
 

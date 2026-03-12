@@ -75,12 +75,16 @@ def get_recent_checks(db, monitor_id: str, limit: int = 100, plan: str = "free")
     return checks
 
 
-def get_daily_uptime(db, monitor_id: str, days: int = 90) -> list[dict]:
+def get_daily_uptime(db, monitor_id: str, days: int = 90, plan: str | None = None) -> list[dict]:
     """
     Get daily uptime summary for the last N days.
     Returns list of dicts: [{date, total, up, down, uptime_percent}, ...]
     Ordered oldest → newest for the uptime bar.
+    If plan is provided, caps days to the plan's retention limit.
     """
+    if plan:
+        max_days = settings.PRO_DATA_RETENTION_DAYS if plan == "pro" else settings.FREE_DATA_RETENTION_DAYS
+        days = min(days, max_days)
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
     docs = (
         db.collection(COLLECTION)
