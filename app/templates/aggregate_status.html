@@ -199,7 +199,7 @@
                 <div class="stat-label">Uptime</div>
             </div>
             <div class="stat">
-                <div class="stat-value">{{ m.last_response_ms | default('—') }}{{ 'ms' if m.last_response_ms }}</div>
+                <div class="stat-value">{% if m.last_response_ms is not none %}{{ m.last_response_ms|int }}ms{% else %}—{% endif %}</div>
                 <div class="stat-label">Response</div>
             </div>
         </div>

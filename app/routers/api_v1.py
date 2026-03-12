@@ -315,6 +315,14 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
     # Bearer token available to all plans
     bearer_token = req.bearer_token or ""
 
+    # Validate check_interval bounds
+    check_interval = req.check_interval
+    if check_interval is not None:
+        min_interval = 30 if plan == "pro" else 60
+        if check_interval < min_interval:
+            err(f"Minimum check interval is {min_interval}s for your plan.", 403)
+        check_interval = max(min_interval, min(300, check_interval))
+
     monitor = create_monitor(
         db,
         user_id=user["id"],
@@ -328,7 +336,7 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
         webhook_url=req.webhook_url or "",
         maintenance_windows=mw_list,
         paused=req.paused,
-        check_interval=req.check_interval,
+        check_interval=check_interval,
         monitor_type=req.monitor_type,
         heartbeat_interval=req.heartbeat_interval,
         heartbeat_grace_period=req.heartbeat_grace_period,

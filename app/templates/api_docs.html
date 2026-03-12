@@ -740,8 +740,8 @@ console.log(<span class="code-string">`Ping URL: ${data.ping_url}`</span>);</div
     "monitor_type": "heartbeat",
     "name": "Nightly Backup Job",
     "status": "pending",
-    "ping_url": "{{ app_url }}/api/ping/hb_abc789",
-    "url": "{{ app_url }}/api/ping/hb_abc789",
+    "ping_url": "{{ app_url }}/api/ping/hb_abc789?token=aBcDeFgH...",
+    "url": "{{ app_url }}/api/ping/hb_abc789?token=aBcDeFgH...",
     "heartbeat_interval": 86400,
     "heartbeat_grace_period": 300,
     "uptime_percent": 100.0,
@@ -757,7 +757,7 @@ console.log(<span class="code-string">`Ping URL: ${data.ping_url}`</span>);</div
   },
   "error": null
 }</div>
-                <p class="api-note">💡 Use the <code>ping_url</code> from the response in your crontab: <code>curl -fsS {{ app_url }}/api/ping/hb_abc789</code></p>
+                <p class="api-note">💡 Use the <code>ping_url</code> from the response directly in your crontab — it already includes the token.</p>
             </div>
         </div>
     </div>
@@ -772,9 +772,11 @@ console.log(<span class="code-string">`Ping URL: ${data.ping_url}`</span>);</div
                 <span class="chevron">&#9654;</span>
             </div>
             <div class="endpoint-body">
-                <p>Records a successful ping and resets the heartbeat timer. If no ping arrives within <code>heartbeat_interval + heartbeat_grace_period</code>, the monitor transitions to <code>down</code>. Accepts GET, POST, or HEAD — use whichever fits your environment. <strong>No authentication required.</strong></p>
+                <p>Records a successful ping and resets the heartbeat timer. If no ping arrives within <code>heartbeat_interval + heartbeat_grace_period</code>, the monitor transitions to <code>down</code>. Accepts GET, POST, or HEAD — use whichever fits your environment.</p>
 
-                <p class="api-note">⚠️ The ping URL is <code>/api/ping/{id}</code> — note there is no <code>/v1/</code> in the path. This is a lightweight public endpoint, separate from the authenticated API.</p>
+                <p class="api-note">🔑 A <code>?token=</code> query parameter is required. Use the <code>ping_url</code> from the create response — it already includes the token. Returns <code>403</code> if the token is missing or invalid.</p>
+
+                <p class="api-note">⚠️ The ping URL is <code>/api/ping/{id}?token={ping_token}</code> — note there is no <code>/v1/</code> in the path. This is a lightweight endpoint, separate from the API-key-authenticated API.</p>
 
                 <div class="code-tabbed" data-tabs>
                     <div class="code-tab-bar">
@@ -782,19 +784,19 @@ console.log(<span class="code-string">`Ping URL: ${data.ping_url}`</span>);</div
                         <button onclick="switchTab(this,'python')">Python</button>
                         <button onclick="switchTab(this,'js')">JavaScript</button>
                     </div>
-                    <div class="code-panel active" data-lang="curl"><span class="code-comment"># Add to crontab (every 5 min)</span>
-*/5 * * * * curl -fsS --retry 3 <span class="code-url">{{ app_url }}/api/ping/hb_abc789</span>
+                    <div class="code-panel active" data-lang="curl"><span class="code-comment"># Use the ping_url from the create response (includes token)</span>
+*/5 * * * * curl -fsS --retry 3 <span class="code-url">{{ app_url }}/api/ping/hb_abc789?token=YOUR_PING_TOKEN</span>
 
 <span class="code-comment"># Or with wget</span>
-*/5 * * * * wget -q -O /dev/null <span class="code-url">{{ app_url }}/api/ping/hb_abc789</span>
+*/5 * * * * wget -q -O /dev/null <span class="code-url">{{ app_url }}/api/ping/hb_abc789?token=YOUR_PING_TOKEN</span>
 
 <span class="code-comment"># At the end of a deploy script</span>
-curl -fsS <span class="code-url">{{ app_url }}/api/ping/hb_abc789</span></div>
-                    <div class="code-panel" data-lang="python"><span class="code-comment"># At the end of your script / job</span>
+curl -fsS <span class="code-url">{{ app_url }}/api/ping/hb_abc789?token=YOUR_PING_TOKEN</span></div>
+                    <div class="code-panel" data-lang="python"><span class="code-comment"># Use the ping_url from the create response (includes token)</span>
 <span class="code-key">import</span> requests
-requests.get(<span class="code-string">"{{ app_url }}/api/ping/hb_abc789"</span>)</div>
-                    <div class="code-panel" data-lang="js"><span class="code-comment">// At the end of your scheduled function</span>
-<span class="code-key">await</span> fetch(<span class="code-string">"{{ app_url }}/api/ping/hb_abc789"</span>);</div>
+requests.get(<span class="code-string">"{{ app_url }}/api/ping/hb_abc789?token=YOUR_PING_TOKEN"</span>)</div>
+                    <div class="code-panel" data-lang="js"><span class="code-comment">// Use the ping_url from the create response (includes token)</span>
+<span class="code-key">await</span> fetch(<span class="code-string">"{{ app_url }}/api/ping/hb_abc789?token=YOUR_PING_TOKEN"</span>);</div>
                 </div>
 
                 <p><strong>Response</strong> (200 OK)<strong>:</strong></p>
@@ -1137,7 +1139,7 @@ data.forEach(m => console.log(<span class="code-string">`${m.name} (${m.monitor_
       "id": "hb_abc789",
       "monitor_type": "heartbeat",
       "name": "Nightly Backup",
-      "ping_url": "{{ app_url }}/api/ping/hb_abc789",
+      "ping_url": "{{ app_url }}/api/ping/hb_abc789?token=aBcDeFgH...",
       "status": "up",
       "heartbeat_interval": 86400,
       "heartbeat_grace_period": 300,
@@ -1801,6 +1803,11 @@ app.post(<span class="code-string">"/webhooks/statusrooster"</span>, (req, res) 
         <h2>Rate Limits</h2>
         <p>No strict rate limits are enforced today. Please keep polling under <strong>60 requests per minute</strong> — once per minute is sufficient for dashboard-style polling. Abusive usage may be throttled or blocked without notice.</p>
         <p class="api-helper-text">The heartbeat ping endpoint (<code>/api/ping/{id}</code>) is excluded from this — ping as frequently as your cron job runs.</p>
+    </div>
+
+    <div class="api-section">
+        <h3>Value Clamping</h3>
+        <p>Numeric fields with documented ranges (e.g. <code>check_interval</code>, <code>timeout</code>, <code>heartbeat_interval</code>, <code>ssl_expiry_threshold_days</code>) are silently clamped to their valid bounds rather than rejected. For example, <code>timeout: 120</code> is stored as <code>60</code> (the maximum). <code>check_interval</code> below your plan minimum returns a <code>403</code> error instead of clamping.</p>
     </div>
 </div>
 

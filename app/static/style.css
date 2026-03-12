@@ -2855,6 +2855,7 @@ code {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--brand);
+    background: rgba(99, 102, 241, 0.12);
     background: color-mix(in srgb, var(--brand) 12%, transparent);
     padding: 2px 8px;
     border-radius: var(--radius-sm);
