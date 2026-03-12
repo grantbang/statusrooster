@@ -369,7 +369,6 @@
                 <!-- Custom headers (Pro) -->
                 <div class="mf-field-group mf-field-group-mt">
                     <label>Custom headers <span class="label-optional">(optional)</span></label>
-                    {% if plan != 'free' %}
                     <div id="custom-headers-container">
                         {% for h in monitor.get('custom_headers', []) %}
                         <div class="builder-row">
@@ -381,11 +380,6 @@
                     </div>
                     <button type="button" class="btn btn-secondary btn-sm mf-builder-add-btn" onclick="addCustomHeader()">+ Add header</button>
                     <div class="hint">Additional headers sent with each check request.</div>
-                    {% else %}
-                    <div class="mf-notify-channel-locked">
-                        <a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a> to send custom request headers.
-                    </div>
-                    {% endif %}
                 </div>
 
                 <hr class="form-divider">
@@ -513,7 +507,6 @@
             <div class="mf-field-group">
                 <label>Maintenance windows</label>
                 <div id="mw-container">
-                    {% if plan != 'free' %}
                     {% for mw in monitor.get('maintenance_windows', []) %}
                     <div class="builder-row">
                         <select name="maintenance_day[]" class="builder-row-flex-auto">
@@ -528,14 +521,9 @@
                         <button type="button" class="builder-remove-btn" onclick="this.parentElement.remove()" title="Remove">✕</button>
                     </div>
                     {% endfor %}
-                    {% endif %}
                 </div>
-                {% if plan != 'free' %}
                 <button type="button" class="btn btn-secondary btn-sm mf-builder-add-btn" onclick="addMaintenanceWindow()">+ Add maintenance window</button>
                 <div class="hint">Suppress alerts during these windows (times in UTC).</div>
-                {% else %}
-                <div class="hint"><a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a> to suppress alerts during scheduled maintenance.</div>
-                {% endif %}
             </div>
         </div>
     </div>

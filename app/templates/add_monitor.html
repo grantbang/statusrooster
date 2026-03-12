@@ -359,15 +359,9 @@
                 <!-- Custom headers (Pro) -->
                 <div class="mf-field-group mf-field-group-mt">
                     <label>Custom headers <span class="label-optional">(optional)</span></label>
-                    {% if plan != 'free' %}
                     <div id="custom-headers-container"></div>
                     <button type="button" class="btn btn-secondary btn-sm mf-builder-add-btn" onclick="addCustomHeader()">+ Add header</button>
                     <div class="hint">Additional headers sent with each check request.</div>
-                    {% else %}
-                    <div class="mf-notify-channel-locked">
-                        <a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a> to send custom request headers.
-                    </div>
-                    {% endif %}
                 </div>
 
                 <hr class="form-divider">
@@ -462,12 +456,8 @@
             <div class="mf-field-group">
                 <label>Maintenance windows</label>
                 <div id="mw-container"></div>
-                {% if plan != 'free' %}
                 <button type="button" class="btn btn-secondary btn-sm mf-builder-add-btn" onclick="addMaintenanceWindow()">+ Add maintenance window</button>
                 <div class="hint">Suppress alerts during these windows (times in UTC).</div>
-                {% else %}
-                <div class="hint"><a href="/api/billing/checkout" class="mf-pro-upgrade">Upgrade to Pro</a> to suppress alerts during scheduled maintenance.</div>
-                {% endif %}
             </div>
         </div>
     </div>
