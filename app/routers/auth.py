@@ -1,7 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, EmailStr
 from app.database import get_db
-from app.models.user import create_user, get_user_by_email, verify_password
+from app.models.user import create_user, get_user_by_email, verify_password, update_user
 from app.services.auth import create_access_token
 
 router = APIRouter(prefix="/api/auth", tags=["auth"], include_in_schema=False)
@@ -24,7 +24,7 @@ class AuthResponse(BaseModel):
 
 
 @router.post("/signup", response_model=AuthResponse)
-async def signup(req: SignupRequest):
+async def signup(req: SignupRequest, ref: str = Query("", max_length=100)):
     db = get_db()
 
     # Check if email already exists
@@ -38,6 +38,10 @@ async def signup(req: SignupRequest):
 
     # Create user
     user = create_user(db, req.email, req.password)
+
+    # Capture referral source if present
+    if ref:
+        update_user(db, user["id"], {"referral_source": ref})
 
     # Generate JWT
     token = create_access_token(user_id=user["id"], email=user["email"])

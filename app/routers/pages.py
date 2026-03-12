@@ -262,6 +262,13 @@ async def signup_submit(request: Request, email: str = Form(...), password: str 
 
     # Create user
     user = create_user(db, email, password)
+
+    # Capture referral source if present
+    ref = request.query_params.get("ref", "")
+    if ref:
+        from app.models.user import update_user
+        update_user(db, user["id"], {"referral_source": ref[:100]})
+
     token = create_access_token(user_id=user["id"], email=user["email"])
 
     # Set cookie and redirect to dashboard

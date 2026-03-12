@@ -30,7 +30,7 @@
             <span>or</span>
         </div>
 
-        <form method="POST" action="/signup">
+        <form method="POST" action="/signup{% if request.query_params.get('ref') %}?ref={{ request.query_params.get('ref') }}{% endif %}">
             <div class="form-group">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" value="{{ email | default('', true) }}" placeholder="you@example.com" required>
