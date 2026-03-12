@@ -1,6 +1,13 @@
 from datetime import datetime, timezone, timedelta
+from app.config import settings
 
 COLLECTION = "checks"
+
+
+def get_retention_cutoff(plan: str) -> datetime:
+    """Return the earliest timestamp allowed for a given plan."""
+    days = settings.PRO_DATA_RETENTION_DAYS if plan == "pro" else settings.FREE_DATA_RETENTION_DAYS
+    return datetime.now(timezone.utc) - timedelta(days=days)
 
 
 def create_check(db, monitor_id: str, status_code: int | None,
@@ -49,11 +56,13 @@ def create_checks_batch(db, checks: list[dict]) -> None:
         batch.commit()
 
 
-def get_recent_checks(db, monitor_id: str, limit: int = 100) -> list[dict]:
-    """Get recent checks for a monitor, newest first."""
+def get_recent_checks(db, monitor_id: str, limit: int = 100, plan: str = "free") -> list[dict]:
+    """Get recent checks for a monitor, newest first. Filtered by plan retention."""
+    cutoff = get_retention_cutoff(plan)
     docs = (
         db.collection(COLLECTION)
         .where("monitor_id", "==", monitor_id)
+        .where("timestamp", ">=", cutoff)
         .order_by("timestamp", direction="DESCENDING")
         .limit(limit)
         .get()

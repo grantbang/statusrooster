@@ -1176,7 +1176,7 @@ async def monitor_detail(request: Request, monitor_id: str):
     now = datetime.now(timezone.utc)
 
     # Get recent checks for chart (last 24h worth, max 1440 = 24*60)
-    checks = get_recent_checks(db, monitor_id, limit=1440)
+    checks = get_recent_checks(db, monitor_id, limit=1440, plan=user.get("plan", "free"))
 
     # Get incidents (more for the detail page)
     incidents = list_incidents_by_monitor(db, monitor_id, limit=50)

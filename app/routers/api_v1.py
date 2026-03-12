@@ -167,7 +167,7 @@ async def api_get_checks(
     if monitor["user_id"] != user["id"]:
         err("Monitor not found", 404)
 
-    checks = get_recent_checks(db, monitor_id, limit=limit)
+    checks = get_recent_checks(db, monitor_id, limit=limit, plan=user.get("plan", "free"))
     return ok(
         data=[_serialize_check(c) for c in checks],
         meta={"monitor_id": monitor_id, "total": len(checks), "limit": limit},
