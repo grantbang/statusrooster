@@ -262,7 +262,7 @@
   <div id="panel-costs" style="display:none;">
 
     <!-- Total Cost KPIs -->
-    {% set gcp_monthly = gcp_costs.total if gcp_costs else gcp_estimated.total %}
+    {% set gcp_monthly = gcp_costs.total if gcp_costs else 0 %}
     {% set total_monthly = monthly_manual_total + gcp_monthly %}
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
       <div class="card" style="padding: 1.25rem; text-align: center;">
@@ -326,87 +326,18 @@
     </div>
     {% endif %}
 
-    <!-- Estimated GCP Cost Breakdown (always shown) -->
-    <div class="card" style="padding: 1.25rem; margin-bottom: 1.5rem;">
-      <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 0.25rem;">
-        {% if gcp_costs %}Estimated Breakdown{% else %}GCP Cost Estimates{% endif %}
-        <span style="font-weight: 400; color: var(--muted); font-size: 0.85rem;">
-          (based on {{ checks_today }} checks/day, {{ total_monitors }} monitors, {{ total_users }} users)
-        </span>
-      </h2>
-      {% if not gcp_costs %}
-      <p style="font-size: 0.8rem; color: var(--muted); margin: 0.25rem 0 1rem;">
-        For exact costs, enable BigQuery billing export in GCP Console
-        → Billing → Billing export → BigQuery export → dataset: <code>billing_export</code>
+    {% if not gcp_costs %}
+    <!-- BigQuery billing export not yet active -->
+    <div class="card" style="padding: 1.5rem; margin-bottom: 1.5rem; border: 1px dashed var(--border);">
+      <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 0.5rem;">GCP Costs — Awaiting Data</h2>
+      <p style="font-size: 0.85rem; color: var(--muted); margin: 0 0 0.75rem;">
+        BigQuery billing export needs to be enabled in the GCP Console. Once active, real cost data will appear here automatically (backfills ~30 days).
       </p>
-      {% endif %}
-      <div style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-          <thead>
-            <tr style="border-bottom: 1px solid var(--border);">
-              <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Service</th>
-              <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Detail</th>
-              <th style="text-align: right; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Est. Monthly</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% set cr = gcp_estimated.cloud_run %}
-            <tr style="border-bottom: 1px solid var(--border);">
-              <td style="padding: 0.5rem 0.75rem; font-weight: 600;" rowspan="4">Cloud Run</td>
-              <td style="padding: 0.5rem 0.75rem; color: var(--muted);">Requests ({{ "{:,}".format(cr.requests) }} total, {{ "{:,}".format(cr.billable_requests) }} billable)</td>
-              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace;">${{ "%.2f"|format(cr.request_cost) }}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid var(--border);">
-              <td style="padding: 0.5rem 0.75rem; color: var(--muted);">CPU (vCPU-seconds)</td>
-              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace;">${{ "%.2f"|format(cr.cpu_cost) }}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid var(--border);">
-              <td style="padding: 0.5rem 0.75rem; color: var(--muted);">Memory (GiB-seconds)</td>
-              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace;">${{ "%.2f"|format(cr.memory_cost) }}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid var(--border); background: var(--surface-2, #f9fafb);">
-              <td style="padding: 0.5rem 0.75rem; font-weight: 600;">Subtotal</td>
-              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 600;">${{ "%.2f"|format(cr.total) }}</td>
-            </tr>
-
-            {% set fs = gcp_estimated.firestore %}
-            <tr style="border-bottom: 1px solid var(--border);">
-              <td style="padding: 0.5rem 0.75rem; font-weight: 600;" rowspan="4">Firestore</td>
-              <td style="padding: 0.5rem 0.75rem; color: var(--muted);">Reads ({{ "{:,}".format(fs.reads_per_month) }}/mo, {{ "{:,}".format(fs.billable_reads) }} billable)</td>
-              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace;">${{ "%.2f"|format(fs.read_cost) }}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid var(--border);">
-              <td style="padding: 0.5rem 0.75rem; color: var(--muted);">Writes ({{ "{:,}".format(fs.writes_per_month) }}/mo, {{ "{:,}".format(fs.billable_writes) }} billable)</td>
-              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace;">${{ "%.2f"|format(fs.write_cost) }}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid var(--border);">
-              <td style="padding: 0.5rem 0.75rem; color: var(--muted);">Storage ({{ "%.3f"|format(fs.storage_gib) }} GiB)</td>
-              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace;">${{ "%.2f"|format(fs.storage_cost) }}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid var(--border); background: var(--surface-2, #f9fafb);">
-              <td style="padding: 0.5rem 0.75rem; font-weight: 600;">Subtotal</td>
-              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 600;">${{ "%.2f"|format(fs.total) }}</td>
-            </tr>
-
-            <tr style="border-bottom: 1px solid var(--border);">
-              <td style="padding: 0.5rem 0.75rem; font-weight: 600;">Cloud Scheduler</td>
-              <td style="padding: 0.5rem 0.75rem; color: var(--muted);">{{ gcp_estimated.scheduler.jobs }} jobs (3 free)</td>
-              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace;">${{ "%.2f"|format(gcp_estimated.scheduler.total) }}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid var(--border);">
-              <td style="padding: 0.5rem 0.75rem; font-weight: 600;">Egress</td>
-              <td style="padding: 0.5rem 0.75rem; color: var(--muted);">{{ "%.2f"|format(gcp_estimated.egress.gb) }} GB (1 GB free)</td>
-              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace;">${{ "%.2f"|format(gcp_estimated.egress.total) }}</td>
-            </tr>
-
-            <tr style="border-top: 2px solid var(--border);">
-              <td style="padding: 0.6rem 0.75rem; font-weight: 700;" colspan="2">Estimated GCP Total</td>
-              <td style="padding: 0.6rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1rem;">${{ "%.2f"|format(gcp_estimated.total) }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div style="font-size: 0.85rem; color: var(--text); background: var(--surface-2, #f9fafb); padding: 1rem; border-radius: 8px;">
+        <strong>Setup:</strong> GCP Console &rarr; Billing &rarr; Billing export &rarr; "Detailed usage cost" tab &rarr; Project: <code>statusrooster</code>, Dataset: <code>billing_export</code> &rarr; Enable
       </div>
     </div>
+    {% endif %}
 
     <!-- Add Cost Form -->
     <div class="card" style="padding: 1.25rem; margin-bottom: 1.5rem;">

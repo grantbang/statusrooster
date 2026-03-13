@@ -1877,13 +1877,9 @@ async def admin_dashboard(request: Request):
         user_rows.append({**u, "stats": s, "uptime_pct": uptime})
     user_rows.sort(key=lambda u: u["stats"].get("monitors", 0), reverse=True)
 
-    # --- GCP Cost Estimates ---
-    from app.services.admin_metrics import get_gcp_costs_from_bigquery, estimate_gcp_costs
+    # --- GCP Costs (from BigQuery billing export) ---
+    from app.services.admin_metrics import get_gcp_costs_from_bigquery
     gcp_bigquery_costs = get_gcp_costs_from_bigquery()
-    gcp_estimated_costs = estimate_gcp_costs(
-        db, monitors_count=total_monitors,
-        checks_per_day=checks_today, users_count=total_users,
-    )
 
     # --- Manual Costs ---
     cost_docs = db.collection("admin_costs").order_by("created_at", direction="DESCENDING").get()
@@ -1921,7 +1917,6 @@ async def admin_dashboard(request: Request):
         "monthly_manual_total": round(monthly_manual_total, 2),
         "revenue_events": revenue_events,
         "gcp_costs": gcp_bigquery_costs,
-        "gcp_estimated": gcp_estimated_costs,
     })
 
 
