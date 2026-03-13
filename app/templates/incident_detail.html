@@ -140,6 +140,20 @@
     </div>
     {% endif %}
 
+    {% set resp_body = incident.get('failure_response_body', '') %}
+    {% if resp_body %}
+    <!-- Response Body Preview -->
+    <div class="inc-detail-section inc-headers-block" style="margin-top: 0.75rem;">
+        <details>
+            <summary class="inc-headers-summary">
+                Response body preview
+                <span style="font-size:0.7rem; background:#f3f4f6; border:1px solid var(--border); border-radius:10px; padding:0 0.4rem; line-height:1.7; color:var(--muted);">{{ resp_body|length }} bytes</span>
+            </summary>
+            <pre class="inc-response-pre"><code>{{ resp_body }}</code></pre>
+        </details>
+    </div>
+    {% endif %}
+
     <!-- Activity Timeline -->
     <div class="inc-detail-section" style="margin-top: 1.5rem;">
         <h3 class="inc-section-title">Activity</h3>
@@ -149,10 +163,24 @@
                     {% set etype = event.type %}
                     {% if etype == 'detected' %}
                         {% set dot_class = 'inc-dot-down' %}
-                        {% set label %}Incident detected — monitor marked <strong>down</strong>{% endset %}
+                        {% set rr = event.get('metadata', {}).get('region_results', []) %}
+                        {% if rr %}
+                            {% set rc = event.get('metadata', {}).get('regions_checked', rr|length) %}
+                            {% set ru = event.get('metadata', {}).get('regions_up', 0) %}
+                            {% set label %}Confirmed <strong>down</strong> from {{ rc - ru }}/{{ rc }} regions{% endset %}
+                        {% else %}
+                            {% set label %}Incident detected — monitor marked <strong>down</strong>{% endset %}
+                        {% endif %}
                     {% elif etype == 'resolved' %}
                         {% set dot_class = 'inc-dot-up' %}
-                        {% set label %}Monitor recovered — incident <strong>resolved</strong>{% endset %}
+                        {% set rr = event.get('metadata', {}).get('region_results', []) %}
+                        {% if rr %}
+                            {% set rc = event.get('metadata', {}).get('regions_checked', rr|length) %}
+                            {% set ru = event.get('metadata', {}).get('regions_up', 0) %}
+                            {% set label %}Recovered — <strong>{{ ru }}/{{ rc }}</strong> regions UP{% endset %}
+                        {% else %}
+                            {% set label %}Monitor recovered — incident <strong>resolved</strong>{% endset %}
+                        {% endif %}
                     {% elif 'sent' in etype %}
                         {% set dot_class = 'inc-dot-info' %}
                         {% if 'email' in etype %}
@@ -191,6 +219,26 @@
                             <div class="inc-timeline-text">{{ label }}</div>
                             {% if event.timestamp %}
                             <div class="inc-timeline-time">{{ event.timestamp | as_tz(user.get('timezone', 'UTC'), '%b %-d, %H:%M:%S') }}</div>
+                            {% endif %}
+                            {% set rr = event.get('metadata', {}).get('region_results', []) %}
+                            {% if rr %}
+                            <details class="inc-region-details">
+                                <summary class="inc-region-summary">Per-region details</summary>
+                                <table class="inc-region-table">
+                                    <thead><tr><th>Region</th><th>Status</th><th>Code</th><th>Time</th><th>Error</th></tr></thead>
+                                    <tbody>
+                                    {% for r in rr %}
+                                    <tr>
+                                        <td>{{ region_labels.get(r.region, r.region) }}</td>
+                                        <td>{% if r.is_up %}<span class="inc-region-up">UP</span>{% else %}<span class="inc-region-down">DOWN</span>{% endif %}</td>
+                                        <td>{{ r.status_code or '—' }}</td>
+                                        <td>{% if r.response_ms %}{{ r.response_ms|round(1) }} ms{% else %}—{% endif %}</td>
+                                        <td class="inc-kv-mono">{{ r.error or '—' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </details>
                             {% endif %}
                         </div>
                     </div>

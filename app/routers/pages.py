@@ -535,6 +535,13 @@ async def incident_detail_page(request: Request, incident_id: str):
     except Exception:
         pass
 
+    region_labels = {
+        "us-east1": "US East",
+        "us-west1": "US West",
+        "europe-west1": "Europe",
+        "asia-east1": "Asia",
+    }
+
     return templates.TemplateResponse("incident_detail.html", {
         "request": request,
         "user": user,
@@ -542,6 +549,7 @@ async def incident_detail_page(request: Request, incident_id: str):
         "monitor": monitor,
         "events": get_incident_events(db, incident_id),
         "failed_check_count": failed_check_count,
+        "region_labels": region_labels,
     })
 
 
@@ -1869,6 +1877,31 @@ async def admin_dashboard(request: Request):
         user_rows.append({**u, "stats": s, "uptime_pct": uptime})
     user_rows.sort(key=lambda u: u["stats"].get("monitors", 0), reverse=True)
 
+    # --- GCP Cost Estimates ---
+    from app.services.admin_metrics import get_gcp_costs_from_bigquery, estimate_gcp_costs
+    gcp_bigquery_costs = get_gcp_costs_from_bigquery()
+    gcp_estimated_costs = estimate_gcp_costs(
+        db, monitors_count=total_monitors,
+        checks_per_day=checks_today, users_count=total_users,
+    )
+
+    # --- Manual Costs ---
+    cost_docs = db.collection("admin_costs").order_by("created_at", direction="DESCENDING").get()
+    manual_costs = [c.to_dict() | {"id": c.id} for c in cost_docs]
+    monthly_manual_total = 0
+    for c in manual_costs:
+        amt = c.get("amount", 0) or 0
+        freq = c.get("frequency", "monthly")
+        if freq == "monthly":
+            monthly_manual_total += amt
+        elif freq == "annual":
+            monthly_manual_total += amt / 12
+        # one-time costs not included in monthly
+
+    # --- Revenue Events ---
+    rev_docs = db.collection("admin_revenue").order_by("timestamp", direction="DESCENDING").limit(50).get()
+    revenue_events = [r.to_dict() | {"id": r.id} for r in rev_docs]
+
     return templates.TemplateResponse("admin.html", {
         "request": request,
         "user": user,
@@ -1884,7 +1917,47 @@ async def admin_dashboard(request: Request):
         "last_cron_run": last_cron_run,
         "all_monitors": all_monitors,
         "user_rows": user_rows,
+        "manual_costs": manual_costs,
+        "monthly_manual_total": round(monthly_manual_total, 2),
+        "revenue_events": revenue_events,
+        "gcp_costs": gcp_bigquery_costs,
+        "gcp_estimated": gcp_estimated_costs,
     })
+
+
+# --- Admin Cost CRUD (AJAX) ---
+
+def _is_admin(request: Request) -> bool:
+    user = get_user_from_cookie(request)
+    return user is not None and user.get("email", "").lower() == ADMIN_EMAIL
+
+
+@router.post("/admin/costs")
+async def admin_add_cost(request: Request):
+    if not _is_admin(request):
+        raise HTTPException(status_code=404)
+    body = await request.json()
+    from datetime import datetime, timezone
+    db = get_db()
+    doc_ref = db.collection("admin_costs").document()
+    doc_ref.set({
+        "name": body.get("name", ""),
+        "category": body.get("category", "other"),
+        "amount": float(body.get("amount", 0)),
+        "frequency": body.get("frequency", "monthly"),
+        "notes": body.get("notes", ""),
+        "created_at": datetime.now(timezone.utc),
+    })
+    return JSONResponse({"ok": True, "id": doc_ref.id})
+
+
+@router.delete("/admin/costs/{cost_id}")
+async def admin_delete_cost(request: Request, cost_id: str):
+    if not _is_admin(request):
+        raise HTTPException(status_code=404)
+    db = get_db()
+    db.collection("admin_costs").document(cost_id).delete()
+    return JSONResponse({"ok": True})
 
 
 # ---------------------------------------------------------------------------

@@ -103,12 +103,17 @@ async def stripe_webhook(request: Request):
             })
             print(f"✅ User {user_id} upgraded to Pro")
 
+        # Log revenue event
+        _log_revenue_event(db, event["type"], user_id=user_id,
+                           customer_id=customer_id, amount=900)
+
     # ---- customer.subscription.deleted → downgrade to Free ----
     elif event["type"] == "customer.subscription.deleted":
         subscription = event["data"]["object"]
         customer_id = subscription.get("customer")
 
         # Find user by stripe_customer_id
+        user_id = None
         users = (
             db.collection("users")
             .where("stripe_customer_id", "==", customer_id)
@@ -117,9 +122,38 @@ async def stripe_webhook(request: Request):
         )
         for doc in users:
             update_user(db, doc.id, {"plan": "free"})
+            user_id = doc.id
             print(f"⬇️ User {doc.id} downgraded to Free")
 
+        _log_revenue_event(db, event["type"], user_id=user_id,
+                           customer_id=customer_id, amount=0)
+
+    # ---- invoice.payment_succeeded → track actual payment ----
+    elif event["type"] == "invoice.payment_succeeded":
+        invoice = event["data"]["object"]
+        customer_id = invoice.get("customer")
+        amount = invoice.get("amount_paid", 0)  # in cents
+        _log_revenue_event(db, event["type"], customer_id=customer_id,
+                           amount=amount)
+
     return JSONResponse({"status": "ok"})
+
+
+def _log_revenue_event(db, event_type: str, user_id: str | None = None,
+                       customer_id: str | None = None, amount: int = 0):
+    """Log a Stripe event to admin_revenue collection for tracking."""
+    from datetime import datetime, timezone
+    try:
+        db.collection("admin_revenue").add({
+            "event_type": event_type,
+            "user_id": user_id,
+            "customer_id": customer_id,
+            "amount": amount,
+            "currency": "usd",
+            "timestamp": datetime.now(timezone.utc),
+        })
+    except Exception as e:
+        print(f"[billing] Failed to log revenue event: {e}")
 
 
 # ---------------------------------------------------------------------------

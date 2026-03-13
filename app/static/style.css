@@ -5723,6 +5723,22 @@ details[open] .inc-headers-block .inc-headers-summary::before,
 .inc-timeline-text { font-size: 0.88rem; line-height: 1.5; }
 .inc-timeline-time { font-size: 0.78rem; color: var(--muted); margin-top: 0.15rem; }
 
+/* Region corroboration details in timeline */
+.inc-region-details { margin-top: 0.5rem; }
+.inc-region-summary { font-size: 0.78rem; color: var(--muted); cursor: pointer; user-select: none; }
+.inc-region-summary::-webkit-details-marker { display: none; }
+.inc-region-summary::marker { display: none; content: ''; }
+.inc-region-summary::before { content: '\25B6'; font-size: 0.55rem; margin-right: 0.4rem; transition: transform 0.15s; display: inline-block; }
+details[open] > .inc-region-summary::before { transform: rotate(90deg); }
+.inc-region-table { width: 100%; font-size: 0.78rem; border-collapse: collapse; margin-top: 0.4rem; }
+.inc-region-table th { text-align: left; color: var(--muted); font-weight: 500; padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--border); }
+.inc-region-table td { padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--border); }
+.inc-region-up { color: var(--success); font-weight: 600; font-size: 0.75rem; }
+.inc-region-down { color: var(--danger); font-weight: 600; font-size: 0.75rem; }
+
+/* Response body preview */
+.inc-response-pre { background: var(--bg-offset, #f9fafb); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; font-size: 0.78rem; font-family: 'JetBrains Mono', monospace; overflow-x: auto; max-height: 300px; white-space: pre-wrap; word-break: break-all; margin-top: 0.5rem; }
+
 
 /* ═══════════════════════════════════════════════════════════════
    MONITOR GROUPS (dashboard)

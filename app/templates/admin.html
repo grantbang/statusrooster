@@ -6,10 +6,12 @@
 <div style="max-width: 1100px; margin: 0 auto;">
 
   <!-- Tab Nav -->
-  <div style="display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 2rem;">
+  <div style="display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 2rem; flex-wrap: wrap;">
     <button onclick="switchTab('overview')" id="tab-overview" class="admin-tab admin-tab--active">Overview</button>
     <button onclick="switchTab('users')" id="tab-users" class="admin-tab">Users</button>
     <button onclick="switchTab('monitors')" id="tab-monitors" class="admin-tab">Monitors</button>
+    <button onclick="switchTab('costs')" id="tab-costs" class="admin-tab">Costs</button>
+    <button onclick="switchTab('revenue')" id="tab-revenue" class="admin-tab">Revenue</button>
   </div>
 
   <!-- TAB: Overview -->
@@ -256,6 +258,310 @@
     </div>
   </div> <!-- /panel-monitors -->
 
+  <!-- TAB: Costs -->
+  <div id="panel-costs" style="display:none;">
+
+    <!-- Total Cost KPIs -->
+    {% set gcp_monthly = gcp_costs.total if gcp_costs else gcp_estimated.total %}
+    {% set total_monthly = monthly_manual_total + gcp_monthly %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+      <div class="card" style="padding: 1.25rem; text-align: center;">
+        <div style="font-size: 1.75rem; font-weight: 800; color: var(--warning);">${{ "%.2f"|format(total_monthly) }}</div>
+        <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem;">Total Monthly</div>
+      </div>
+      <div class="card" style="padding: 1.25rem; text-align: center;">
+        <div style="font-size: 1.75rem; font-weight: 800; color: var(--brand);">${{ "%.2f"|format(gcp_monthly) }}</div>
+        <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem;">GCP Costs</div>
+      </div>
+      <div class="card" style="padding: 1.25rem; text-align: center;">
+        <div style="font-size: 1.75rem; font-weight: 800; color: var(--brand);">${{ "%.2f"|format(monthly_manual_total) }}</div>
+        <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem;">Other Costs</div>
+      </div>
+      <div class="card" style="padding: 1.25rem; text-align: center;">
+        <div style="font-size: 1.75rem; font-weight: 800; color: var(--success);">${{ mrr }}</div>
+        <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem;">MRR</div>
+      </div>
+      <div class="card" style="padding: 1.25rem; text-align: center;">
+        {% set net = mrr - total_monthly %}
+        <div style="font-size: 1.75rem; font-weight: 800; color: {% if net >= 0 %}var(--success){% else %}var(--danger){% endif %};">${{ "%.2f"|format(net) }}</div>
+        <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem;">Net / Month</div>
+      </div>
+      <div class="card" style="padding: 1.25rem; text-align: center;">
+        {% if total_users > 0 %}
+          <div style="font-size: 1.75rem; font-weight: 800; color: var(--brand);">${{ "%.4f"|format(total_monthly / total_users) }}</div>
+        {% else %}
+          <div style="font-size: 1.75rem; font-weight: 800; color: var(--muted);">—</div>
+        {% endif %}
+        <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem;">Cost / User</div>
+      </div>
+    </div>
+
+    <!-- GCP Cost Breakdown -->
+    {% if gcp_costs %}
+    <!-- BigQuery actual costs -->
+    <div class="card" style="padding: 1.25rem; margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">GCP Costs <span style="font-weight: 400; color: var(--muted); font-size: 0.85rem;">(last {{ gcp_costs.days }}d — from BigQuery billing export)</span></h2>
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Service</th>
+              <th style="text-align: right; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for service, cost in gcp_costs.by_service.items() %}
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.6rem 0.75rem;">{{ service }}</td>
+              <td style="padding: 0.6rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace;">${{ "%.2f"|format(cost) }}</td>
+            </tr>
+            {% endfor %}
+            <tr style="border-top: 2px solid var(--border);">
+              <td style="padding: 0.6rem 0.75rem; font-weight: 700;">Total</td>
+              <td style="padding: 0.6rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 700;">${{ "%.2f"|format(gcp_costs.total) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Estimated GCP Cost Breakdown (always shown) -->
+    <div class="card" style="padding: 1.25rem; margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 0.25rem;">
+        {% if gcp_costs %}Estimated Breakdown{% else %}GCP Cost Estimates{% endif %}
+        <span style="font-weight: 400; color: var(--muted); font-size: 0.85rem;">
+          (based on {{ checks_today }} checks/day, {{ total_monitors }} monitors, {{ total_users }} users)
+        </span>
+      </h2>
+      {% if not gcp_costs %}
+      <p style="font-size: 0.8rem; color: var(--muted); margin: 0.25rem 0 1rem;">
+        For exact costs, enable BigQuery billing export in GCP Console
+        → Billing → Billing export → BigQuery export → dataset: <code>billing_export</code>
+      </p>
+      {% endif %}
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Service</th>
+              <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Detail</th>
+              <th style="text-align: right; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Est. Monthly</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set cr = gcp_estimated.cloud_run %}
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.5rem 0.75rem; font-weight: 600;" rowspan="4">Cloud Run</td>
+              <td style="padding: 0.5rem 0.75rem; color: var(--muted);">Requests ({{ "{:,}".format(cr.requests) }} total, {{ "{:,}".format(cr.billable_requests) }} billable)</td>
+              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace;">${{ "%.2f"|format(cr.request_cost) }}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.5rem 0.75rem; color: var(--muted);">CPU (vCPU-seconds)</td>
+              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace;">${{ "%.2f"|format(cr.cpu_cost) }}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.5rem 0.75rem; color: var(--muted);">Memory (GiB-seconds)</td>
+              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace;">${{ "%.2f"|format(cr.memory_cost) }}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border); background: var(--surface-2, #f9fafb);">
+              <td style="padding: 0.5rem 0.75rem; font-weight: 600;">Subtotal</td>
+              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 600;">${{ "%.2f"|format(cr.total) }}</td>
+            </tr>
+
+            {% set fs = gcp_estimated.firestore %}
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.5rem 0.75rem; font-weight: 600;" rowspan="4">Firestore</td>
+              <td style="padding: 0.5rem 0.75rem; color: var(--muted);">Reads ({{ "{:,}".format(fs.reads_per_month) }}/mo, {{ "{:,}".format(fs.billable_reads) }} billable)</td>
+              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace;">${{ "%.2f"|format(fs.read_cost) }}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.5rem 0.75rem; color: var(--muted);">Writes ({{ "{:,}".format(fs.writes_per_month) }}/mo, {{ "{:,}".format(fs.billable_writes) }} billable)</td>
+              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace;">${{ "%.2f"|format(fs.write_cost) }}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.5rem 0.75rem; color: var(--muted);">Storage ({{ "%.3f"|format(fs.storage_gib) }} GiB)</td>
+              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace;">${{ "%.2f"|format(fs.storage_cost) }}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border); background: var(--surface-2, #f9fafb);">
+              <td style="padding: 0.5rem 0.75rem; font-weight: 600;">Subtotal</td>
+              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 600;">${{ "%.2f"|format(fs.total) }}</td>
+            </tr>
+
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.5rem 0.75rem; font-weight: 600;">Cloud Scheduler</td>
+              <td style="padding: 0.5rem 0.75rem; color: var(--muted);">{{ gcp_estimated.scheduler.jobs }} jobs (3 free)</td>
+              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace;">${{ "%.2f"|format(gcp_estimated.scheduler.total) }}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.5rem 0.75rem; font-weight: 600;">Egress</td>
+              <td style="padding: 0.5rem 0.75rem; color: var(--muted);">{{ "%.2f"|format(gcp_estimated.egress.gb) }} GB (1 GB free)</td>
+              <td style="padding: 0.5rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace;">${{ "%.2f"|format(gcp_estimated.egress.total) }}</td>
+            </tr>
+
+            <tr style="border-top: 2px solid var(--border);">
+              <td style="padding: 0.6rem 0.75rem; font-weight: 700;" colspan="2">Estimated GCP Total</td>
+              <td style="padding: 0.6rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1rem;">${{ "%.2f"|format(gcp_estimated.total) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Add Cost Form -->
+    <div class="card" style="padding: 1.25rem; margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">Add Cost</h2>
+      <form id="addCostForm" onsubmit="addCost(event)" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end;">
+        <div style="flex: 1; min-width: 150px;">
+          <label style="font-size: 0.75rem; color: var(--muted); display: block; margin-bottom: 0.25rem;">Name</label>
+          <input type="text" name="name" required placeholder="e.g. Twilio SMS" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem;">
+        </div>
+        <div style="min-width: 120px;">
+          <label style="font-size: 0.75rem; color: var(--muted); display: block; margin-bottom: 0.25rem;">Category</label>
+          <select name="category" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem;">
+            <option value="infrastructure">Infrastructure</option>
+            <option value="communications">Communications</option>
+            <option value="domain">Domain</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div style="min-width: 100px;">
+          <label style="font-size: 0.75rem; color: var(--muted); display: block; margin-bottom: 0.25rem;">Amount ($)</label>
+          <input type="number" name="amount" step="0.01" required placeholder="9.99" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem;">
+        </div>
+        <div style="min-width: 120px;">
+          <label style="font-size: 0.75rem; color: var(--muted); display: block; margin-bottom: 0.25rem;">Frequency</label>
+          <select name="frequency" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem;">
+            <option value="monthly">Monthly</option>
+            <option value="annual">Annual</option>
+            <option value="one_time">One-time</option>
+          </select>
+        </div>
+        <div style="min-width: 150px;">
+          <label style="font-size: 0.75rem; color: var(--muted); display: block; margin-bottom: 0.25rem;">Notes</label>
+          <input type="text" name="notes" placeholder="Optional" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem;">
+        </div>
+        <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1.25rem; height: fit-content;">Add</button>
+      </form>
+    </div>
+
+    <!-- Costs Table -->
+    <div class="card" style="padding: 1.25rem;">
+      <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">Manual Costs <span style="font-weight: 400; color: var(--muted); font-size: 0.85rem;">({{ manual_costs | length }})</span></h2>
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Name</th>
+              <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Category</th>
+              <th style="text-align: right; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Amount</th>
+              <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Frequency</th>
+              <th style="text-align: right; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Monthly Eq.</th>
+              <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Notes</th>
+              <th style="text-align: center; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;"></th>
+            </tr>
+          </thead>
+          <tbody id="costsTableBody">
+            {% for c in manual_costs %}
+            <tr style="border-bottom: 1px solid var(--border);" id="cost-row-{{ c.id }}">
+              <td style="padding: 0.6rem 0.75rem; font-weight: 500;">{{ c.name }}</td>
+              <td style="padding: 0.6rem 0.75rem;">
+                <span style="background: var(--surface-2, #f3f4f6); color: var(--muted); font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 4px; text-transform: capitalize;">{{ c.category }}</span>
+              </td>
+              <td style="padding: 0.6rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace;">${{ "%.2f"|format(c.amount) }}</td>
+              <td style="padding: 0.6rem 0.75rem; text-transform: capitalize; color: var(--muted);">{{ c.frequency | replace('_', '-') }}</td>
+              <td style="padding: 0.6rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace; color: var(--muted);">
+                {% if c.frequency == 'monthly' %}${{ "%.2f"|format(c.amount) }}
+                {% elif c.frequency == 'annual' %}${{ "%.2f"|format(c.amount / 12) }}
+                {% else %}—{% endif %}
+              </td>
+              <td style="padding: 0.6rem 0.75rem; color: var(--muted); font-size: 0.8rem;">{{ c.notes or '—' }}</td>
+              <td style="padding: 0.6rem 0.75rem; text-align: center;">
+                <button onclick="deleteCost('{{ c.id }}')" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 0.8rem; padding: 0.25rem 0.5rem;">Delete</button>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" style="padding: 1rem 0.75rem; color: var(--muted);">No costs added yet. Add your first cost above.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div> <!-- /panel-costs -->
+
+  <!-- TAB: Revenue -->
+  <div id="panel-revenue" style="display:none;">
+
+    <!-- Revenue KPIs -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+      <div class="card" style="padding: 1.25rem; text-align: center;">
+        <div style="font-size: 2rem; font-weight: 800; color: var(--success);">${{ mrr }}</div>
+        <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem;">MRR</div>
+      </div>
+      <div class="card" style="padding: 1.25rem; text-align: center;">
+        <div style="font-size: 2rem; font-weight: 800; color: var(--brand);">{{ pro_count }}</div>
+        <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem;">Pro Subscribers</div>
+      </div>
+      <div class="card" style="padding: 1.25rem; text-align: center;">
+        {% if pro_count > 0 %}
+          <div style="font-size: 2rem; font-weight: 800; color: var(--brand);">${{ "%.2f"|format(mrr / pro_count) }}</div>
+        {% else %}
+          <div style="font-size: 2rem; font-weight: 800; color: var(--muted);">—</div>
+        {% endif %}
+        <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem;">ARPU</div>
+      </div>
+      <div class="card" style="padding: 1.25rem; text-align: center;">
+        <div style="font-size: 2rem; font-weight: 800; color: var(--success);">${{ mrr * 12 }}</div>
+        <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem;">ARR</div>
+      </div>
+    </div>
+
+    <!-- Revenue Events Log -->
+    <div class="card" style="padding: 1.25rem;">
+      <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">Revenue Events <span style="font-weight: 400; color: var(--muted); font-size: 0.85rem;">(last 50)</span></h2>
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Event</th>
+              <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">User ID</th>
+              <th style="text-align: right; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Amount</th>
+              <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500;">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in revenue_events %}
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.6rem 0.75rem;">
+                {% if 'completed' in r.event_type %}
+                  <span style="background: #dcfce7; color: #166534; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px;">UPGRADE</span>
+                {% elif 'deleted' in r.event_type %}
+                  <span style="background: #fee2e2; color: #991b1b; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px;">CHURN</span>
+                {% elif 'payment_succeeded' in r.event_type %}
+                  <span style="background: #dbeafe; color: #1e40af; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px;">PAYMENT</span>
+                {% else %}
+                  <span style="background: var(--surface-2, #f3f4f6); color: var(--muted); font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 4px;">{{ r.event_type }}</span>
+                {% endif %}
+              </td>
+              <td style="padding: 0.6rem 0.75rem; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted);">{{ r.user_id or r.customer_id or '—' }}</td>
+              <td style="padding: 0.6rem 0.75rem; text-align: right; font-family: 'JetBrains Mono', monospace;">
+                {% if r.amount %}${{ "%.2f"|format(r.amount / 100) }}{% else %}—{% endif %}
+              </td>
+              <td style="padding: 0.6rem 0.75rem; color: var(--muted); font-size: 0.8rem;">
+                {% if r.timestamp %}{{ r.timestamp.strftime('%b %d, %Y %H:%M') }}{% else %}—{% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" style="padding: 1rem 0.75rem; color: var(--muted);">No revenue events yet. Events will appear as Stripe processes subscriptions.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div> <!-- /panel-revenue -->
+
 </div>
 
 <style>
@@ -276,8 +582,10 @@
 </style>
 
 <script>
+const ALL_TABS = ['overview','users','monitors','costs','revenue'];
+
 function switchTab(name) {
-  ['overview','users','monitors'].forEach(t => {
+  ALL_TABS.forEach(t => {
     document.getElementById('panel-' + t).style.display = t === name ? '' : 'none';
     document.getElementById('tab-' + t).classList.toggle('admin-tab--active', t === name);
   });
@@ -288,7 +596,7 @@ function switchTab(name) {
 const TAB_KEY = 'admin_active_tab';
 const activeTab = sessionStorage.getItem(TAB_KEY) || 'overview';
 switchTab(activeTab);
-['overview','users','monitors'].forEach(t => {
+ALL_TABS.forEach(t => {
   document.getElementById('tab-' + t).addEventListener('click', () => sessionStorage.setItem(TAB_KEY, t));
 });
 setTimeout(() => location.reload(), 60000);
@@ -297,5 +605,41 @@ setTimeout(() => location.reload(), 60000);
 const timerEl = document.getElementById('refresh-countdown');
 let secs = 60;
 setInterval(() => { secs--; if (timerEl) timerEl.textContent = secs + 's'; }, 1000);
+
+// ── Cost CRUD ──
+async function addCost(e) {
+  e.preventDefault();
+  const form = e.target;
+  const data = Object.fromEntries(new FormData(form));
+  try {
+    const resp = await fetch('/admin/costs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (resp.ok) {
+      location.reload();
+    } else {
+      alert('Failed to add cost');
+    }
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
+
+async function deleteCost(id) {
+  if (!confirm('Delete this cost entry?')) return;
+  try {
+    const resp = await fetch('/admin/costs/' + id, { method: 'DELETE' });
+    if (resp.ok) {
+      const row = document.getElementById('cost-row-' + id);
+      if (row) row.remove();
+    } else {
+      alert('Failed to delete');
+    }
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
 </script>
 {% endblock %}

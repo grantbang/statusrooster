@@ -194,10 +194,16 @@ def _aggregate_multi_region_results(monitor: dict, local_result: dict,
     # Add local result
     local_is_up = local_result.get("result", {}).get("is_up", False)
     local_ms = local_result.get("result", {}).get("response_ms")
-    all_results.append({"region": "us-east1", "is_up": local_is_up, "response_ms": local_ms})
+    all_results.append({
+        "region": "us-east1",
+        "is_up": local_is_up,
+        "response_ms": local_ms,
+        "status_code": local_result.get("result", {}).get("status_code"),
+        "error": local_result.get("result", {}).get("error_message"),
+    })
     if local_ms and local_ms > 0:
         response_by_region["us-east1"] = local_ms
-    
+
     # Add worker results
     for wr in worker_results:
         if not wr:
@@ -209,6 +215,8 @@ def _aggregate_multi_region_results(monitor: dict, local_result: dict,
                     "region": region,
                     "is_up": r.get("is_up", False),
                     "response_ms": r.get("response_ms"),
+                    "status_code": r.get("status_code"),
+                    "error": r.get("error"),
                 })
                 ms = r.get("response_ms")
                 if ms and ms > 0:
@@ -231,7 +239,8 @@ def _aggregate_multi_region_results(monitor: dict, local_result: dict,
     merged["result"]["response_ms_by_region"] = response_by_region
     merged["result"]["regions_checked"] = total
     merged["result"]["regions_up"] = up_count
-    
+    merged["result"]["region_results"] = all_results
+
     return merged
 
 
@@ -754,10 +763,15 @@ async def run_checks():
                     failure_error_message=result.get("error_message") or "",
                     regions_checked=regions_checked,
                     regions_up=regions_up,
+                    region_results=result.get("region_results", []),
+                    failure_response_body=(result.get("body") or "")[:2048],
                 )
                 log_incident_event(db, incident["id"], "detected", {
                     "status_code": result["status_code"],
                     "response_ms": result["response_ms"],
+                    "regions_checked": regions_checked,
+                    "regions_up": regions_up,
+                    "region_results": result.get("region_results", []),
                 })
                 if not in_maintenance:
                     down_results = await send_down_alert(monitor, incident)
@@ -777,6 +791,9 @@ async def run_checks():
                 resolved = resolve_incident(db, open_incident["id"])
                 log_incident_event(db, resolved["id"], "resolved", {
                     "duration_seconds": resolved.get("duration_seconds"),
+                    "regions_checked": regions_checked,
+                    "regions_up": regions_up,
+                    "region_results": result.get("region_results", []),
                 })
                 if not in_maintenance:
                     recovery_results = await send_recovery_alert(monitor, resolved)
