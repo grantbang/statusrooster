@@ -186,7 +186,9 @@ async def check_url_with_retry(url: str, timeout: float = 10.0, expected_status_
 
 async def check_json_api(url: str, timeout: float = 10.0, expected_status_code: int | None = None,
                          auth_header: str = "", assertions: list | None = None,
-                         client: httpx.AsyncClient | None = None) -> dict:
+                         client: httpx.AsyncClient | None = None,
+                         http_method: str = "GET",
+                         request_body: str = "", request_content_type: str = "") -> dict:
     """
     Check a JSON API endpoint. Validates:
     - HTTP response status
@@ -211,7 +213,13 @@ async def check_json_api(url: str, timeout: float = 10.0, expected_status_code: 
             client = httpx.AsyncClient()
         try:
             start = time.monotonic()
-            response = await client.get(url, timeout=timeout, follow_redirects=True, headers=headers)
+            method = http_method.upper() if http_method else "GET"
+            kwargs: dict = {"timeout": timeout, "follow_redirects": True, "headers": headers}
+            if method != "GET" and request_body:
+                if request_content_type:
+                    headers["Content-Type"] = request_content_type
+                kwargs["content"] = request_body.encode()
+            response = await client.request(method, url, **kwargs)
             elapsed_ms = round((time.monotonic() - start) * 1000, 2)
 
             # Check status code

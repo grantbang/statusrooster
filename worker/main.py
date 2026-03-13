@@ -166,6 +166,9 @@ async def _check_single(monitor: dict, client: httpx.AsyncClient) -> dict | None
                 auth_header=monitor.get("auth_header", ""),
                 assertions=monitor.get("json_assertions", []),
                 client=client,
+                http_method=monitor.get("http_method", "GET"),
+                request_body=monitor.get("request_body", ""),
+                request_content_type=monitor.get("request_content_type", ""),
             )
             return {
                 "is_up": result.get("is_up", False),

@@ -383,10 +383,14 @@ async def _check_single_monitor_inner(monitor: dict, now: datetime) -> dict | No
         expected_code = monitor.get("expected_status_code")
         auth_header = monitor.get("auth_header", "")
         assertions = monitor.get("json_assertions") or []
+        http_method = monitor.get("http_method", "GET")
+        req_body = monitor.get("request_body", "")
+        req_ct = monitor.get("request_content_type", "")
 
         result = await check_json_api(
             monitor["url"], timeout=timeout_val, expected_status_code=expected_code,
             auth_header=auth_header, assertions=assertions, client=client,
+            http_method=http_method, request_body=req_body, request_content_type=req_ct,
         )
         # Grab SSL info concurrently for HTTPS URLs
         ssl_info = {}
