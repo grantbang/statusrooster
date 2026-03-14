@@ -1643,6 +1643,28 @@ async def settings_page(request: Request):
     db = get_db()
     api_keys = list_api_keys(db, user["id"])
 
+    # Fetch Stripe subscription info for Pro users
+    subscription_info = None
+    if user.get("plan") == "pro" and user.get("stripe_customer_id"):
+        try:
+            import stripe
+            from app.config import settings as app_settings
+            stripe.api_key = app_settings.STRIPE_SECRET_KEY
+            subs = stripe.Subscription.list(
+                customer=user["stripe_customer_id"],
+                status="active",
+                limit=1,
+            )
+            if subs.data:
+                sub = subs.data[0]
+                subscription_info = {
+                    "status": sub.status,
+                    "current_period_end": sub.current_period_end,
+                    "cancel_at_period_end": sub.cancel_at_period_end,
+                }
+        except Exception:
+            pass  # Graceful fallback — page still renders
+
     # Check for flash
     flash_message = request.cookies.get("flash_message")
     flash_type = request.cookies.get("flash_type", "success")
@@ -1652,6 +1674,7 @@ async def settings_page(request: Request):
         "request": request,
         "user": user,
         "api_keys": api_keys,
+        "subscription_info": subscription_info,
         "flash_message": flash_message,
         "flash_type": flash_type,
         "new_api_key": new_api_key,
