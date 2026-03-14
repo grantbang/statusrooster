@@ -433,6 +433,8 @@ code {
 }
 .btn:hover { text-decoration: none; }
 .btn:active { transform: scale(0.97); }
+.btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.btn-secondary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .btn-primary {
     background: var(--brand);
     color: #fff;
@@ -1416,6 +1418,7 @@ code {
     color: var(--text);
     border-color: var(--border);
 }
+.row-menu-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .row-menu {
     display: none;
     position: absolute;
@@ -1819,6 +1822,7 @@ code {
     color: var(--brand);
     background: rgba(99, 102, 241, 0.04);
 }
+.d-filter-pill:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .d-filter-pill.active {
     background: var(--brand);
     color: #fff;
@@ -6777,4 +6781,20 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
     .inc-grid .monitor-type-col { display: none; }
     .md-header { flex-direction: column; }
     .md-header-actions { flex-wrap: wrap; }
+}
+
+/* 4.3 — Mobile responsive: small screens (375px–480px) */
+@media (max-width: 480px) {
+    .md-header-actions { gap: 0.35rem; }
+    .md-header-actions .btn { font-size: 0.75rem; padding: 0.45rem 0.75rem; }
+    .md-top-cards { gap: 0.5rem; }
+    .md-region-name { min-width: 60px; }
+    .md-region-ms { min-width: 45px; }
+    .toolbar-right { flex-wrap: wrap; gap: 0.35rem; }
+    .toolbar-dropdown { font-size: 0.78rem; padding: 0.4rem 0.6rem; }
+}
+@media (max-width: 375px) {
+    .md-header-actions .btn { flex: 1 1 calc(50% - 0.25rem); text-align: center; }
+    .md-section-header h2 { font-size: 0.85rem; }
+    .d-filter-pill { font-size: 0.68rem; padding: 0.2rem 0.45rem; }
 }

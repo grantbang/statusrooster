@@ -42,19 +42,15 @@ These sprints focus on UX polish, feature enrichment, and QA before public launc
 - [x] 2.2 Per-region response time overlay (toggle button, color-coded lines per region)
 - [x] 2.2b Checks API returns `response_ms_by_region` for chart data
 
-### Sprint 3: Incident Enrichment — NOT STARTED
-- [ ] 3.1 Failed check count on incident detail page
-  - Backend: query checks where `is_up == False` during incident window
-  - Template: add "Failed Checks" row to details grid
-- [ ] 3.2 Failed regions on incident detail page
-  - Backend: store `regions_checked`/`regions_up` on incident creation
-  - Template: show "2/4 regions UP" in details grid
+### Sprint 3: Incident Enrichment — DONE
+- [x] 3.1 Failed check count on incident detail page
+- [x] 3.2 Failed regions on incident detail page ("X/Y regions UP")
 
-### Sprint 4: UX Audit — NOT STARTED
-- [ ] 4.1 Loading states (chart spinner during range switch, bulk action disable)
-- [ ] 4.2 Empty states (chart with no checks, hide region section when no data)
-- [ ] 4.3 Mobile responsiveness (test at 375px, 768px, 1024px, 1440px)
-- [ ] 4.4 Accessibility (aria-labels on dots, role/tabindex on clickable elements, chart labels)
+### Sprint 4: UX Audit — DONE
+- [x] 4.1 Loading states (chart spinner, bulk action button disable during request)
+- [x] 4.2 Empty states (chart empty overlay, region section hidden when no data)
+- [x] 4.3 Mobile responsiveness (375px/480px/768px breakpoints, action button wrapping, toolbar wrapping)
+- [x] 4.4 Accessibility (focus-visible on all buttons/pills/menus, aria-labels on search/status dots, keyboard nav on monitor cards, aria-hidden on decorative SVGs)
 
 ### Sprint 5: Manual QA Plan — NOT STARTED
 Full manual QA checklist covering:

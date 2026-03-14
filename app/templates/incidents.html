@@ -53,7 +53,7 @@
 <!-- Toolbar: Search, Filter, Sort — mirrors dashboard exactly -->
 <div class="table-toolbar">
     <div class="toolbar-left">
-        <input type="text" id="incSearch" class="toolbar-search" placeholder="Search by name or URL" oninput="filterIncidentRows()">
+        <input type="text" id="incSearch" class="toolbar-search" placeholder="Search by name or URL" aria-label="Search incidents" oninput="filterIncidentRows()">
         <div class="toolbar-dropdown">
             <button class="btn btn-secondary btn-sm" onclick="toggleDropdown('filterDropdown')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>

@@ -19,7 +19,7 @@
             {% endif %}
         </div>
         <div class="md-title-row">
-            <span class="status-dot-lg {% if monitor.get('paused') %}dot-paused{% elif monitor.status == 'up' %}dot-up{% elif monitor.status == 'down' %}dot-down{% else %}dot-pending{% endif %}"></span>
+            <span class="status-dot-lg {% if monitor.get('paused') %}dot-paused{% elif monitor.status == 'up' %}dot-up{% elif monitor.status == 'down' %}dot-down{% else %}dot-pending{% endif %}" aria-label="Status: {% if monitor.get('paused') %}Paused{% elif monitor.status == 'up' %}Up{% elif monitor.status == 'down' %}Down{% else %}Pending{% endif %}"></span>
             <h1 class="md-name">{{ monitor.name }}</h1>
         </div>
         <div class="md-subtitle">
