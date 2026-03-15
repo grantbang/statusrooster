@@ -1,4 +1,6 @@
-{% extends "base.html" %}
+{% extends "dashboard_base.html" if user else "base.html" %}
+
+{% block nav_api %}active{% endblock %}
 
 {% block title %}API Documentation{% endblock %}
 {% block description %}StatusRooster REST API docs — create monitors, pull check data, manage incidents, and automate your uptime workflow.{% endblock %}

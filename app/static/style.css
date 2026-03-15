@@ -7451,13 +7451,22 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
     .apg-code-tab { font-size: 0.68rem; padding: 0.3rem 0.5rem; }
 
     /* ── Landing page ── */
+    .l-hero { padding: 1.5rem 0 0.75rem; }
     .l-hero h1 { font-size: 1.6rem; }
     .l-hero-sub { font-size: 0.9rem; }
     .l-hero-features { gap: 0.1rem 0.75rem; }
     .l-hero-features span { font-size: 0.75rem; }
     .l-hero-kicker { font-size: 0.85rem; }
-    .l-hero-actions .btn-lg { padding: 0.7rem 1.5rem; font-size: 0.9rem; }
+    .l-btn-primary, .l-btn-ghost { padding: 0.7rem 1.5rem; font-size: 0.9rem; }
     .l-pricing-grid { grid-template-columns: 1fr; }
+    .l-vs-card { padding: 0.75rem 1rem; }
+    .l-versus h2 { font-size: 1.25rem; }
+    .l-howto-steps { gap: 1rem; }
+    .l-howto-connector { display: none; }
+    .l-types-grid { grid-template-columns: 1fr; }
+    .l-feature-grid { grid-template-columns: 1fr; }
+    .l-code pre { font-size: 0.72rem; }
+    .l-bottom-cta h2 { font-size: 1.25rem; }
 
     /* ── Pricing page ── */
     .price-card { padding: 1.5rem 1rem; }
@@ -7527,11 +7536,12 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
     .apg-kw-input { font-size: 0.72rem; }
 
     /* ── Landing page ── */
+    .l-hero { padding: 1rem 0 0.5rem; }
     .l-hero h1 { font-size: 1.35rem; }
     .l-hero-sub { font-size: 0.82rem; }
     .l-hero-features span { font-size: 0.7rem; }
     .l-hero-actions { flex-direction: column; gap: 0.5rem; }
-    .l-hero-actions .btn-lg { width: 100%; text-align: center; }
+    .l-btn-primary, .l-btn-ghost { width: 100%; text-align: center; box-sizing: border-box; }
 
     /* ── Pricing ── */
     .price-card { padding: 1.25rem 0.75rem; }
