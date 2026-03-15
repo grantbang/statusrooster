@@ -1,6 +1,6 @@
 # StatusRooster — Project Status Tracker
 
-**Last updated:** 2026-03-13
+**Last updated:** 2026-03-14
 
 ---
 
@@ -52,7 +52,29 @@ These sprints focus on UX polish, feature enrichment, and QA before public launc
 - [x] 4.3 Mobile responsiveness (375px/480px/768px breakpoints, action button wrapping, toolbar wrapping)
 - [x] 4.4 Accessibility (focus-visible on all buttons/pills/menus, aria-labels on search/status dots, keyboard nav on monitor cards, aria-hidden on decorative SVGs)
 
-### Sprint 5: Manual QA Plan — NOT STARTED
+### Sprint 5: Mobile Optimization — DONE
+Deep mobile polish pass across all pages (480px + 375px breakpoints):
+- [x] Landing page (hero, feature checklist, versus cards, pricing cards, URL checker)
+- [x] Dashboard (cards, filters, toolbar, uptime bars, context menu)
+- [x] Monitor detail (action buttons, chart, stats grid, incidents table)
+- [x] Add/Edit monitor forms (inputs, selects, toggle groups)
+- [x] Incidents list + detail (grid, timeline, region table)
+- [x] Settings (plan card, forms, API keys table)
+- [x] Status pages (public-facing)
+- [x] API docs + request builder
+- [x] Pricing page
+
+### Sprint 6: CI/CD Pipeline — NOT STARTED
+GitHub Actions for automated test + deploy:
+- [ ] GitHub Actions workflow (`.github/workflows/deploy.yml`)
+- [ ] On PR: run E2E + functional tests
+- [ ] On push to main: test → build → deploy primary to Cloud Run
+- [ ] Smart worker deploy: only if `checker_core/` or `worker/` changed
+- [ ] GCP Workload Identity Federation (keyless auth from GitHub)
+- [ ] GitHub secrets: `SR_API_KEY`, GCP project config
+- [ ] Slack/email notification on deploy failure (optional)
+
+### Sprint 7: Manual QA Plan — NOT STARTED
 Full manual QA checklist covering:
 - [ ] Auth flows (signup, login, OAuth, logout, redirects)
 - [ ] Dashboard (filters, sort, context menu, bulk actions, uptime bars)
@@ -65,7 +87,7 @@ Full manual QA checklist covering:
 - [ ] API testing (auth, CRUD, plan enforcement, response shape)
 - [ ] Integration testing (multi-region, alerts, SSL, heartbeat, incident lifecycle)
 
-### Sprint 6: Incident Region Corroboration — DONE
+### Sprint 8: Incident Region Corroboration — DONE
 - [x] Checker stores per-region `status_code` and `error` in aggregation
 - [x] Incident model accepts `region_results` and `failure_response_body`
 - [x] Incident detail timeline shows "Confirmed down from X/Y regions"
@@ -73,7 +95,7 @@ Full manual QA checklist covering:
 - [x] Response body preview section (truncated to 2048 bytes)
 - [x] Incident events include region metadata
 
-### Sprint 7: Admin Dashboard — DONE
+### Sprint 9: Admin Dashboard — DONE
 - [x] GCP cost tracking via BigQuery billing export (real data only, no estimates)
 - [x] Manual cost CRUD (add/delete non-trackable expenses)
 - [x] Revenue tab with MRR/ARPU/ARR KPIs
