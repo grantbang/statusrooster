@@ -120,6 +120,7 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow-x: hidden;
 }
 
 a { color: var(--brand); text-decoration: none; }
@@ -7450,23 +7451,36 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
     .apg-code { font-size: 0.72rem; padding: 0.75rem; }
     .apg-code-tab { font-size: 0.68rem; padding: 0.3rem 0.5rem; }
 
+    /* ── Container ── */
+    .container { padding: 1rem; }
+
     /* ── Landing page ── */
     .l-hero { padding: 1.5rem 0 0.75rem; }
-    .l-hero h1 { font-size: 1.6rem; }
+    .l-hero h1 { font-size: 1.5rem; line-height: 1.2; }
     .l-hero-sub { font-size: 0.9rem; }
     .l-hero-features { gap: 0.1rem 0.75rem; }
     .l-hero-features span { font-size: 0.75rem; }
     .l-hero-kicker { font-size: 0.85rem; }
-    .l-btn-primary, .l-btn-ghost { padding: 0.7rem 1.5rem; font-size: 0.9rem; }
+    .l-hero-actions { flex-wrap: wrap; gap: 0.5rem; }
+    .l-btn-primary, .l-btn-ghost { padding: 0.65rem 1.25rem; font-size: 0.88rem; flex: 1 1 auto; text-align: center; }
     .l-pricing-grid { grid-template-columns: 1fr; }
     .l-vs-card { padding: 0.75rem 1rem; }
+    .l-versus { margin: 2rem auto; padding: 0 0.5rem; }
     .l-versus h2 { font-size: 1.25rem; }
     .l-howto-steps { gap: 1rem; }
     .l-howto-connector { display: none; }
     .l-types-grid { grid-template-columns: 1fr; }
     .l-feature-grid { grid-template-columns: 1fr; }
-    .l-code pre { font-size: 0.72rem; }
+    .l-features { padding: 1.5rem 0 1rem; }
+    .l-feature { padding: 1.5rem 0; }
+    .l-feature h2 { font-size: 1.25rem; }
+    .l-code pre { font-size: 0.72rem; overflow-x: auto; word-break: break-all; }
+    .l-bottom-cta { padding: 2rem 1rem; }
     .l-bottom-cta h2 { font-size: 1.25rem; }
+    .l-checker-wrap { margin: 1.5rem auto; }
+    .l-screenshots { padding: 1.5rem 0; }
+    .l-ss-tabs { gap: 0.25rem; }
+    .l-ss-tab { font-size: 0.78rem; padding: 0.4rem 0.6rem; }
 
     /* ── Pricing page ── */
     .price-card { padding: 1.5rem 1rem; }
@@ -7535,13 +7549,18 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
     .apg-kw-match { font-size: 0.72rem; }
     .apg-kw-input { font-size: 0.72rem; }
 
+    /* ── Container ── */
+    .container { padding: 0.75rem; }
+
     /* ── Landing page ── */
-    .l-hero { padding: 1rem 0 0.5rem; }
-    .l-hero h1 { font-size: 1.35rem; }
-    .l-hero-sub { font-size: 0.82rem; }
+    .l-hero { padding: 0.75rem 0 0.5rem; }
+    .l-hero h1 { font-size: 1.3rem; }
+    .l-hero-sub { font-size: 0.8rem; }
     .l-hero-features span { font-size: 0.7rem; }
     .l-hero-actions { flex-direction: column; gap: 0.5rem; }
     .l-btn-primary, .l-btn-ghost { width: 100%; text-align: center; box-sizing: border-box; }
+    .l-versus { padding: 0 0.25rem; }
+    .l-checker-wrap h2 { font-size: 1rem; }
 
     /* ── Pricing ── */
     .price-card { padding: 1.25rem 0.75rem; }
