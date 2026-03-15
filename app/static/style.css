@@ -7365,3 +7365,170 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
     .md-section-header h2 { font-size: 0.85rem; }
     .d-filter-pill { font-size: 0.68rem; padding: 0.2rem 0.45rem; }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE: 480px — small phones
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+
+    /* ── App layout ── */
+    .app-content { padding: 0.5rem; }
+    .app-sidebar { padding: 0.35rem 0.5rem; }
+    .app-sidebar-nav { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .app-sidebar-link { font-size: 0.72rem; padding: 0.35rem 0.5rem; }
+
+    /* ── Dashboard ── */
+    .dash-header h1 { font-size: 1.1rem; }
+    .monitor-card.d-two-tier { padding: 0.5rem 0.6rem; }
+    .d-row-primary .monitor-name { font-size: 0.82rem; }
+    .d-row-primary .uptime-value { font-size: 0.75rem; min-width: 48px; }
+    .d-row-secondary { padding-left: 32px; font-size: 0.7rem; }
+    .strip-stat { font-size: 0.7rem; }
+    .strip-stat-val { font-size: 1rem; }
+    .d-agg-stats { gap: 0.5rem; }
+    .d-agg-stat { font-size: 0.68rem; padding: 0.4rem 0.5rem; }
+
+    /* ── Monitor detail ── */
+    .md-card { padding: 0.75rem; }
+    .md-card-value { font-size: 1.25rem; }
+    .md-uptime-pct { font-size: 2rem; }
+    .md-section { padding: 0.75rem; }
+    .md-config-grid { grid-template-columns: 1fr; }
+    .md-uptime-bars { height: 26px; }
+    .md-inc-header,
+    .md-inc-row-link { grid-template-columns: 70px 1fr 70px 20px; }
+
+    /* ── Monitor forms ── */
+    .mf-heading { font-size: 1.2rem; margin-bottom: 1.25rem; }
+    .mf-section { padding: 1rem 0.85rem; border-radius: 10px; }
+    .mf-footer { padding: 0.6rem 0.75rem; }
+    .mf-submit { padding: 0.6rem 1.25rem; font-size: 0.85rem; }
+    .mf-field-group label { font-size: 0.82rem; }
+    .mf-info-box { padding: 0.75rem; font-size: 0.8rem; }
+
+    /* ── Settings ── */
+    .settings-section { padding: 1rem 0.75rem; }
+    .settings-header h1 { font-size: 1.25rem; }
+    .sub-plan-card { padding: 0.75rem 1rem; }
+    .sub-plan-row { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .sub-plan-features span { font-size: 0.72rem; padding: 0.2rem 0.5rem; }
+    .sub-guarantee { padding: 0.6rem 0.75rem; font-size: 0.78rem; }
+
+    /* ── Incidents ── */
+    .inc-detail-hero { padding: 0.75rem 1rem; }
+    .inc-hero-monitor { font-size: 1rem; }
+    .inc-detail-grid { grid-template-columns: 1fr; }
+    .inc-badge { font-size: 0.62rem; padding: 0.1rem 0.4rem; }
+    .inc-timeline-event { padding-left: 1.5rem; }
+
+    /* ── API docs ── */
+    .api-docs-header h1 { font-size: 1.25rem; }
+    .api-section { padding: 0.75rem; }
+    .api-type-section { padding: 0.75rem; }
+    .api-cta-bar { flex-wrap: wrap; padding: 0.75rem; gap: 0.5rem; }
+    .param-table { font-size: 0.75rem; }
+    .param-table td, .param-table th { padding: 0.3rem 0.25rem; }
+    .endpoint-header { gap: 0.5rem; padding: 0.6rem 0.75rem; font-size: 0.82rem; }
+    .endpoint-path { font-size: 0.78rem; }
+    .method-badge { font-size: 0.65rem; padding: 0.15rem 0.4rem; }
+    .response-shape { font-size: 0.72rem; padding: 0.6rem; }
+    .code-panel { font-size: 0.72rem; }
+    .field-ref-table { font-size: 0.72rem; }
+    .field-ref-table td, .field-ref-table th { padding: 0.25rem 0.2rem; }
+
+    /* ── API playground ── */
+    .apg { padding: 1rem; }
+    .apg-code { font-size: 0.72rem; padding: 0.75rem; }
+    .apg-code-tab { font-size: 0.68rem; padding: 0.3rem 0.5rem; }
+
+    /* ── Landing page ── */
+    .l-hero h1 { font-size: 1.6rem; }
+    .l-hero-sub { font-size: 0.9rem; }
+    .l-hero-features { gap: 0.1rem 0.75rem; }
+    .l-hero-features span { font-size: 0.75rem; }
+    .l-hero-kicker { font-size: 0.85rem; }
+    .l-hero-actions .btn-lg { padding: 0.7rem 1.5rem; font-size: 0.9rem; }
+    .l-pricing-grid { grid-template-columns: 1fr; }
+
+    /* ── Pricing page ── */
+    .price-card { padding: 1.5rem 1rem; }
+    .price-amount { font-size: 2.25rem; }
+    .pricing-grid { grid-template-columns: 1fr !important; }
+    .features { grid-template-columns: 1fr !important; }
+
+    /* ── Status pages ── */
+    .uptime-section { padding: 1rem; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE: 375px — iPhone SE / smallest phones
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 375px) {
+
+    /* ── App layout ── */
+    .app-content { padding: 0.35rem; }
+    .app-sidebar-link { font-size: 0.68rem; padding: 0.3rem 0.4rem; }
+
+    /* ── Dashboard ── */
+    .dash-header h1 { font-size: 1rem; }
+    .monitor-card.d-two-tier { padding: 0.4rem 0.5rem; }
+    .d-row-primary .monitor-name { font-size: 0.78rem; }
+    .d-row-secondary { padding-left: 28px; font-size: 0.68rem; }
+    .d-agg-stat { font-size: 0.62rem; }
+    .status-strip { padding: 0.5rem; }
+    .strip-stat-val { font-size: 0.9rem; }
+
+    /* ── Monitor detail ── */
+    .md-card { padding: 0.6rem; }
+    .md-uptime-pct { font-size: 1.75rem; }
+    .md-uptime-bars { height: 22px; }
+    .md-section { padding: 0.6rem; }
+    .md-region-row { gap: 0.25rem; }
+    .md-region-name { min-width: 50px; font-size: 0.68rem; }
+    .md-region-ms { min-width: 38px; font-size: 0.72rem; }
+
+    /* ── Monitor forms ── */
+    .mf-section { padding: 0.75rem 0.65rem; }
+    .mf-heading { font-size: 1.05rem; }
+    .mf-submit { width: 100%; }
+
+    /* ── Settings ── */
+    .settings-section { padding: 0.75rem 0.6rem; }
+    .sub-plan-card { padding: 0.6rem 0.75rem; }
+    .sub-plan-features span { font-size: 0.68rem; }
+
+    /* ── Incidents ── */
+    .inc-detail-hero { padding: 0.6rem 0.75rem; }
+    .inc-hero-monitor { font-size: 0.9rem; }
+
+    /* ── API docs ── */
+    .api-type-section { padding: 0.5rem; }
+    .api-section { padding: 0.5rem; }
+    .param-table { font-size: 0.7rem; }
+    .method-badge { font-size: 0.6rem; }
+    .endpoint-header { font-size: 0.78rem; padding: 0.5rem 0.6rem; }
+
+    /* ── API playground ── */
+    .apg { padding: 0.75rem; }
+    .apg-tab { font-size: 0.68rem; padding: 0.4rem 0.35rem; }
+    .apg-copy { font-size: 0.68rem; }
+    .apg-kw-match { font-size: 0.72rem; }
+    .apg-kw-input { font-size: 0.72rem; }
+
+    /* ── Landing page ── */
+    .l-hero h1 { font-size: 1.35rem; }
+    .l-hero-sub { font-size: 0.82rem; }
+    .l-hero-features span { font-size: 0.7rem; }
+    .l-hero-actions { flex-direction: column; gap: 0.5rem; }
+    .l-hero-actions .btn-lg { width: 100%; text-align: center; }
+
+    /* ── Pricing ── */
+    .price-card { padding: 1.25rem 0.75rem; }
+    .price-amount { font-size: 2rem; }
+    .feature-card { padding: 1rem; }
+
+    /* ── Status pages ── */
+    .uptime-section { padding: 0.75rem; }
+}
