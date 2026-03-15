@@ -4222,6 +4222,360 @@ code {
 }
 
 /* ============================================================
+   API REQUEST BUILDER (apg- prefix)
+   Interactive code builder on the API docs page.
+   ============================================================ */
+.apg {
+    background: #fafbfc;
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+}
+.apg-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem;
+}
+.apg-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin: 0 0 1rem;
+}
+.apg-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1.25rem;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    width: fit-content;
+}
+.apg-tab {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    border: none;
+    background: var(--bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.apg-tab:not(:last-child) { border-right: 1px solid var(--border); }
+.apg-tab.active { background: var(--brand); color: #fff; }
+.apg-tab:hover:not(.active) { background: #f0f1f3; }
+
+/* Form grid */
+.apg-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+.apg-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.apg-field.apg-full { grid-column: 1 / -1; }
+.apg-field label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.apg-req { color: var(--danger); }
+.apg-field input[type="text"],
+.apg-field input[type="number"],
+.apg-field select,
+.apg-field textarea {
+    padding: 0.5rem 0.625rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text);
+    transition: border-color 0.15s;
+}
+.apg-field input:focus,
+.apg-field select:focus,
+.apg-field textarea:focus {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+.apg-field textarea { resize: vertical; min-height: 52px; }
+
+/* Toggle switch */
+.apg-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    padding: 0.4rem 0;
+    user-select: none;
+}
+.apg-toggle input[type="checkbox"] {
+    width: 36px;
+    height: 20px;
+    appearance: none;
+    -webkit-appearance: none;
+    background: #d1d5db;
+    border-radius: 10px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+.apg-toggle input[type="checkbox"]::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+.apg-toggle input[type="checkbox"]:checked { background: var(--brand); }
+.apg-toggle input[type="checkbox"]:checked::after { transform: translateX(16px); }
+
+/* Collapsible groups */
+.apg-group { margin-top: 0.75rem; }
+.apg-group summary {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--brand);
+    cursor: pointer;
+    padding: 0.5rem 0;
+    user-select: none;
+}
+.apg-group summary:hover { text-decoration: underline; }
+.apg-group[open] summary { margin-bottom: 0.5rem; }
+
+/* Assertion builder */
+.apg-assertion-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 0.5rem;
+    align-items: end;
+    margin-bottom: 0.5rem;
+}
+.apg-assertion-row input,
+.apg-assertion-row select {
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    font-family: inherit;
+}
+.apg-assertion-row input:focus,
+.apg-assertion-row select:focus {
+    outline: none;
+    border-color: var(--brand);
+}
+.apg-add-btn {
+    font-size: 0.8125rem;
+    color: var(--brand);
+    background: none;
+    border: 1px dashed var(--brand);
+    border-radius: 6px;
+    padding: 0.375rem 0.75rem;
+    cursor: pointer;
+    margin-top: 0.25rem;
+}
+.apg-add-btn:hover { background: rgba(99, 102, 241, 0.05); }
+.apg-remove-btn {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 1.25rem;
+    padding: 0.375rem 0.5rem;
+    line-height: 1;
+    border-radius: 4px;
+}
+.apg-remove-btn:hover { background: rgba(239, 68, 68, 0.08); }
+
+/* Code output */
+.apg-output {
+    margin-top: 1.25rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+}
+.apg-output-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+.apg-code-tabs {
+    display: flex;
+    gap: 0;
+    border-radius: 6px 6px 0 0;
+    overflow: hidden;
+    border: 1px solid #383850;
+    border-bottom: none;
+}
+.apg-code-tab {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: none;
+    background: #2a2a3c;
+    color: #888;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+.apg-code-tab:not(:last-child) { border-right: 1px solid #383850; }
+.apg-code-tab.active { background: #1e1e2e; color: #cdd6f4; }
+.apg-code-tab:hover:not(.active) { color: #bbb; }
+.apg-copy {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.apg-copy:hover { border-color: var(--brand); color: var(--brand); }
+.apg-copy.copied { background: var(--success); border-color: var(--success); color: #fff; }
+.apg-code {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    padding: 1rem;
+    border-radius: 0 6px 6px 6px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre;
+    border: 1px solid #383850;
+    margin: 0;
+    min-height: 80px;
+}
+
+/* Keyword expression builder */
+.apg-kw {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem;
+    background: var(--bg);
+}
+.apg-kw-group {
+    padding: 0.5rem;
+    border: 1px solid #e8e8ec;
+    border-radius: 6px;
+    background: #fafbfc;
+}
+.apg-kw-or {
+    text-align: center;
+    margin: 0.5rem 0;
+    position: relative;
+    line-height: 1;
+}
+.apg-kw-or::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border);
+}
+.apg-kw-or span {
+    position: relative;
+    background: var(--bg);
+    padding: 0 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--brand);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.apg-kw-term {
+    display: flex;
+    gap: 0.375rem;
+    align-items: center;
+}
+.apg-kw-match {
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.8125rem;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text);
+    flex-shrink: 0;
+}
+.apg-kw-input {
+    flex: 1;
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.8125rem;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text);
+    min-width: 0;
+}
+.apg-kw-match:focus, .apg-kw-input:focus {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+.apg-kw-and {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.125rem 0 0.125rem 0.25rem;
+}
+.apg-kw-add-term {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem 0;
+    margin-top: 0.25rem;
+}
+.apg-kw-add-term:hover { color: var(--brand); }
+.apg-kw-add-group { margin-top: 0.5rem; }
+.apg-kw-preview {
+    margin-top: 0.5rem;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    padding: 0.375rem 0.5rem;
+    background: #f0f1f3;
+    border-radius: 4px;
+    min-height: 1.5em;
+    word-break: break-word;
+}
+.apg-kw-preview:empty::before {
+    content: 'No conditions set';
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+@media (max-width: 640px) {
+    .apg-grid { grid-template-columns: 1fr; }
+    .apg-tabs { width: 100%; }
+    .apg-tab { flex: 1; text-align: center; font-size: 0.75rem; padding: 0.5rem 0.5rem; }
+    .apg-assertion-row { grid-template-columns: 1fr; }
+    .apg-output-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .apg-kw-term { flex-wrap: wrap; }
+    .apg-kw-match { width: 100%; }
+}
+
+
+/* ============================================================
    LANDING PAGE — NEW DESIGN (l- prefix)
    Clean, modern, developer-first. Inspired by UptimeRobot.
    ============================================================ */

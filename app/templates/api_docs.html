@@ -38,6 +38,7 @@
     <p class="api-nav-label">Getting Started</p>
     <a class="api-nav-item active" href="#auth" onclick="scrollToSection(event,'auth')">Authentication</a>
     <a class="api-nav-item" href="#client-setup" onclick="scrollToSection(event,'client-setup')">Client Setup</a>
+    <a class="api-nav-item" href="#request-builder" onclick="scrollToSection(event,'request-builder')">Request Builder</a>
 
     <div class="api-nav-divider"></div>
     <p class="api-nav-label">Monitor Types</p>
@@ -186,6 +187,38 @@ headers = {<span class="code-string">"X-API-Key"</span>: API_KEY}</div>
 </div>
 
 
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  REQUEST BUILDER                                                -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="api-type-section" id="request-builder">
+    <div class="apg">
+        <h2 class="apg-title">Request Builder</h2>
+        <p class="apg-subtitle">Select a monitor type, fill in fields, and get ready-to-use code.</p>
+
+        <div class="apg-tabs" id="apg-tabs">
+            <button class="apg-tab active" onclick="apgSetType('http')">HTTP</button>
+            <button class="apg-tab" onclick="apgSetType('json_api')">JSON / API</button>
+            <button class="apg-tab" onclick="apgSetType('heartbeat')">Heartbeat</button>
+            <button class="apg-tab" onclick="apgSetType('ssl')">SSL</button>
+        </div>
+
+        <div id="apg-fields"></div>
+
+        <div class="apg-output">
+            <div class="apg-output-header">
+                <div class="apg-code-tabs" id="apg-code-tabs">
+                    <button class="apg-code-tab active" onclick="apgSetLang('curl')">curl</button>
+                    <button class="apg-code-tab" onclick="apgSetLang('python')">Python</button>
+                    <button class="apg-code-tab" onclick="apgSetLang('js')">JavaScript</button>
+                </div>
+                <button class="apg-copy" onclick="apgCopy()">Copy</button>
+            </div>
+            <pre class="apg-code" id="apg-code"></pre>
+        </div>
+    </div>
+</div>
+
+
 <!-- ─── MONITOR TYPES ────────────────────────────────────────────── -->
 <h2 class="api-group-header">Monitor Types</h2>
 
@@ -219,29 +252,29 @@ headers = {<span class="code-string">"X-API-Key"</span>: API_KEY}</div>
                 <table class="param-table">
                     <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
                     <tbody>
-                        <tr><td><span class="param-name">name</span></td><td>string</td><td><span class="param-required">required</span></td><td>Display name for the monitor</td></tr>
-                        <tr><td><span class="param-name">url</span></td><td>string</td><td><span class="param-required">required</span></td><td>Full URL including protocol (<code>https://example.com</code>)</td></tr>
-                        <tr><td><span class="param-name">monitor_type</span></td><td>string</td><td>optional</td><td><code>"http"</code> — this is the default, can be omitted</td></tr>
-                        <tr><td><span class="param-name">expected_status_code</span></td><td>integer</td><td>optional</td><td>Expected HTTP status code (default: <code>200</code>)</td></tr>
-                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>optional</td><td>Request timeout in seconds, 1–60 (default: <code>10</code>)</td></tr>
-                        <tr><td><span class="param-name">http_method</span></td><td>string</td><td>optional</td><td>HTTP method: <code>GET</code>, <code>POST</code>, <code>HEAD</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code>, <code>OPTIONS</code> (default: <code>GET</code>)</td></tr>
-                        <tr><td><span class="param-name">follow_redirects</span></td><td>boolean</td><td>optional</td><td>Follow HTTP 3xx redirects (default: <code>true</code>). Set to <code>false</code> to check the redirect itself.</td></tr>
-                        <tr><td><span class="param-name">basic_auth_user</span></td><td>string</td><td>optional</td><td>HTTP Basic Auth username. Sent as <code>Authorization: Basic</code> header.</td></tr>
-                        <tr><td><span class="param-name">basic_auth_pass</span></td><td>string</td><td>optional</td><td>HTTP Basic Auth password. Required if <code>basic_auth_user</code> is set.</td></tr>
-                        <tr><td><span class="param-name">bearer_token</span></td><td>string</td><td>optional</td><td>Bearer token auth. Sent as <code>Authorization: Bearer &lt;token&gt;</code> header. If both Bearer and Basic are set, Bearer takes precedence.</td></tr>
-                        <tr><td><span class="param-name">request_body</span></td><td>string</td><td>optional</td><td>Request body to send (for <code>POST</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code> methods)</td></tr>
-                        <tr><td><span class="param-name">request_content_type</span></td><td>string</td><td>optional</td><td>Content-Type for request body: <code>application/json</code>, <code>text/plain</code>, or <code>application/x-www-form-urlencoded</code></td></tr>
-                        <tr><td><span class="param-name">custom_headers</span></td><td>array</td><td>optional</td><td>Custom request headers. Array of <code>{"key":"X-Custom","value":"val"}</code> objects.</td></tr>
-                        <tr><td><span class="param-name">keyword</span></td><td>string</td><td>optional</td><td>Mark down if missing from body. Prefix with <code>!</code> for "not contains". Supports <code>AND</code> / <code>OR</code>: <code>"Welcome AND !Error"</code></td></tr>
-                        <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>optional</td><td>Response time condition: <code>&gt; 2000</code>, <code>&lt; 200</code>, <code>200-3000</code></td></tr>
-                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>optional</td><td>Seconds between checks. Free: 60–300 (default 60). Pro: 30–300 (default 30).</td></tr>
-                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>optional</td><td>Override email for alerts (defaults to account email)</td></tr>
-                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>optional</td><td>Slack incoming webhook URL</td></tr>
-                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>optional</td><td>POST status changes to this URL</td></tr>
-                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>optional</td><td>Expose on public status page (default: <code>true</code>)</td></tr>
-                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>optional</td><td>Create in paused state (default: <code>false</code>)</td></tr>
-                        <tr><td><span class="param-name">group</span></td><td>string</td><td>optional</td><td>Group tag for organizing monitors on the dashboard (e.g. <code>"Production"</code>)</td></tr>
-                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>optional</td><td>Suppress alerts during windows. <code>[{"day":"monday","start_utc":"02:00","end_utc":"04:00"}]</code></td></tr>
+                        <tr><td><span class="param-name">name</span></td><td>string</td><td><span class="param-required">required</span></td><td>Display name for the monitor. Example: <code>"Production API"</code>, <code>"Blog Homepage"</code></td></tr>
+                        <tr><td><span class="param-name">url</span></td><td>string</td><td><span class="param-required">required</span></td><td>Full URL including protocol. Must be <code>http://</code> or <code>https://</code>. Example: <code>"https://example.com/health"</code>. Private/internal IPs are blocked.</td></tr>
+                        <tr><td><span class="param-name">monitor_type</span></td><td>string</td><td>optional</td><td><code>"http"</code> — this is the default and can be omitted for HTTP monitors</td></tr>
+                        <tr><td><span class="param-name">expected_status_code</span></td><td>integer</td><td>optional</td><td>HTTP status code the checker expects. Default: <code>200</code>. Common values: <code>200</code> (OK), <code>201</code> (Created), <code>204</code> (No Content), <code>301</code> (Redirect), <code>401</code> (to verify auth is enforced)</td></tr>
+                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>optional</td><td>Max seconds to wait for a response. Range: <code>1</code>–<code>60</code>. Default: <code>10</code>. Values above 60 are clamped to 60.</td></tr>
+                        <tr><td><span class="param-name">http_method</span></td><td>string</td><td>optional</td><td>The HTTP method the checker uses to hit your URL. Values: <code>GET</code>, <code>POST</code>, <code>HEAD</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code>, <code>OPTIONS</code>. Default: <code>GET</code>. Use <code>HEAD</code> for fast up/down checks without downloading the body.</td></tr>
+                        <tr><td><span class="param-name">follow_redirects</span></td><td>boolean</td><td>optional</td><td>Follow HTTP 3xx redirects. Default: <code>true</code>. Set to <code>false</code> to verify a redirect itself returns the expected 301/302 status.</td></tr>
+                        <tr><td><span class="param-name">basic_auth_user</span></td><td>string</td><td>optional</td><td>HTTP Basic Auth username. Sent as <code>Authorization: Basic base64(user:pass)</code> header.</td></tr>
+                        <tr><td><span class="param-name">basic_auth_pass</span></td><td>string</td><td>optional</td><td>HTTP Basic Auth password. Required if <code>basic_auth_user</code> is set. Ignored without <code>basic_auth_user</code>.</td></tr>
+                        <tr><td><span class="param-name">bearer_token</span></td><td>string</td><td>optional</td><td>Bearer token. Sent as <code>Authorization: Bearer &lt;token&gt;</code>. Example: <code>"tok_live_abc123"</code>. If both Bearer and Basic are set, Bearer takes precedence.</td></tr>
+                        <tr><td><span class="param-name">request_body</span></td><td>string</td><td>optional</td><td>Request body to send. Only used with <code>POST</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code> methods. Example: <code>"{\"ping\": true}"</code>. Ignored for <code>GET</code>/<code>HEAD</code>.</td></tr>
+                        <tr><td><span class="param-name">request_content_type</span></td><td>string</td><td>optional</td><td>Content-Type header for the request body. Values: <code>"application/json"</code>, <code>"text/plain"</code>, <code>"application/x-www-form-urlencoded"</code>. Only relevant when <code>request_body</code> is set.</td></tr>
+                        <tr><td><span class="param-name">custom_headers</span></td><td>array</td><td>optional</td><td>Custom request headers sent with each check. Array of objects: <code>[{"key": "X-Custom-Header", "value": "my-value"}, {"key": "Accept", "value": "text/html"}]</code></td></tr>
+                        <tr><td><span class="param-name">keyword</span></td><td>string</td><td>optional</td><td>Mark down if keyword is missing from response body. Prefix with <code>!</code> for "must NOT contain". Combine with <code>AND</code> / <code>OR</code>. Examples: <code>"Welcome"</code>, <code>"!maintenance"</code>, <code>"OK AND !error"</code>, <code>"healthy OR ready"</code></td></tr>
+                        <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>optional</td><td>Mark down if response time violates this condition. Formats: <code>"&gt; 2000"</code> (slower than 2s), <code>"&lt; 50"</code> (suspiciously fast), <code>"200-3000"</code> (outside range). Value is in milliseconds.</td></tr>
+                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>optional</td><td>Seconds between checks. Free plan: <code>60</code>–<code>300</code> (default <code>60</code>). Pro plan: <code>30</code>–<code>300</code> (default <code>30</code>). Common values: <code>60</code> (1 min), <code>120</code> (2 min), <code>300</code> (5 min).</td></tr>
+                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>optional</td><td>Override alert email. Defaults to your account email. Example: <code>"ops@example.com"</code></td></tr>
+                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>optional</td><td>Slack incoming webhook URL for alerts. Example: <code>"https://hooks.slack.com/services/T00/B00/xxxx"</code></td></tr>
+                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>optional</td><td>URL to receive POST requests on status changes (up → down, down → up). Payload includes monitor ID, status, and timestamp.</td></tr>
+                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>optional</td><td>Include on your public status page at <code>/s/{slug}</code>. Default: <code>true</code>. Set to <code>false</code> for internal monitors.</td></tr>
+                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>optional</td><td>Create in paused state — no checks run until resumed. Default: <code>false</code></td></tr>
+                        <tr><td><span class="param-name">group</span></td><td>string</td><td>optional</td><td>Group tag for organizing monitors on the dashboard. Free-form text. Examples: <code>"Production"</code>, <code>"Staging"</code>, <code>"Payment Services"</code></td></tr>
+                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>optional</td><td>Suppress alerts during scheduled windows. Array of objects with <code>day</code> (<code>"monday"</code>–<code>"sunday"</code> or <code>"daily"</code>), <code>start_utc</code>, and <code>end_utc</code> in <code>"HH:MM"</code> format. Example: <code>[{"day": "daily", "start_utc": "02:00", "end_utc": "04:00"}]</code></td></tr>
                     </tbody>
                 </table>
 
@@ -327,7 +360,7 @@ console.log(<span class="code-string">`Created ${data.id}`</span>);</div>
     "paused": false,
     "group": "",
     "slug": "my-website-a3f8c1",
-    "created_at": "2026-03-03T12:00:00"
+    "created_at": "2026-03-03T12:00:00+00:00"
   },
   "error": null
 }</div>
@@ -350,29 +383,29 @@ console.log(<span class="code-string">`Created ${data.id}`</span>);</div>
                 <table class="param-table">
                     <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
                     <tbody>
-                        <tr><td><span class="param-name">name</span></td><td>string</td><td>Display name</td></tr>
-                        <tr><td><span class="param-name">url</span></td><td>string</td><td>Monitored URL</td></tr>
-                        <tr><td><span class="param-name">expected_status_code</span></td><td>integer</td><td>Expected HTTP status code</td></tr>
-                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>Timeout in seconds (1–60)</td></tr>
-                        <tr><td><span class="param-name">http_method</span></td><td>string</td><td>HTTP method: <code>GET</code>, <code>POST</code>, <code>HEAD</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code>, <code>OPTIONS</code></td></tr>
-                        <tr><td><span class="param-name">follow_redirects</span></td><td>boolean</td><td>Follow HTTP 3xx redirects</td></tr>
-                        <tr><td><span class="param-name">basic_auth_user</span></td><td>string</td><td>HTTP Basic Auth username</td></tr>
-                        <tr><td><span class="param-name">basic_auth_pass</span></td><td>string</td><td>HTTP Basic Auth password</td></tr>
-                        <tr><td><span class="param-name">bearer_token</span></td><td>string</td><td>Bearer token auth. Sent as <code>Authorization: Bearer &lt;token&gt;</code> header.</td></tr>
-                        <tr><td><span class="param-name">request_body</span></td><td>string</td><td>Request body for POST/PUT/PATCH/DELETE methods</td></tr>
-                        <tr><td><span class="param-name">request_content_type</span></td><td>string</td><td>Content-Type for request body</td></tr>
-                        <tr><td><span class="param-name">custom_headers</span></td><td>array</td><td>Custom request headers. Array of <code>{"key":"X-Custom","value":"val"}</code></td></tr>
-                        <tr><td><span class="param-name">keyword</span></td><td>string</td><td>Body keyword expression (supports AND/OR, <code>!</code> for not-contains)</td></tr>
-                        <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>Response time condition (e.g. <code>> 2000</code>, <code>200-3000</code>)</td></tr>
-                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>Seconds between checks. Free: 60–300. Pro: 30–300.</td></tr>
-                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>Alert email address</td></tr>
-                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>Slack webhook URL</td></tr>
-                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>Status change webhook URL</td></tr>
-                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Toggle public status page visibility</td></tr>
-                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause or resume monitoring</td></tr>
-                        <tr><td><span class="param-name">group</span></td><td>string</td><td>Group tag for organizing monitors (e.g. <code>"Production"</code>)</td></tr>
-                        <tr><td><span class="param-name">slug</span></td><td>string</td><td>Custom status page URL slug (<code>/s/{slug}</code>). Auto-sanitized to lowercase alphanumeric + hyphens.</td></tr>
-                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows</td></tr>
+                        <tr><td><span class="param-name">name</span></td><td>string</td><td>Display name. Example: <code>"Production API"</code></td></tr>
+                        <tr><td><span class="param-name">url</span></td><td>string</td><td>Monitored URL. Must include protocol (<code>http://</code> or <code>https://</code>). Private IPs are blocked.</td></tr>
+                        <tr><td><span class="param-name">expected_status_code</span></td><td>integer</td><td>Expected HTTP status code. Common values: <code>200</code>, <code>201</code>, <code>204</code>, <code>301</code></td></tr>
+                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>Request timeout in seconds. Range: <code>1</code>–<code>60</code>. Values above 60 are clamped.</td></tr>
+                        <tr><td><span class="param-name">http_method</span></td><td>string</td><td>HTTP method the checker uses to hit your URL. Values: <code>GET</code>, <code>POST</code>, <code>HEAD</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code>, <code>OPTIONS</code></td></tr>
+                        <tr><td><span class="param-name">follow_redirects</span></td><td>boolean</td><td>Follow HTTP 3xx redirects. Set <code>false</code> to verify redirects return the expected 301/302.</td></tr>
+                        <tr><td><span class="param-name">basic_auth_user</span></td><td>string</td><td>HTTP Basic Auth username. Sent as <code>Authorization: Basic base64(user:pass)</code>.</td></tr>
+                        <tr><td><span class="param-name">basic_auth_pass</span></td><td>string</td><td>HTTP Basic Auth password. Set to <code>""</code> to clear. Ignored without <code>basic_auth_user</code>.</td></tr>
+                        <tr><td><span class="param-name">bearer_token</span></td><td>string</td><td>Bearer token. Example: <code>"tok_live_abc123"</code>. Set to <code>""</code> to clear. Takes precedence over Basic Auth.</td></tr>
+                        <tr><td><span class="param-name">request_body</span></td><td>string</td><td>Request body for <code>POST</code>/<code>PUT</code>/<code>PATCH</code>/<code>DELETE</code>. Example: <code>"{\"ping\": true}"</code>. Ignored for <code>GET</code>/<code>HEAD</code>.</td></tr>
+                        <tr><td><span class="param-name">request_content_type</span></td><td>string</td><td>Content-Type for request body. Values: <code>"application/json"</code>, <code>"text/plain"</code>, <code>"application/x-www-form-urlencoded"</code></td></tr>
+                        <tr><td><span class="param-name">custom_headers</span></td><td>array</td><td>Custom headers. Replaces all existing headers. Example: <code>[{"key": "Accept", "value": "text/html"}]</code>. Send <code>[]</code> to clear.</td></tr>
+                        <tr><td><span class="param-name">keyword</span></td><td>string</td><td>Body keyword expression. Examples: <code>"OK"</code>, <code>"!error"</code>, <code>"OK AND !maintenance"</code>. Set to <code>""</code> to clear.</td></tr>
+                        <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>Response time condition in ms. Formats: <code>"&gt; 2000"</code>, <code>"&lt; 50"</code>, <code>"200-3000"</code>. Set to <code>""</code> to clear.</td></tr>
+                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>Seconds between checks. Free: <code>60</code>–<code>300</code>. Pro: <code>30</code>–<code>300</code>. Common: <code>60</code> (1 min), <code>300</code> (5 min).</td></tr>
+                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>Alert email address. Example: <code>"ops@example.com"</code>. Set to <code>""</code> to use account default.</td></tr>
+                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>Slack incoming webhook URL. Example: <code>"https://hooks.slack.com/services/T00/B00/xxxx"</code></td></tr>
+                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>URL to receive POST on status changes. Set to <code>""</code> to disable.</td></tr>
+                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Show on public status page (<code>/s/{slug}</code>). Set <code>false</code> for internal monitors.</td></tr>
+                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause (<code>true</code>) or resume (<code>false</code>) monitoring. Paused monitors run no checks.</td></tr>
+                        <tr><td><span class="param-name">group</span></td><td>string</td><td>Group tag. Examples: <code>"Production"</code>, <code>"Staging"</code>. Set to <code>""</code> to clear.</td></tr>
+                        <tr><td><span class="param-name">slug</span></td><td>string</td><td>Custom status page URL slug (<code>/s/{slug}</code>). Auto-sanitized to lowercase alphanumeric + hyphens. Example: <code>"my-api"</code></td></tr>
+                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows. <code>day</code>: <code>"monday"</code>–<code>"sunday"</code> or <code>"daily"</code>. Times in <code>"HH:MM"</code> UTC. Send <code>[]</code> to clear.</td></tr>
                     </tbody>
                 </table>
 
@@ -445,22 +478,22 @@ updated = r.json()[<span class="code-string">"data"</span>]</div>
                 <table class="param-table">
                     <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
                     <tbody>
-                        <tr><td><span class="param-name">name</span></td><td>string</td><td><span class="param-required">required</span></td><td>Display name</td></tr>
-                        <tr><td><span class="param-name">monitor_type</span></td><td>string</td><td><span class="param-required">required</span></td><td><code>"json_api"</code></td></tr>
-                        <tr><td><span class="param-name">url</span></td><td>string</td><td><span class="param-required">required</span></td><td>API endpoint URL</td></tr>
-                        <tr><td><span class="param-name">expected_status_code</span></td><td>integer</td><td>optional</td><td>Expected HTTP status (default: <code>200</code>)</td></tr>
-                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>optional</td><td>Request timeout in seconds, 1–60 (default: <code>10</code>)</td></tr>
-                        <tr><td><span class="param-name">auth_header</span></td><td>string</td><td>optional</td><td>Authorization header value, e.g. <code>"Bearer tok_xxx"</code></td></tr>
-                        <tr><td><span class="param-name">json_assertions</span></td><td>array</td><td>optional</td><td>Array of assertion objects (see schema below)</td></tr>
-                        <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>optional</td><td>Response time condition: <code>&gt; 2000</code>, <code>&lt; 200</code>, <code>200-3000</code></td></tr>
-                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>optional</td><td>Check frequency in seconds. Free: 60–300. Pro: 30–300.</td></tr>
-                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>optional</td><td>Override alert email</td></tr>
-                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>optional</td><td>Slack webhook</td></tr>
-                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>optional</td><td>Status change webhook</td></tr>
-                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>optional</td><td>Expose on status page (default: <code>true</code>)</td></tr>
-                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>optional</td><td>Create paused (default: <code>false</code>)</td></tr>
-                        <tr><td><span class="param-name">group</span></td><td>string</td><td>optional</td><td>Group tag for organizing monitors (e.g. <code>"Production"</code>)</td></tr>
-                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>optional</td><td>Suppress alerts during windows</td></tr>
+                        <tr><td><span class="param-name">name</span></td><td>string</td><td><span class="param-required">required</span></td><td>Display name. Example: <code>"Health API"</code>, <code>"Payments Service"</code></td></tr>
+                        <tr><td><span class="param-name">monitor_type</span></td><td>string</td><td><span class="param-required">required</span></td><td>Must be <code>"json_api"</code></td></tr>
+                        <tr><td><span class="param-name">url</span></td><td>string</td><td><span class="param-required">required</span></td><td>API endpoint URL. Must return JSON. Example: <code>"https://api.example.com/v1/health"</code>. Private IPs are blocked.</td></tr>
+                        <tr><td><span class="param-name">expected_status_code</span></td><td>integer</td><td>optional</td><td>Expected HTTP status code. Default: <code>200</code>. Common values: <code>200</code>, <code>201</code>, <code>204</code></td></tr>
+                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>optional</td><td>Max seconds to wait for a response. Range: <code>1</code>–<code>60</code>. Default: <code>10</code>. Values above 60 are clamped.</td></tr>
+                        <tr><td><span class="param-name">auth_header</span></td><td>string</td><td>optional</td><td>Full <code>Authorization</code> header value. Examples: <code>"Bearer tok_live_xxxx"</code>, <code>"Basic dXNlcjpwYXNz"</code>, <code>"Token my-api-key"</code></td></tr>
+                        <tr><td><span class="param-name">json_assertions</span></td><td>array</td><td>optional</td><td>Array of assertion objects to validate the JSON response (see schema below). All assertions must pass for the check to be "up".</td></tr>
+                        <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>optional</td><td>Response time condition in ms. Formats: <code>"&gt; 2000"</code> (slower than 2s), <code>"&lt; 50"</code>, <code>"200-3000"</code> (outside range)</td></tr>
+                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>optional</td><td>Seconds between checks. Free: <code>60</code>–<code>300</code> (default <code>60</code>). Pro: <code>30</code>–<code>300</code> (default <code>30</code>). Common: <code>60</code> (1 min), <code>300</code> (5 min).</td></tr>
+                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>optional</td><td>Override alert email. Example: <code>"ops@example.com"</code>. Defaults to your account email.</td></tr>
+                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>optional</td><td>Slack incoming webhook URL. Example: <code>"https://hooks.slack.com/services/T00/B00/xxxx"</code></td></tr>
+                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>optional</td><td>URL to receive POST on status changes (up → down, down → up)</td></tr>
+                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>optional</td><td>Include on public status page. Default: <code>true</code>. Set <code>false</code> for internal monitors.</td></tr>
+                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>optional</td><td>Create in paused state — no checks run until resumed. Default: <code>false</code></td></tr>
+                        <tr><td><span class="param-name">group</span></td><td>string</td><td>optional</td><td>Group tag. Examples: <code>"Production"</code>, <code>"Microservices"</code>, <code>"Third-Party"</code></td></tr>
+                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>optional</td><td>Suppress alerts during windows. <code>day</code>: <code>"monday"</code>–<code>"sunday"</code> or <code>"daily"</code>. Example: <code>[{"day": "sunday", "start_utc": "03:00", "end_utc": "05:00"}]</code></td></tr>
                     </tbody>
                 </table>
 
@@ -468,9 +501,9 @@ updated = r.json()[<span class="code-string">"data"</span>]</div>
                 <table class="param-table">
                     <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
                     <tbody>
-                        <tr><td><span class="param-name">path</span></td><td>string</td><td>JSON path with dot notation: <code>"data.users[0].name"</code></td></tr>
-                        <tr><td><span class="param-name">operator</span></td><td>string</td><td><code>"equals"</code> · <code>"not_equals"</code> · <code>"contains"</code> · <code>"not_contains"</code> · <code>"greater_than"</code> · <code>"less_than"</code> · <code>"exists"</code> · <code>"not_exists"</code></td></tr>
-                        <tr><td><span class="param-name">value</span></td><td>string</td><td>Expected value (ignored for <code>exists</code> / <code>not_exists</code>)</td></tr>
+                        <tr><td><span class="param-name">path</span></td><td>string</td><td>JSON path using dot notation. Supports array indices. Examples: <code>"status"</code>, <code>"data.count"</code>, <code>"data.users[0].name"</code>, <code>"meta.pagination.total"</code></td></tr>
+                        <tr><td><span class="param-name">operator</span></td><td>string</td><td>Comparison operator. Values: <code>"equals"</code>, <code>"not_equals"</code>, <code>"contains"</code> (substring match), <code>"not_contains"</code>, <code>"greater_than"</code> (numeric), <code>"less_than"</code> (numeric), <code>"exists"</code> (field is present), <code>"not_exists"</code> (field is absent)</td></tr>
+                        <tr><td><span class="param-name">value</span></td><td>string</td><td>Expected value as a string. Numeric comparisons parse the string: <code>"100"</code>. Ignored for <code>exists</code>/<code>not_exists</code> (pass <code>""</code>). Examples: <code>"ok"</code>, <code>"true"</code>, <code>"42"</code></td></tr>
                     </tbody>
                 </table>
 
@@ -557,10 +590,11 @@ print(f<span class="code-string">"Created {monitor['id']}"</span>)</div>
     "paused": false,
     "group": "",
     "slug": "health-api-d4e5f6",
-    "created_at": "2026-03-04T12:00:00"
+    "created_at": "2026-03-04T12:00:00+00:00"
   },
   "error": null
 }</div>
+                <p class="api-helper-text">Only type-relevant fields shown. The full response includes all fields from the <a href="#list-monitors" onclick="scrollToSection(event,'list-monitors')">complete field reference</a>.</p>
             </div>
         </div>
     </div>
@@ -580,22 +614,22 @@ print(f<span class="code-string">"Created {monitor['id']}"</span>)</div>
                 <table class="param-table">
                     <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
                     <tbody>
-                        <tr><td><span class="param-name">name</span></td><td>string</td><td>Display name</td></tr>
-                        <tr><td><span class="param-name">url</span></td><td>string</td><td>API endpoint URL</td></tr>
-                        <tr><td><span class="param-name">expected_status_code</span></td><td>integer</td><td>Expected HTTP status code</td></tr>
-                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>Timeout in seconds (1–60)</td></tr>
-                        <tr><td><span class="param-name">auth_header</span></td><td>string</td><td>Authorization header value (e.g. <code>Bearer tok_xxx</code>)</td></tr>
-                        <tr><td><span class="param-name">json_assertions</span></td><td>array</td><td>Replaces all assertions — array of <code>{path, operator, value}</code></td></tr>
-                        <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>Response time condition</td></tr>
-                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>Seconds between checks. Free: 60–300. Pro: 30–300.</td></tr>
-                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>Alert email address</td></tr>
-                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>Slack webhook URL</td></tr>
-                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>Status change webhook URL</td></tr>
-                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Toggle public status page visibility</td></tr>
-                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause or resume monitoring</td></tr>
-                        <tr><td><span class="param-name">group</span></td><td>string</td><td>Group tag for organizing monitors</td></tr>
-                        <tr><td><span class="param-name">slug</span></td><td>string</td><td>Custom status page URL slug (<code>/s/{slug}</code>)</td></tr>
-                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows</td></tr>
+                        <tr><td><span class="param-name">name</span></td><td>string</td><td>Display name. Example: <code>"Health API"</code></td></tr>
+                        <tr><td><span class="param-name">url</span></td><td>string</td><td>API endpoint URL. Must return JSON. Private IPs are blocked.</td></tr>
+                        <tr><td><span class="param-name">expected_status_code</span></td><td>integer</td><td>Expected HTTP status code. Common values: <code>200</code>, <code>201</code>, <code>204</code></td></tr>
+                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>Request timeout in seconds. Range: <code>1</code>–<code>60</code>. Values above 60 are clamped.</td></tr>
+                        <tr><td><span class="param-name">auth_header</span></td><td>string</td><td>Full Authorization header value. Examples: <code>"Bearer tok_xxx"</code>, <code>"Token my-key"</code>. Set to <code>""</code> to clear.</td></tr>
+                        <tr><td><span class="param-name">json_assertions</span></td><td>array</td><td>Replaces all assertions. Array of <code>{path, operator, value}</code> objects. Send <code>[]</code> to clear all assertions.</td></tr>
+                        <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>Response time condition in ms. Formats: <code>"&gt; 2000"</code>, <code>"&lt; 50"</code>, <code>"200-3000"</code>. Set to <code>""</code> to clear.</td></tr>
+                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>Seconds between checks. Free: <code>60</code>–<code>300</code>. Pro: <code>30</code>–<code>300</code>. Common: <code>60</code> (1 min), <code>300</code> (5 min).</td></tr>
+                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>Alert email. Example: <code>"ops@example.com"</code>. Set to <code>""</code> to use account default.</td></tr>
+                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>Slack incoming webhook URL. Example: <code>"https://hooks.slack.com/services/T00/B00/xxxx"</code></td></tr>
+                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>URL to receive POST on status changes. Set to <code>""</code> to disable.</td></tr>
+                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Show on public status page. Set <code>false</code> for internal monitors.</td></tr>
+                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause (<code>true</code>) or resume (<code>false</code>) monitoring.</td></tr>
+                        <tr><td><span class="param-name">group</span></td><td>string</td><td>Group tag. Examples: <code>"Production"</code>, <code>"Microservices"</code>. Set to <code>""</code> to clear.</td></tr>
+                        <tr><td><span class="param-name">slug</span></td><td>string</td><td>Custom status page URL slug (<code>/s/{slug}</code>). Auto-sanitized to lowercase + hyphens. Example: <code>"health-api"</code></td></tr>
+                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows. <code>day</code>: <code>"monday"</code>–<code>"sunday"</code> or <code>"daily"</code>. Send <code>[]</code> to clear.</td></tr>
                     </tbody>
                 </table>
 
@@ -678,18 +712,18 @@ updated = r.json()[<span class="code-string">"data"</span>]</div>
                 <table class="param-table">
                     <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
                     <tbody>
-                        <tr><td><span class="param-name">name</span></td><td>string</td><td><span class="param-required">required</span></td><td>Display name (e.g. "Nightly Backup")</td></tr>
-                        <tr><td><span class="param-name">monitor_type</span></td><td>string</td><td><span class="param-required">required</span></td><td><code>"heartbeat"</code></td></tr>
-                        <tr><td><span class="param-name">heartbeat_interval</span></td><td>integer</td><td>optional</td><td>Expected ping frequency in seconds, 60–86400 (default: <code>300</code> = 5 min)</td></tr>
-                        <tr><td><span class="param-name">heartbeat_grace_period</span></td><td>integer</td><td>optional</td><td>Extra seconds before alerting, 0–3600 (default: <code>60</code>)</td></tr>
-                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>optional</td><td>Check frequency in seconds. Free: 60–300. Pro: 30–300.</td></tr>
-                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>optional</td><td>Override alert email</td></tr>
-                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>optional</td><td>Slack webhook</td></tr>
-                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>optional</td><td>Status change webhook</td></tr>
-                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>optional</td><td>Expose on status page (default: <code>true</code>)</td></tr>
-                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>optional</td><td>Create paused (default: <code>false</code>)</td></tr>
-                        <tr><td><span class="param-name">group</span></td><td>string</td><td>optional</td><td>Group tag for organizing monitors (e.g. <code>"Infrastructure"</code>)</td></tr>
-                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>optional</td><td>Suppress alerts during windows</td></tr>
+                        <tr><td><span class="param-name">name</span></td><td>string</td><td><span class="param-required">required</span></td><td>Display name. Examples: <code>"Nightly Backup"</code>, <code>"Invoice Cron"</code>, <code>"Queue Worker"</code></td></tr>
+                        <tr><td><span class="param-name">monitor_type</span></td><td>string</td><td><span class="param-required">required</span></td><td>Must be <code>"heartbeat"</code></td></tr>
+                        <tr><td><span class="param-name">heartbeat_interval</span></td><td>integer</td><td>optional</td><td>How often your job should ping, in seconds. Range: <code>60</code>–<code>86400</code>. Default: <code>300</code>. Common values: <code>300</code> (5 min), <code>900</code> (15 min), <code>3600</code> (1 hr), <code>86400</code> (daily)</td></tr>
+                        <tr><td><span class="param-name">heartbeat_grace_period</span></td><td>integer</td><td>optional</td><td>Extra seconds to wait before marking down. Range: <code>0</code>–<code>3600</code>. Default: <code>60</code>. Use higher values for jobs with variable runtime. Example: <code>300</code> (5 min grace)</td></tr>
+                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>optional</td><td>How often StatusRooster verifies whether a ping was received on time. Free: <code>60</code>–<code>300</code> (default <code>60</code>). Pro: <code>30</code>–<code>300</code> (default <code>30</code>).</td></tr>
+                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>optional</td><td>Override alert email. Example: <code>"ops@example.com"</code>. Defaults to your account email.</td></tr>
+                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>optional</td><td>Slack incoming webhook URL. Example: <code>"https://hooks.slack.com/services/T00/B00/xxxx"</code></td></tr>
+                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>optional</td><td>URL to receive POST on status changes (up → down, down → up)</td></tr>
+                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>optional</td><td>Include on public status page. Default: <code>true</code>. Set <code>false</code> for internal jobs.</td></tr>
+                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>optional</td><td>Create in paused state — pings are accepted but not tracked. Default: <code>false</code></td></tr>
+                        <tr><td><span class="param-name">group</span></td><td>string</td><td>optional</td><td>Group tag. Examples: <code>"Infrastructure"</code>, <code>"Cron Jobs"</code>, <code>"Background Workers"</code></td></tr>
+                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>optional</td><td>Suppress alerts during windows. <code>day</code>: <code>"monday"</code>–<code>"sunday"</code> or <code>"daily"</code>. Example: <code>[{"day": "daily", "start_utc": "03:00", "end_utc": "04:00"}]</code></td></tr>
                     </tbody>
                 </table>
 
@@ -755,10 +789,11 @@ console.log(<span class="code-string">`Ping URL: ${data.ping_url}`</span>);</div
     "paused": false,
     "group": "",
     "slug": "nightly-backup-job-abc789",
-    "created_at": "2026-03-04T12:00:00"
+    "created_at": "2026-03-04T12:00:00+00:00"
   },
   "error": null
 }</div>
+                <p class="api-helper-text">Only type-relevant fields shown. The full response includes all fields from the <a href="#list-monitors" onclick="scrollToSection(event,'list-monitors')">complete field reference</a>.</p>
                 <p class="api-note">💡 Use the <code>ping_url</code> from the response directly in your crontab — it already includes the token.</p>
             </div>
         </div>
@@ -836,18 +871,18 @@ requests.get(<span class="code-string">"{{ app_url }}/api/ping/hb_abc789?token=Y
                 <table class="param-table">
                     <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
                     <tbody>
-                        <tr><td><span class="param-name">name</span></td><td>string</td><td>Display name</td></tr>
-                        <tr><td><span class="param-name">heartbeat_interval</span></td><td>integer</td><td>Expected ping frequency in seconds (60–86400)</td></tr>
-                        <tr><td><span class="param-name">heartbeat_grace_period</span></td><td>integer</td><td>Grace period before alert in seconds (0–3600)</td></tr>
-                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>Seconds between checks. Free: 60–300. Pro: 30–300.</td></tr>
-                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>Alert email address</td></tr>
-                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>Slack webhook URL</td></tr>
-                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>Status change webhook URL</td></tr>
-                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Toggle public status page visibility</td></tr>
-                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause or resume monitoring</td></tr>
-                        <tr><td><span class="param-name">group</span></td><td>string</td><td>Group tag for organizing monitors</td></tr>
-                        <tr><td><span class="param-name">slug</span></td><td>string</td><td>Custom status page URL slug (<code>/s/{slug}</code>)</td></tr>
-                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows</td></tr>
+                        <tr><td><span class="param-name">name</span></td><td>string</td><td>Display name. Example: <code>"Nightly Backup"</code></td></tr>
+                        <tr><td><span class="param-name">heartbeat_interval</span></td><td>integer</td><td>Expected ping frequency in seconds. Range: <code>60</code>–<code>86400</code>. Common: <code>300</code> (5 min), <code>3600</code> (1 hr), <code>86400</code> (daily)</td></tr>
+                        <tr><td><span class="param-name">heartbeat_grace_period</span></td><td>integer</td><td>Extra seconds before alerting. Range: <code>0</code>–<code>3600</code>. Example: <code>300</code> (5 min grace for slow jobs)</td></tr>
+                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>Seconds between status checks. Free: <code>60</code>–<code>300</code>. Pro: <code>30</code>–<code>300</code>.</td></tr>
+                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>Alert email. Example: <code>"ops@example.com"</code>. Set to <code>""</code> to use account default.</td></tr>
+                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>Slack incoming webhook URL. Example: <code>"https://hooks.slack.com/services/T00/B00/xxxx"</code></td></tr>
+                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>URL to receive POST on status changes. Set to <code>""</code> to disable.</td></tr>
+                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Show on public status page. Set <code>false</code> for internal jobs.</td></tr>
+                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause (<code>true</code>) or resume (<code>false</code>). Paused monitors accept pings but don't track them.</td></tr>
+                        <tr><td><span class="param-name">group</span></td><td>string</td><td>Group tag. Examples: <code>"Cron Jobs"</code>, <code>"Infrastructure"</code>. Set to <code>""</code> to clear.</td></tr>
+                        <tr><td><span class="param-name">slug</span></td><td>string</td><td>Custom status page URL slug (<code>/s/{slug}</code>). Auto-sanitized to lowercase + hyphens. Example: <code>"nightly-backup"</code></td></tr>
+                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows. <code>day</code>: <code>"monday"</code>–<code>"sunday"</code> or <code>"daily"</code>. Send <code>[]</code> to clear.</td></tr>
                     </tbody>
                 </table>
 
@@ -919,18 +954,18 @@ updated = r.json()[<span class="code-string">"data"</span>]</div>
                 <table class="param-table">
                     <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
                     <tbody>
-                        <tr><td><span class="param-name">name</span></td><td>string</td><td><span class="param-required">required</span></td><td>Display name (e.g. "example.com SSL")</td></tr>
-                        <tr><td><span class="param-name">monitor_type</span></td><td>string</td><td><span class="param-required">required</span></td><td><code>"ssl"</code></td></tr>
-                        <tr><td><span class="param-name">ssl_domain</span></td><td>string</td><td><span class="param-required">required</span></td><td>Domain to check — bare hostname, no <code>https://</code> (e.g. <code>"example.com"</code>)</td></tr>
-                        <tr><td><span class="param-name">ssl_expiry_threshold_days</span></td><td>integer</td><td>optional</td><td>Days before expiry to trigger <code>warn</code> status, 1–90 (default: <code>30</code>)</td></tr>
-                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>optional</td><td>Check frequency in seconds. Free: 60–300. Pro: 30–300.</td></tr>
-                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>optional</td><td>Override alert email</td></tr>
-                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>optional</td><td>Slack webhook</td></tr>
-                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>optional</td><td>Status change webhook</td></tr>
-                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>optional</td><td>Expose on status page (default: <code>true</code>)</td></tr>
-                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>optional</td><td>Create paused (default: <code>false</code>)</td></tr>
-                        <tr><td><span class="param-name">group</span></td><td>string</td><td>optional</td><td>Group tag for organizing monitors (e.g. <code>"Infrastructure"</code>)</td></tr>
-                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>optional</td><td>Suppress alerts during windows</td></tr>
+                        <tr><td><span class="param-name">name</span></td><td>string</td><td><span class="param-required">required</span></td><td>Display name. Examples: <code>"example.com SSL"</code>, <code>"API Certificate"</code></td></tr>
+                        <tr><td><span class="param-name">monitor_type</span></td><td>string</td><td><span class="param-required">required</span></td><td>Must be <code>"ssl"</code></td></tr>
+                        <tr><td><span class="param-name">ssl_domain</span></td><td>string</td><td><span class="param-required">required</span></td><td>Bare hostname — no protocol, no path. Examples: <code>"example.com"</code>, <code>"api.example.com"</code>. Do NOT include <code>https://</code>.</td></tr>
+                        <tr><td><span class="param-name">ssl_expiry_threshold_days</span></td><td>integer</td><td>optional</td><td>Days before certificate expiry to trigger <code>warn</code> status. Range: <code>1</code>–<code>90</code>. Default: <code>30</code>. Common values: <code>7</code> (tight), <code>14</code> (standard), <code>30</code> (conservative)</td></tr>
+                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>optional</td><td>Seconds between checks. Free: <code>60</code>–<code>300</code> (default <code>60</code>). Pro: <code>30</code>–<code>300</code> (default <code>30</code>). SSL checks are lightweight — <code>300</code> (5 min) is usually sufficient.</td></tr>
+                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>optional</td><td>Override alert email. Example: <code>"security@example.com"</code>. Defaults to your account email.</td></tr>
+                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>optional</td><td>Slack incoming webhook URL. Example: <code>"https://hooks.slack.com/services/T00/B00/xxxx"</code></td></tr>
+                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>optional</td><td>URL to receive POST on status changes (up → warn, warn → down, etc.)</td></tr>
+                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>optional</td><td>Include on public status page. Default: <code>true</code></td></tr>
+                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>optional</td><td>Create in paused state. Default: <code>false</code></td></tr>
+                        <tr><td><span class="param-name">group</span></td><td>string</td><td>optional</td><td>Group tag. Examples: <code>"Infrastructure"</code>, <code>"Certificates"</code></td></tr>
+                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>optional</td><td>Suppress alerts during windows. <code>day</code>: <code>"monday"</code>–<code>"sunday"</code> or <code>"daily"</code>. Example: <code>[{"day": "daily", "start_utc": "02:00", "end_utc": "04:00"}]</code></td></tr>
                     </tbody>
                 </table>
 
@@ -996,10 +1031,11 @@ print(f<span class="code-string">"SSL monitor: {monitor['id']}"</span>)</div>
     "paused": false,
     "group": "",
     "slug": "example-com-ssl-def012",
-    "created_at": "2026-03-04T12:00:00"
+    "created_at": "2026-03-04T12:00:00+00:00"
   },
   "error": null
 }</div>
+                <p class="api-helper-text">Only type-relevant fields shown. The full response includes all fields from the <a href="#list-monitors" onclick="scrollToSection(event,'list-monitors')">complete field reference</a>.</p>
                 <p class="api-note">⚠️ SSL monitors use three statuses: <code>up</code> (cert valid and not near expiry), <code>warn</code> (cert expires within threshold), <code>down</code> (cert expired, invalid, or unreachable).</p>
             </div>
         </div>
@@ -1020,18 +1056,18 @@ print(f<span class="code-string">"SSL monitor: {monitor['id']}"</span>)</div>
                 <table class="param-table">
                     <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
                     <tbody>
-                        <tr><td><span class="param-name">name</span></td><td>string</td><td>Display name</td></tr>
-                        <tr><td><span class="param-name">ssl_domain</span></td><td>string</td><td>Domain to monitor for certificate expiry</td></tr>
-                        <tr><td><span class="param-name">ssl_expiry_threshold_days</span></td><td>integer</td><td>Days before expiry to trigger warn (1–90)</td></tr>
-                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>Seconds between checks. Free: 60–300. Pro: 30–300.</td></tr>
-                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>Alert email address</td></tr>
-                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>Slack webhook URL</td></tr>
-                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>Status change webhook URL</td></tr>
-                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Toggle public status page visibility</td></tr>
-                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause or resume monitoring</td></tr>
-                        <tr><td><span class="param-name">group</span></td><td>string</td><td>Group tag for organizing monitors</td></tr>
-                        <tr><td><span class="param-name">slug</span></td><td>string</td><td>Custom status page URL slug (<code>/s/{slug}</code>)</td></tr>
-                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows</td></tr>
+                        <tr><td><span class="param-name">name</span></td><td>string</td><td>Display name. Example: <code>"example.com SSL"</code></td></tr>
+                        <tr><td><span class="param-name">ssl_domain</span></td><td>string</td><td>Bare hostname — no protocol. Examples: <code>"example.com"</code>, <code>"api.example.com"</code></td></tr>
+                        <tr><td><span class="param-name">ssl_expiry_threshold_days</span></td><td>integer</td><td>Days before expiry to trigger <code>warn</code>. Range: <code>1</code>–<code>90</code>. Common: <code>7</code>, <code>14</code>, <code>30</code></td></tr>
+                        <tr><td><span class="param-name">check_interval</span></td><td>integer</td><td>Seconds between checks. Free: <code>60</code>–<code>300</code>. Pro: <code>30</code>–<code>300</code>. SSL is lightweight — <code>300</code> (5 min) is usually fine.</td></tr>
+                        <tr><td><span class="param-name">alert_email</span></td><td>string</td><td>Alert email. Example: <code>"security@example.com"</code>. Set to <code>""</code> to use account default.</td></tr>
+                        <tr><td><span class="param-name">alert_slack_webhook</span></td><td>string</td><td>Slack incoming webhook URL. Example: <code>"https://hooks.slack.com/services/T00/B00/xxxx"</code></td></tr>
+                        <tr><td><span class="param-name">webhook_url</span></td><td>string</td><td>URL to receive POST on status changes. Set to <code>""</code> to disable.</td></tr>
+                        <tr><td><span class="param-name">public</span></td><td>boolean</td><td>Show on public status page. Set <code>false</code> for internal domains.</td></tr>
+                        <tr><td><span class="param-name">paused</span></td><td>boolean</td><td>Pause (<code>true</code>) or resume (<code>false</code>) monitoring.</td></tr>
+                        <tr><td><span class="param-name">group</span></td><td>string</td><td>Group tag. Examples: <code>"Certificates"</code>, <code>"Infrastructure"</code>. Set to <code>""</code> to clear.</td></tr>
+                        <tr><td><span class="param-name">slug</span></td><td>string</td><td>Custom status page URL slug (<code>/s/{slug}</code>). Auto-sanitized. Example: <code>"example-ssl"</code></td></tr>
+                        <tr><td><span class="param-name">maintenance_windows</span></td><td>array</td><td>Replaces all maintenance windows. <code>day</code>: <code>"monday"</code>–<code>"sunday"</code> or <code>"daily"</code>. Send <code>[]</code> to clear.</td></tr>
                     </tbody>
                 </table>
 
@@ -1170,7 +1206,6 @@ data.forEach(m => console.log(<span class="code-string">`${m.name} (${m.monitor_
                             <tr><td><code>last_checked</code></td><td class="field-type">datetime|null</td><td>Last check timestamp (null if never checked)</td></tr>
                             <tr><td><code>alert_email</code></td><td class="field-type">string</td><td>Email for alerts</td></tr>
                             <tr><td><code>alert_slack_webhook</code></td><td class="field-type">string</td><td>Slack webhook URL</td></tr>
-                            <tr><td><code>alert_sms</code></td><td class="field-type">string</td><td>SMS number (Pro, dashboard only — not settable via API)</td></tr>
                             <tr><td><code>webhook_url</code></td><td class="field-type">string</td><td>Status change webhook URL</td></tr>
                             <tr><td><code>maintenance_windows</code></td><td class="field-type">array</td><td>Array of <code>{day, start_utc, end_utc}</code></td></tr>
                             <tr><td><code>public</code></td><td class="field-type">bool</td><td>Has a public status page</td></tr>
@@ -1178,6 +1213,7 @@ data.forEach(m => console.log(<span class="code-string">`${m.name} (${m.monitor_
                             <tr><td><code>group</code></td><td class="field-type">string</td><td>Dashboard group tag (empty string if ungrouped)</td></tr>
                             <tr><td><code>slug</code></td><td class="field-type">string</td><td>Status page URL slug (<code>/s/{slug}</code>)</td></tr>
                             <tr><td><code>created_at</code></td><td class="field-type">datetime</td><td>Creation timestamp</td></tr>
+                            <tr><td><code>last_response_by_region</code></td><td class="field-type">object|null</td><td>Last response time per region (e.g. <code>{"us-east1": 120.5, "us-west1": 245.3}</code>)</td></tr>
 
                             <tr class="param-table-section-header param-table-section-header--shared"><td colspan="3">HTTP &amp; JSON/API Fields</td></tr>
                             <tr><td><code>last_status_code</code></td><td class="field-type">int|null</td><td>HTTP status from most recent check</td></tr>
@@ -1277,14 +1313,14 @@ console.log(<span class="code-string">`${data.monitor_type}: ${data.status}`</sp
     "last_checked": "2026-03-04T12:30:00+00:00",
     "last_status_code": 200,
     "last_response_ms": 245.3,
-    "ssl_expiry": "2026-09-15T00:00:00",
+    "ssl_expiry": "2026-09-15T00:00:00+00:00",
     "ssl_issuer": "Let's Encrypt",
     "alert_email": "you@example.com",
     "public": true,
     "paused": false,
     "group": "",
     "slug": "my-website-a3f8c1",
-    "created_at": "2026-03-03T12:00:00"
+    "created_at": "2026-03-03T12:00:00+00:00"
   },
   "error": null
 }</div>
@@ -1312,7 +1348,7 @@ console.log(<span class="code-string">`${data.monitor_type}: ${data.status}`</sp
                 <table class="param-table">
                     <thead><tr><th>Query Param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
                     <tbody>
-                        <tr><td><span class="param-name">limit</span></td><td>integer</td><td><code>100</code></td><td>Number of checks to return (1–500)</td></tr>
+                        <tr><td><span class="param-name">limit</span></td><td>integer</td><td><code>100</code></td><td>Number of checks to return. Range: <code>1</code>–<code>500</code>. Example: <code>?limit=10</code> for the most recent 10 checks.</td></tr>
                     </tbody>
                 </table>
 
@@ -1347,8 +1383,8 @@ data.forEach(c => console.log(<span class="code-string">`${c.timestamp}: ${c.res
       "status_code": 200,
       "response_ms": 245.3,
       "is_up": true,
-      "regions_checked": ["us-east1", "us-west1", "europe-west1"],
-      "regions_up": ["us-east1", "us-west1", "europe-west1"],
+      "regions_checked": 3,
+      "regions_up": 3,
       "response_ms_by_region": {"us-east1": 120.5, "us-west1": 245.3, "europe-west1": 310.1}
     }
   ],
@@ -1366,8 +1402,8 @@ data.forEach(c => console.log(<span class="code-string">`${c.timestamp}: ${c.res
                             <tr><td><code>status_code</code></td><td class="field-type">int|null</td><td>HTTP status (null for heartbeat/SSL or connection failure)</td></tr>
                             <tr><td><code>response_ms</code></td><td class="field-type">float|null</td><td>Response time in ms (null for heartbeat/SSL or timeout)</td></tr>
                             <tr><td><code>is_up</code></td><td class="field-type">bool</td><td>Whether the check passed</td></tr>
-                            <tr><td><code>regions_checked</code></td><td class="field-type">list|null</td><td>Regions that ran this check (e.g. <code>["us-east1", "us-west1"]</code>)</td></tr>
-                            <tr><td><code>regions_up</code></td><td class="field-type">list|null</td><td>Regions where the check passed</td></tr>
+                            <tr><td><code>regions_checked</code></td><td class="field-type">int|null</td><td>Number of regions that ran this check</td></tr>
+                            <tr><td><code>regions_up</code></td><td class="field-type">int|null</td><td>Number of regions where the check passed</td></tr>
                             <tr><td><code>response_ms_by_region</code></td><td class="field-type">object|null</td><td>Response time per region (e.g. <code>{"us-east1": 120.5}</code>)</td></tr>
                         </tbody>
                     </table>
@@ -1511,7 +1547,18 @@ data.forEach(i => {
       "response_ms": 12045.2,
       "started_at": "2026-03-03T08:15:00+00:00",
       "resolved_at": "2026-03-03T08:22:30+00:00",
-      "duration_seconds": 450
+      "duration_seconds": 450,
+      "failure_error_message": "Connection timeout after 10s",
+      "failure_response_headers": null,
+      "failure_response_body": null,
+      "regions_checked": 4,
+      "regions_up": 1,
+      "region_results": [
+        {"region": "us-east1", "is_up": false, "status_code": 503, "response_ms": 12045.2},
+        {"region": "us-west1", "is_up": false, "status_code": 503, "response_ms": 11200.0},
+        {"region": "europe-west1", "is_up": true, "status_code": 200, "response_ms": 245.3},
+        {"region": "asia-east1", "is_up": false, "status_code": 503, "response_ms": 10800.0}
+      ]
     },
     {
       "id": "inc_p3q8r1",
@@ -1523,7 +1570,13 @@ data.forEach(i => {
       "response_ms": null,
       "started_at": "2026-03-04T14:05:00+00:00",
       "resolved_at": null,
-      "duration_seconds": null
+      "duration_seconds": null,
+      "failure_error_message": "HTTP 522 — Connection timed out",
+      "failure_response_headers": null,
+      "failure_response_body": null,
+      "regions_checked": 4,
+      "regions_up": 0,
+      "region_results": null
     }
   ],
   "error": null,
@@ -1545,6 +1598,12 @@ data.forEach(i => {
                             <tr><td><code>started_at</code></td><td class="field-type">datetime</td><td>When the monitor first went down</td></tr>
                             <tr><td><code>resolved_at</code></td><td class="field-type">datetime|null</td><td>When the monitor recovered (null if still open)</td></tr>
                             <tr><td><code>duration_seconds</code></td><td class="field-type">int|null</td><td>Total downtime in seconds (null if still open)</td></tr>
+                            <tr><td><code>failure_error_message</code></td><td class="field-type">string|null</td><td>Error description from the failed check</td></tr>
+                            <tr><td><code>failure_response_headers</code></td><td class="field-type">object|null</td><td>Response headers from the failed check</td></tr>
+                            <tr><td><code>failure_response_body</code></td><td class="field-type">string|null</td><td>Response body from the failed check (truncated to 2048 chars)</td></tr>
+                            <tr><td><code>regions_checked</code></td><td class="field-type">int|null</td><td>Number of regions that checked during the incident</td></tr>
+                            <tr><td><code>regions_up</code></td><td class="field-type">int|null</td><td>Number of regions reporting UP during the incident</td></tr>
+                            <tr><td><code>region_results</code></td><td class="field-type">array|null</td><td>Per-region results: <code>[{region, is_up, status_code, response_ms}]</code></td></tr>
                         </tbody>
                     </table>
                 </details>
@@ -1596,7 +1655,18 @@ console.log(<span class="code-string">`Down since ${data.started_at}, status: ${
     "response_ms": 12045.2,
     "started_at": "2026-03-03T08:15:00+00:00",
     "resolved_at": "2026-03-03T08:22:30+00:00",
-    "duration_seconds": 450
+    "duration_seconds": 450,
+    "failure_error_message": "Connection timeout after 10s",
+    "failure_response_headers": null,
+    "failure_response_body": null,
+    "regions_checked": 4,
+    "regions_up": 1,
+    "region_results": [
+      {"region": "us-east1", "is_up": false, "status_code": 503, "response_ms": 12045.2},
+      {"region": "us-west1", "is_up": false, "status_code": 503, "response_ms": 11200.0},
+      {"region": "europe-west1", "is_up": true, "status_code": 200, "response_ms": 245.3},
+      {"region": "asia-east1", "is_up": false, "status_code": 503, "response_ms": 10800.0}
+    ]
   },
   "error": null
 }</div>
@@ -1921,5 +1991,358 @@ if (location.hash) {
         }, 100);
     }
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  REQUEST BUILDER (API Playground)
+// ═══════════════════════════════════════════════════════════════
+(function() {
+    const API_URL = '{{ app_url }}/api/v1';
+
+    const COMMON = [
+        { id: 'check_interval', label: 'Check Interval', type: 'select', opts: [
+            {v: 30, l: '30s (Pro)'}, {v: 60, l: '1 min'}, {v: 120, l: '2 min'}, {v: 300, l: '5 min'}
+        ], def: 60, group: 'scheduling' },
+        { id: 'alert_email', label: 'Alert Email', type: 'text', ph: 'ops@example.com', group: 'alerts' },
+        { id: 'alert_slack_webhook', label: 'Slack Webhook URL', type: 'text', ph: 'https://hooks.slack.com/services/...', full: true, group: 'alerts' },
+        { id: 'webhook_url', label: 'Status Webhook URL', type: 'text', ph: 'https://example.com/hook', full: true, group: 'alerts' },
+        { id: 'group', label: 'Group', type: 'text', ph: 'Production', group: 'options' },
+        { id: 'public', label: 'Public Status Page', type: 'toggle', def: true, group: 'options' },
+        { id: 'paused', label: 'Start Paused', type: 'toggle', def: false, group: 'options' },
+    ];
+
+    const TYPES = {
+        http: [
+            { id: 'name', label: 'Monitor Name', type: 'text', req: true, ph: 'My Website' },
+            { id: 'url', label: 'URL', type: 'text', req: true, ph: 'https://example.com' },
+            { id: 'http_method', label: 'Method', type: 'select', opts: ['GET','POST','HEAD','PUT','PATCH','DELETE','OPTIONS'], def: 'GET' },
+            { id: 'expected_status_code', label: 'Expected Status', type: 'number', ph: '200' },
+            { id: 'timeout', label: 'Timeout (s)', type: 'number', ph: '10' },
+            { id: 'keyword', label: 'Keyword Check', type: 'keyword', full: true },
+            { id: 'response_threshold_ms', label: 'Response Threshold', type: 'text', ph: '> 2000' },
+            { id: 'follow_redirects', label: 'Follow Redirects', type: 'toggle', def: true },
+            { id: 'bearer_token', label: 'Bearer Token', type: 'text', ph: 'tok_live_abc123', group: 'auth' },
+            { id: 'basic_auth_user', label: 'Basic Auth User', type: 'text', group: 'auth' },
+            { id: 'basic_auth_pass', label: 'Basic Auth Pass', type: 'text', group: 'auth' },
+            { id: 'request_body', label: 'Request Body', type: 'textarea', ph: '{"ping": true}', full: true, group: 'body' },
+            { id: 'request_content_type', label: 'Content Type', type: 'select', opts: [
+                {v: '', l: '\u2014 select \u2014'}, {v: 'application/json', l: 'application/json'},
+                {v: 'text/plain', l: 'text/plain'}, {v: 'application/x-www-form-urlencoded', l: 'x-www-form-urlencoded'}
+            ], group: 'body' },
+        ],
+        json_api: [
+            { id: 'name', label: 'Monitor Name', type: 'text', req: true, ph: 'Health API' },
+            { id: 'url', label: 'URL', type: 'text', req: true, ph: 'https://api.example.com/health' },
+            { id: 'expected_status_code', label: 'Expected Status', type: 'number', ph: '200' },
+            { id: 'timeout', label: 'Timeout (s)', type: 'number', ph: '10' },
+            { id: 'auth_header', label: 'Authorization Header', type: 'text', ph: 'Bearer tok_live_xxxx', full: true, group: 'auth' },
+            { id: 'response_threshold_ms', label: 'Response Threshold', type: 'text', ph: '> 2000' },
+        ],
+        heartbeat: [
+            { id: 'name', label: 'Monitor Name', type: 'text', req: true, ph: 'Nightly Backup' },
+            { id: 'heartbeat_interval', label: 'Expected Interval', type: 'select', opts: [
+                {v: 60, l: '1 min'}, {v: 300, l: '5 min'}, {v: 900, l: '15 min'},
+                {v: 3600, l: '1 hour'}, {v: 86400, l: '24 hours'}
+            ], def: 300 },
+            { id: 'heartbeat_grace_period', label: 'Grace Period (s)', type: 'number', ph: '60' },
+        ],
+        ssl: [
+            { id: 'name', label: 'Monitor Name', type: 'text', req: true, ph: 'example.com SSL' },
+            { id: 'ssl_domain', label: 'Domain', type: 'text', req: true, ph: 'example.com' },
+            { id: 'ssl_expiry_threshold_days', label: 'Warn Before Expiry', type: 'select', opts: [
+                {v: 7, l: '7 days'}, {v: 14, l: '14 days'}, {v: 30, l: '30 days'},
+                {v: 60, l: '60 days'}, {v: 90, l: '90 days'}
+            ], def: 30 },
+        ],
+    };
+
+    const GROUPS = [
+        { key: 'auth', label: 'Authentication' },
+        { key: 'body', label: 'Request Body' },
+        { key: 'scheduling', label: 'Scheduling' },
+        { key: 'alerts', label: 'Alerts' },
+        { key: 'options', label: 'Options' },
+    ];
+
+    let curType = 'http';
+    let curLang = 'curl';
+
+    function fields() { return [...TYPES[curType], ...COMMON]; }
+
+    function renderField(f) {
+        const cls = f.full ? ' apg-full' : '';
+        const req = f.req ? '<span class="apg-req">*</span>' : '';
+        let inp = '';
+        switch (f.type) {
+            case 'text':
+                inp = '<input type="text" id="apg-' + f.id + '" placeholder="' + (f.ph || '') + '">';
+                break;
+            case 'number':
+                inp = '<input type="number" id="apg-' + f.id + '" placeholder="' + (f.ph || '') + '">';
+                break;
+            case 'textarea':
+                inp = '<textarea id="apg-' + f.id + '" placeholder="' + (f.ph || '') + '" rows="2"></textarea>';
+                break;
+            case 'select':
+                var options = f.opts.map(function(o) {
+                    var v = typeof o === 'object' ? o.v : o;
+                    var l = typeof o === 'object' ? o.l : o;
+                    var sel = String(v) === String(f.def) ? ' selected' : '';
+                    return '<option value="' + v + '"' + sel + '>' + l + '</option>';
+                }).join('');
+                inp = '<select id="apg-' + f.id + '">' + options + '</select>';
+                break;
+            case 'toggle':
+                var chk = f.def ? ' checked' : '';
+                inp = '<label class="apg-toggle"><input type="checkbox" id="apg-' + f.id + '"' + chk + '><span class="apg-slider"></span></label>';
+                break;
+            case 'keyword':
+                inp = '<input type="hidden" id="apg-' + f.id + '">'
+                    + '<div class="apg-kw">'
+                    + '<div class="apg-kw-groups" id="apg-kw-groups"></div>'
+                    + '<button type="button" class="apg-add-btn apg-kw-add-group" onclick="apgAddKwGroup()">+ OR group</button>'
+                    + '<div class="apg-kw-preview" id="apg-kw-preview"></div>'
+                    + '</div>';
+                break;
+        }
+        return '<div class="apg-field' + cls + '"><label for="apg-' + f.id + '">' + f.label + ' ' + req + '</label>' + inp + '</div>';
+    }
+
+    function render() {
+        var ff = fields();
+        var ungrouped = ff.filter(function(f) { return !f.group; });
+        var byGroup = {};
+        ff.filter(function(f) { return f.group; }).forEach(function(f) {
+            if (!byGroup[f.group]) byGroup[f.group] = [];
+            byGroup[f.group].push(f);
+        });
+
+        var html = '<div class="apg-grid">';
+        ungrouped.forEach(function(f) { html += renderField(f); });
+        html += '</div>';
+
+        if (curType === 'json_api') {
+            html += '<details class="apg-group" open><summary>JSON Assertions</summary>';
+            html += '<div id="apg-assertions"></div>';
+            html += '<button type="button" class="apg-add-btn" onclick="apgAddAssertion()">+ Add assertion</button>';
+            html += '</details>';
+        }
+
+        GROUPS.forEach(function(g) {
+            if (!byGroup[g.key] || byGroup[g.key].length === 0) return;
+            html += '<details class="apg-group"><summary>' + g.label + '</summary><div class="apg-grid">';
+            byGroup[g.key].forEach(function(f) { html += renderField(f); });
+            html += '</div></details>';
+        });
+
+        document.getElementById('apg-fields').innerHTML = html;
+
+        document.getElementById('apg-fields').querySelectorAll('input, select, textarea').forEach(function(el) {
+            el.addEventListener('input', generate);
+            el.addEventListener('change', generate);
+        });
+
+        if (curType === 'json_api') apgAddAssertion();
+        if (curType === 'http') apgInitKeyword();
+        generate();
+    }
+
+    function getPayload() {
+        var ff = fields();
+        var p = {};
+        if (curType !== 'http') p.monitor_type = curType;
+
+        ff.forEach(function(f) {
+            var el = document.getElementById('apg-' + f.id);
+            if (!el) return;
+            if (f.type === 'toggle') {
+                if (el.checked !== f.def) p[f.id] = el.checked;
+            } else if (f.type === 'number') {
+                if (el.value) p[f.id] = parseInt(el.value);
+            } else if (f.type === 'select') {
+                var v = el.value;
+                if (v !== '' && v !== String(f.def || '')) {
+                    p[f.id] = isNaN(v) ? v : parseInt(v);
+                }
+            } else {
+                var v = el.value.trim();
+                if (v) p[f.id] = v;
+            }
+        });
+
+        if (curType === 'json_api') {
+            var assertions = [];
+            document.querySelectorAll('.apg-assertion-row').forEach(function(row) {
+                var path = row.querySelector('.apg-a-path').value.trim();
+                var op = row.querySelector('.apg-a-op').value;
+                var val = row.querySelector('.apg-a-val').value.trim();
+                if (path && op) assertions.push({ path: path, operator: op, value: val });
+            });
+            if (assertions.length > 0) p.json_assertions = assertions;
+        }
+
+        return p;
+    }
+
+    function generate() {
+        var p = getPayload();
+        var json = JSON.stringify(p, null, 2);
+        var el = document.getElementById('apg-code');
+        var code = '';
+
+        if (curLang === 'curl') {
+            code = 'curl -X POST \\\n  -H "X-API-Key: sr_your_key_here" \\\n  -H "Content-Type: application/json" \\\n  -d \'' + json + '\' \\\n  ' + API_URL + '/monitors';
+        } else if (curLang === 'python') {
+            code = 'import requests\n\nr = requests.post(\n    "' + API_URL + '/monitors",\n    headers={"X-API-Key": "sr_your_key_here"},\n    json=' + json + '\n)\nmonitor = r.json()["data"]\nprint(f"Created {monitor[\'id\']}")';
+        } else {
+            code = 'const res = await fetch("' + API_URL + '/monitors", {\n  method: "POST",\n  headers: {\n    "X-API-Key": "sr_your_key_here",\n    "Content-Type": "application/json"\n  },\n  body: JSON.stringify(' + json + ')\n});\nconst { data } = await res.json();\nconsole.log(`Created ${data.id}`);';
+        }
+        el.textContent = code;
+    }
+
+    window.apgSetType = function(type) {
+        curType = type;
+        var types = ['http', 'json_api', 'heartbeat', 'ssl'];
+        document.querySelectorAll('#apg-tabs .apg-tab').forEach(function(t, i) {
+            t.classList.toggle('active', types[i] === type);
+        });
+        render();
+    };
+
+    window.apgSetLang = function(lang) {
+        curLang = lang;
+        var langs = ['curl', 'python', 'js'];
+        document.querySelectorAll('#apg-code-tabs .apg-code-tab').forEach(function(t, i) {
+            t.classList.toggle('active', langs[i] === lang);
+        });
+        generate();
+    };
+
+    window.apgGenerate = generate;
+
+    window.apgCopy = function() {
+        var text = document.getElementById('apg-code').textContent;
+        navigator.clipboard.writeText(text);
+        var btn = document.querySelector('.apg-copy');
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(function() { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    };
+
+    window.apgAddAssertion = function() {
+        var c = document.getElementById('apg-assertions');
+        if (!c) return;
+        var row = document.createElement('div');
+        row.className = 'apg-assertion-row';
+        row.innerHTML = '<input type="text" class="apg-a-path" placeholder="data.status">'
+            + '<select class="apg-a-op">'
+            + '<option value="equals">equals</option><option value="not_equals">not_equals</option>'
+            + '<option value="contains">contains</option><option value="not_contains">not_contains</option>'
+            + '<option value="greater_than">greater_than</option><option value="less_than">less_than</option>'
+            + '<option value="exists">exists</option><option value="not_exists">not_exists</option>'
+            + '</select>'
+            + '<input type="text" class="apg-a-val" placeholder="ok">'
+            + '<button type="button" class="apg-remove-btn" onclick="this.parentElement.remove(); apgGenerate();">\u00d7</button>';
+        c.appendChild(row);
+        row.querySelectorAll('input, select').forEach(function(el) {
+            el.addEventListener('input', generate);
+            el.addEventListener('change', generate);
+        });
+        generate();
+    };
+
+    // ── Keyword Expression Builder ──────────────────────────────
+    window.apgInitKeyword = function() {
+        var container = document.getElementById('apg-kw-groups');
+        if (!container) return;
+        container.innerHTML = '';
+        apgAddKwGroup();
+    };
+
+    window.apgAddKwGroup = function() {
+        var container = document.getElementById('apg-kw-groups');
+        if (!container) return;
+        if (container.children.length > 0) {
+            var divider = document.createElement('div');
+            divider.className = 'apg-kw-or';
+            divider.innerHTML = '<span>OR</span>';
+            container.appendChild(divider);
+        }
+        var group = document.createElement('div');
+        group.className = 'apg-kw-group';
+        group.innerHTML = '<div class="apg-kw-terms"></div>'
+            + '<button type="button" class="apg-kw-add-term" onclick="apgAddKwTerm(this.parentElement)">+ AND condition</button>';
+        container.appendChild(group);
+        apgAddKwTerm(group);
+    };
+
+    window.apgAddKwTerm = function(groupEl) {
+        var terms = groupEl.querySelector('.apg-kw-terms');
+        if (terms.querySelectorAll('.apg-kw-term').length > 0) {
+            var andLabel = document.createElement('div');
+            andLabel.className = 'apg-kw-and';
+            andLabel.textContent = 'AND';
+            terms.appendChild(andLabel);
+        }
+        var term = document.createElement('div');
+        term.className = 'apg-kw-term';
+        term.innerHTML = '<select class="apg-kw-match" onchange="apgUpdateKw()">'
+            + '<option value="contains">contains</option>'
+            + '<option value="not_contains">does not contain</option>'
+            + '</select>'
+            + '<input type="text" class="apg-kw-input" placeholder="keyword" oninput="apgUpdateKw()">'
+            + '<button type="button" class="apg-remove-btn" onclick="apgRemoveKwTerm(this)">\u00d7</button>';
+        terms.appendChild(term);
+        apgUpdateKw();
+    };
+
+    window.apgRemoveKwTerm = function(btn) {
+        var term = btn.closest('.apg-kw-term');
+        var terms = term.parentElement;
+        var group = terms.closest('.apg-kw-group');
+        var prev = term.previousElementSibling;
+        if (prev && prev.classList.contains('apg-kw-and')) {
+            prev.remove();
+        } else {
+            var next = term.nextElementSibling;
+            if (next && next.classList.contains('apg-kw-and')) next.remove();
+        }
+        term.remove();
+        if (terms.querySelectorAll('.apg-kw-term').length === 0) {
+            var container = document.getElementById('apg-kw-groups');
+            var gprev = group.previousElementSibling;
+            var gnext = group.nextElementSibling;
+            if (gprev && gprev.classList.contains('apg-kw-or')) gprev.remove();
+            else if (gnext && gnext.classList.contains('apg-kw-or')) gnext.remove();
+            group.remove();
+            if (container.querySelectorAll('.apg-kw-group').length === 0) apgAddKwGroup();
+        }
+        apgUpdateKw();
+    };
+
+    window.apgUpdateKw = function() {
+        var groups = document.querySelectorAll('.apg-kw-group');
+        var orParts = [];
+        groups.forEach(function(group) {
+            var andParts = [];
+            group.querySelectorAll('.apg-kw-term').forEach(function(term) {
+                var match = term.querySelector('.apg-kw-match').value;
+                var kw = term.querySelector('.apg-kw-input').value.trim();
+                if (!kw) return;
+                andParts.push(match === 'not_contains' ? '!' + kw : kw);
+            });
+            if (andParts.length > 0) orParts.push(andParts.join(' AND '));
+        });
+        var expression = orParts.join(' OR ');
+        var hidden = document.getElementById('apg-keyword');
+        if (hidden) {
+            hidden.value = expression;
+            hidden.dispatchEvent(new Event('input'));
+        }
+        var preview = document.getElementById('apg-kw-preview');
+        if (preview) preview.textContent = expression || '';
+    };
+
+    render();
+})();
 </script>
 {% endblock %}
