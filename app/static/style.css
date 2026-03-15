@@ -271,6 +271,8 @@ code {
     opacity: 0.65;
 }
 .app-sidebar-link:hover svg { opacity: 1; }
+.nav-short { display: none; }
+.nav-full { display: inline; }
 
 .app-sidebar-footer {
     padding: 0.75rem 0.65rem;
@@ -355,6 +357,8 @@ code {
     }
     .app-sidebar-link { font-size: 0.75rem; padding: 0.4rem 0.5rem; }
     .app-sidebar-link svg { display: none; }
+    .nav-short { display: inline; }
+    .nav-full { display: none; }
     .app-sidebar-footer {
         flex-direction: row;
         border-top: none;
@@ -7374,9 +7378,13 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
 
     /* ── App layout ── */
     .app-content { padding: 0.5rem; }
-    .app-sidebar { padding: 0.35rem 0.5rem; }
-    .app-sidebar-nav { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .app-sidebar-link { font-size: 0.72rem; padding: 0.35rem 0.5rem; }
+    .app-sidebar { padding: 0.35rem 0.5rem; gap: 0.25rem; flex-wrap: nowrap; }
+    .app-sidebar-brand-text { display: none; }
+    .app-sidebar-nav { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-shrink: 1; min-width: 0; }
+    .app-sidebar-link { font-size: 0.68rem; padding: 0.35rem 0.4rem; white-space: nowrap; }
+    .app-sidebar-footer { gap: 0.25rem; }
+    .app-sidebar-upgrade { font-size: 0.68rem; padding: 0.3rem 0.5rem; }
+    .app-sidebar-link-sm { font-size: 0.68rem; padding: 0.3rem 0.4rem; }
 
     /* ── Dashboard ── */
     .dash-header h1 { font-size: 1.1rem; }
@@ -7469,7 +7477,8 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
 
     /* ── App layout ── */
     .app-content { padding: 0.35rem; }
-    .app-sidebar-link { font-size: 0.68rem; padding: 0.3rem 0.4rem; }
+    .app-sidebar { padding: 0.25rem 0.35rem; }
+    .app-sidebar-link { font-size: 0.65rem; padding: 0.3rem 0.35rem; }
 
     /* ── Dashboard ── */
     .dash-header h1 { font-size: 1rem; }
