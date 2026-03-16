@@ -287,6 +287,14 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
     if plan == "pro" and len(existing) >= PRO_MONITOR_LIMIT:
         err(f"Pro plan limited to {PRO_MONITOR_LIMIT} monitors. Contact us if you need more.", 403)
 
+    # URL required for HTTP and JSON/API monitors
+    if req.monitor_type in ("http", "json_api") and not req.url:
+        err("url is required for HTTP and JSON/API monitors", 422)
+
+    # ssl_domain required for SSL monitors
+    if req.monitor_type == "ssl" and not req.ssl_domain:
+        err("ssl_domain is required for SSL monitors", 422)
+
     # Build maintenance windows (all plans)
     mw_list = None
     if req.maintenance_windows:

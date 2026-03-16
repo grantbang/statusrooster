@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
-from fastapi.exceptions import HTTPException
+from fastapi.exceptions import HTTPException, RequestValidationError
 from app.routers import auth, monitors, cron, pages, billing, api_v1, badge, oauth, heartbeat
 from datetime import datetime
 import json
@@ -169,6 +169,18 @@ async def sitemap_xml():
 # ---------------------------------------------------------------------------
 # Custom error pages
 # ---------------------------------------------------------------------------
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Pydantic validation errors — wrap in our standard API shape for /api/ routes."""
+    from fastapi.responses import JSONResponse
+    if request.url.path.startswith("/api/"):
+        errors = exc.errors()
+        msg = "; ".join(f"{e['loc'][-1]}: {e['msg']}" for e in errors if e.get("loc"))
+        return JSONResponse({"data": None, "error": msg or "Validation error", "meta": None}, status_code=422)
+    # Non-API routes: return FastAPI's default behavior
+    return JSONResponse({"detail": exc.errors()}, status_code=422)
+
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
