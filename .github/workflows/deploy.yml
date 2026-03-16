@@ -1,0 +1,127 @@
+name: Test & Deploy
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Run E2E + functional tests ──
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: pip-
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio
+
+      - name: Run E2E tests
+        env:
+          SR_API_KEY: ${{ secrets.SR_API_KEY }}
+        run: pytest tests/test_e2e.py -v --asyncio-mode=auto -k "not slow"
+
+      - name: Run functional tests
+        env:
+          SR_API_KEY: ${{ secrets.SR_API_KEY }}
+        run: pytest tests/test_functional.py -v --asyncio-mode=auto
+
+  # ── Deploy primary app to Cloud Run ──
+  deploy-primary:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/286329122172/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-deploy@statusrooster.iam.gserviceaccount.com
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy primary to us-east1
+        run: gcloud run deploy statusrooster --source . --region us-east1 --project statusrooster --quiet
+
+  # ── Check if worker code changed ──
+  detect-worker-changes:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      workers_changed: ${{ steps.check.outputs.workers_changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: check
+        run: |
+          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+          if echo "$CHANGED" | grep -qE '^(checker_core/|worker/)'; then
+            echo "workers_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "workers_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+  # ── Deploy workers (only if checker_core/ or worker/ changed) ──
+  deploy-workers:
+    if: needs.detect-worker-changes.outputs.workers_changed == 'true'
+    needs: [test, detect-worker-changes]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/286329122172/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-deploy@statusrooster.iam.gserviceaccount.com
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Build worker image
+        run: |
+          gcloud builds submit . \
+            --tag us-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker \
+            --dockerfile worker/Dockerfile \
+            --project statusrooster \
+            --quiet
+
+      - name: Deploy workers to all regions
+        run: |
+          gcloud run deploy statusrooster-worker \
+            --image us-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker \
+            --region us-west1 --project statusrooster --quiet &
+          gcloud run deploy statusrooster-worker \
+            --image us-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker \
+            --region europe-west1 --project statusrooster --quiet &
+          gcloud run deploy statusrooster-worker \
+            --image us-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker \
+            --region asia-east1 --project statusrooster --quiet &
+          wait
