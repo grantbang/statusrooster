@@ -1014,13 +1014,15 @@ class TestErrorHandling:
         assert resp.status_code == 422, f"G.6 FAIL: Expected 422, got {resp.status_code}"
 
     @pytest.mark.asyncio
-    async def test_g7_api_create_name_no_url(self, client, pro_headers, make_monitor):
-        """G.7 — POST /api/v1/monitors with name but no URL → 201 (url optional)"""
-        monitor = await make_monitor({
-            "name": "E2E-G7-no-url",
-            "monitor_type": "http",
-        })
-        assert monitor["name"] == "E2E-G7-no-url"
+    async def test_g7_api_create_name_no_url(self, client, pro_headers):
+        """G.7 — POST /api/v1/monitors with name but no URL → 422 (url required for HTTP)"""
+        resp = await client.post(
+            "/api/v1/monitors",
+            json={"name": "E2E-G7-no-url", "monitor_type": "http"},
+            headers=pro_headers,
+        )
+        assert resp.status_code == 422
+        assert "url is required" in resp.json()["error"].lower()
 
     @pytest.mark.asyncio
     async def test_g8_update_other_users_monitor(self, client, pro_headers):
