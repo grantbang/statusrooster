@@ -918,21 +918,28 @@ function buildChart(checks) {
         pointHitRadius: 10,
     }];
 
+    // Compute Y-axis max from actual response data (ignore threshold)
+    const maxResponse = Math.max(...s.data.filter(v => v != null && v > 0), 1);
+    const yMax = Math.ceil(maxResponse * 1.3);  // 30% headroom
+
     {% if monitor.get('response_threshold_ms') %}
     const thresholdRaw = {{ monitor.response_threshold_ms | tojson | safe }};
     const thresholdMatch = String(thresholdRaw).match(/(\d+)/);
     if (thresholdMatch) {
         const thresholdVal = parseInt(thresholdMatch[1]);
-        datasets.push({
-            label: 'Threshold',
-            data: s.labels.map(() => thresholdVal),
-            borderColor: 'rgba(239, 68, 68, 0.5)',
-            borderWidth: 1.5,
-            borderDash: [6, 4],
-            pointRadius: 0,
-            pointHitRadius: 0,
-            fill: false,
-        });
+        // Only show threshold line if it's within 5x of max response (otherwise it distorts the chart)
+        if (thresholdVal <= maxResponse * 5) {
+            datasets.push({
+                label: 'Threshold',
+                data: s.labels.map(() => thresholdVal),
+                borderColor: 'rgba(239, 68, 68, 0.5)',
+                borderWidth: 1.5,
+                borderDash: [6, 4],
+                pointRadius: 0,
+                pointHitRadius: 0,
+                fill: false,
+            });
+        }
     }
     {% endif %}
 
@@ -990,6 +997,7 @@ function buildChart(checks) {
             scales: {
                 y: {
                     beginAtZero: true,
+                    suggestedMax: yMax,
                     title: { display: false },
                     grid: { color: '#f0f0f0' },
                     ticks: { font: { size: 11 }, color: '#999' },
