@@ -919,17 +919,21 @@ function buildChart(checks) {
     }];
 
     {% if monitor.get('response_threshold_ms') %}
-    const thresholdVal = {{ monitor.response_threshold_ms }};
-    datasets.push({
-        label: 'Threshold',
-        data: s.labels.map(() => thresholdVal),
-        borderColor: 'rgba(239, 68, 68, 0.5)',
-        borderWidth: 1.5,
-        borderDash: [6, 4],
-        pointRadius: 0,
-        pointHitRadius: 0,
-        fill: false,
-    });
+    const thresholdRaw = {{ monitor.response_threshold_ms | tojson | safe }};
+    const thresholdMatch = String(thresholdRaw).match(/(\d+)/);
+    if (thresholdMatch) {
+        const thresholdVal = parseInt(thresholdMatch[1]);
+        datasets.push({
+            label: 'Threshold',
+            data: s.labels.map(() => thresholdVal),
+            borderColor: 'rgba(239, 68, 68, 0.5)',
+            borderWidth: 1.5,
+            borderDash: [6, 4],
+            pointRadius: 0,
+            pointHitRadius: 0,
+            fill: false,
+        });
+    }
     {% endif %}
 
     if (showRegions) {
