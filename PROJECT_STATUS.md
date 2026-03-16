@@ -14,11 +14,11 @@ All core build phases are complete. These delivered the product from scratch.
 | Phase 6 | Infrastructure Hardening | DONE |
 | Phase 1 | Free Tier Unlocking | DONE |
 | Phase 4 | Custom Branding | DONE |
-| Phase 3 | Data Retention | DONE (scheduling pending — 3.6) |
+| Phase 3 | Data Retention | DONE |
 | Phase 7 | Viral Loop | DONE |
 
 ### Remaining build items
-- [ ] **3.6** Schedule `/cron/cleanup` in Cloud Scheduler (daily 3am UTC)
+- [x] **3.6** Schedule `/cron/cleanup` in Cloud Scheduler (daily 3am UTC)
 - [ ] **Final verification** E2E tests, security, multi-region, plan enforcement (see IMPLEMENTATION_PLAN.md)
 
 ---
@@ -64,14 +64,14 @@ Deep mobile polish pass across all pages (480px + 375px breakpoints):
 - [x] API docs + request builder
 - [x] Pricing page
 
-### Sprint 6: CI/CD Pipeline — NOT STARTED
+### Sprint 6: CI/CD Pipeline — DONE
 GitHub Actions for automated test + deploy:
-- [ ] GitHub Actions workflow (`.github/workflows/deploy.yml`)
-- [ ] On PR: run E2E + functional tests
-- [ ] On push to main: test → build → deploy primary to Cloud Run
-- [ ] Smart worker deploy: only if `checker_core/` or `worker/` changed
-- [ ] GCP Workload Identity Federation (keyless auth from GitHub)
-- [ ] GitHub secrets: `SR_API_KEY`, GCP project config
+- [x] GitHub Actions workflow (`.github/workflows/deploy.yml`)
+- [x] On PR: run E2E + functional tests
+- [x] On push to main: test → build → deploy primary to Cloud Run
+- [x] Smart worker deploy: only if `checker_core/` or `worker/` changed
+- [x] GCP Workload Identity Federation (keyless auth from GitHub)
+- [x] GitHub secrets: `SR_API_KEY`, GCP project config
 - [ ] Slack/email notification on deploy failure (optional)
 
 ### Sprint 7: Manual QA Plan — NOT STARTED
@@ -114,7 +114,7 @@ Full manual QA checklist covering:
 | Worker asia-east1 | Deployed | `statusrooster-worker` |
 | Firestore | Live | Production, same for local dev |
 | Cloud Scheduler | Live | `/cron/check` every minute |
-| Cron cleanup | NOT SCHEDULED | Need to add `/cron/cleanup` daily job |
+| Cron cleanup | SCHEDULED | `statusrooster-cleanup` daily 3am UTC |
 | BigQuery billing export | Enabled | Table exists, awaiting data backfill (~24-48h) |
 | SendGrid (email alerts) | Live | |
 | Stripe billing | Live | Webhook endpoint active |
