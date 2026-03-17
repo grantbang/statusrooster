@@ -1110,13 +1110,16 @@ function exportIncidents() {
             const pct     = this.dataset.tipPct;
             const status  = this.dataset.tipStatus || 'nodata';
 
-            // Format date with timezone abbreviation
+            // Format label — hourly bars already in user tz (e.g. "10pm"), daily are date strings
             let displayLabel = label;
             try {
-                const d = new Date(label + 'T12:00:00');
-                if (!isNaN(d)) {
-                    const tzAbbr = new Intl.DateTimeFormat('en-US', {timeZone: USER_TZ, timeZoneName: 'short'}).formatToParts(d).find(p => p.type === 'timeZoneName')?.value || '';
-                    displayLabel = d.toLocaleDateString('en-US', {month: 'short', day: 'numeric', timeZone: USER_TZ}) + (tzAbbr ? ` (${tzAbbr})` : '');
+                const tzAbbr = new Intl.DateTimeFormat('en-US', {timeZone: USER_TZ, timeZoneName: 'short'}).formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value || '';
+                if (label === 'now' || label.match(/^\d{1,2}[ap]m$/)) {
+                    // Hourly bar — append timezone
+                    displayLabel = label === 'now' ? `Now (${tzAbbr})` : `${label.toUpperCase()} ${tzAbbr}`;
+                } else {
+                    // Daily bar — just the date
+                    displayLabel = label;
                 }
             } catch(e) {}
             tipLabel.textContent = displayLabel;

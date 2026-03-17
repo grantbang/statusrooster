@@ -1280,10 +1280,14 @@ async def monitor_detail(request: Request, monitor_id: str):
     raw_hbars = monitor.get("hourly_uptime_bars") or []
     hbar_map = {b["hour"]: b for b in raw_hbars}
     hourly_bars = []
+    # Convert UTC hours to user timezone for display
+    import pytz as _pytz
+    _user_tz = _pytz.timezone(user.get("timezone", "UTC"))
     for i in range(23, -1, -1):
         h = now - timedelta(hours=i)
         hour_key = h.strftime("%Y-%m-%d-%H")
-        label = h.strftime("%-I%p").lower() if i > 0 else "now"
+        h_local = h.replace(tzinfo=_pytz.utc).astimezone(_user_tz)
+        label = h_local.strftime("%-I%p").lower() if i > 0 else "now"
         b = hbar_map.get(hour_key)
         if b and b.get("total", 0) > 0:
             pct = round((b["up"] / b["total"]) * 100, 3)
