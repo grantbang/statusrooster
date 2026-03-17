@@ -225,7 +225,7 @@
                     {% set bar_total = bar.get('total', 0) %}
                     {% set bar_up = bar.get('up', 0) %}
                     {% set pct = (bar_up / bar_total * 100) if bar_total > 0 else -1 %}
-                    <div class="d-uptime-bar {% if pct < 0 %}bar-nodata{% elif pct >= 99.5 %}bar-up{% elif pct >= 95 %}bar-warn{% else %}bar-down{% endif %}" title="{{ bar.get('date', '') }}: {{ '%.1f' | format(pct) if pct >= 0 else 'No data' }}%"></div>
+                    <div class="d-uptime-bar {% if pct < 0 %}bar-nodata{% elif pct >= 99.5 %}bar-up{% elif pct >= 95 %}bar-warn{% else %}bar-down{% endif %}" title="{{ bar.get('date', '') }} ({{ user.get('timezone', 'UTC') }}): {{ '%.1f' | format(pct) if pct >= 0 else 'No data' }}%"></div>
                 {% endfor %}
                 {% for _ in range(30 - bars_slice|length) %}
                     <div class="d-uptime-bar bar-nodata" title="No data"></div>
@@ -297,7 +297,7 @@
                 {% if '+' not in lc_iso|string and 'Z' not in lc_iso|string %}
                     {% set lc_iso = lc_iso ~ 'Z' %}
                 {% endif %}
-                <span class="d-secondary-stat last-checked-tick" data-last-checked="{{ lc_iso }}" title="Last checked: {{ lc.strftime('%Y-%m-%d %H:%M:%S UTC') if lc.strftime is defined else lc }}"></span>
+                <span class="d-secondary-stat last-checked-tick" data-last-checked="{{ lc_iso }}" title="Last checked: {{ lc | as_tz(user.get('timezone', 'UTC'), '%Y-%m-%d %H:%M:%S') }} {{ user.get('timezone', 'UTC') }}"></span>
             {% else %}
                 <span class="d-secondary-stat">Never checked</span>
             {% endif %}

@@ -629,6 +629,7 @@
 <script>
 // @ts-nocheck
 const MONITOR_ID = '{{ monitor.id }}';
+const USER_TZ = {{ user.get('timezone', 'UTC') | tojson | safe }};
 
 /* ── Copy Monitor ID ──────────────────────────── */
 function copyMonitorId() {
@@ -891,7 +892,7 @@ function buildChart(checks) {
         if (typeof c.timestamp === 'string') d = new Date(c.timestamp);
         else if (c.timestamp._seconds) d = new Date(c.timestamp._seconds * 1000);
         else d = new Date(c.timestamp);
-        return d.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+        return d.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', timeZone: USER_TZ});
     });
     const data = sorted.map(c => c.response_ms || null);
 
@@ -993,6 +994,13 @@ function buildChart(checks) {
                 legend: { display: showRegions, position: 'bottom', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } },
                 tooltip: {
                     callbacks: {
+                        title: ctx => {
+                            const lbl = ctx[0]?.label || '';
+                            try {
+                                const tzAbbr = new Intl.DateTimeFormat('en-US', {timeZone: USER_TZ, timeZoneName: 'short'}).formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value || '';
+                                return tzAbbr ? `${lbl} ${tzAbbr}` : lbl;
+                            } catch(e) { return lbl; }
+                        },
                         label: ctx => ctx.parsed.y ? `${ctx.parsed.y}ms` : 'Timeout'
                     }
                 }
@@ -1102,7 +1110,16 @@ function exportIncidents() {
             const pct     = this.dataset.tipPct;
             const status  = this.dataset.tipStatus || 'nodata';
 
-            tipLabel.textContent = label;
+            // Format date with timezone abbreviation
+            let displayLabel = label;
+            try {
+                const d = new Date(label + 'T12:00:00');
+                if (!isNaN(d)) {
+                    const tzAbbr = new Intl.DateTimeFormat('en-US', {timeZone: USER_TZ, timeZoneName: 'short'}).formatToParts(d).find(p => p.type === 'timeZoneName')?.value || '';
+                    displayLabel = d.toLocaleDateString('en-US', {month: 'short', day: 'numeric', timeZone: USER_TZ}) + (tzAbbr ? ` (${tzAbbr})` : '');
+                }
+            } catch(e) {}
+            tipLabel.textContent = displayLabel;
             tipDot.style.background = STATUS_COLOR[status] || '#d1d5db';
             tipPct.textContent = pct === 'No data' ? 'No data' : `${pct} uptime — ${STATUS_LABEL[status] || ''}`;
 
