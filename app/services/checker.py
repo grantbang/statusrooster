@@ -640,13 +640,18 @@ async def run_checks():
             "checks_failed": checks_failed,
         }
 
-        # Multi-region data (if present)
-        regions_checked = result.get("regions_checked", 1)
-        regions_up = result.get("regions_up", regions_checked if result["is_up"] else 0)
-        response_by_region = result.get("response_ms_by_region", {})
-        monitor_updates["last_regions_checked"] = regions_checked
-        monitor_updates["last_regions_up"] = regions_up
-        monitor_updates["last_response_by_region"] = response_by_region
+        # Multi-region data (only meaningful for HTTP/JSON monitors)
+        mtype = monitor.get("monitor_type", "http")
+        if mtype in ("http", "json_api"):
+            regions_checked = result.get("regions_checked", 1)
+            regions_up = result.get("regions_up", regions_checked if result["is_up"] else 0)
+            response_by_region = result.get("response_ms_by_region", {})
+            monitor_updates["last_regions_checked"] = regions_checked
+            monitor_updates["last_regions_up"] = regions_up
+            monitor_updates["last_response_by_region"] = response_by_region
+        else:
+            regions_checked = None
+            regions_up = None
 
         if status_changed:
             monitor_updates["last_status_change"] = datetime.now(timezone.utc)
