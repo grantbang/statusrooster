@@ -150,7 +150,7 @@
                 Certificate checked periodically
             {% else %}
                 {% set ci = monitor.get('check_interval', 60) %}
-                Checked every {% if ci < 120 %}{{ ci }}s{% elif ci < 300 %}{{ (ci / 60)|int }}m{% else %}5m{% endif %}
+                Check interval: {% if ci < 120 %}{{ ci }}s{% elif ci < 300 %}{{ (ci / 60)|int }}m{% else %}5m{% endif %}
             {% endif %}
         </div>
     </div>
