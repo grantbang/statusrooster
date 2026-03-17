@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request
+import httpx
 from app.config import settings
 from app.services.checker import run_checks
 
@@ -25,6 +26,11 @@ async def cron_check(request: Request):
     """
     _verify_cron_auth(request)
     results = await run_checks()
+    try:
+        async with httpx.AsyncClient() as hb:
+            await hb.get("https://statusrooster.com/api/ping/eqJyb8UWvNq8hskGk3kK?token=h3VeUGTMGYhCY0MPQiUS9q4IoBtejlZFq_1fgmQdZyM")
+    except Exception:
+        pass
     return {"status": "completed", "results": results}
 
 
