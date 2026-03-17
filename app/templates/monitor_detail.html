@@ -107,6 +107,7 @@
             {% elif monitor.status == 'up' %}Up
             {% elif monitor.status == 'warn' %}Warning
             {% elif monitor.status == 'down' %}Down
+            {% elif monitor.get('monitor_type') == 'heartbeat' and not monitor.get('last_heartbeat') %}Awaiting first ping
             {% else %}Pending{% endif %}
         </div>
         <div class="md-card-sub"
@@ -127,7 +128,9 @@
              {% if monitor.get('last_checked') %}
              data-last-checked="{{ monitor.last_checked.isoformat() if monitor.last_checked.isoformat is defined else monitor.last_checked }}"
              {% endif %}>
-            {% if last_check_ago %}
+            {% if monitor.get('monitor_type') == 'heartbeat' and not monitor.get('last_heartbeat') %}
+                Never
+            {% elif last_check_ago %}
                 {{ last_check_ago }}
             {% elif monitor.get('last_checked') %}
                 {% if monitor.last_checked.strftime is defined %}

@@ -340,15 +340,11 @@ async def _check_single_monitor_inner(monitor: dict, now: datetime) -> dict | No
                 last_hb_dt = last_hb if last_hb.tzinfo else last_hb.replace(tzinfo=timezone.utc)
 
         if last_hb_dt is None:
-            created = monitor.get("created_at")
-            if created:
-                created_dt = created if hasattr(created, 'timestamp') else now
-                if hasattr(created_dt, 'tzinfo') and created_dt.tzinfo is None:
-                    created_dt = created_dt.replace(tzinfo=timezone.utc)
-                age = (now - created_dt).total_seconds()
-                is_up = age < heartbeat_interval + grace_period
-            else:
-                is_up = True
+            # Never pinged — keep status as pending, don't mark down
+            return {
+                "monitor": monitor,
+                "result": {"status_code": None, "response_ms": 0, "is_up": None, "body": "awaiting_first_ping"},
+            }
         else:
             overdue = (now - last_hb_dt).total_seconds()
             is_up = overdue <= heartbeat_interval + grace_period
@@ -595,6 +591,11 @@ async def run_checks():
         ssl_result = cr.get("ssl_result")
         new_monitor_status = cr.get("new_monitor_status")
         ssl_info = cr.get("ssl_info") or {}  # Pre-fetched during Phase 2
+
+        # Heartbeat awaiting first ping — skip processing, keep status as pending
+        if result.get("is_up") is None:
+            results["skipped"] += 1
+            continue
 
         # Accumulate check for batch write (instead of individual create_check)
         check_batch.append({
