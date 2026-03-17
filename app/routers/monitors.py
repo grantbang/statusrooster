@@ -12,7 +12,7 @@ from app.services.alerts import send_test_alert
 router = APIRouter(prefix="/api/monitors", tags=["monitors-internal"], include_in_schema=False)
 
 FREE_MONITOR_LIMIT = 100
-PRO_MONITOR_LIMIT = 500
+PRO_MONITOR_LIMIT = 200
 
 
 class CreateMonitorRequest(BaseModel):

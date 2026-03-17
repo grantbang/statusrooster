@@ -4752,83 +4752,6 @@ code {
     color: #999;
 }
 
-/* Versus comparison cards */
-.l-versus {
-    max-width: 820px;
-    margin: 3.5rem auto;
-    text-align: center;
-    padding: 0 1rem;
-}
-.l-versus h2 {
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: var(--text);
-    margin-bottom: 2rem;
-    letter-spacing: -0.02em;
-}
-.l-versus-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.75rem;
-}
-.l-vs-card {
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.25rem 1rem;
-    text-align: left;
-    background: var(--surface);
-    transition: box-shadow 0.15s;
-}
-.l-vs-card:hover {
-    box-shadow: var(--shadow-md);
-}
-.l-vs-feature {
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-.l-vs-them {
-    font-size: 0.82rem;
-    color: var(--text-muted);
-    margin-bottom: 0.35rem;
-    text-decoration: line-through;
-    text-decoration-color: var(--danger);
-}
-.l-vs-them strong { color: var(--danger); text-decoration: none; }
-.l-vs-us {
-    font-size: 0.9rem;
-    color: var(--success-text);
-    font-weight: 600;
-}
-.l-vs-us strong { color: var(--success-text); }
-.l-vs-punchline {
-    margin-top: 2rem;
-}
-.l-vs-math {
-    font-size: 1.15rem;
-    color: var(--text);
-    margin-bottom: 1rem;
-    line-height: 1.5;
-}
-.l-vs-math strong {
-    color: var(--danger);
-    font-size: 1.3rem;
-}
-@media (max-width: 640px) {
-    .l-versus-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    .l-versus h2 { font-size: 1.25rem; }
-}
-@media (max-width: 420px) {
-    .l-versus-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
 /* URL Checker section */
 .l-checker-wrap {
     max-width: 560px;
@@ -7472,9 +7395,6 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
     .l-hero-actions { flex-wrap: wrap; gap: 0.5rem; }
     .l-btn-primary, .l-btn-ghost { padding: 0.65rem 1.25rem; font-size: 0.88rem; flex: 1 1 auto; text-align: center; }
     .l-pricing-grid { grid-template-columns: 1fr; }
-    .l-vs-card { padding: 0.75rem 1rem; }
-    .l-versus { margin: 2rem auto; padding: 0 0.5rem; }
-    .l-versus h2 { font-size: 1.25rem; }
     .l-howto-steps { gap: 1rem; }
     .l-howto-connector { display: none; }
     .l-types-grid { grid-template-columns: 1fr; }
@@ -7567,7 +7487,6 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
     .l-hero-features span { font-size: 0.7rem; }
     .l-hero-actions { flex-direction: column; gap: 0.5rem; }
     .l-btn-primary, .l-btn-ghost { width: 100%; text-align: center; box-sizing: border-box; }
-    .l-versus { padding: 0 0.25rem; }
     .l-checker-wrap h2 { font-size: 1rem; }
 
     /* ── Pricing ── */

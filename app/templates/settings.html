@@ -64,12 +64,12 @@
 
         {% if user.get('plan', 'free') == 'pro' %}
         <div class="sub-plan-features">
-            <span>500 monitors</span>
+            <span>200 monitors</span>
             <span>30s checks</span>
             <span>SMS alerts</span>
             <span>Custom branding</span>
             <span>90-day history</span>
-            <span>{{ user.get('monitors_count', 0) }} / 500 monitors used</span>
+            <span>{{ user.get('monitors_count', 0) }} / 200 monitors used</span>
         </div>
         {% else %}
         <div class="sub-plan-features">
@@ -85,7 +85,7 @@
 
     {% if user.get('plan', 'free') != 'pro' %}
     <div class="sub-upgrade-pitch">
-        <strong>Pro unlocks:</strong> 500 monitors, 30-second checks, SMS alerts, custom status page branding, and 90 days of history.
+        <strong>Pro unlocks:</strong> 200 monitors, 30-second checks, SMS alerts, custom status page branding, and 90 days of history.
     </div>
     {% endif %}
 

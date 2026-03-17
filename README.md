@@ -64,7 +64,7 @@ I'm Grant — a CPA with Big 4 accounting experience and blue-chip technical dat
 - **All monitor types** (HTTP, JSON/API, Heartbeat, SSL)
 
 **Pro — $9/month:**
-- **500 monitors**
+- **200 monitors**
 - **30-second check intervals**
 - **SMS alerts** (Twilio)
 - **90 days of history**

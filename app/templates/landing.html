@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}StatusRooster — 100 Free Monitors, 60-Second Checks, $0{% endblock %}
-{% block description %}Uptime monitoring that doesn't nickel-and-dime you. 100 monitors, 60-second checks from 4 regions, email/Slack/webhook alerts — all free. No credit card required.{% endblock %}
+{% block title %}StatusRooster — Uptime Monitoring for Developers{% endblock %}
+{% block description %}Know when your app goes down before your users do. 100 free monitors, 60-second checks from 4 regions, full REST API, Slack/webhook alerts. No credit card.{% endblock %}
 
 {% block canonical %}<link rel="canonical" href="https://statusrooster.com/">{% endblock %}
 
@@ -12,18 +12,8 @@
 
 <!-- Hero -->
 <section class="l-hero">
-    <h1>100 monitors.<br>60-second checks.<br>$0.</h1>
-    <p class="l-hero-sub">Uptime monitoring that doesn't nickel-and-dime you.</p>
-
-    <div class="l-hero-features">
-        <span>Slack alerts</span>
-        <span>Webhooks</span>
-        <span>REST API</span>
-        <span>Multi-region</span>
-        <span>SSL monitoring</span>
-        <span>Status pages</span>
-    </div>
-    <p class="l-hero-kicker">All included free. Others charge <strong>$29/mo</strong> for this.</p>
+    <h1>Know when it breaks.<br>Before your users do.</h1>
+    <p class="l-hero-sub">Uptime monitoring built for developers. 100 monitors, 60-second checks from 4 regions, full REST API — free forever.</p>
 
     <div class="l-hero-actions">
         <a href="/signup" class="l-btn-primary">Start monitoring free</a>
@@ -32,44 +22,59 @@
     <p class="l-hero-trust">No credit card &middot; Set up in 30 seconds &middot; Free forever</p>
 </section>
 
-<!-- The knockout punch — what others charge for -->
-<section class="l-versus">
-    <h2>They charge for this. We don't.</h2>
-    <div class="l-versus-grid">
-        <div class="l-vs-card">
-            <div class="l-vs-feature">Slack alerts</div>
-            <div class="l-vs-them">UptimeRobot: <strong>$7/mo</strong></div>
-            <div class="l-vs-us">StatusRooster: <strong>Free</strong></div>
+<!-- What you get — feature showcase -->
+<section class="l-features">
+    <h2>Everything you need. Nothing you don't.</h2>
+    <div class="l-feature-grid">
+        <div class="l-feature-card">
+            <h3>Full REST API</h3>
+            <p>Create monitors, pull check data, automate your workflow. Wire it into CI/CD. Free on every plan.</p>
         </div>
-        <div class="l-vs-card">
-            <div class="l-vs-feature">Webhook alerts</div>
-            <div class="l-vs-them">UptimeRobot: <strong>$29/mo</strong></div>
-            <div class="l-vs-us">StatusRooster: <strong>Free</strong></div>
+        <div class="l-feature-card">
+            <h3>4-Region Consensus</h3>
+            <p>Every check runs from US-East, US-West, Europe, and Asia. Majority vote means no false alarms.</p>
         </div>
-        <div class="l-vs-card">
-            <div class="l-vs-feature">REST API access</div>
-            <div class="l-vs-them">UptimeRobot: <strong>$7/mo</strong></div>
-            <div class="l-vs-us">StatusRooster: <strong>Free</strong></div>
+        <div class="l-feature-card">
+            <h3>Slack, Email &amp; Webhooks</h3>
+            <p>Get alerted the way you work. All channels included free — no paywall on Slack or webhooks.</p>
         </div>
-        <div class="l-vs-card">
-            <div class="l-vs-feature">Multi-region checks</div>
-            <div class="l-vs-them">UptimeRobot: <strong>Pro only</strong></div>
-            <div class="l-vs-us">StatusRooster: <strong>Free</strong></div>
+        <div class="l-feature-card">
+            <h3>JSON/API Assertions</h3>
+            <p>Assert on response fields with dot-path selectors. Catch broken APIs that return 200 with bad data.</p>
         </div>
-        <div class="l-vs-card">
-            <div class="l-vs-feature">SSL monitoring</div>
-            <div class="l-vs-them">UptimeRobot: <strong>$7/mo</strong></div>
-            <div class="l-vs-us">StatusRooster: <strong>Free</strong></div>
+        <div class="l-feature-card">
+            <h3>Cron &amp; Heartbeat</h3>
+            <p>Unique ping URL for your scheduled jobs. If your cron misses its window, you'll know immediately.</p>
         </div>
-        <div class="l-vs-card">
-            <div class="l-vs-feature">60-second checks</div>
-            <div class="l-vs-them">UptimeRobot free: <strong>5 min only</strong></div>
-            <div class="l-vs-us">StatusRooster: <strong>60s, free</strong></div>
+        <div class="l-feature-card">
+            <h3>SSL Expiry Alerts</h3>
+            <p>Get warned before your cert expires. Catches mismatched domains and broken chains too.</p>
+        </div>
+        <div class="l-feature-card">
+            <h3>Public Status Pages</h3>
+            <p>Share a clean status page with your users — 30-day history, live status, incident log. No login needed.</p>
+        </div>
+        <div class="l-feature-card">
+            <h3>Uptime Badges</h3>
+            <p>Embed live uptime badges in your GitHub README, docs, or landing page. Always current. Zero config.</p>
         </div>
     </div>
-    <div class="l-vs-punchline">
-        <div class="l-vs-math">To match our free plan on UptimeRobot, you'd pay <strong>$348/year</strong>.</div>
-        <a href="/signup" class="l-btn-primary">Get all of this for $0</a>
+</section>
+
+<!-- API showcase -->
+<section class="l-features">
+    <div class="l-feature">
+        <div class="l-feature-content">
+            <h2>API-first. Automate everything.</h2>
+            <p>Create monitors, pull uptime data, and wire monitoring into your deploy pipeline — all with a REST API that's free on every plan. <a href="/docs/api">Full docs here</a>.</p>
+            <div class="l-code l-code-sm">
+<pre>$ curl -X POST https://statusrooster.com/api/v1/monitors \
+    -H "X-API-Key: sr_live_abc123" \
+    -d '{"url":"https://myapp.com","name":"Production"}'
+
+<span class="c-muted">{"data":{"id":"m_8f3k","status":"pending","monitor_type":"http"}}</span></pre>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -143,8 +148,8 @@
             <div class="l-howto-icon">
                 <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
-            <h3>We check every 60 seconds</h3>
-            <p>From 4 regions simultaneously. Majority-vote consensus means no false alarms from a single region blip.</p>
+            <h3>We check from 4 regions</h3>
+            <p>Every 60 seconds. US-East, US-West, Europe, and Asia. Majority-vote consensus means no false alarms.</p>
         </div>
         <div class="l-howto-connector" aria-hidden="true"></div>
         <div class="l-howto-step">
@@ -153,30 +158,7 @@
                 <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             </div>
             <h3>Get alerted instantly</h3>
-            <p>Email, Slack, webhook, or SMS — the moment something breaks. Incident reports show which regions were affected.</p>
-        </div>
-    </div>
-</section>
-
-<!-- Monitor types — clean and tight -->
-<section class="l-types">
-    <h2>Four monitor types. All free.</h2>
-    <div class="l-types-grid">
-        <div class="l-type-card">
-            <h3>HTTP / HTTPS</h3>
-            <p>Any method. Custom headers. Keyword matching. Response time thresholds. Multi-region consensus.</p>
-        </div>
-        <div class="l-type-card">
-            <h3>JSON / API</h3>
-            <p>Assert on JSON fields with dot-path selectors. Alerts on assertion failure — even on a 200.</p>
-        </div>
-        <div class="l-type-card">
-            <h3>SSL Certificate</h3>
-            <p>Alerts before your cert expires. Catches mismatched domains and broken chains.</p>
-        </div>
-        <div class="l-type-card">
-            <h3>Heartbeat / Cron</h3>
-            <p>Unique ping URL for your cron job. Alert if it misses its window. Token-secured.</p>
+            <p>Email, Slack, or webhook — the moment something breaks. Incident reports show which regions were affected.</p>
         </div>
     </div>
 </section>
@@ -206,61 +188,10 @@
     </div>
 </section>
 
-<!-- Features -->
-<section class="l-features">
-    <div class="l-feature">
-        <div class="l-feature-content">
-            <h2>API-first. Automate everything.</h2>
-            <p>Create monitors, pull uptime data, and wire monitoring into your deploy pipeline — with a REST API on every plan, including Free. <a href="/docs/api">Full docs here</a>.</p>
-            <div class="l-code l-code-sm">
-<pre>$ curl -X POST https://statusrooster.com/api/v1/monitors \
-    -H "X-API-Key: sr_live_abc123" \
-    -d '{"url":"https://myapp.com","name":"Production"}'
-
-<span class="c-muted">{"id":"m_8f3k","status":"active","next_check":"2s"}</span></pre>
-            </div>
-        </div>
-    </div>
-
-    <div class="l-feature">
-        <div class="l-feature-content">
-            <h2>Uptime badges for your README.</h2>
-            <p>Embed live uptime badges in your GitHub README, docs, or landing page. Three styles. Always current. Zero config.</p>
-            <div class="l-code l-code-sm">
-<pre>![Uptime](https://statusrooster.com/badge/m_8f3k.svg)</pre>
-            </div>
-            <div class="l-badge-row">
-                <img src="/badge/demo.svg" alt="Uptime badge" onerror="this.style.display='none'" />
-                <img src="/badge/demo/status.svg" alt="Status badge" onerror="this.style.display='none'" />
-                <img src="/badge/demo/response.svg" alt="Response badge" onerror="this.style.display='none'" />
-            </div>
-        </div>
-    </div>
-
-    <div class="l-feature-grid">
-        <div class="l-feature-card">
-            <h3>Multi-region checks</h3>
-            <p>Every check runs from 4 regions (US-East, US-West, EU, Asia). Majority vote prevents false positives.</p>
-        </div>
-        <div class="l-feature-card">
-            <h3>Incident corroboration</h3>
-            <p>When something goes down, see exactly which regions were affected — with status codes, response times, and errors per region.</p>
-        </div>
-        <div class="l-feature-card">
-            <h3>Maintenance windows</h3>
-            <p>Schedule maintenance windows so you don't get woken up by expected downtime.</p>
-        </div>
-        <div class="l-feature-card">
-            <h3>Keyword monitoring</h3>
-            <p>Set an expected keyword. If it disappears from the response, we alert you — even on a 200.</p>
-        </div>
-    </div>
-</section>
-
 <!-- Pricing -->
 <section class="l-pricing">
     <h2>Simple pricing. No surprises.</h2>
-    <p class="l-pricing-sub">Start free. Upgrade if you need more. Most people don't.</p>
+    <p class="l-pricing-sub">Start free. Upgrade when your side project becomes a real business.</p>
     <div class="l-pricing-grid">
         <div class="l-price-card">
             <h3>Free</h3>
@@ -270,25 +201,26 @@
                 <li>60-second checks from 4 regions</li>
                 <li>Email, Slack &amp; webhook alerts</li>
                 <li>HTTP, SSL, Heartbeat &amp; JSON/API</li>
-                <li>Maintenance windows</li>
                 <li>Full REST API &amp; uptime badges</li>
                 <li>10 public status pages</li>
+                <li>Maintenance windows</li>
                 <li>30 days of history</li>
             </ul>
             <a href="/signup" class="l-price-cta">Get started free</a>
         </div>
         <div class="l-price-card l-price-card-pro">
-            <div class="l-price-badge">Power users</div>
+            <div class="l-price-badge">For growing teams</div>
             <h3>Pro</h3>
             <div class="l-price">$9 <span>/ mo</span></div>
             <ul>
-                <li><strong>500 monitors</strong></li>
-                <li>30-second checks</li>
+                <li><strong>200 monitors</strong></li>
+                <li><strong>30-second</strong> checks</li>
                 <li>Everything in Free, plus:</li>
                 <li>SMS alerts (Twilio)</li>
                 <li>Custom status page branding</li>
                 <li>Aggregate status page</li>
                 <li>90 days of history</li>
+                <li>Priority support</li>
             </ul>
             <a href="/pricing" class="l-price-cta l-price-cta-pro">Upgrade to Pro</a>
         </div>
@@ -298,7 +230,7 @@
 <!-- Bottom CTA -->
 <section class="l-bottom-cta">
     <h2>Your users shouldn't be your monitoring system.</h2>
-    <p>100 monitors. 60-second checks. 4 regions. Free forever.</p>
+    <p>100 monitors. 60-second checks. 4 regions. Full API. Free forever.</p>
     <a href="/signup" class="l-btn-primary">Start monitoring free</a>
 </section>
 

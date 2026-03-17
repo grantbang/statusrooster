@@ -10,7 +10,7 @@
 
 {% if user.get('plan', 'free') == 'free' and monitors | length >= 80 %}
 <div class="upgrade-banner">
-    <p>You're using <strong>{{ monitors | length }} of 100</strong> free monitors. Upgrade to Pro for 500 monitors, 30s checks, and SMS alerts.</p>
+    <p>You're using <strong>{{ monitors | length }} of 100</strong> free monitors. Upgrade to Pro for 200 monitors, 30s checks, and SMS alerts.</p>
     <form method="POST" action="/api/billing/checkout" style="margin:0;">
         <button type="submit" class="upgrade-btn">Upgrade to Pro — $9/mo</button>
     </form>
@@ -333,7 +333,7 @@
 {% if user.get('plan', 'free') == 'free' %}
 <div class="d-pro-footer">
     <span class="d-pro-footer-text">
-        <strong>Upgrade to Pro</strong> — get 30s checks, 500 monitors, and SMS alerts.
+        <strong>Upgrade to Pro</strong> — get 30s checks, 200 monitors, and SMS alerts.
     </span>
     <form method="POST" action="/api/billing/checkout" style="margin:0;">
         <button type="submit" class="d-pro-footer-cta">Upgrade — $9/mo</button>

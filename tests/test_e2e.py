@@ -608,7 +608,7 @@ class TestPlanEnforcement:
     """Tests E.1–E.12: Verify Free vs Pro plan gating.
 
     Phase 1 unlocked most features for free users. Only SMS and 30s intervals
-    remain Pro-only. Free limit = 100 monitors, Pro = 500.
+    remain Pro-only. Free limit = 100 monitors, Pro = 200.
     Status pages: 10 for all plans. Aggregate status page: Pro-only.
     """
 
@@ -1956,7 +1956,7 @@ class TestApiDocsAccuracy:
 
     @pytest.mark.asyncio
     async def test_q21_plan_limits_documented(self, client, pro_headers):
-        """Q.21 — Plan limits from API docs: Free=100 monitors, Pro=500"""
+        """Q.21 — Plan limits from API docs: Free=100 monitors, Pro=200"""
         # Check that Pro user can set check_interval=30 (documented Pro min)
         resp = await client.post("/api/v1/monitors", json={
             "url": "https://httpbin.org/status/200",
