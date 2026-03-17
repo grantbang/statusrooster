@@ -4593,24 +4593,24 @@ code {
 /* Hero */
 .l-hero {
     text-align: center;
-    padding: 3rem 0 1rem;
+    padding: 2rem 0 0.5rem;
     max-width: 720px;
     margin: 0 auto;
 }
 .l-hero h1 {
-    font-size: 3rem;
+    font-size: 2.6rem;
     font-weight: 800;
     line-height: 1.12;
     color: var(--text);
     letter-spacing: -0.03em;
-    margin-bottom: 1.25rem;
+    margin-bottom: 0.75rem;
 }
 .l-hero-sub {
-    font-size: 1.1rem;
-    line-height: 1.65;
+    font-size: 1.05rem;
+    line-height: 1.55;
     color: #555;
     max-width: 540px;
-    margin: 0 auto 1.5rem;
+    margin: 0 auto 1rem;
 }
 
 /* Hero feature checklist */
@@ -4648,7 +4648,7 @@ code {
     display: flex;
     justify-content: center;
     gap: 0.75rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
 }
 .l-btn-primary {
     display: inline-block;
@@ -4895,7 +4895,14 @@ code {
 
 /* Features */
 .l-features {
-    padding: 3rem 0 2rem;
+    padding: 1.25rem 0 1.5rem;
+}
+.l-features > h2 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    text-align: center;
+    margin: 0;
+    letter-spacing: -0.01em;
 }
 .l-feature {
     padding: 3rem 0;
@@ -4957,7 +4964,7 @@ code {
 .l-hero-trust {
     font-size: 0.82rem;
     color: #9ca3af;
-    margin: 0.25rem 0 1.5rem;
+    margin: 0.25rem 0 0;
     letter-spacing: 0.01em;
 }
 .l-hero-stat-strip {
@@ -5232,26 +5239,26 @@ code {
 /* ── Feature grid + cards (used by l-features) ── */
 .l-feature-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-    margin-top: 2rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-top: 1rem;
 }
 .l-feature-card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 1.25rem 1.5rem;
+    padding: 1rem 1.1rem;
 }
 .l-feature-card h3 {
-    font-size: 0.95rem;
+    font-size: 0.88rem;
     font-weight: 700;
     color: var(--text);
-    margin: 0 0 0.4rem;
+    margin: 0 0 0.3rem;
 }
 .l-feature-card p {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     color: var(--muted);
-    line-height: 1.55;
+    line-height: 1.5;
     margin: 0;
 }
 
@@ -5418,7 +5425,7 @@ code {
     .l-sp-stat { padding: 0.5rem 1rem; }
     .l-trans-grid { grid-template-columns: 1fr; }
     .l-pricing-grid { grid-template-columns: 1fr; }
-    .l-feature-grid { grid-template-columns: 1fr; }
+    .l-feature-grid { grid-template-columns: repeat(2, 1fr); }
     .l-ss-tabs { flex-wrap: wrap; }
     .l-ss-frame { border-radius: 10px; }
     .l-sp-num { font-size: 1.4rem; }
@@ -7399,7 +7406,7 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
     .l-howto-connector { display: none; }
     .l-types-grid { grid-template-columns: 1fr; }
     .l-feature-grid { grid-template-columns: 1fr; }
-    .l-features { padding: 1.5rem 0 1rem; }
+    .l-features { padding: 1rem 0 0.75rem; }
     .l-feature { padding: 1.5rem 0; }
     .l-feature h2 { font-size: 1.25rem; }
     .l-code pre { font-size: 0.72rem; overflow-x: auto; word-break: break-all; }
