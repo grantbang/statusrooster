@@ -6949,6 +6949,19 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
 }
 .mf-sms-hint--ok { color: var(--success); }
 .mf-sms-hint--err { color: var(--danger); }
+.mf-sms-consent {
+    margin: 0.5rem 0 0;
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.5;
+}
+.mf-sms-consent a {
+    color: var(--brand);
+    text-decoration: none;
+}
+.mf-sms-consent a:hover {
+    text-decoration: underline;
+}
 .mf-notify-channel-input.mf-input-ok {
     border-color: var(--success);
     outline: none;

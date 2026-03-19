@@ -11,6 +11,19 @@
 
     <div style="line-height: 1.8; color: var(--text);">
 
+        <div style="border: 2px solid var(--brand); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 2rem; background: #f5f3ff;">
+            <h3 style="font-size: 1rem; font-weight: 700; margin: 0 0 0.75rem; color: var(--brand);">Summary for Compliance Review</h3>
+            <ul style="padding-left: 1.25rem; margin: 0; font-size: 0.92rem;">
+                <li><strong>Opt-in method:</strong> Electronic, behind login — user must toggle SMS on, enter phone number, read inline consent disclosure, and submit the form.</li>
+                <li><strong>Opt-in page:</strong> <a href="https://statusrooster.com/add-monitor" style="color: var(--brand);">statusrooster.com/add-monitor</a> (requires login + Pro plan)</li>
+                <li><strong>Message type:</strong> Transactional only — downtime alerts and recovery notifications. Zero marketing messages.</li>
+                <li><strong>Frequency:</strong> 1–10 messages/week typical, varies by monitor activity.</li>
+                <li><strong>Opt-out:</strong> Reply STOP, or remove phone number in-app.</li>
+                <li><strong>Privacy Policy:</strong> <a href="https://statusrooster.com/privacy" style="color: var(--brand);">statusrooster.com/privacy</a></li>
+                <li><strong>Terms of Service:</strong> <a href="https://statusrooster.com/terms" style="color: var(--brand);">statusrooster.com/terms</a></li>
+            </ul>
+        </div>
+
         <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">1. Overview</h2>
         <p><strong>StatusRooster</strong> is an uptime monitoring service at <a href="https://statusrooster.com" style="color: var(--brand);">statusrooster.com</a>. SMS alerts are a <strong>Pro plan</strong> feature ($9/month) that sends transactional text messages when a user's monitored website or API goes down or recovers. Messages are strictly transactional — we never send marketing or promotional SMS.</p>
 
@@ -51,7 +64,16 @@
         </div>
 
         <div style="margin: 1.5rem 0;">
-            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Step 4: User saves the form</h3>
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Step 4: User reads consent disclosure</h3>
+            <p>Below the phone number field, an inline consent disclosure is displayed:</p>
+            <div style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; margin: 1rem 0; background: #fafafa;">
+                <div style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">UI Preview — Consent Disclosure</div>
+                <p style="font-size: 0.78rem; color: #666; line-height: 1.5; background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem;">By enabling SMS alerts, you consent to receive transactional text messages about monitor status (down/recovery). Msg frequency varies by monitor activity. Msg &amp; data rates may apply. Reply STOP to opt out. Reply HELP for help. <a href="/privacy" style="color: var(--brand);">Privacy Policy</a> · <a href="/terms" style="color: var(--brand);">Terms</a> · <a href="/sms-consent" style="color: var(--brand);">SMS Consent</a></p>
+            </div>
+        </div>
+
+        <div style="margin: 1.5rem 0;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Step 5: User saves the form</h3>
             <p>The user clicks <strong>"Create Monitor"</strong> or <strong>"Save Changes"</strong> to submit the form. By saving with SMS enabled and a phone number entered, the user explicitly consents to receive SMS alert notifications from StatusRooster. Consent is recorded at the time of form submission.</p>
         </div>
 
