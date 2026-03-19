@@ -716,20 +716,31 @@ async def run_checks():
         if is_http and keyword and result["is_up"]:
             body_lower = result.get("body", "").lower()
             keyword_failed = not _check_keyword_expression(keyword, body_lower)
+            was_keyword_failing = monitor.get("keyword_failing", False)
             if keyword_failed:
-                if not in_maintenance:
+                monitor_updates["keyword_failing"] = True
+                if not was_keyword_failing and not in_maintenance:
                     await send_keyword_alert(monitor, keyword)
                     print(f"[checker] KEYWORD MISSING: '{keyword}' not found on {monitor['name']}")
+            else:
+                if was_keyword_failing:
+                    monitor_updates["keyword_failing"] = False
 
         # ----- Response Time Threshold — HTTP + JSON/API monitors -----
         has_response = monitor.get("monitor_type") in ("http", "json_api")
         threshold = monitor.get("response_threshold_ms")
         if has_response and threshold and result["response_ms"] and result["is_up"]:
             threshold_str = str(threshold)
-            if _check_threshold_condition(threshold_str, result["response_ms"]):
-                if not in_maintenance:
+            threshold_violated = _check_threshold_condition(threshold_str, result["response_ms"])
+            was_threshold_failing = monitor.get("threshold_failing", False)
+            if threshold_violated:
+                monitor_updates["threshold_failing"] = True
+                if not was_threshold_failing and not in_maintenance:
                     await send_threshold_alert(monitor, result["response_ms"], threshold)
                     print(f"[checker] THRESHOLD: {monitor['name']} {result['response_ms']}ms violated condition '{threshold_str}'")
+            else:
+                if was_threshold_failing:
+                    monitor_updates["threshold_failing"] = False
 
         # ----- SSL Expiry Alerts (14, 7, 3 days) — HTTP + JSON/API monitors (auto-detect) -----
         if monitor.get("monitor_type") in ("http", "json_api") and ssl_info.get("ssl_expiry_days") is not None:
