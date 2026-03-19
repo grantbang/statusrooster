@@ -1333,29 +1333,56 @@ async def monitor_detail(request: Request, monitor_id: str):
         "max": round(max(response_vals)) if response_vals else None,
     }
 
-    # ---------- MTBF (Mean Time Between Failures) ----------
-    # Computed from incidents in the last 30 days
-    resolved_incidents = [
+    # ---------- Downtime (30 days) ----------
+    resolved_incidents_30d = [
         inc for inc in incidents
         if inc.get("started_at") and inc.get("status") == "resolved"
         and inc["started_at"] >= now - timedelta(days=30)
     ]
-    if len(resolved_incidents) >= 1:
-        # MTBF = (total monitored time - total downtime) / number of failures
-        monitoring_hours = 30 * 24  # 30 days in hours
-        total_down_hours = sum(
-            (inc.get("duration_seconds", 0) or 0) / 3600
-            for inc in resolved_incidents
-        )
-        uptime_hours = max(monitoring_hours - total_down_hours, 0)
-        mtbf_hours = round(uptime_hours / len(resolved_incidents), 2)
-        if mtbf_hours >= 24:
-            mtbf_str = f"{mtbf_hours / 24:.1f} days"
-        else:
-            mtbf_str = f"{mtbf_hours:.1f} hours"
-        mtbf = {"value": mtbf_str, "hours": mtbf_hours, "failures": len(resolved_incidents)}
+    total_down_seconds = sum(
+        (inc.get("duration_seconds", 0) or 0)
+        for inc in resolved_incidents_30d
+    )
+    # Also count ongoing incident duration
+    open_incidents_30d = [
+        inc for inc in incidents
+        if inc.get("started_at") and inc.get("status") == "open"
+        and inc["started_at"] >= now - timedelta(days=30)
+    ]
+    for inc in open_incidents_30d:
+        started = inc["started_at"]
+        if hasattr(started, 'timestamp'):
+            total_down_seconds += (now - started).total_seconds()
+    incident_count = len(resolved_incidents_30d) + len(open_incidents_30d)
+    # Format downtime string
+    if total_down_seconds < 60:
+        downtime_str = f"{int(total_down_seconds)}s" if total_down_seconds > 0 else "None"
+    elif total_down_seconds < 3600:
+        downtime_str = f"{int(total_down_seconds / 60)}m"
+    elif total_down_seconds < 86400:
+        hours = total_down_seconds / 3600
+        downtime_str = f"{hours:.1f}h"
     else:
-        mtbf = None
+        days = total_down_seconds / 86400
+        downtime_str = f"{days:.1f}d"
+    # Find longest outage
+    all_durations = [inc.get("duration_seconds", 0) or 0 for inc in resolved_incidents_30d]
+    for inc in open_incidents_30d:
+        started = inc["started_at"]
+        if hasattr(started, 'timestamp'):
+            all_durations.append((now - started).total_seconds())
+    longest_seconds = max(all_durations) if all_durations else 0
+    if longest_seconds < 60:
+        longest_str = f"{int(longest_seconds)}s" if longest_seconds > 0 else None
+    elif longest_seconds < 3600:
+        longest_str = f"{int(longest_seconds / 60)}m"
+    else:
+        longest_str = f"{longest_seconds / 3600:.1f}h"
+    downtime_30d = {
+        "value": downtime_str,
+        "incidents": incident_count,
+        "longest": longest_str,
+    }
 
     # ---------- Last check "ago" text (server-rendered) ----------
     last_checked = monitor.get("last_checked")
@@ -1396,7 +1423,7 @@ async def monitor_detail(request: Request, monitor_id: str):
         "daily_bars": daily_bars,
         "hourly_bars": hourly_bars,
         "response_stats": response_stats,
-        "mtbf": mtbf,
+        "downtime_30d": downtime_30d,
         "last_check_ago": last_check_ago,
         "flash_message": flash_message,
         "flash_type": flash_type,

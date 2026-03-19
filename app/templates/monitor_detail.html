@@ -158,12 +158,14 @@
         </div>
     </div>
     <div class="md-card">
-        <div class="md-card-label">MTBF</div>
-        <div class="md-card-value" style="color: var(--brand);">
-            {% if mtbf %}{{ mtbf.value }}{% else %}—{% endif %}
+        <div class="md-card-label">Downtime (30d)</div>
+        <div class="md-card-value" style="color: {% if downtime_30d.value == 'None' %}var(--success){% else %}var(--danger){% endif %};">
+            {{ downtime_30d.value }}
         </div>
         <div class="md-card-sub">
-            {% if mtbf %}{{ mtbf.failures }} failure{{ 's' if mtbf.failures != 1 else '' }} · 30 days{% else %}No failures recorded{% endif %}
+            {% if downtime_30d.incidents == 0 %}No incidents
+            {% else %}{{ downtime_30d.incidents }} incident{{ 's' if downtime_30d.incidents != 1 else '' }}{% if downtime_30d.longest %} · longest {{ downtime_30d.longest }}{% endif %}
+            {% endif %}
         </div>
     </div>
 </div>
