@@ -233,6 +233,12 @@ async def sms_consent_page(request: Request):
     return templates.TemplateResponse("sms_consent.html", {"request": request, "user": user})
 
 
+@router.get("/cookies", response_class=HTMLResponse)
+async def cookies_page(request: Request):
+    user = get_user_from_cookie(request)
+    return templates.TemplateResponse("cookies.html", {"request": request, "user": user})
+
+
 # ---------------------------------------------------------------------------
 # Auth Pages
 # ---------------------------------------------------------------------------

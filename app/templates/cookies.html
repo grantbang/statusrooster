@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Cookie Policy{% endblock %}
+{% block description %}How StatusRooster uses cookies — what we set, why, and how to manage them.{% endblock %}
+{% block canonical %}<link rel="canonical" href="https://statusrooster.com/cookies">{% endblock %}
+
+{% block content %}
+<div style="max-width: 760px; margin: 3rem auto; padding: 0 1rem;">
+    <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Cookie Policy</h1>
+    <p style="color: var(--muted); margin-bottom: 2.5rem;">Last updated: March 19, 2026</p>
+
+    <div style="line-height: 1.8; color: var(--text);">
+
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">1. Overview</h2>
+        <p>StatusRooster uses a small number of cookies that are strictly necessary for the application to function. We do not use any advertising, analytics, or third-party tracking cookies.</p>
+
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">2. Cookies We Set</h2>
+
+        <table style="width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.92rem;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--divider); text-align: left;">
+                    <th style="padding: 0.6rem 0.75rem;">Cookie</th>
+                    <th style="padding: 0.6rem 0.75rem;">Purpose</th>
+                    <th style="padding: 0.6rem 0.75rem;">Duration</th>
+                    <th style="padding: 0.6rem 0.75rem;">Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="border-bottom: 1px solid var(--divider);">
+                    <td style="padding: 0.6rem 0.75rem;"><code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">access_token</code></td>
+                    <td style="padding: 0.6rem 0.75rem;">Keeps you logged in. Contains an encrypted JWT with your user ID.</td>
+                    <td style="padding: 0.6rem 0.75rem;">Session</td>
+                    <td style="padding: 0.6rem 0.75rem;">Essential</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--divider);">
+                    <td style="padding: 0.6rem 0.75rem;"><code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">oauth_state</code></td>
+                    <td style="padding: 0.6rem 0.75rem;">CSRF protection during Google/GitHub login. Prevents login forgery attacks.</td>
+                    <td style="padding: 0.6rem 0.75rem;">10 minutes</td>
+                    <td style="padding: 0.6rem 0.75rem;">Essential</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--divider);">
+                    <td style="padding: 0.6rem 0.75rem;"><code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">flash_message</code></td>
+                    <td style="padding: 0.6rem 0.75rem;">Shows success/error messages after an action (e.g., "Monitor saved!").</td>
+                    <td style="padding: 0.6rem 0.75rem;">10 seconds</td>
+                    <td style="padding: 0.6rem 0.75rem;">Essential</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--divider);">
+                    <td style="padding: 0.6rem 0.75rem;"><code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">flash_type</code></td>
+                    <td style="padding: 0.6rem 0.75rem;">Determines the style of the flash message (success, error, info).</td>
+                    <td style="padding: 0.6rem 0.75rem;">10 seconds</td>
+                    <td style="padding: 0.6rem 0.75rem;">Essential</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--divider);">
+                    <td style="padding: 0.6rem 0.75rem;"><code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">new_api_key</code></td>
+                    <td style="padding: 0.6rem 0.75rem;">Displays a newly created API key once so you can copy it. Never shown again.</td>
+                    <td style="padding: 0.6rem 0.75rem;">10 seconds</td>
+                    <td style="padding: 0.6rem 0.75rem;">Essential</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>All cookies are:</p>
+        <ul style="padding-left: 1.5rem; margin: 0.5rem 0;">
+            <li><strong>First-party only</strong> — set by statusrooster.com, not by any third party.</li>
+            <li><strong>HttpOnly</strong> — not accessible to JavaScript, protecting against XSS attacks.</li>
+            <li><strong>Secure</strong> — only transmitted over HTTPS.</li>
+            <li><strong>SameSite=Lax</strong> — not sent with cross-site requests, protecting against CSRF.</li>
+        </ul>
+
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">3. What We Don't Use</h2>
+        <ul style="padding-left: 1.5rem; margin: 0.5rem 0;">
+            <li>No Google Analytics or any analytics cookies.</li>
+            <li>No advertising or retargeting cookies.</li>
+            <li>No third-party tracking pixels or scripts.</li>
+            <li>No social media tracking cookies.</li>
+            <li>No cookie consent banner — because we only use essential cookies required for the service to function.</li>
+        </ul>
+
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">4. Managing Cookies</h2>
+        <p>You can delete or block cookies through your browser settings. However, if you block the <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">access_token</code> cookie, you will not be able to stay logged in.</p>
+
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">5. Related Policies</h2>
+        <ul style="padding-left: 1.5rem; margin: 0.5rem 0;">
+            <li><a href="/privacy" style="color: var(--brand);">Privacy Policy</a></li>
+            <li><a href="/terms" style="color: var(--brand);">Terms of Service</a></li>
+        </ul>
+
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">6. Contact</h2>
+        <p>Questions about our cookie practices? Email <a href="mailto:support@statusrooster.com" style="color: var(--brand);">support@statusrooster.com</a>.</p>
+
+    </div>
+</div>
+{% endblock %}
