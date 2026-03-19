@@ -6,7 +6,7 @@ Separate from API routes which return JSON.
 from fastapi import APIRouter, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from app.database import get_db
-from app.models.user import create_user, get_user_by_email, verify_password, get_user_by_id, update_user
+from app.models.user import create_user, get_user_by_email, verify_password, get_user_by_id, update_user, hash_password, delete_user
 from app.models.monitor import list_monitors_by_user, get_monitor, get_monitor_by_slug, create_monitor, update_monitor, delete_monitor
 from app.models.check import get_recent_checks, get_daily_uptime
 from app.models.incident import list_incidents_by_monitor, list_incidents_by_user, get_incident, get_incident_events
@@ -1769,6 +1769,120 @@ async def save_branding(request: Request):
 
     response = RedirectResponse(url="/settings", status_code=302)
     _set_flash(response, "Branding settings saved.")
+    return response
+
+
+@router.post("/settings/profile", response_class=HTMLResponse)
+async def save_profile(request: Request):
+    user = get_user_from_cookie(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+
+    form = await request.form()
+    display_name = form.get("display_name", "").strip()[:100]
+
+    db = get_db()
+    update_user(db, user["id"], {"display_name": display_name})
+
+    response = RedirectResponse(url="/settings#profile", status_code=302)
+    _set_flash(response, "Profile updated.")
+    return response
+
+
+@router.post("/settings/password", response_class=HTMLResponse)
+async def change_password(request: Request):
+    user = get_user_from_cookie(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+
+    # Only email-auth users can change password
+    if user.get("auth_provider") != "email":
+        response = RedirectResponse(url="/settings", status_code=302)
+        _set_flash(response, "Password change is only available for email accounts.", "error")
+        return response
+
+    form = await request.form()
+    current_password = form.get("current_password", "")
+    new_password = form.get("new_password", "")
+    confirm_password = form.get("confirm_password", "")
+
+    if not verify_password(current_password, user.get("password_hash", "")):
+        response = RedirectResponse(url="/settings#password", status_code=302)
+        _set_flash(response, "Current password is incorrect.", "error")
+        return response
+
+    if len(new_password) < 8:
+        response = RedirectResponse(url="/settings#password", status_code=302)
+        _set_flash(response, "New password must be at least 8 characters.", "error")
+        return response
+
+    if new_password != confirm_password:
+        response = RedirectResponse(url="/settings#password", status_code=302)
+        _set_flash(response, "New passwords do not match.", "error")
+        return response
+
+    db = get_db()
+    update_user(db, user["id"], {"password_hash": hash_password(new_password)})
+
+    response = RedirectResponse(url="/settings#password", status_code=302)
+    _set_flash(response, "Password changed successfully.")
+    return response
+
+
+@router.post("/settings/notifications", response_class=HTMLResponse)
+async def save_notifications(request: Request):
+    user = get_user_from_cookie(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+
+    form = await request.form()
+    default_alert_email = form.get("default_alert_email", "").strip()[:200]
+    alert_on_recovery = form.get("alert_on_recovery") == "on"
+    weekly_digest = form.get("weekly_digest") == "on"
+
+    db = get_db()
+    update_user(db, user["id"], {
+        "default_alert_email": default_alert_email,
+        "alert_on_recovery": alert_on_recovery,
+        "weekly_digest": weekly_digest,
+    })
+
+    response = RedirectResponse(url="/settings#notifications", status_code=302)
+    _set_flash(response, "Notification preferences saved.")
+    return response
+
+
+@router.post("/settings/delete-account", response_class=HTMLResponse)
+async def delete_account(request: Request):
+    user = get_user_from_cookie(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+
+    form = await request.form()
+    confirm_email = form.get("confirm_email", "").strip().lower()
+
+    if confirm_email != user.get("email", "").lower():
+        response = RedirectResponse(url="/settings#danger", status_code=302)
+        _set_flash(response, "Email confirmation did not match. Account was not deleted.", "error")
+        return response
+
+    # Cancel Stripe subscription if Pro
+    if user.get("plan") == "pro" and user.get("stripe_customer_id"):
+        try:
+            import stripe
+            from app.config import settings as app_settings
+            stripe.api_key = app_settings.STRIPE_SECRET_KEY
+            subs = stripe.Subscription.list(customer=user["stripe_customer_id"], status="active", limit=1)
+            for sub in subs.data:
+                stripe.Subscription.cancel(sub.id)
+        except Exception:
+            pass  # Best-effort
+
+    db = get_db()
+    delete_user(db, user["id"])
+
+    response = RedirectResponse(url="/", status_code=302)
+    response.delete_cookie("access_token")
     return response
 
 

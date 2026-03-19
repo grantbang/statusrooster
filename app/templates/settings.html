@@ -19,8 +19,125 @@
 </div>
 {% endif %}
 
-<!-- Account + Plan (first frame) -->
-<div class="settings-section">
+<div class="settings-layout">
+    <!-- Section Nav -->
+    <nav class="settings-nav">
+        <a href="#profile" class="settings-nav-link active" data-section="profile">Profile</a>
+        {% if user.get('auth_provider', 'email') == 'email' %}
+        <a href="#password" class="settings-nav-link" data-section="password">Password</a>
+        {% endif %}
+        <a href="#notifications" class="settings-nav-link" data-section="notifications">Notifications</a>
+        <a href="#subscription" class="settings-nav-link" data-section="subscription">Subscription & Billing</a>
+        <a href="#timezone" class="settings-nav-link" data-section="timezone">Timezone</a>
+        {% if user.get('plan', 'free') == 'pro' %}
+        <a href="#branding" class="settings-nav-link" data-section="branding">Status Page Branding</a>
+        {% endif %}
+        <a href="#api-keys" class="settings-nav-link" data-section="api-keys">API Keys</a>
+        <a href="#danger" class="settings-nav-link settings-nav-danger" data-section="danger">Danger Zone</a>
+    </nav>
+
+    <!-- Content -->
+    <div class="settings-content">
+
+<!-- Profile -->
+<div class="settings-section" id="profile">
+    <h2>Profile</h2>
+    <div class="section-desc">Your personal information.</div>
+    <form method="POST" action="/settings/profile" style="max-width: 420px;">
+        <div class="form-group">
+            <label for="display_name">Display name</label>
+            <input type="text" id="display_name" name="display_name"
+                   value="{{ user.get('display_name', '') }}" placeholder="How you want to be called"
+                   maxlength="100" class="form-control">
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <div class="settings-readonly">
+                {{ user.email }}
+                <span class="settings-provider-badge">
+                    {% if user.get('auth_provider') == 'google' %}Google account
+                    {% elif user.get('auth_provider') == 'github' %}GitHub account
+                    {% else %}Email account{% endif %}
+                </span>
+            </div>
+            <div class="hint">Contact <a href="mailto:support@statusrooster.com">support@statusrooster.com</a> to change your email.</div>
+        </div>
+        <div class="form-group">
+            <label>Member since</label>
+            <div class="settings-readonly">
+                {% if user.get('created_at') %}
+                    {{ user.created_at.strftime('%B %d, %Y') if user.created_at.strftime is defined else user.created_at }}
+                {% else %}
+                    —
+                {% endif %}
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Save profile</button>
+    </form>
+</div>
+
+<!-- Password (email-auth only) -->
+{% if user.get('auth_provider', 'email') == 'email' %}
+<div class="settings-section" id="password">
+    <h2>Password</h2>
+    <div class="section-desc">Change your account password.</div>
+    <form method="POST" action="/settings/password" style="max-width: 420px;">
+        <div class="form-group">
+            <label for="current_password">Current password</label>
+            <input type="password" id="current_password" name="current_password" required class="form-control" autocomplete="current-password">
+        </div>
+        <div class="form-group">
+            <label for="new_password">New password</label>
+            <input type="password" id="new_password" name="new_password" required minlength="8" class="form-control" autocomplete="new-password">
+            <div class="hint">Minimum 8 characters.</div>
+        </div>
+        <div class="form-group">
+            <label for="confirm_password">Confirm new password</label>
+            <input type="password" id="confirm_password" name="confirm_password" required minlength="8" class="form-control" autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn btn-primary">Change password</button>
+    </form>
+</div>
+{% endif %}
+
+<!-- Notifications -->
+<div class="settings-section" id="notifications">
+    <h2>Notifications</h2>
+    <div class="section-desc">Configure your default alert preferences.</div>
+    <form method="POST" action="/settings/notifications" style="max-width: 420px;">
+        <div class="form-group">
+            <label for="default_alert_email">Default alert email</label>
+            <input type="email" id="default_alert_email" name="default_alert_email"
+                   value="{{ user.get('default_alert_email', user.email) }}"
+                   placeholder="{{ user.email }}" maxlength="200" class="form-control">
+            <div class="hint">Pre-filled when creating new monitors. Falls back to your login email.</div>
+        </div>
+        <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 400;">
+                <input type="checkbox" name="alert_on_recovery" value="on"
+                       {% if user.get('alert_on_recovery', True) %}checked{% endif %}
+                       style="width: 18px; height: 18px;">
+                Send recovery notifications
+            </label>
+            <div class="hint">Get notified when a monitor comes back up after an incident.</div>
+        </div>
+        <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 400;">
+                <input type="checkbox" name="weekly_digest" value="on"
+                       {% if user.get('weekly_digest', False) %}checked{% endif %}
+                       style="width: 18px; height: 18px;">
+                Weekly uptime digest
+                <span class="settings-coming-soon">Coming soon</span>
+            </label>
+            <div class="hint">A weekly summary of your monitors' uptime and incidents.</div>
+        </div>
+        <button type="submit" class="btn btn-primary">Save notifications</button>
+    </form>
+</div>
+
+<!-- Subscription & Billing -->
+<div class="settings-section" id="subscription">
+    <h2>Subscription & Billing</h2>
     <div class="sub-plan-card {% if user.get('plan', 'free') == 'pro' %}sub-plan-pro{% endif %}">
         <div class="sub-plan-row">
             <div class="sub-plan-info">
@@ -99,7 +216,7 @@
 </div>
 
 <!-- Timezone -->
-<div class="settings-section">
+<div class="settings-section" id="timezone">
     <h2>Timezone</h2>
     <div class="section-desc">All timestamps in the app will display in your chosen timezone.</div>
     <form method="POST" action="/settings/timezone" style="max-width: 340px;">
@@ -169,7 +286,7 @@
 
 <!-- Status Page Branding (Pro) -->
 {% if user.get('plan', 'free') == 'pro' %}
-<div class="settings-section">
+<div class="settings-section" id="branding">
     <h2>Status Page Branding</h2>
     <div class="section-desc">Customize how your public status pages look. These settings apply to all your status pages.</div>
     <form method="POST" action="/settings/branding" style="max-width: 420px;">
@@ -211,7 +328,7 @@
 {% endif %}
 
 <!-- API Keys -->
-<div class="settings-section">
+<div class="settings-section" id="api-keys">
     <h2>API Keys</h2>
     <div class="section-desc">Create API keys to access the <a href="/docs/api">StatusRooster API</a> programmatically.</div>
 
@@ -296,16 +413,47 @@
     {% endif %}
 </div>
 
+<!-- Danger Zone -->
+<div class="settings-section settings-danger-zone" id="danger">
+    <h2>Danger Zone</h2>
+    <div class="section-desc">Irreversible actions. Please be certain before proceeding.</div>
+
+    <div class="danger-card">
+        <div class="danger-card-info">
+            <strong>Delete account</strong>
+            <p>Permanently delete your account and all associated data including monitors, incidents, API keys, and status pages. If you have an active Pro subscription, it will be cancelled.</p>
+        </div>
+        <button type="button" class="btn btn-danger" onclick="showDeleteConfirm()">Delete account</button>
+    </div>
+
+    <div id="deleteConfirm" class="danger-confirm" style="display: none;">
+        <form method="POST" action="/settings/delete-account" onsubmit="return confirmDelete()">
+            <p><strong>This action cannot be undone.</strong> Type your email <code>{{ user.email }}</code> to confirm.</p>
+            <div class="form-group">
+                <input type="email" name="confirm_email" id="confirmDeleteEmail"
+                       placeholder="Type your email to confirm" class="form-control" required autocomplete="off">
+            </div>
+            <button type="submit" class="btn btn-danger">Permanently delete my account</button>
+        </form>
+    </div>
+</div>
+
+    </div><!-- /.settings-content -->
+</div><!-- /.settings-layout -->
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
+/* Accent color preview */
 var colorInput = document.getElementById('status_page_accent_color');
 if (colorInput) {
     colorInput.addEventListener('input', function() {
         document.getElementById('accentHex').textContent = this.value;
     });
 }
+
+/* Copy API key */
 function copyKey() {
     var keyEl = document.getElementById('newKeyValue');
     if (keyEl) {
@@ -316,6 +464,7 @@ function copyKey() {
         });
     }
 }
+
 /* Format next billing date */
 var nbEl = document.getElementById('nextBilling');
 if (nbEl) {
@@ -325,5 +474,39 @@ if (nbEl) {
         nbEl.textContent = d.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
     }
 }
+
+/* Danger zone: delete account */
+function showDeleteConfirm() {
+    document.getElementById('deleteConfirm').style.display = 'block';
+    document.getElementById('confirmDeleteEmail').focus();
+}
+
+function confirmDelete() {
+    return confirm('Are you absolutely sure? This will permanently delete your account and all data.');
+}
+
+/* Scroll-spy for section nav */
+(function() {
+    var links = document.querySelectorAll('.settings-nav-link');
+    var sections = [];
+    links.forEach(function(link) {
+        var id = link.getAttribute('data-section');
+        var el = document.getElementById(id);
+        if (el) sections.push({ id: id, el: el, link: link });
+    });
+    if (!sections.length) return;
+
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                links.forEach(function(l) { l.classList.remove('active'); });
+                var match = sections.find(function(s) { return s.el === entry.target; });
+                if (match) match.link.classList.add('active');
+            }
+        });
+    }, { rootMargin: '-20% 0px -60% 0px' });
+
+    sections.forEach(function(s) { observer.observe(s.el); });
+})();
 </script>
 {% endblock %}

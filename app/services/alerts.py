@@ -269,6 +269,19 @@ async def send_recovery_alert(monitor: dict, incident: dict) -> dict:
     monitor_id = monitor.get("id", "")
     user_id = monitor.get("user_id", "")
     user_plan = _get_user_plan(user_id)
+
+    # Check user's recovery notification preference
+    if user_id:
+        try:
+            from app.database import get_db
+            db = get_db()
+            user_ref = db.collection("users").document(user_id).get()
+            if user_ref.exists:
+                user_data = user_ref.to_dict()
+                if user_data.get("alert_on_recovery") is False:
+                    return {}
+        except Exception:
+            pass
     duration_sec = incident.get("duration_seconds", 0) or 0
     duration_str = _format_duration(duration_sec)
     response_ms = monitor.get("last_response_ms")

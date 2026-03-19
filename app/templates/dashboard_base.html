@@ -41,10 +41,10 @@
             </a>
         </nav>
         <div class="app-sidebar-footer">
-            <div class="app-sidebar-user">
-                <div class="app-sidebar-avatar">{{ user.get('email', '?')[0]|upper }}</div>
-                <span class="app-sidebar-username">{{ user.get('email', 'User').split('@')[0] }}</span>
-            </div>
+            <a href="/settings" class="app-sidebar-user app-sidebar-user-link">
+                <div class="app-sidebar-avatar">{{ (user.get('display_name') or user.get('email', '?'))[0]|upper }}</div>
+                <span class="app-sidebar-username">{{ user.get('display_name') or user.get('email', 'User').split('@')[0] }}</span>
+            </a>
             {% if user.get('plan', 'free') != 'pro' %}
             <form method="POST" action="/api/billing/checkout" style="margin:0; width:100%;">
                 <button type="submit" class="app-sidebar-upgrade">Upgrade now</button>

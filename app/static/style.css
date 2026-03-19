@@ -3433,6 +3433,158 @@ code {
 }
 .docs-callout a { font-weight: 600; }
 
+/* Settings two-column layout */
+.settings-layout {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 0 var(--space-xl);
+    align-items: start;
+}
+.settings-nav {
+    position: sticky;
+    top: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.settings-nav-link {
+    display: block;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+}
+.settings-nav-link:hover {
+    background: var(--hover-bg, #f5f5f5);
+    color: var(--text);
+}
+.settings-nav-link.active {
+    background: rgba(99, 102, 241, 0.08);
+    color: var(--brand);
+    font-weight: 600;
+}
+.settings-nav-danger {
+    color: #ef4444;
+}
+.settings-nav-danger:hover {
+    background: rgba(239, 68, 68, 0.06);
+    color: #dc2626;
+}
+.settings-nav-danger.active {
+    background: rgba(239, 68, 68, 0.08);
+    color: #dc2626;
+}
+.settings-content {
+    min-width: 0;
+}
+
+/* Profile read-only field */
+.settings-readonly {
+    padding: 0.5rem 0.75rem;
+    background: #f9f9f9;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: var(--text-base);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+.settings-provider-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: #eee;
+    padding: 0.1rem 0.5rem;
+    border-radius: 12px;
+}
+.settings-coming-soon {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--brand);
+    background: rgba(99, 102, 241, 0.1);
+    padding: 0.1rem 0.45rem;
+    border-radius: 8px;
+}
+
+/* Danger zone */
+.settings-danger-zone {
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+}
+.settings-danger-zone h2 {
+    color: #dc2626;
+}
+.danger-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+}
+.danger-card-info {
+    flex: 1;
+}
+.danger-card-info p {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+    line-height: 1.5;
+}
+.btn-danger {
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+.btn-danger:hover { background: #dc2626; }
+.danger-confirm {
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+}
+.danger-confirm p {
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+}
+.danger-confirm code {
+    background: #fee2e2;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.82rem;
+}
+.danger-confirm .btn-danger {
+    margin-top: 0.5rem;
+}
+
+/* Sidebar user link */
+.app-sidebar-user-link {
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s;
+}
+.app-sidebar-user-link:hover {
+    background: rgba(255,255,255,0.08);
+}
+
 
 /* ============================================================
    14. PRICING PAGE
@@ -7352,12 +7504,15 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
     .mf-info-box { padding: 0.75rem; font-size: 0.8rem; }
 
     /* ── Settings ── */
+    .settings-layout { grid-template-columns: 1fr; }
+    .settings-nav { display: none; }
     .settings-section { padding: 1rem 0.75rem; }
     .settings-header h1 { font-size: 1.25rem; }
     .sub-plan-card { padding: 0.75rem 1rem; }
     .sub-plan-row { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
     .sub-plan-features span { font-size: 0.72rem; padding: 0.2rem 0.5rem; }
     .sub-guarantee { padding: 0.6rem 0.75rem; font-size: 0.78rem; }
+    .danger-card { flex-direction: column; }
 
     /* ── Incidents ── */
     .inc-detail-hero { padding: 0.75rem 1rem; }
