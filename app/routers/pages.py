@@ -378,39 +378,18 @@ async def dashboard(request: Request):
         up = sum(b.get("up", 0) for b in hbars)
         m["uptime_24h"] = round((up / total) * 100, 2) if total > 0 else None
 
-    # ---------- Shift daily bar UTC dates to user's local timezone ----------
-    # Bars are stored with UTC date keys. Convert to user-local dates for display.
-    # A UTC day (e.g. Mar 19 00:00 UTC) maps to the prior local day for western
-    # timezones (e.g. Mar 18 in CDT). We shift bar dates by the UTC offset so
-    # tooltips show dates matching the user's clock.
+    # ---------- Cap daily bar dates at user's local "today" ----------
+    # Bars are stored with UTC date keys. When UTC is ahead of user's timezone,
+    # the latest bar can show tomorrow's date. Relabel it as today.
     import pytz
-    from datetime import datetime as _dt, timedelta as _td
+    from datetime import datetime as _dt
     user_tz = pytz.timezone(user.get("timezone", "UTC"))
-    _now_local = _dt.now(pytz.utc).astimezone(user_tz)
-    local_today = _now_local.strftime("%Y-%m-%d")
-    _utc_offset_hours = _now_local.utcoffset().total_seconds() / 3600
+    local_today = _dt.now(pytz.utc).astimezone(user_tz).strftime("%Y-%m-%d")
     for m in monitors:
         bars = m.get("daily_uptime_bars") or []
-        shifted = []
         for b in bars:
-            raw_date = b.get("date", "")
-            if not raw_date:
-                continue
-            try:
-                # Convert UTC midnight to user timezone to get the local date
-                utc_midnight = _dt.strptime(raw_date, "%Y-%m-%d").replace(tzinfo=pytz.utc)
-                # Use midday UTC to determine which local day this bar mostly represents
-                utc_midday = utc_midnight.replace(hour=12)
-                local_date = utc_midday.astimezone(user_tz).strftime("%Y-%m-%d")
-                # Skip if this bar's local date is in the future
-                if local_date > local_today:
-                    continue
-                b_copy = dict(b)
-                b_copy["date"] = local_date
-                shifted.append(b_copy)
-            except (ValueError, KeyError):
-                shifted.append(b)
-        m["daily_uptime_bars"] = shifted
+            if b.get("date", "") > local_today:
+                b["date"] = local_today
 
     # ---------- Aggregate stats for status strip ----------
     # Compute avg response time (skip heartbeat/SSL — they don't have meaningful response_ms)
