@@ -48,11 +48,13 @@ curl -X POST https://statusrooster.com/api/v1/monitors \
 
 I'm Grant — a CPA by training, with Big 4 audit and blue-chip corporate accounting on my resume, followed by years in technical data governance and solution architecture. I've spent my career at the intersection of data, process, and systems.
 
-I'm also someone who builds things. Woodworking, a custom Harley, raised on a farm where you fix what's broken with whatever you've got. That same instinct carried into my work — I built a data catalog web app and a certification tracking app at my day job, automated SAP GUI workflows with VBA, implemented Alteryx processes, wrote more Excel macros than I can count. Not a traditional developer, but someone who's been solving real problems with code for a long time.
+I've also spent years inside large enterprise tech organizations — the kind with 15-person scrum teams, three layers of project managers, and backlogs that grow faster than they shrink. I've watched great ideas die in translation between business needs and what engineering actually ships. Months of waiting in queues. Requirements lost in handoffs. Too many people, too many meetings, not enough building. I came away convinced that the people closest to the problem should be the ones building the solution — and that the tooling has finally caught up to make that possible.
+
+I'm someone who builds things. Woodworking, a custom Harley, raised on a farm where you fix what's broken with whatever you've got. That same instinct carried into my professional life — I built a data catalog web app and a certification tracking app at my day job, automated SAP GUI workflows with VBA, implemented Alteryx processes, wrote more Excel macros than I can count. Not a traditional developer, but someone who's been solving real problems with code for a long time. We're entering a world where people with deep functional knowledge can build what they need firsthand — maybe with a little help from a real technical SME (those people are still incredibly valuable), but without waiting in a queue behind 50 other tickets.
 
 StatusRooster started because I wanted to build a real product — not a landing page, not a waitlist, not something chasing a trend. Uptime monitoring is an evergreen problem: servers crash, deploys break things, SSL certs expire, cloud providers have outages. If your server goes down, any monitoring code on that server goes down with it. You need an external service watching from the outside. That structural reality isn't going away.
 
-I'm not trying to get rich quick. I want to build a tool that developers actually use and find value in, get enough paid subscribers to cover infrastructure costs, and keep shipping features. That's it.
+I'm not trying to compete with the UptimeRobots of the world, and I'm not trying to get rich quick. I want to build a useful tool that people actually rely on, get enough paid subscribers to cover infrastructure costs, and keep shipping features. That's it.
 
 This entire application — every line of code, every deploy, every production bug fix — was built with AI-assisted development using [Claude Code](https://claude.ai/claude-code). I'm transparent about that because I think it's the future: domain experts who understand problems deeply, shipping production software with AI as a force multiplier.
 
@@ -200,6 +202,19 @@ statusrooster/
 ├── .github/workflows/        # CI/CD (test → build → deploy)
 └── PROJECT_STATUS.md         # Sprint tracker
 ```
+
+---
+
+## Help Me Build This
+
+If any of this resonates with you — the idea that domain experts can ship real software, that indie tools deserve to exist alongside the big players, that a solo builder can put out something worth using — I'd love your help.
+
+- **Try it out.** Sign up, add a few monitors, kick the tires.
+- **Try to break it.** Seriously. Find bugs, hit edge cases, test on weird browsers. I want to know.
+- **Tell me what's missing.** What would make this useful enough that you'd actually switch from whatever you're using now?
+- **Share it.** If you know someone who'd find it useful, send them the link.
+
+You can reach me at [support@statusrooster.com](mailto:support@statusrooster.com) or open an issue on this repo.
 
 ---
 
