@@ -1,239 +1,214 @@
 # StatusRooster
 
-**Uptime monitoring for indie developers, not enterprises.**
+**Uptime monitoring for developers who ship.**
 
-Know when your site goes down. Before your customers do.
+Monitor your app, your APIs, and every service you depend on. 100 monitors, 60-second checks from 4 global regions, full REST API — free forever. Pro at $9/mo when you need more.
+
+[Website](https://statusrooster.com) · [API Docs](https://statusrooster.com/docs/api) · [Pricing](https://statusrooster.com/pricing) · [Status Page](https://statusrooster.com/s/statusrooster-com-d0f7a4)
+
+<!-- TODO: Add screenshot of dashboard -->
+<!-- ![Dashboard](docs/screenshots/dashboard.png) -->
 
 ---
 
-## What Is This
+## What You Get
 
-StatusRooster is a simple, fast, no-bullshit uptime monitoring service. You add a URL, we check it every 60 seconds from four global regions, and we alert you the instant it goes down — via email, Slack, webhook, or SMS. Every account gets a free hosted public status page.
+### Four Monitor Types — All Free
 
-No dashboards with 47 tabs. No enterprise sales calls. No "contact us for pricing." Just monitoring that works.
+- **HTTP** — Check any URL. Verify status codes, keywords, response time thresholds, custom headers, basic/bearer auth.
+- **JSON / API** — Assert on response fields with JSONPath selectors. Catch APIs that return 200 with bad data. Supports GET, POST, PUT, PATCH.
+- **Heartbeat / Cron** — Unique ping URL for your scheduled jobs. If your cron misses its window, you know immediately.
+- **SSL Certificate** — Track cert expiry across your stack. Alert at 14, 7, and 3 days before expiration.
 
-### Monitor Types
+### Multi-Region Consensus
 
-- **HTTP** — check any URL, verify status codes, keywords, response thresholds, custom headers, auth
-- **JSON/API** — monitor API endpoints with JSON path assertions, supports all HTTP methods (GET/POST/PUT/PATCH)
-- **Heartbeat/Cron** — monitor scheduled jobs via ping URL — if your cron stops hitting the endpoint, we alert you
-- **SSL Certificate** — track certificate expiry, alert at configurable thresholds before they expire
+Every check runs from **US-East, US-West, Europe, and Asia** simultaneously. Results are aggregated via majority vote — a single region blip won't page you at 3am. Incident reports show exactly which regions saw the failure.
 
-### Multi-Region Verification
+### Alerts That Actually Work
 
-Every check runs from **four regions** (US East, US West, Europe, Asia) simultaneously. Results are aggregated via majority-vote consensus — no false alarms from a single region blip. Incident reports show per-region corroboration so you can see exactly which regions were affected.
+Email, Slack, webhooks (JSON POST), and SMS (Pro). Edge-triggered — you get one alert when something breaks and one when it recovers. No spam.
+
+### Public Status Pages
+
+Share a hosted status page with your users at `statusrooster.com/s/your-slug`. 30-day uptime history, live status, incident log. Pro users can add their logo, brand colors, and hide the "Powered by" footer.
+
+### Full REST API
+
+Create monitors, pull check data, wire monitoring into CI/CD. OpenAPI spec included. Free on every plan.
+
+```bash
+curl -X POST https://statusrooster.com/api/v1/monitors \
+  -H "X-API-Key: sr_live_abc123" \
+  -d '{"url": "https://api.stripe.com", "name": "Stripe API"}'
+```
 
 ---
 
 ## Why I Built This
 
-### The Backstory
+I'm Grant — a CPA by training, with Big 4 audit and blue-chip corporate accounting on my resume, followed by years in technical data governance and solution architecture. I've spent my career at the intersection of data, process, and systems.
 
-I'm Grant — a CPA with Big 4 accounting experience and blue-chip technical data governance and solution architecture background. I'm always interested in data and process. Over the past few months I've taught myself to ship web applications using AI-assisted development on a Python/FastAPI/GCP stack. I can take an idea from nothing to deployed on Google Cloud Run in a day.
+I'm also someone who builds things. Woodworking, a custom Harley, raised on a farm where you fix what's broken with whatever you've got. That same instinct carried into my work — I built a data catalog web app and a certification tracking app at my day job, automated SAP GUI workflows with VBA, implemented Alteryx processes, wrote more Excel macros than I can count. Not a traditional developer, but someone who's been solving real problems with code for a long time.
 
-### Why Uptime Monitoring
+StatusRooster started because I wanted to build a real product — not a landing page, not a waitlist, not something chasing a trend. Uptime monitoring is an evergreen problem: servers crash, deploys break things, SSL certs expire, cloud providers have outages. If your server goes down, any monitoring code on that server goes down with it. You need an external service watching from the outside. That structural reality isn't going away.
 
-1. **The problem is permanent.** Servers crash. Deploys break things. DNS expires. Cloud providers have outages. This will never stop happening, which means demand never goes away. Not trend-dependent. Not crypto. Not AI hype. Infrastructure is evergreen.
+I'm not trying to get rich quick. I want to build a tool that developers actually use and find value in, get enough paid subscribers to cover infrastructure costs, and keep shipping features. That's it.
 
-2. **You can't self-solve it.** If your server crashes, any monitoring code on that server crashes with it. You *need* an external service on separate infrastructure watching from the outside. This isn't a "just build it yourself" problem — it's structurally impossible to DIY properly.
+This entire application — every line of code, every deploy, every production bug fix — was built with AI-assisted development using [Claude Code](https://claude.ai/claude-code). I'm transparent about that because I think it's the future: domain experts who understand problems deeply, shipping production software with AI as a force multiplier.
 
-3. **The indie lane is wide open.** UptimeRobot has 2M+ users but feels like it was built in 2012. BetterUptime is beautiful but starts at $20+/month and targets teams. Pingdom is enterprise bloat. There's a clear gap for a clean, modern, $9/month tool for freelancers, indie devs, and small business owners.
-
-4. **Built-in growth engine.** Every public status page has a "Powered by StatusRooster" footer. Users' customers see it, some have their own sites, they sign up. Same viral loop that grew Calendly and Typeform.
-
-### What I'm Optimizing For
-
-- **A product that works.** Not a landing page. Not a waitlist. A thing people use every day because it solves a real problem.
-- **Real users.** People who signed up because they needed this, not because I tricked them with an ad.
-- **A foundation that scales.** If it works at 100 users, it works at 10,000. The architecture doesn't change.
-- **Proof I can ship.** Going from "I'm learning to code" to "I built a SaaS with paying customers" changes every conversation going forward.
+But AI-assisted doesn't mean AI-autonomous. I've spent countless hours manually testing every flow, clicking through every page, tweaking copy, catching edge cases the AI missed, and making judgment calls about what to ship and what to rework. Claude writes the code — I decide what gets built, verify it actually works, and own every line that hits production. The AI is the tool. The product decisions, the QA, and the accountability are mine.
 
 ---
 
-## The Product
+## Tech Stack
 
-### Pricing
-
-**Free tier** — generous, this is the top of funnel:
-- **100 monitors** (UptimeRobot free = 50)
-- **60-second check intervals** (UptimeRobot free = 5 minutes. We're 5x faster.)
-- **Email + Slack + webhook alerts**
-- **Multi-region checks from 4 regions**
-- **10 public status pages**
-- **30 days of history**
-- **All monitor types** (HTTP, JSON/API, Heartbeat, SSL)
-
-**Pro — $9/month:**
-- **200 monitors**
-- **30-second check intervals**
-- **SMS alerts** (Twilio)
-- **90 days of history**
-- **Aggregate status page** (all monitors on one page)
-- **Custom branding** (logo, colors, hide "Powered by")
-
-### Who It's For
-
-- **Freelance web developers** managing 5-15 client sites
-- **Indie SaaS founders** running a product with real users
-- **Small e-commerce stores** where downtime = lost revenue
-- **Agencies** managing client infrastructure
-
-### Who It's NOT For
-
-- Enterprise teams with 500+ services (use Datadog)
-- People who need APM, log aggregation, or distributed tracing
-- Anyone who wants a 45-minute onboarding call
-
----
-
-## Architecture
-
-### Tech Stack
-
-| Component | Technology | Why |
-|-----------|-----------|-----|
-| **Web App / API** | Python, FastAPI | Async-native, fast to build, fast to run |
-| **Templates** | Jinja2 (server-rendered) | No frontend framework needed, fast page loads |
-| **Hosting** | Google Cloud Run (4 regions) | Scale to zero, pennies to run, no server management |
-| **Database** | Google Firestore | Fast reads, scalable, generous free tier |
-| **Scheduler** | Google Cloud Scheduler | Triggers check cycle every minute |
-| **Email Alerts** | SendGrid | 100/day free, simple API |
-| **SMS Alerts** | Twilio | $0.0079/SMS, Pro tier only |
-| **Payments** | Stripe Checkout | Hosted payment page, webhook-driven |
+| Layer | Technology | Notes |
+|-------|-----------|-------|
+| **Web framework** | Python / FastAPI | Async-native, handles API + SSR in one service |
+| **Rendering** | Jinja2 (server-side) | No frontend framework. JS only for charts and AJAX. |
+| **Database** | Google Firestore | NoSQL document store, real-time capable |
+| **Hosting** | Google Cloud Run | 4 regions, scales to zero, pennies at low traffic |
+| **Scheduling** | Google Cloud Scheduler | Triggers `/cron/check` every 60 seconds |
+| **CI/CD** | GitHub Actions | Push to main → test → build → deploy to Cloud Run |
+| **Email alerts** | SendGrid | Transactional email API |
+| **SMS alerts** | Twilio | Pro tier, ~$0.008/message |
+| **Payments** | Stripe Checkout + Webhooks | Hosted payment flow, subscription management |
 | **Charts** | Chart.js | Response time graphs, per-region overlays |
+| **SSL/TLS** | Google-managed certs | Auto-provisioned on Cloud Run custom domain |
 
-### System Design
-
-Three deployable units:
+### Architecture
 
 ```
 Cloud Scheduler (every 60s)
-    |
-    v
-Cloud Run: Primary App (us-east1)
-    |
-    |-- /cron/check
-    |     |-- For each monitor due for check:
-    |     |     |-- Dispatch to 3 regional workers (parallel)
-    |     |     |-- Run local check (us-east1)
-    |     |     |-- Aggregate 4 results via majority vote
-    |     |     |-- Store result, update monitor status
-    |     |     |-- If status changed: create incident, fire alerts
-    |     |
-    |-- Web App (dashboard, detail pages, settings)
-    |-- Public API v1 (API-key authenticated)
-    |-- Status pages (/s/{slug}, /status/{user_id})
-    |
-Cloud Run: Regional Workers
-    |-- us-west1    (worker/main.py)
-    |-- europe-west1
-    |-- asia-east1
-    |
-    Shared: checker_core/ (pure check logic, zero DB dependencies)
+    │
+    ▼
+Primary App — Cloud Run (us-east1)
+    ├── /cron/check → for each due monitor:
+    │     ├── Dispatch to 3 regional workers (parallel)
+    │     ├── Run local check (us-east1)
+    │     ├── Aggregate via majority vote (3 of 4 must agree)
+    │     ├── Update monitor doc (status, uptime bars, response times)
+    │     └── On status change → create incident, fire alerts
+    │
+    ├── Web app (dashboard, monitor detail, settings)
+    ├── Public API v1 (API-key auth)
+    └── Status pages (/s/{slug})
+
+Regional Workers — Cloud Run
+    ├── us-west1
+    ├── europe-west1
+    └── asia-east1
+    │
+    └── Shared: checker_core/ (pure check logic, zero DB imports)
 ```
 
 **Key design decisions:**
-- **SSR-first** — all pages are server-rendered Jinja2. JavaScript only for charts, AJAX actions, and client-side filtering. No React, no Vue, no HTMX.
-- **Pre-computed dashboards** — monitor Firestore docs hold `daily_uptime_bars`, `uptime_percent`, `last_response_by_region`, etc. Dashboard reads zero queries from the checks collection.
-- **Worker isolation** — `checker_core/` is a pure library with no Firestore imports. Workers are stateless HTTP services that accept a batch of monitors and return results.
 
-### Data Model (Firestore)
+- **SSR-first** — Every page is server-rendered HTML. No React, no Vue, no build step. JavaScript is only for Chart.js graphs, AJAX actions, and client-side filtering.
+- **Pre-computed dashboards** — Monitor documents hold `daily_uptime_bars`, `hourly_uptime_bars`, `uptime_percent`, `last_response_by_region`. The dashboard loads by reading monitor docs only — zero queries to the checks collection.
+- **Worker isolation** — `checker_core/` is a pure Python library with no database imports. Workers are stateless HTTP services that accept a batch of URLs and return results. They can be deployed, scaled, and updated independently.
+- **Edge-triggered alerts** — Flags on each monitor doc (`keyword_failing`, `threshold_failing`, `ssl_expiry_alerted_days`) ensure alerts fire once on state change, not on every check cycle.
 
-```
-users/{user_id}
-    email, password_hash, plan, stripe_customer_id, created_at, ...
+### Security
 
-monitors/{monitor_id}
-    user_id, url, name, monitor_type, check_interval, status,
-    last_checked, last_status_code, last_response_ms, uptime_percent,
-    daily_uptime_bars[], last_response_by_region{}, region_results[], ...
-
-checks/{check_id}
-    monitor_id, timestamp, status_code, response_ms, is_up,
-    response_ms_by_region{}, regions_checked, regions_up
-
-incidents/{incident_id}
-    monitor_id, user_id, started_at, resolved_at, duration_seconds,
-    cause, region_results[], failure_response_body, ...
-```
+- SSRF protection blocks all private/reserved IP ranges in outbound checks
+- JWT secret validated on startup — app refuses to boot with default value in production
+- Heartbeat monitors use `secrets.token_urlsafe(32)` ping tokens
+- Rate limiting on public endpoints (URL checker, check-now)
+- Cron endpoints authenticated via `X-Cron-Secret` header
+- Worker endpoints authenticated via `X-Worker-Secret` header
 
 ---
 
-## Competitive Landscape
+## Roadmap
 
-| Competitor | Price | Weakness | Our Angle |
-|-----------|-------|----------|-----------|
-| UptimeRobot | Free / $7/mo | Stale UI, 5-min free checks, 50 free monitors | 60s checks, 100 monitors, modern UI |
-| BetterUptime | $20+/mo | Expensive for solo devs | $9/mo, indie-focused |
-| Pingdom | $15+/mo | Enterprise bloat | Simple, no BS |
-| Hetrix Tools | Free / $10/mo | Poor UX, limited awareness | Better UX + distribution |
-| Datadog | $15+/host/mo | Overkill for small sites | 1/10th the complexity |
+### Shipping Now
 
-**We don't compete with Datadog.** We compete with "I should probably monitor my site but haven't set anything up yet." Our real competition is inaction.
+- **Auto-Discovery** — Enter a domain, we scan sitemap.xml, robots.txt, crawl links, and probe common paths (/api/health, /graphql, /.well-known). Select which endpoints to monitor, bulk-create in one click.
+
+### Planned
+
+- **Repository Ingester** — Connect a GitHub repo, we parse route files (Express, FastAPI, Rails, Next.js) and surface every endpoint worth monitoring. Zero manual URL entry.
+- **Synthetic Checks** — Multi-step flows (login → navigate → assert). Catch broken user journeys, not just broken servers.
+- **Team Accounts** — Shared dashboards, role-based access, on-call rotation. For when your side project becomes a real company.
 
 ---
 
-## Development
+## Pricing
+
+| | Free | Pro — $9/mo |
+|---|---|---|
+| **Monitors** | 100 | 200 |
+| **Check interval** | 60 seconds | 30 seconds |
+| **Regions** | 4 | 4 |
+| **Monitor types** | All 4 | All 4 |
+| **Alerts** | Email, Slack, Webhook | + SMS |
+| **Status pages** | 10 (with "Powered by") | 10 (custom branding, remove footer) |
+| **History** | 30 days | 90 days |
+| **API access** | Full | Full |
+| **Aggregate status page** | — | Included |
+
+[See full pricing →](https://statusrooster.com/pricing)
+
+---
+
+## Quick Start
 
 ```bash
-# Start dev server
-source venv/bin/activate
-uvicorn app.main:app --reload --port 8080
+# 1. Sign up (30 seconds, no credit card)
+https://statusrooster.com/signup
 
-# Run E2E tests (need a valid API key)
-SR_API_KEY=sr_xxx pytest tests/test_e2e.py -v --asyncio-mode=auto -k "not slow"
+# 2. Add your first monitor via the dashboard
+#    or use the API:
+curl -X POST https://statusrooster.com/api/v1/monitors \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://your-app.com",
+    "name": "Production",
+    "alert_email": "you@example.com"
+  }'
 
-# Run functional tests
-SR_API_KEY=sr_xxx pytest tests/test_functional.py -v --asyncio-mode=auto
+# 3. That's it. We start checking in < 60 seconds.
 ```
 
-Local dev uses production Firestore (same project). Cloud Scheduler cron and multi-region workers don't run locally — set `WORKER_SECRET=""` in `.env` to fall back to local-only checks.
+---
 
-### Key Files
+## Project Structure
 
-| Path | Purpose |
-|------|---------|
-| `app/main.py` | FastAPI entry point |
-| `app/routers/pages.py` | All SSR page routes + AJAX endpoints |
-| `app/routers/api_v1.py` | Public API v1 (API-key authed) |
-| `app/routers/cron.py` | Cloud Scheduler endpoints |
-| `app/services/checker.py` | Check orchestrator — multi-region dispatch + aggregation |
-| `app/services/alerts.py` | Email, Slack, SMS, webhook dispatch |
-| `checker_core/__init__.py` | Pure check logic (HTTP, JSON, SSL, heartbeat) |
-| `worker/main.py` | Regional worker service |
-| `app/static/style.css` | Unified CSS with design tokens |
-
-### Project Docs
-
-| File | Purpose |
-|------|---------|
-| `CLAUDE.md` | AI coding conventions, architecture reference |
-| `PROJECT_STATUS.md` | Sprint tracker — what's done, what's next |
+```
+statusrooster/
+├── app/
+│   ├── main.py              # FastAPI entry point
+│   ├── config.py             # Settings, env vars, worker config
+│   ├── routers/
+│   │   ├── pages.py          # SSR routes + AJAX endpoints
+│   │   ├── api_v1.py         # Public REST API (API-key auth)
+│   │   ├── cron.py           # Cloud Scheduler handlers
+│   │   └── heartbeat.py      # Heartbeat ping endpoint
+│   ├── models/               # Firestore data access (monitor, check, incident, user)
+│   ├── services/
+│   │   ├── checker.py        # Check orchestrator (dispatch, aggregate, store)
+│   │   └── alerts.py         # Email, Slack, SMS, webhook dispatch
+│   ├── templates/            # Jinja2 templates (SSR)
+│   └── static/               # CSS, favicon, images
+├── checker_core/             # Pure check logic (shared with workers)
+├── worker/                   # Regional worker service
+├── tests/
+│   ├── test_e2e.py           # 80+ E2E tests against live API
+│   └── test_functional.py    # 38 functional tests
+├── .github/workflows/        # CI/CD (test → build → deploy)
+└── PROJECT_STATUS.md         # Sprint tracker
+```
 
 ---
 
-## Growth Strategy
+## License
 
-1. **Status page viral loop** — every public page = passive referral. "Powered by StatusRooster" compounds over time.
-2. **SEO content** — "monitor website uptime free", "status page for SaaS", "UptimeRobot alternatives"
-3. **Free tool strategy** — standalone SSL checker page, ranks on Google, funnels to signup
-4. **Launch channels** — Hacker News (Show HN), Reddit (r/SideProject, r/webdev), IndieHackers, Product Hunt
-5. **Directory listings** — G2, AlternativeTo, StackShare
+Proprietary. Source code is public for transparency, not for redistribution. See [LICENSE](LICENSE) for details.
 
 ---
 
-## Cost Structure
-
-| Users | Cloud Run | Firestore | SendGrid | Twilio | Total |
-|-------|-----------|-----------|----------|--------|-------|
-| 100 | ~$2/mo | ~$0 | $0 | ~$1 | **~$3/mo** |
-| 500 | ~$8/mo | ~$3/mo | $0 | ~$3 | **~$14/mo** |
-| 1,000 | ~$15/mo | ~$8/mo | $15/mo | ~$5 | **~$43/mo** |
-
-At 1,000 users with ~100 paid at $9/mo = **$900 MRR on $43 costs = 95% margin.**
-
-GCP costs are tracked in real-time via BigQuery billing export on the admin dashboard.
-
----
-
-*Built with focus, coffee, and Claude Code.*
+<p align="center">
+  Built with focus, sawdust under the fingernails, and <a href="https://claude.ai/claude-code">Claude Code</a>.
+</p>
