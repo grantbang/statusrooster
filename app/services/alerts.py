@@ -135,6 +135,18 @@ async def send_slack(webhook_url: str, message: str) -> bool:
 # SMS alerts via Twilio
 # ---------------------------------------------------------------------------
 
+SMS_OPT_IN_CONFIRMATION = (
+    "StatusRooster: SMS alerts enabled. You'll receive texts when your monitors "
+    "go down or recover. Msg frequency varies. Msg & data rates may apply. "
+    "Reply STOP to opt out, HELP for help. Terms: https://statusrooster.com/terms"
+)
+
+
+async def send_sms_opt_in_confirmation(phone: str) -> bool:
+    """Send one-time opt-in confirmation when user first enables SMS."""
+    return await send_sms(phone, SMS_OPT_IN_CONFIRMATION)
+
+
 async def send_sms(phone: str, message: str) -> bool:
     """Send an SMS alert via Twilio REST API. Returns True on success."""
     if not phone:
@@ -253,7 +265,7 @@ async def send_down_alert(monitor: dict, incident: dict) -> dict:
     # --- SMS (Pro only) ---
     sms_number = monitor.get("alert_sms", "")
     if sms_number and user_plan == "pro":
-        results["sms"] = await send_sms(sms_number, f"DOWN: {name} ({url}) — Status {status_code}")
+        results["sms"] = await send_sms(sms_number, f"[StatusRooster] ALERT: {name} is DOWN — Status {status_code}. Reply STOP to opt out, HELP for help.")
 
     return results
 
@@ -328,7 +340,7 @@ async def send_recovery_alert(monitor: dict, incident: dict) -> dict:
     # --- SMS (Pro only) ---
     sms_number = monitor.get("alert_sms", "")
     if sms_number and user_plan == "pro":
-        results["sms"] = await send_sms(sms_number, f"UP: {name} ({url}) — back up after {duration_str}")
+        results["sms"] = await send_sms(sms_number, f"[StatusRooster] RECOVERY: {name} is back UP — downtime: {duration_str}. Reply STOP to opt out, HELP for help.")
 
     return results
 
@@ -574,7 +586,7 @@ async def send_test_alert(monitor: dict, user_plan: str = "free") -> dict:
     # --- SMS (Pro only) ---
     sms_number = monitor.get("alert_sms", "")
     if sms_number and user_plan == "pro":
-        results["sms"] = await send_sms(sms_number, f"Test alert from StatusRooster: {name} — your SMS alerts are working!")
+        results["sms"] = await send_sms(sms_number, f"[StatusRooster] Test alert: {name} — your SMS alerts are working! Reply STOP to opt out, HELP for help.")
 
     # --- Webhook (Pro only) ---
     webhook_url = monitor.get("webhook_url", "")

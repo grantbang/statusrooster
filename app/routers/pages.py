@@ -834,6 +834,12 @@ async def add_monitor(
         follow_redirects=follow_redirects,
     )
 
+    # Send SMS opt-in confirmation if SMS was enabled
+    if alert_sms:
+        from app.services.alerts import send_sms_opt_in_confirmation
+        import asyncio
+        asyncio.ensure_future(send_sms_opt_in_confirmation(alert_sms))
+
     # For heartbeat monitors, set the ping URL (with token) on the monitor doc
     if monitor_type == "heartbeat":
         from app.config import settings
@@ -1085,6 +1091,14 @@ async def edit_monitor_submit(
             pass
 
     update_monitor(db, monitor_id, updates)
+
+    # Send SMS opt-in confirmation if SMS number is new or changed
+    new_sms = updates.get("alert_sms", "")
+    old_sms = monitor.get("alert_sms", "")
+    if new_sms and new_sms != old_sms:
+        from app.services.alerts import send_sms_opt_in_confirmation
+        import asyncio
+        asyncio.ensure_future(send_sms_opt_in_confirmation(new_sms))
 
     return RedirectResponse(
         url=f"/dashboard?msg=Monitor+'{name}'+updated!&msg_type=success",
