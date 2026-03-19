@@ -2,7 +2,7 @@
 
 **Uptime monitoring for developers who ship.**
 
-Monitor your app, your APIs, and every service you depend on. 100 monitors, 60-second checks from 4 global regions, full REST API — free forever. Pro at $9/mo when you need more.
+Monitor your app, your APIs, and the services your stack depends on. 100 monitors, 60-second checks from 4 global regions, full REST API — free forever. Pro at $9/mo when you need more.
 
 [Website](https://statusrooster.com) · [API Docs](https://statusrooster.com/docs/api) · [Pricing](https://statusrooster.com/pricing) · [Status Page](https://statusrooster.com/s/statusrooster-com-d0f7a4)
 
