@@ -182,7 +182,6 @@ def record_heartbeat(db, monitor_id: str) -> dict | None:
     now = datetime.now(timezone.utc)
     db.collection(COLLECTION).document(monitor_id).update({
         "last_heartbeat": now,
-        "last_checked": now,
         "status": "up",
         "last_status_change": now if m.get("status") != "up" else m.get("last_status_change", now),
     })
