@@ -378,6 +378,17 @@ async def dashboard(request: Request):
         up = sum(b.get("up", 0) for b in hbars)
         m["uptime_24h"] = round((up / total) * 100, 2) if total > 0 else None
 
+    # ---------- Filter daily bars to user's local "today" ----------
+    # Bars are keyed by UTC date. When UTC is ahead of user's timezone,
+    # the latest bar can show tomorrow's date. Filter it out.
+    import pytz
+    from datetime import datetime as _dt
+    user_tz = pytz.timezone(user.get("timezone", "UTC"))
+    local_today = _dt.now(pytz.utc).astimezone(user_tz).strftime("%Y-%m-%d")
+    for m in monitors:
+        bars = m.get("daily_uptime_bars") or []
+        m["daily_uptime_bars"] = [b for b in bars if b.get("date", "") <= local_today]
+
     # ---------- Aggregate stats for status strip ----------
     # Compute avg response time (skip heartbeat/SSL — they don't have meaningful response_ms)
     response_monitors = [m for m in monitors if m.get("monitor_type") in ("http", "json_api") and m.get("last_response_ms")]
@@ -1226,12 +1237,19 @@ async def monitor_detail(request: Request, monitor_id: str):
     raw_bars = monitor.get("daily_uptime_bars") or []
     bar_map = {b["date"]: b for b in raw_bars}
 
+    # Convert UTC "now" to user's timezone for date-based lookups
+    import pytz as _pytz
+    _user_tz = _pytz.timezone(user.get("timezone", "UTC"))
+    now_local = now.replace(tzinfo=_pytz.utc).astimezone(_user_tz)
+
     def compute_period_uptime(days_back):
         total_checks = 0
         up_checks = 0
         for i in range(days_back):
-            d = (now - timedelta(days=i)).strftime("%Y-%m-%d")
-            b = bar_map.get(d)
+            # Look up bars by UTC key (how they're stored) — check both UTC and local date
+            d_utc = (now - timedelta(days=i)).strftime("%Y-%m-%d")
+            d_local = (now_local - timedelta(days=i)).strftime("%Y-%m-%d")
+            b = bar_map.get(d_utc) or bar_map.get(d_local)
             if b:
                 total_checks += b.get("total", 0)
                 up_checks += b.get("up", 0)
@@ -1264,13 +1282,16 @@ async def monitor_detail(request: Request, monitor_id: str):
     }
 
     # ---------- Uptime bars for detail page (30d daily + 24h hourly) ----------
-    today = now.date()
+    today_local = now_local.date()
     daily_bars = []
     for i in range(29, -1, -1):
-        d = today - timedelta(days=i)
+        d = today_local - timedelta(days=i)
         day_key = d.isoformat()
         label = d.strftime("%b %-d, '%y")
-        b = bar_map.get(day_key)
+        # Try local date key first, then check if UTC key differs
+        d_utc = (now.date() - timedelta(days=i))
+        utc_key = d_utc.isoformat()
+        b = bar_map.get(day_key) or (bar_map.get(utc_key) if utc_key != day_key else None)
         if b and b.get("total", 0) > 0:
             pct = round((b["up"] / b["total"]) * 100, 3)
             daily_bars.append({"date": label, "pct": pct})
@@ -1280,9 +1301,6 @@ async def monitor_detail(request: Request, monitor_id: str):
     raw_hbars = monitor.get("hourly_uptime_bars") or []
     hbar_map = {b["hour"]: b for b in raw_hbars}
     hourly_bars = []
-    # Convert UTC hours to user timezone for display
-    import pytz as _pytz
-    _user_tz = _pytz.timezone(user.get("timezone", "UTC"))
     for i in range(23, -1, -1):
         h = now - timedelta(hours=i)
         hour_key = h.strftime("%Y-%m-%d-%H")

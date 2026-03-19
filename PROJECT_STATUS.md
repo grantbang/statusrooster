@@ -87,6 +87,45 @@ Full manual QA checklist covering:
 - [ ] API testing (auth, CRUD, plan enforcement, response shape)
 - [ ] Integration testing (multi-region, alerts, SSL, heartbeat, incident lifecycle)
 
+### Sprint 7.5: Load / Stress Test — NOT STARTED
+Validate the system handles real-world scale before launch.
+
+**Phase A — Baseline (100 monitors, 1 free user):**
+- [ ] Create a dedicated test user for load testing
+- [ ] Script to bulk-create 100 HTTP monitors (hitting various public endpoints)
+- [ ] Let run for 10 minutes (~10 check cycles)
+- [ ] Measure: cron cycle duration (from Cloud Run logs), worker batch response times
+- [ ] Measure: Firestore reads/writes per cycle (GCP console → Firestore usage tab)
+- [ ] Measure: Cloud Run CPU/memory usage
+- [ ] Verify: all 100 monitors show correct status, uptime bars populating, no timeouts
+- [ ] Verify: dashboard loads in <3 seconds with 100 cards
+
+**Phase B — Pro scale (500 monitors, 1 pro user):**
+- [ ] Upgrade test user to pro (or mock plan), create 500 monitors
+- [ ] Let run for 10 minutes
+- [ ] Measure: same metrics as Phase A
+- [ ] Watch for: `/cron/check` approaching 60-second cycle time (overlap = missed checks)
+- [ ] Watch for: worker timeouts on large batches
+- [ ] Verify: dashboard still usable, filters/search responsive
+
+**Phase C — Multi-user (1,000 monitors, 10 users):**
+- [ ] Create 10 test users with 100 monitors each
+- [ ] Let run for 10 minutes
+- [ ] Measure: cron cycle duration (this is the key metric — must stay under 55s)
+- [ ] Measure: total Firestore ops and estimated daily cost
+- [ ] Verify: each user's dashboard loads correctly, no cross-user data leaks
+- [ ] Verify: incidents fire correctly when a monitor goes down
+
+**Phase D — Cleanup & report:**
+- [ ] Delete all test monitors and test users
+- [ ] Document: cycle time at each scale, cost projections, any bottlenecks found
+- [ ] If cron cycle > 45s at 1,000 monitors: flag for architecture review (batch splitting, parallel dispatch)
+
+**Cost guard rails:**
+- [ ] Check GCP billing dashboard before, during, and after each phase
+- [ ] Set a billing alert at $10/day as a safety net
+- [ ] Each phase runs only 10 minutes — estimated cost <$1 total
+
 ### Sprint 8: Incident Region Corroboration — DONE
 - [x] Checker stores per-region `status_code` and `error` in aggregation
 - [x] Incident model accepts `region_results` and `failure_response_body`
@@ -101,6 +140,50 @@ Full manual QA checklist covering:
 - [x] Revenue tab with MRR/ARPU/ARR KPIs
 - [x] Stripe webhook event logging (`checkout.session.completed`, `customer.subscription.deleted`, `invoice.payment_succeeded`)
 - [x] BigQuery billing export enabled in GCP Console (awaiting data backfill)
+
+### Sprint 10: Settings & Profile Enhancement — DONE
+- [x] Two-column settings layout with sticky section nav + scroll-spy
+- [x] Profile section (display name, read-only email with auth provider badge, member since)
+- [x] Password change (email-auth only, with validation)
+- [x] Notification preferences (default alert email, recovery toggle, weekly digest toggle)
+- [x] Danger zone — account deletion (email confirmation, JS confirm, Stripe cancellation, full data cleanup)
+- [x] Sidebar avatar clickable, shows display name when set
+- [x] Recovery alerts respect user `alert_on_recovery` preference
+- [x] QA walkthrough updated with settings test cases
+
+### Sprint 11: Auto-Discovery — NOT STARTED
+Scan a domain to auto-discover endpoints and bulk-create monitors.
+
+**Backend (`app/services/discovery.py`):**
+- [ ] Fetch /sitemap.xml, parse `<loc>` tags
+- [ ] Fetch /robots.txt, follow `Sitemap:` directives
+- [ ] Crawl homepage — extract same-domain `<a href>` links (regex/html.parser, no BeautifulSoup)
+- [ ] Probe common paths: /api/health, /api/v1, /api/status, /graphql, /.well-known/security.txt, /login, /signup, /dashboard
+- [ ] Auto-detect SSL cert info for domain
+- [ ] Deduplicate, cap at 50 URLs
+- [ ] Each URL includes: url, source (sitemap/crawl/probe), suggested priority (high/medium/low)
+- [ ] Graceful failure handling (bot detection, timeouts, 404s — never crash)
+- [ ] httpx with 10s timeout, follow redirects, realistic User-Agent + Accept/Accept-Language headers
+- [ ] Detect Cloudflare/bot challenge pages (403 + challenge HTML) — treat as "blocked" not "down", surface in status message
+
+**API endpoints:**
+- [ ] `POST /api/v1/discover` — authenticated, full results
+- [ ] `POST /api/discover-preview` — unauthenticated, rate-limited (5/min per IP), capped at 20 URLs
+- [ ] `POST /api/v1/monitors/bulk` — bulk-create monitors from discovery results
+
+**Frontend (`/discover` page, 3 states):**
+- [ ] State 1 — Input: domain input, "Scan for endpoints" button
+- [ ] State 2 — Results: checkbox list of URLs with source badges, "Monitor selected (N)" CTA, select all/deselect all
+- [ ] State 3 — Empty/Error: friendly message, link to manual add
+- [ ] Sidebar nav entry with sparkle/wand icon after "Add Monitor"
+- [ ] Dashboard empty-state: "Or scan your domain to auto-discover endpoints" link
+
+**Tests (`TestDiscovery` in test_e2e.py):**
+- [ ] POST /api/v1/discover with statusrooster.com → 200, returns URLs
+- [ ] POST /api/v1/discover with invalid domain → 200, empty urls with status message
+- [ ] POST /api/v1/discover without API key → 401
+- [ ] POST /api/discover-preview → 200
+- [ ] POST /api/discover-preview rate limit → 429 after 5 rapid requests
 
 ---
 

@@ -18,6 +18,8 @@ from datetime import datetime, timezone
 from app.database import get_db
 from app.models.monitor import get_monitor, record_heartbeat
 from app.models.check import create_check
+from app.models.incident import get_open_incident, resolve_incident, log_incident_event
+from app.services.alerts import send_recovery_alert, send_webhook_notification
 
 router = APIRouter(tags=["heartbeat"], include_in_schema=False)
 
@@ -64,6 +66,24 @@ async def receive_heartbeat(monitor_id: str, request: Request):
         response_ms=0,
         is_up=True,
     )
+
+    # Resolve open incident if monitor was down or has an orphaned incident
+    open_incident = get_open_incident(db, monitor_id)
+    if open_incident:
+            resolved = resolve_incident(db, open_incident["id"])
+            log_incident_event(db, resolved["id"], "resolved", {
+                "duration_seconds": resolved.get("duration_seconds"),
+            })
+            # Send recovery alerts
+            try:
+                recovery_results = await send_recovery_alert(monitor, resolved)
+                for channel, ok in recovery_results.items():
+                    log_incident_event(db, resolved["id"],
+                                       f"recovery_{channel}_{'sent' if ok else 'failed'}")
+                if monitor.get("webhook_url"):
+                    await send_webhook_notification(monitor, "monitor.up", {"is_up": True})
+            except Exception as e:
+                print(f"[heartbeat] Recovery alert error: {e}")
 
     return {
         "ok": True,
