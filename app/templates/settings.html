@@ -471,7 +471,8 @@ if (nbEl) {
     var ts = parseInt(nbEl.dataset.ts, 10);
     if (ts) {
         var d = new Date(ts * 1000);
-        nbEl.textContent = d.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+        var userTz = {{ user.get('timezone', 'UTC') | tojson | safe }};
+        nbEl.textContent = d.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric', timeZone: userTz });
     }
 }
 

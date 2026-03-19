@@ -400,10 +400,20 @@ async def dashboard(request: Request):
     uptime_vals = [m["uptime_24h"] for m in monitors if m.get("uptime_24h") is not None]
     overall_uptime_pct = round(sum(uptime_vals) / len(uptime_vals), 2) if uptime_vals else None
 
-    # Count today's incidents — use lightweight query with small limit
+    # Count today's incidents — use user's local "today" (midnight to now)
     try:
         monitor_ids = [m["id"] for m in monitors]
-        all_incidents = list_incidents_by_user(db, monitor_ids, hours=24, limit=50)
+        # Compute hours since midnight in user's timezone
+        _now_utc = _dt.now(pytz.utc)
+        _now_local = _now_utc.astimezone(user_tz)
+        _local_midnight = _now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+        _hours_since_midnight = (_now_local - _local_midnight).total_seconds() / 3600
+        all_incidents = list_incidents_by_user(db, monitor_ids, hours=max(1, int(_hours_since_midnight) + 1), limit=50)
+        # Filter to only incidents that started today in user's TZ
+        _today_str = _now_local.strftime("%Y-%m-%d")
+        all_incidents = [inc for inc in all_incidents
+                         if inc.get("started_at") and
+                         inc["started_at"].astimezone(user_tz).strftime("%Y-%m-%d") == _today_str]
         incidents_today = len(all_incidents)
         # Per-monitor incident count for dashboard cards
         from collections import defaultdict

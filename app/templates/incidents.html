@@ -304,6 +304,7 @@ function sortIncidents() {
 }
 
 /* ── Relative timestamps ───────────────────────────────── */
+const USER_TZ = {{ user.get('timezone', 'UTC') | tojson | safe }};
 function updateRelativeTimes() {
     document.querySelectorAll('.relative-time').forEach(el => {
         const ts = el.dataset.ts;
@@ -316,7 +317,7 @@ function updateRelativeTimes() {
             else if (secs < 3600) el.textContent = Math.floor(secs / 60) + 'm ago';
             else if (secs < 86400) el.textContent = Math.floor(secs / 3600) + 'h ago';
             else if (secs < 604800) el.textContent = Math.floor(secs / 86400) + 'd ago';
-            else el.textContent = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            else el.textContent = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: USER_TZ });
         } catch(e) {}
     });
 }

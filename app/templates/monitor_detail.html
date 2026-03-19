@@ -871,6 +871,7 @@ function switchUptimePeriod(period, btn) {
 const initialChecks = {{ checks | tojson | safe }};
 let chart = null;
 let showRegions = false;
+let currentChartHours = 1;
 const REGION_COLORS = {
     'us-east1': {border: '#6366f1', bg: 'rgba(99,102,241,0.06)', name: 'US East'},
     'us-west1': {border: '#22c55e', bg: 'rgba(34,197,94,0.06)', name: 'US West'},
@@ -895,6 +896,11 @@ function buildChart(checks) {
         if (typeof c.timestamp === 'string') d = new Date(c.timestamp);
         else if (c.timestamp._seconds) d = new Date(c.timestamp._seconds * 1000);
         else d = new Date(c.timestamp);
+        if (currentChartHours >= 168) {
+            return d.toLocaleDateString([], {month: 'short', day: 'numeric', timeZone: USER_TZ});
+        } else if (currentChartHours >= 24) {
+            return d.toLocaleDateString([], {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: USER_TZ});
+        }
         return d.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', timeZone: USER_TZ});
     });
     const data = sorted.map(c => c.response_ms || null);
@@ -1039,6 +1045,7 @@ let lastChecksData = null;
 /* ── Chart time range switching ──────────────── */
 {% if monitor.get('monitor_type', 'http') in ('http', 'json_api') %}
 async function loadChartRange(hours, btn) {
+    currentChartHours = hours;
     document.querySelectorAll('.md-range-toggle .range-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     const loader = document.getElementById('chartLoading');

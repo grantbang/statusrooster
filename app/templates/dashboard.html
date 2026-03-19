@@ -228,7 +228,15 @@
                     {% set bar_total = bar.get('total', 0) %}
                     {% set bar_up = bar.get('up', 0) %}
                     {% set pct = (bar_up / bar_total * 100) if bar_total > 0 else -1 %}
-                    <div class="d-uptime-bar {% if pct < 0 %}bar-nodata{% elif pct >= 99.5 %}bar-up{% elif pct >= 95 %}bar-warn{% else %}bar-down{% endif %}" title="{{ bar.get('date', '') }}: {{ '%.1f' | format(pct) if pct >= 0 else 'No data' }}%"></div>
+                    {% if pct < 0 %}
+                    <div class="d-uptime-bar bar-nodata" title="{{ bar.get('date', '') }}: No data"></div>
+                    {% elif pct >= 99.5 %}
+                    <div class="d-uptime-bar bar-up" title="{{ bar.get('date', '') }}: {{ '%.1f' | format(pct) }}%"></div>
+                    {% elif pct <= 0.5 %}
+                    <div class="d-uptime-bar bar-down" title="{{ bar.get('date', '') }}: {{ '%.1f' | format(pct) }}%"></div>
+                    {% else %}
+                    <div class="d-uptime-bar bar-partial" style="background: linear-gradient(to top, var(--danger) 0%, var(--danger) {{ 100 - pct }}%, var(--success) {{ 100 - pct }}%, var(--success) 100%);" title="{{ bar.get('date', '') }}: {{ '%.1f' | format(pct) }}%"></div>
+                    {% endif %}
                 {% endfor %}
             </div>
 
