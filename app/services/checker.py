@@ -649,6 +649,15 @@ async def run_checks():
             monitor_updates["last_regions_checked"] = regions_checked
             monitor_updates["last_regions_up"] = regions_up
             monitor_updates["last_response_by_region"] = response_by_region
+            # Ensure region_results is always populated (even for local-only checks)
+            if not result.get("region_results"):
+                result["region_results"] = [{
+                    "region": "us-east1",
+                    "is_up": result["is_up"],
+                    "status_code": result.get("status_code"),
+                    "response_ms": result.get("response_ms"),
+                    "error": result.get("error_message") or "",
+                }]
         else:
             regions_checked = None
             regions_up = None
