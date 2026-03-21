@@ -6,6 +6,8 @@ Receives monitors to check via POST /check-batch, runs the checks
 using checker_core, and returns results. No Firestore, no auth, no web UI.
 
 Auth: X-Worker-Secret header must match WORKER_SECRET env var.
+
+v1.1.0 — Updated to pass custom_headers to check_json_api
 """
 
 import os
