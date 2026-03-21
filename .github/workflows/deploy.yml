@@ -105,14 +105,13 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v2
 
-      - name: Build worker image
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-docker.pkg.dev --quiet
+
+      - name: Build and push worker image
         run: |
-          cp worker/Dockerfile Dockerfile
-          gcloud builds submit . \
-            --tag us-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker \
-            --project statusrooster \
-            --suppress-logs \
-            --quiet
+          docker build -t us-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker -f worker/Dockerfile .
+          docker push us-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker
 
       - name: Deploy workers to all regions
         run: |
