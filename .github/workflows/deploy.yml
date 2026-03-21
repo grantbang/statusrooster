@@ -109,7 +109,7 @@ jobs:
         run: |
           cp worker/Dockerfile Dockerfile
           BUILD_ID=$(gcloud builds submit . \
-            --tag us-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker \
+            --tag us-east1-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker \
             --project statusrooster \
             --async --format='value(id)' --quiet)
           echo "Waiting for build $BUILD_ID..."
@@ -127,12 +127,12 @@ jobs:
       - name: Deploy workers to all regions
         run: |
           gcloud run deploy statusrooster-worker \
-            --image us-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker \
+            --image us-east1-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker \
             --region us-west1 --project statusrooster --quiet &
           gcloud run deploy statusrooster-worker \
-            --image us-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker \
+            --image us-east1-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker \
             --region europe-west1 --project statusrooster --quiet &
           gcloud run deploy statusrooster-worker \
-            --image us-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker \
+            --image us-east1-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker \
             --region asia-east1 --project statusrooster --quiet &
           wait
