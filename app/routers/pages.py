@@ -651,11 +651,16 @@ async def add_monitor(
     else:
         follow_redirects = True
 
-    # Parse custom headers (Pro only)
+    # Parse custom headers (HTTP uses header_key[], JSON/API uses json_header_key[])
     custom_headers = []
     header_keys = form.getlist("header_key[]")
     header_values = form.getlist("header_value[]")
     for hk, hv in zip(header_keys, header_values):
+        if hk.strip():
+            custom_headers.append({"key": hk.strip(), "value": hv.strip() if hv else ""})
+    json_header_keys = form.getlist("json_header_key[]")
+    json_header_values = form.getlist("json_header_value[]")
+    for hk, hv in zip(json_header_keys, json_header_values):
         if hk.strip():
             custom_headers.append({"key": hk.strip(), "value": hv.strip() if hv else ""})
 
@@ -927,11 +932,16 @@ async def edit_monitor_submit(
     request_body = form.get("request_body", "")
     request_content_type = form.get("request_content_type", "")
 
-    # Parse custom headers
+    # Parse custom headers (HTTP uses header_key[], JSON/API uses json_header_key[])
     custom_headers = []
     header_keys = form.getlist("header_key[]")
     header_values = form.getlist("header_value[]")
     for hk, hv in zip(header_keys, header_values):
+        if hk.strip():
+            custom_headers.append({"key": hk.strip(), "value": hv.strip() if hv else ""})
+    json_header_keys = form.getlist("json_header_key[]")
+    json_header_values = form.getlist("json_header_value[]")
+    for hk, hv in zip(json_header_keys, json_header_values):
         if hk.strip():
             custom_headers.append({"key": hk.strip(), "value": hv.strip() if hv else ""})
 

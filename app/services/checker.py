@@ -396,6 +396,7 @@ async def _check_single_monitor_inner(monitor: dict, now: datetime) -> dict | No
             monitor["url"], timeout=timeout_val, expected_status_code=expected_code,
             auth_header=auth_header, assertions=assertions, client=client,
             http_method=http_method, request_body=req_body, request_content_type=req_ct,
+            custom_headers=monitor.get("custom_headers"),
         )
         # Grab SSL info concurrently for HTTPS URLs
         ssl_info = {}

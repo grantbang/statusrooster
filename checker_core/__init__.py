@@ -188,7 +188,8 @@ async def check_json_api(url: str, timeout: float = 10.0, expected_status_code: 
                          auth_header: str = "", assertions: list | None = None,
                          client: httpx.AsyncClient | None = None,
                          http_method: str = "GET",
-                         request_body: str = "", request_content_type: str = "") -> dict:
+                         request_body: str = "", request_content_type: str = "",
+                         custom_headers: list | None = None) -> dict:
     """
     Check a JSON API endpoint. Validates:
     - HTTP response status
@@ -203,7 +204,16 @@ async def check_json_api(url: str, timeout: float = 10.0, expected_status_code: 
     except ValueError as e:
         return {"is_up": False, "status_code": None, "response_ms": None, "body": "", "error": str(e), "ssrf_blocked": True, "assertion_results": []}
     try:
-        headers = {}
+        headers = {
+            "User-Agent": "Mozilla/5.0 (compatible; StatusRooster/1.0; +https://statusrooster.com)",
+        }
+        # Custom headers (applied first so auth header can override)
+        if custom_headers:
+            for h in custom_headers:
+                key = h.get("key", "").strip()
+                val = h.get("value", "").strip()
+                if key:
+                    headers[key] = val
         if auth_header:
             headers["Authorization"] = auth_header
 
