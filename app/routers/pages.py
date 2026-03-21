@@ -1982,8 +1982,8 @@ async def generate_api_key_page(request: Request, label: str = Form("Default")):
     db = get_db()
     key_data = generate_api_key(db, user["id"], label=label.strip() or "Default")
 
-    response = RedirectResponse(url="/settings", status_code=302)
-    _set_flash(response, "API key created! Copy it now -- you won't see it again.")
+    response = RedirectResponse(url="/settings#api-keys", status_code=302)
+    _set_flash(response, "API key created! Copy it now — you won't see it again.")
     response.set_cookie("new_api_key", key_data["raw_key"], max_age=10, httponly=True, secure=True, samesite="lax")
     return response
 
@@ -1997,7 +1997,7 @@ async def revoke_api_key_page(request: Request, key_id: str):
     db = get_db()
     success = revoke_api_key(db, key_id, user["id"])
 
-    response = RedirectResponse(url="/settings", status_code=302)
+    response = RedirectResponse(url="/settings#api-keys", status_code=302)
     if success:
         _set_flash(response, "API key revoked.")
     else:

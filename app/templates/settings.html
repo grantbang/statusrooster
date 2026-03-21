@@ -470,6 +470,12 @@ function copyKey() {
     }
 }
 
+/* Auto-scroll to new API key box if present */
+var newKeyBox = document.querySelector('.new-key-box');
+if (newKeyBox) {
+    newKeyBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 /* Format next billing date */
 var nbEl = document.getElementById('nextBilling');
 if (nbEl) {
