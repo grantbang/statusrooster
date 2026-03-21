@@ -1179,12 +1179,21 @@ async def clone_monitor(request: Request, monitor_id: str):
         group=monitor.get("group", ""),
     )
 
-    # Copy extra fields
+    # Copy extra fields that create_monitor doesn't handle via args
     extra = {}
-    for field in ["keyword", "response_threshold_ms", "webhook_url", "check_interval",
-                   "maintenance_windows"]:
-        if monitor.get(field):
-            extra[field] = monitor[field]
+    clone_fields = [
+        "keyword", "response_threshold_ms", "webhook_url", "check_interval",
+        "maintenance_windows", "monitor_type", "expected_status_code", "timeout",
+        "json_assertions", "auth_header", "ssl_domain", "ssl_expiry_threshold_days",
+        "heartbeat_interval", "heartbeat_grace_period", "http_method",
+        "basic_auth_user", "basic_auth_pass", "bearer_token",
+        "request_body", "request_content_type", "custom_headers",
+        "follow_redirects", "alert_sms",
+    ]
+    for field in clone_fields:
+        val = monitor.get(field)
+        if val is not None and val != "" and val != []:
+            extra[field] = val
     if extra:
         update_monitor(db, cloned["id"], extra)
 

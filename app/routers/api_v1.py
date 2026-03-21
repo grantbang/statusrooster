@@ -248,6 +248,7 @@ class ApiCreateMonitor(BaseModel):
     name: str
     alert_email: str = ""
     alert_slack_webhook: str = ""
+    alert_sms: str = ""
     keyword: str = ""
     response_threshold_ms: str | None = None
     webhook_url: str = ""
@@ -346,6 +347,7 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
         name=req.name,
         alert_email=req.alert_email or user.get("email", ""),
         alert_slack_webhook=req.alert_slack_webhook or "",
+        alert_sms=req.alert_sms or "",
         public=req.public,
         keyword=req.keyword,
         response_threshold_ms=req.response_threshold_ms,
@@ -390,6 +392,7 @@ class ApiUpdateMonitor(BaseModel):
     name: str | None = None
     alert_email: str | None = None
     alert_slack_webhook: str | None = None
+    alert_sms: str | None = None
     keyword: str | None = None
     response_threshold_ms: str | None = None
     webhook_url: str | None = None
@@ -441,6 +444,8 @@ async def api_update_monitor(
         updates["alert_email"] = req.alert_email
     if req.alert_slack_webhook is not None:
         updates["alert_slack_webhook"] = req.alert_slack_webhook
+    if req.alert_sms is not None:
+        updates["alert_sms"] = req.alert_sms
     if req.keyword is not None:
         updates["keyword"] = req.keyword
     if req.response_threshold_ms is not None:
