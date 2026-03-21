@@ -1,0 +1,13 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '$_TAG'
+      - '-f'
+      - 'worker/Dockerfile'
+      - '.'
+images:
+  - '$_TAG'
+substitutions:
+  _TAG: 'us-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker'

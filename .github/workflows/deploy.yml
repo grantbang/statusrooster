@@ -108,8 +108,7 @@ jobs:
       - name: Build worker image
         run: |
           gcloud builds submit . \
-            --tag us-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker \
-            --dockerfile worker/Dockerfile \
+            --config worker/cloudbuild.yaml \
             --project statusrooster \
             --quiet
 
