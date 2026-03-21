@@ -171,6 +171,11 @@
                     <form method="POST" action="/api/billing/portal" style="display:inline;">
                         <button type="submit" class="btn btn-secondary">Manage billing</button>
                     </form>
+                    {% if not (subscription_info and subscription_info.cancel_at_period_end) %}
+                    <form method="POST" action="/api/billing/portal" style="display:inline; margin-left: 0.5rem;">
+                        <button type="submit" class="btn-text-danger">Cancel subscription</button>
+                    </form>
+                    {% endif %}
                 {% else %}
                     <form method="POST" action="/api/billing/checkout" style="display:inline;">
                         <button type="submit" class="btn btn-primary">Upgrade to Pro — $9/mo</button>
