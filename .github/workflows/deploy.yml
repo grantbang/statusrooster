@@ -107,9 +107,11 @@ jobs:
 
       - name: Build worker image
         run: |
+          cp worker/Dockerfile Dockerfile
           gcloud builds submit . \
-            --config worker/cloudbuild.yaml \
+            --tag us-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker \
             --project statusrooster \
+            --suppress-logs \
             --quiet
 
       - name: Deploy workers to all regions
