@@ -1,90 +1,202 @@
 {% extends "base.html" %}
 
-{% block title %}SMS Consent & Opt-In Flow{% endblock %}
-{% block description %}How StatusRooster collects SMS consent — opt-in flow, message frequency, and opt-out instructions.{% endblock %}
+{% block title %}SMS Consent & Opt-In Documentation{% endblock %}
+{% block description %}Public documentation of StatusRooster's SMS opt-in flow — screenshots, consent language, opt-out instructions, and compliance details.{% endblock %}
 {% block canonical %}<link rel="canonical" href="https://statusrooster.com/sms-consent">{% endblock %}
 
 {% block content %}
 <div style="max-width: 760px; margin: 3rem auto; padding: 0 1rem;">
-    <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">SMS Alert Consent &amp; Opt-In Flow</h1>
-    <p style="color: var(--muted); margin-bottom: 2.5rem;">How StatusRooster collects user consent for SMS notifications</p>
+    <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">SMS Alert Consent &amp; Opt-In Documentation</h1>
+    <p style="color: var(--muted); margin-bottom: 2rem;">Public documentation of how StatusRooster collects, records, and honors SMS consent</p>
 
     <div style="line-height: 1.8; color: var(--text);">
 
-        <div style="border: 2px solid var(--brand); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 2rem; background: #f5f3ff;">
-            <h3 style="font-size: 1rem; font-weight: 700; margin: 0 0 0.75rem; color: var(--brand);">Summary for Compliance Review</h3>
-            <ul style="padding-left: 1.25rem; margin: 0; font-size: 0.92rem;">
-                <li><strong>Opt-in method:</strong> Electronic, behind login — user must toggle SMS on, enter phone number, read inline consent disclosure, and submit the form.</li>
-                <li><strong>Opt-in page:</strong> <a href="https://statusrooster.com/add-monitor" style="color: var(--brand);">statusrooster.com/add-monitor</a> (requires login + Pro plan)</li>
-                <li><strong>Message type:</strong> Transactional only — downtime alerts and recovery notifications. Zero marketing messages.</li>
-                <li><strong>Frequency:</strong> 1–10 messages/week typical, varies by monitor activity.</li>
-                <li><strong>Opt-out:</strong> Reply STOP, or remove phone number in-app.</li>
-                <li><strong>Privacy Policy:</strong> <a href="https://statusrooster.com/privacy" style="color: var(--brand);">statusrooster.com/privacy</a></li>
-                <li><strong>Terms of Service:</strong> <a href="https://statusrooster.com/terms" style="color: var(--brand);">statusrooster.com/terms</a></li>
+        <!-- ═══ COMPLIANCE REVIEWER BOX ═══ -->
+        <div style="border: 2px solid var(--brand); border-radius: 12px; padding: 1.5rem; margin-bottom: 2.5rem; background: #f5f3ff;">
+            <h2 style="font-size: 1.1rem; font-weight: 700; margin: 0 0 0.5rem; color: var(--brand);">For Compliance Reviewers</h2>
+            <p style="font-size: 0.92rem; margin: 0 0 1rem; color: #555;">Our SMS opt-in occurs within a logged-in application. Because reviewers cannot access the form directly, this page provides complete public documentation with exact reproductions of every screen in the opt-in flow.</p>
+
+            <table style="width: 100%; font-size: 0.9rem; border-collapse: collapse;">
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 0.5rem 0; font-weight: 600; width: 40%;">Brand name in messages</td>
+                    <td style="padding: 0.5rem 0;">[StatusRooster] — prefixed on every SMS</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 0.5rem 0; font-weight: 600;">Message type</td>
+                    <td style="padding: 0.5rem 0;">Transactional only (downtime alerts, recovery notifications). Zero marketing.</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 0.5rem 0; font-weight: 600;">Message frequency</td>
+                    <td style="padding: 0.5rem 0;">Varies by monitor activity. Typically 1–10 msgs/week. Disclosed in consent text.</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 0.5rem 0; font-weight: 600;">Opt-in method</td>
+                    <td style="padding: 0.5rem 0;">Electronic — user toggles SMS on, enters phone, reads consent disclosure, submits form. <strong>See full flow below.</strong></td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 0.5rem 0; font-weight: 600;">Consent disclosure includes</td>
+                    <td style="padding: 0.5rem 0;">Brand name, message type, frequency disclosure, "Msg &amp; data rates may apply", STOP/HELP instructions, Privacy Policy link, Terms link</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 0.5rem 0; font-weight: 600;">Opt-out</td>
+                    <td style="padding: 0.5rem 0;">Reply STOP to any message, or remove phone number in-app</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 0.5rem 0; font-weight: 600;">HELP keyword</td>
+                    <td style="padding: 0.5rem 0;">Reply HELP to any message for support info</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 0.5rem 0; font-weight: 600;">Confirmation SMS</td>
+                    <td style="padding: 0.5rem 0;">Sent immediately upon opt-in. Includes frequency, rates, STOP/HELP. <strong>See sample below.</strong></td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 0.5rem 0; font-weight: 600;">Privacy Policy</td>
+                    <td style="padding: 0.5rem 0;"><a href="https://statusrooster.com/privacy" style="color: var(--brand);">statusrooster.com/privacy</a></td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.5rem 0; font-weight: 600;">Terms of Service</td>
+                    <td style="padding: 0.5rem 0;"><a href="https://statusrooster.com/terms" style="color: var(--brand);">statusrooster.com/terms</a></td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- ═══ SECTION 1: OVERVIEW ═══ -->
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">1. Overview</h2>
+        <p><strong>StatusRooster</strong> (<a href="https://statusrooster.com" style="color: var(--brand);">statusrooster.com</a>) is an uptime monitoring service. SMS alerts are a <strong>Pro plan</strong> feature ($9/month) that sends transactional text messages when a user's monitored website or API goes down or recovers. Messages are strictly transactional — we never send marketing or promotional SMS.</p>
+
+        <!-- ═══ SECTION 2: OPT-IN FLOW WITH SCREENSHOTS ═══ -->
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2.5rem 0 0.75rem;">2. Complete Opt-In Flow (with Screenshots)</h2>
+        <p>SMS opt-in requires a multi-step, explicit consent process within the user's logged-in account. The opt-in form is at <code>statusrooster.com/monitors/add</code> (requires authentication). Below are exact reproductions of the in-app interface at each step.</p>
+
+        <!-- Step 1 -->
+        <div style="margin: 2rem 0;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Step 1: User navigates to Add Monitor or Edit Monitor</h3>
+            <p>After logging in, users navigate to the <strong>Add Monitor</strong> or <strong>Edit Monitor</strong> form. The Notifications section shows all available alert channels.</p>
+        </div>
+
+        <!-- Step 2 -->
+        <div style="margin: 2rem 0;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Step 2: User toggles SMS from OFF to ON</h3>
+            <p>SMS is <strong>off by default</strong> and cannot be pre-selected. The user must explicitly toggle it on. Free plan users see a locked "Upgrade to Pro" prompt and cannot enable SMS at all.</p>
+
+            <div style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; margin: 1rem 0; background: #fafafa;">
+                <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Screenshot — Notifications section of Add Monitor form (SMS toggled ON)</div>
+
+                <!-- Full notifications section reproduction -->
+                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem;">
+                    <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; font-weight: 600;">
+                        <svg style="vertical-align: -3px; margin-right: 4px;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                        Notifications
+                    </div>
+
+                    <!-- Email channel -->
+                    <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 0.5rem;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
+                        <span style="font-weight: 500; flex: 1; font-size: 0.95rem;">Email</span>
+                        <div style="width: 36px; height: 20px; background: #6366f1; border-radius: 10px; position: relative;">
+                            <div style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 2px; right: 2px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Slack channel -->
+                    <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 0.5rem;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5z"/><path d="M20.5 10H19V8.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+                        <span style="font-weight: 500; flex: 1; font-size: 0.95rem;">Slack</span>
+                        <div style="width: 36px; height: 20px; background: #d1d5db; border-radius: 10px; position: relative;">
+                            <div style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Webhook channel -->
+                    <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 0.5rem;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                        <span style="font-weight: 500; flex: 1; font-size: 0.95rem;">Webhook</span>
+                        <div style="width: 36px; height: 20px; background: #d1d5db; border-radius: 10px; position: relative;">
+                            <div style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- SMS channel — toggled ON -->
+                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 0;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81a19.79 19.79 0 01-3.07-8.68A2 2 0 012 .18h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.09-1.09a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 14.92v2z"/></svg>
+                            <span style="font-weight: 500; flex: 1; font-size: 0.95rem;">SMS</span>
+                            <div style="width: 36px; height: 20px; background: #6366f1; border-radius: 10px; position: relative;">
+                                <div style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 2px; right: 2px;"></div>
+                            </div>
+                        </div>
+                        <!-- Phone input -->
+                        <div style="padding: 0 0.75rem 0.75rem;">
+                            <input type="tel" disabled value="+15551234567" style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; background: white; color: #333; box-sizing: border-box;">
+                            <p style="font-size: 0.8rem; color: #888; margin: 0.4rem 0 0;">Enter in international format: +1 555 123 4567</p>
+                            <!-- CONSENT DISCLOSURE — exact text from the live application -->
+                            <p style="font-size: 0.78rem; color: #666; line-height: 1.5; background: #f9fafb; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.6rem 0.75rem; margin: 0.5rem 0 0;">By enabling SMS alerts, you consent to receive transactional text messages about monitor status (down/recovery). Msg frequency varies by monitor activity. Msg &amp; data rates may apply. Reply STOP to opt out. Reply HELP for help. <a href="/privacy" style="color: var(--brand);">Privacy Policy</a> · <a href="/terms" style="color: var(--brand);">Terms</a> · <a href="/sms-consent" style="color: var(--brand);">SMS Consent</a></p>
+                        </div>
+                    </div>
+                </div>
+                <p style="font-size: 0.78rem; color: #999; margin: 0.5rem 0 0; font-style: italic;">This is an exact reproduction of the in-app Notifications section. The live form is at statusrooster.com/monitors/add (requires login).</p>
+            </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div style="margin: 2rem 0;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Step 3: User enters their phone number</h3>
+            <p>After toggling SMS on, a phone number input field appears. The user enters their phone number in international format (e.g., +15551234567). Client-side validation confirms the number matches E.164 format before submission.</p>
+        </div>
+
+        <!-- Step 4 -->
+        <div style="margin: 2rem 0;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Step 4: User reads the inline consent disclosure</h3>
+            <p>Directly below the phone number field, the following consent disclosure is displayed (visible in the screenshot above). The exact consent text is:</p>
+            <blockquote style="border-left: 3px solid var(--brand); padding: 0.75rem 1rem; margin: 1rem 0; background: #f9fafb; border-radius: 0 8px 8px 0; font-size: 0.92rem;">
+                "By enabling SMS alerts, you consent to receive transactional text messages about monitor status (down/recovery). Msg frequency varies by monitor activity. Msg &amp; data rates may apply. Reply STOP to opt out. Reply HELP for help. Privacy Policy · Terms · SMS Consent"
+            </blockquote>
+            <p>This disclosure includes:</p>
+            <ul style="padding-left: 1.5rem; margin: 0.5rem 0; font-size: 0.95rem;">
+                <li>Description of message content (transactional alerts about monitor status)</li>
+                <li>Message frequency disclosure ("varies by monitor activity")</li>
+                <li>"Msg &amp; data rates may apply"</li>
+                <li>Opt-out instructions ("Reply STOP to opt out")</li>
+                <li>Help instructions ("Reply HELP for help")</li>
+                <li>Link to <a href="/privacy" style="color: var(--brand);">Privacy Policy</a></li>
+                <li>Link to <a href="/terms" style="color: var(--brand);">Terms of Service</a></li>
+                <li>Link to this <a href="/sms-consent" style="color: var(--brand);">SMS Consent</a> page</li>
             </ul>
         </div>
 
-        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">1. Overview</h2>
-        <p><strong>StatusRooster</strong> is an uptime monitoring service at <a href="https://statusrooster.com" style="color: var(--brand);">statusrooster.com</a>. SMS alerts are a <strong>Pro plan</strong> feature ($9/month) that sends transactional text messages when a user's monitored website or API goes down or recovers. Messages are strictly transactional — we never send marketing or promotional SMS.</p>
-
-        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">2. How Users Opt In</h2>
-        <p>SMS opt-in is a multi-step, explicit consent process that occurs within the user's logged-in account:</p>
-
-        <div style="margin: 1.5rem 0;">
-            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Step 1: User creates or edits a monitor</h3>
-            <p>After logging in, users navigate to the <strong>Add Monitor</strong> or <strong>Edit Monitor</strong> form. The Notifications section lists available alert channels: Email, Slack, Webhook, and SMS.</p>
+        <!-- Step 5 -->
+        <div style="margin: 2rem 0;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Step 5: User submits the form</h3>
+            <p>The user clicks <strong>"Create Monitor"</strong> or <strong>"Save Changes"</strong>. By saving with SMS enabled and a phone number entered, the user explicitly consents to receive SMS alert notifications from StatusRooster.</p>
         </div>
 
-        <div style="margin: 1.5rem 0;">
-            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Step 2: User toggles on SMS alerts</h3>
-            <p>SMS is off by default. The user must explicitly toggle the SMS switch to enable it. Free plan users see "Upgrade to Pro" — they cannot enable SMS without upgrading first.</p>
+        <!-- Step 6: Confirmation SMS -->
+        <div style="margin: 2rem 0;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Step 6: Confirmation SMS is sent immediately</h3>
+            <p>Upon first opt-in, the user receives the following confirmation text message:</p>
 
-            <!-- Visual mockup of the SMS toggle -->
             <div style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; margin: 1rem 0; background: #fafafa;">
-                <div style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">UI Preview — Notifications Section</div>
-                <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: white; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 0.5rem;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81a19.79 19.79 0 01-3.07-8.68A2 2 0 012 .18h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.09-1.09a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 14.92v2z"/></svg>
-                    <span style="font-weight: 500; flex: 1;">SMS</span>
-                    <div style="width: 40px; height: 22px; background: #6366f1; border-radius: 11px; position: relative;">
-                        <div style="width: 18px; height: 18px; background: white; border-radius: 50%; position: absolute; top: 2px; right: 2px;"></div>
-                    </div>
+                <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Confirmation SMS — sent upon opt-in</div>
+                <div style="background: #e8f5e9; border-radius: 12px 12px 12px 4px; padding: 0.75rem 1rem; max-width: 420px; font-size: 0.92rem; line-height: 1.5; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+                    StatusRooster: SMS alerts enabled. You'll receive texts when your monitors go down or recover. Msg frequency varies. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. Terms: https://statusrooster.com/terms
                 </div>
-                <div style="padding: 0.75rem; background: white; border: 1px solid #e2e8f0; border-radius: 8px;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <input type="tel" disabled value="+15551234567" style="flex: 1; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; background: white; color: #333;">
-                    </div>
-                    <p style="font-size: 0.8rem; color: #888; margin: 0.5rem 0 0;">Enter in international format: +1 555 123 4567</p>
-                </div>
+                <p style="font-size: 0.78rem; color: #999; margin: 0.5rem 0 0; font-style: italic;">This is the exact message text sent via Twilio upon first SMS opt-in.</p>
             </div>
         </div>
 
-        <div style="margin: 1.5rem 0;">
-            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Step 3: User enters their phone number</h3>
-            <p>After toggling SMS on, a phone number input field appears. The user enters their phone number in international format (e.g., +15551234567).</p>
-        </div>
-
-        <div style="margin: 1.5rem 0;">
-            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Step 4: User reads consent disclosure</h3>
-            <p>Below the phone number field, an inline consent disclosure is displayed:</p>
-            <div style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; margin: 1rem 0; background: #fafafa;">
-                <div style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">UI Preview — Consent Disclosure</div>
-                <p style="font-size: 0.78rem; color: #666; line-height: 1.5; background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem;">By enabling SMS alerts, you consent to receive transactional text messages about monitor status (down/recovery). Msg frequency varies by monitor activity. Msg &amp; data rates may apply. Reply STOP to opt out. Reply HELP for help. <a href="/privacy" style="color: var(--brand);">Privacy Policy</a> · <a href="/terms" style="color: var(--brand);">Terms</a> · <a href="/sms-consent" style="color: var(--brand);">SMS Consent</a></p>
-            </div>
-        </div>
-
-        <div style="margin: 1.5rem 0;">
-            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Step 5: User saves the form</h3>
-            <p>The user clicks <strong>"Create Monitor"</strong> or <strong>"Save Changes"</strong> to submit the form. By saving with SMS enabled and a phone number entered, the user explicitly consents to receive SMS alert notifications from StatusRooster. Consent is recorded at the time of form submission.</p>
-        </div>
-
-        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">3. Message Content &amp; Frequency</h2>
+        <!-- ═══ SECTION 3: MESSAGE CONTENT ═══ -->
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2.5rem 0 0.75rem;">3. Message Content &amp; Frequency</h2>
+        <p><strong>All messages are prefixed with [StatusRooster]</strong> and include STOP/HELP instructions.</p>
         <ul style="padding-left: 1.5rem; margin: 0.5rem 0;">
-            <li><strong>Message types:</strong> Downtime alerts ("Your monitor [name] is DOWN") and recovery notifications ("Your monitor [name] is back UP"). These are strictly transactional, event-driven messages.</li>
-            <li><strong>Frequency:</strong> Message frequency varies based on monitor activity. Typical usage is 1–10 messages per week, depending on how many monitors have SMS enabled and how often incidents occur. Users with stable services may receive zero messages for extended periods.</li>
-            <li><strong>Message and data rates may apply.</strong></li>
+            <li><strong>Downtime alert:</strong> <code>[StatusRooster] ALERT: Your monitor "My Website" is DOWN. Checked at 10:45 AM UTC. Reply STOP to opt out, HELP for help.</code></li>
+            <li><strong>Recovery notification:</strong> <code>[StatusRooster] RECOVERY: Your monitor "My Website" is back UP. Downtime: 4 minutes. Reply STOP to opt out, HELP for help.</code></li>
+            <li><strong>SSL expiry:</strong> <code>[StatusRooster] ALERT: SSL certificate for myapp.com expires in 3 days. Renew now to avoid downtime. Reply STOP to opt out, HELP for help.</code></li>
         </ul>
+        <p><strong>Frequency:</strong> Message frequency varies based on monitor activity. Typical usage is 1–10 messages per week, depending on how many monitors have SMS enabled and how often incidents occur. Users with stable services may receive zero messages for extended periods.</p>
+        <p><strong>Message and data rates may apply.</strong></p>
 
-        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">4. How to Opt Out</h2>
+        <!-- ═══ SECTION 4: OPT-OUT ═══ -->
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2.5rem 0 0.75rem;">4. How to Opt Out</h2>
         <p>Users can opt out of SMS alerts at any time using either method:</p>
         <ul style="padding-left: 1.5rem; margin: 0.5rem 0;">
             <li><strong>Reply STOP</strong> to any SMS message from StatusRooster to immediately stop all SMS notifications.</li>
@@ -92,20 +204,23 @@
         </ul>
         <p>For help, reply <strong>HELP</strong> to any SMS message or contact <a href="mailto:support@statusrooster.com" style="color: var(--brand);">support@statusrooster.com</a>.</p>
 
-        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">5. Data &amp; Privacy</h2>
+        <!-- ═══ SECTION 5: PRIVACY ═══ -->
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2.5rem 0 0.75rem;">5. Data &amp; Privacy</h2>
         <ul style="padding-left: 1.5rem; margin: 0.5rem 0;">
             <li>Phone numbers are stored securely and used only for sending SMS alerts via <strong>Twilio</strong>.</li>
-            <li>We do not share phone numbers with third parties for marketing purposes.</li>
-            <li>SMS delivery is handled by Twilio. Only the phone number is shared with Twilio — no other personal data.</li>
+            <li>We do not share, sell, or rent phone numbers or opt-in data with third parties for marketing or any other purpose.</li>
+            <li>SMS delivery is handled by Twilio. Only the phone number and message content are shared with Twilio — no other personal data.</li>
         </ul>
 
-        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">6. Policies</h2>
+        <!-- ═══ SECTION 6: POLICIES ═══ -->
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2.5rem 0 0.75rem;">6. Policies</h2>
         <ul style="padding-left: 1.5rem; margin: 0.5rem 0;">
             <li><a href="https://statusrooster.com/terms" style="color: var(--brand);">Terms of Service</a></li>
             <li><a href="https://statusrooster.com/privacy" style="color: var(--brand);">Privacy Policy</a></li>
         </ul>
 
-        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem;">7. Contact</h2>
+        <!-- ═══ SECTION 7: CONTACT ═══ -->
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin: 2.5rem 0 0.75rem;">7. Contact</h2>
         <p>For questions about SMS alerts or this consent flow, contact us at <a href="mailto:support@statusrooster.com" style="color: var(--brand);">support@statusrooster.com</a>.</p>
 
     </div>

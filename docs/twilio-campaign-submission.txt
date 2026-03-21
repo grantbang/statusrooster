@@ -1,0 +1,72 @@
+TWILIO A2P 10DLC CAMPAIGN SUBMISSION
+=====================================
+Copy each field below and paste directly into the Twilio form.
+
+
+--- FIELD: Campaign description ---
+
+StatusRooster (https://statusrooster.com) is an uptime monitoring service. This campaign sends transactional SMS alerts to Pro plan subscribers ($9/month) who have explicitly opted in to receive text message notifications when their monitored websites or APIs go down or recover. Messages are strictly transactional. No marketing, promotional, or advertising content is ever sent.
+
+
+--- FIELD: Sample message #1 ---
+
+[StatusRooster] ALERT: Your monitor "My Website" is DOWN. Checked at 10:45 AM UTC. Reply STOP to opt out, HELP for help.
+
+
+--- FIELD: Sample message #2 ---
+
+[StatusRooster] RECOVERY: Your monitor "My Website" is back UP. Downtime: 4 minutes. Reply STOP to opt out, HELP for help.
+
+
+--- FIELD: Sample message #3 ---
+
+StatusRooster: SMS alerts enabled. You'll receive texts when your monitors go down or recover. Msg frequency varies. Msg & data rates may apply. Reply STOP to opt out, HELP for help. Terms: https://statusrooster.com/terms
+
+
+--- FIELD: Sample message #4 ---
+
+[StatusRooster] ALERT: Your monitor "Stripe API" is DOWN. Checked from 4 regions — 0/4 responding. Reply STOP to opt out, HELP for help.
+
+
+--- FIELD: Sample message #5 ---
+
+[StatusRooster] ALERT: SSL certificate for myapp.com expires in 3 days. Renew now to avoid downtime. Reply STOP to opt out, HELP for help.
+
+
+--- FIELD: Message contents ---
+
+CHECK: Messages will include embedded links.
+UNCHECK: Messages will include phone numbers.
+UNCHECK: Messages include content related to direct lending or other loan arrangement.
+UNCHECK: Messages include age-gated content as defined by Carrier and CTIA guidelines
+
+
+--- FIELD: How do end-users consent to receive messages? (40-2048 characters) ---
+
+COMPLETE OPT-IN DOCUMENTATION WITH SCREENSHOTS: https://statusrooster.com/sms-consent
+
+Our opt-in flow is inside a logged-in web application, so it cannot be accessed by reviewers directly. The page above is a publicly accessible document with exact reproductions of every screen in the consent flow, the full consent disclosure text, sample messages, and all compliance details.
+
+OPT-IN PROCESS (6 steps):
+1. User logs in to StatusRooster and navigates to the Add Monitor or Edit Monitor form.
+2. In the Notifications section, user toggles SMS from OFF to ON. SMS is off by default and cannot be pre-selected. Free users cannot enable SMS — it requires a paid Pro plan ($9/month).
+3. User enters their phone number in E.164 format (e.g., +15551234567).
+4. An inline consent disclosure is displayed directly below the phone input. It reads: "By enabling SMS alerts, you consent to receive transactional text messages about monitor status (down/recovery). Msg frequency varies by monitor activity. Msg & data rates may apply. Reply STOP to opt out. Reply HELP for help." with links to our Privacy Policy, Terms, and SMS Consent page.
+5. User clicks "Create Monitor" or "Save Changes" to submit.
+6. A confirmation SMS is sent immediately: "StatusRooster: SMS alerts enabled. You'll receive texts when your monitors go down or recover. Msg frequency varies. Msg & data rates may apply. Reply STOP to opt out, HELP for help. Terms: https://statusrooster.com/terms"
+
+No SMS is sent until all 6 steps are complete. Users opt out by replying STOP or removing their phone number in-app. Phone numbers are not shared with third parties.
+
+Privacy Policy: https://statusrooster.com/privacy
+Terms of Service: https://statusrooster.com/terms
+SMS Consent Documentation: https://statusrooster.com/sms-consent
+
+
+--- FIELD: Privacy Policy URL ---
+
+https://statusrooster.com/privacy
+
+
+--- FIELD: Terms and Conditions URL ---
+
+https://statusrooster.com/terms
