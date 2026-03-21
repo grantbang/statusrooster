@@ -5,6 +5,8 @@ and regional worker services.
 This module contains ONLY the network check functions (HTTP, JSON/API, SSL, heartbeat
 helpers) and SSRF protection. It has ZERO dependencies on app.database, app.models,
 or app.services — keeping it portable for lightweight Cloud Run worker deployments.
+
+v1.1.0 — Added custom_headers support for JSON/API monitors
 """
 
 import httpx
