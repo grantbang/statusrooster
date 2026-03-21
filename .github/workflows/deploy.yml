@@ -105,13 +105,24 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v2
 
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker us-docker.pkg.dev --quiet
-
-      - name: Build and push worker image
+      - name: Build worker image
         run: |
-          docker build -t us-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker -f worker/Dockerfile .
-          docker push us-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker
+          cp worker/Dockerfile Dockerfile
+          BUILD_ID=$(gcloud builds submit . \
+            --tag us-docker.pkg.dev/statusrooster/cloud-run-source-deploy/statusrooster-worker \
+            --project statusrooster \
+            --async --format='value(id)' --quiet)
+          echo "Waiting for build $BUILD_ID..."
+          while true; do
+            STATUS=$(gcloud builds describe "$BUILD_ID" --project statusrooster --format='value(status)')
+            echo "Build status: $STATUS"
+            if [ "$STATUS" = "SUCCESS" ]; then break; fi
+            if [ "$STATUS" = "FAILURE" ] || [ "$STATUS" = "TIMEOUT" ] || [ "$STATUS" = "CANCELLED" ]; then
+              echo "Build failed with status: $STATUS"
+              exit 1
+            fi
+            sleep 10
+          done
 
       - name: Deploy workers to all regions
         run: |
