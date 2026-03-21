@@ -81,7 +81,7 @@ jobs:
       - id: check
         run: |
           CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
-          if echo "$CHANGED" | grep -qE '^(checker_core/|worker/)'; then
+          if echo "$CHANGED" | grep -qE '^(checker_core/|worker/|\.github/workflows/deploy\.yml)'; then
             echo "workers_changed=true" >> $GITHUB_OUTPUT
           else
             echo "workers_changed=false" >> $GITHUB_OUTPUT
