@@ -756,12 +756,16 @@ async def run_checks():
         if monitor.get("monitor_type") in ("http", "json_api") and ssl_info.get("ssl_expiry_days") is not None:
             days_left = ssl_info["ssl_expiry_days"]
             last_alerted = monitor.get("ssl_expiry_alerted_days")
-            for threshold_days in [14, 7, 3]:
-                if days_left <= threshold_days and last_alerted != threshold_days:
-                    if not in_maintenance:
-                        await send_ssl_expiry_alert(monitor, days_left, ssl_info["ssl_expiry"])
-                        monitor_updates["ssl_expiry_alerted_days"] = threshold_days
+            # Find tightest applicable threshold (ascending so we match the smallest first)
+            tightest = None
+            for t in [3, 7, 14]:
+                if days_left <= t:
+                    tightest = t
                     break
+            if tightest is not None and (last_alerted is None or last_alerted > tightest):
+                if not in_maintenance:
+                    await send_ssl_expiry_alert(monitor, days_left, ssl_info["ssl_expiry"])
+                    monitor_updates["ssl_expiry_alerted_days"] = tightest
 
         # ----- SSL Monitor — Expiry alerts based on configured threshold -----
         if monitor.get("monitor_type") == "ssl" and ssl_result:
