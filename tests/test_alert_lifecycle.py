@@ -29,11 +29,13 @@ CRON_SECRET = os.environ.get("SR_CRON_SECRET", "")
 # ── Helpers ────────────────────────────────────────────────────────────
 
 async def trigger_cron(client: httpx.AsyncClient) -> dict:
-    """Trigger a cron check cycle. Returns the cron response."""
-    resp = await client.post(
-        "/cron/check",
-        headers={"X-Cron-Secret": CRON_SECRET},
-    )
+    """Trigger a cron check cycle. Returns the cron response.
+    Uses a separate client with a long timeout since cron checks ALL monitors."""
+    async with httpx.AsyncClient(base_url=str(client.base_url), timeout=120.0) as cron_client:
+        resp = await cron_client.post(
+            "/cron/check",
+            headers={"X-Cron-Secret": CRON_SECRET},
+        )
     assert resp.status_code == 200, f"Cron trigger failed: {resp.status_code} — {resp.text}"
     return resp.json()
 
@@ -184,6 +186,9 @@ class TestIncidentLifecycle:
             # Update URL to healthy endpoint
             await update_monitor(client, mid, pro_headers, {"url": "https://httpbin.org/status/200"})
 
+            # Wait for check_interval (60s) to elapse so the monitor is due again
+            await asyncio.sleep(65)
+
             # Trigger cron → should recover
             await trigger_cron(client)
             await asyncio.sleep(3)
@@ -223,13 +228,15 @@ class TestIncidentLifecycle:
             await trigger_cron(client)
             await asyncio.sleep(3)
 
-            # Recover
+            # Recover — wait for check_interval to elapse
             await update_monitor(client, mid, pro_headers, {"url": "https://httpbin.org/status/200"})
+            await asyncio.sleep(65)
             await trigger_cron(client)
             await asyncio.sleep(3)
 
-            # Cycle 2: DOWN again
+            # Cycle 2: DOWN again — wait for check_interval to elapse
             await update_monitor(client, mid, pro_headers, {"url": "https://httpbin.org/status/500"})
+            await asyncio.sleep(65)
             await trigger_cron(client)
             await asyncio.sleep(3)
 
