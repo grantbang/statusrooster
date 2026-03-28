@@ -97,6 +97,18 @@ def _serialize_monitor(m: dict) -> dict:
     }
     for field in _INTERNAL_FIELDS:
         s.pop(field, None)
+    # Mask sensitive fields — show that a value is set without exposing the secret
+    _SENSITIVE_FIELDS = [
+        "bearer_token", "basic_auth_pass", "auth_header",
+        "alert_slack_webhook", "webhook_url",
+    ]
+    for field in _SENSITIVE_FIELDS:
+        if s.get(field):
+            val = s[field]
+            if len(val) > 8:
+                s[field] = val[:4] + "••••" + val[-4:]
+            else:
+                s[field] = "••••••••"
     return s
 
 

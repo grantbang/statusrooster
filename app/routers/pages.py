@@ -990,7 +990,7 @@ async def edit_monitor_submit(
         "url": url,
         "name": name,
         "alert_email": alert_email,
-        "alert_slack_webhook": alert_slack_webhook,
+        "alert_slack_webhook": "" if form.get("clear_slack_webhook") == "1" else (alert_slack_webhook if alert_slack_webhook else monitor.get("alert_slack_webhook", "")),
         "alert_sms": alert_sms if user.get("plan", "free") == "pro" else monitor.get("alert_sms", ""),
         "slug": slug,
         "public": public == "true",
@@ -1009,13 +1009,14 @@ async def edit_monitor_submit(
         updates["request_content_type"] = request_content_type
 
         # Auth: clear fields based on auth type selection
+        # Empty values preserve existing secrets (masked in edit form)
         if auth_type == "bearer":
-            updates["bearer_token"] = bearer_token
+            updates["bearer_token"] = bearer_token if bearer_token else monitor.get("bearer_token", "")
             updates["basic_auth_user"] = ""
             updates["basic_auth_pass"] = ""
         elif auth_type == "basic":
             updates["basic_auth_user"] = basic_auth_user
-            updates["basic_auth_pass"] = basic_auth_pass
+            updates["basic_auth_pass"] = basic_auth_pass if basic_auth_pass else monitor.get("basic_auth_pass", "")
             updates["bearer_token"] = ""
         else:
             updates["basic_auth_user"] = ""
@@ -1037,9 +1038,9 @@ async def edit_monitor_submit(
         except (ValueError, TypeError):
             pass
 
-    # Handle auth header
+    # Handle auth header (empty preserves existing — masked in edit form)
     if monitor.get("monitor_type") == "json_api":
-        updates["auth_header"] = auth_header
+        updates["auth_header"] = auth_header if auth_header else monitor.get("auth_header", "")
 
     # Handle SSL domain and threshold
     if monitor.get("monitor_type") == "ssl":
@@ -1093,7 +1094,7 @@ async def edit_monitor_submit(
             )
 
     # Webhook URL and maintenance windows (all plans)
-    updates["webhook_url"] = webhook_url
+    updates["webhook_url"] = "" if form.get("clear_webhook_url") == "1" else (webhook_url if webhook_url else monitor.get("webhook_url", ""))
     updates["maintenance_windows"] = maintenance_windows
 
     # Custom check interval (free: 60-300s, pro: 30-300s)

@@ -42,6 +42,9 @@ CHECK_REGIONS = ["us-east1", "us-west1", "europe-west1", "asia-east1"]
 CHECK_CONCURRENCY = 50
 _check_semaphore = asyncio.Semaphore(CHECK_CONCURRENCY)
 
+# Prevent overlapping run_checks() cycles (e.g. when cron fires while previous cycle is still running)
+_run_checks_lock = asyncio.Lock()
+
 # Shared httpx client for connection pooling (lazily created)
 _shared_client: httpx.AsyncClient | None = None
 
@@ -523,6 +526,16 @@ async def run_checks():
     Run checks for ALL monitors concurrently. Called by the cron endpoint.
     Returns summary of results.
     """
+    if _run_checks_lock.locked():
+        logger.warning("[checker] run_checks() already in progress, skipping overlapping invocation")
+        return {"total": 0, "up": 0, "down": 0, "skipped": 0, "skipped_reason": "overlap"}
+
+    async with _run_checks_lock:
+        return await _run_checks_inner()
+
+
+async def _run_checks_inner():
+    """Inner implementation of run_checks(), called under the lock."""
     t_cycle_start = time.monotonic()
     db = get_db()
     # Use get_due_monitors() — filters paused=False at Firestore level,

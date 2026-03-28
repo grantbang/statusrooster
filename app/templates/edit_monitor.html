@@ -185,13 +185,14 @@
                 <span class="mf-notify-channel-name">Slack</span>
                 <label class="mf-toggle-switch mf-toggle-switch-sm mf-toggle-ml-auto">
                     <input type="checkbox" id="slackToggle" {% if has_slack %}checked{% endif %}
-                           onchange="document.getElementById('slackUrlWrap').style.display = this.checked ? 'block' : 'none'">
+                           onchange="document.getElementById('slackUrlWrap').style.display = this.checked ? 'block' : 'none'; if(!this.checked) document.getElementById('slackClear').value = '1'; else document.getElementById('slackClear').value = '';">
                     <span class="mf-toggle-slider"></span>
                 </label>
             </div>
             <div id="slackUrlWrap" style="{% if not has_slack %}display: none;{% endif %}">
-                <input type="text" name="alert_slack_webhook" class="mf-notify-channel-input" value="{{ has_slack }}" placeholder="https://hooks.slack.com/services/...">
-                <div class="hint hint-mt-sm">Paste your Slack incoming webhook URL.</div>
+                <input type="password" name="alert_slack_webhook" class="mf-notify-channel-input" value="" placeholder="{{ '••••••••' if has_slack else 'https://hooks.slack.com/services/...' }}">
+                <input type="hidden" id="slackClear" name="clear_slack_webhook" value="">
+                <div class="hint hint-mt-sm">{{ 'Slack is configured. Paste a new URL to change it, or toggle off to remove.' if has_slack else 'Paste your Slack incoming webhook URL.' }}</div>
             </div>
         </div>
 
@@ -205,13 +206,14 @@
                 <span class="mf-notify-channel-name">Webhook</span>
                 <label class="mf-toggle-switch mf-toggle-switch-sm mf-toggle-ml-auto">
                     <input type="checkbox" id="webhookToggle" {% if has_webhook %}checked{% endif %}
-                           onchange="document.getElementById('webhookUrlWrap').style.display = this.checked ? 'block' : 'none'">
+                           onchange="document.getElementById('webhookUrlWrap').style.display = this.checked ? 'block' : 'none'; if(!this.checked) document.getElementById('webhookClear').value = '1'; else document.getElementById('webhookClear').value = '';">
                     <span class="mf-toggle-slider"></span>
                 </label>
             </div>
             <div id="webhookUrlWrap" style="{% if not has_webhook %}display: none;{% endif %}">
-                <input type="text" name="webhook_url" class="mf-notify-channel-input" value="{{ has_webhook }}" placeholder="https://your-api.com/webhook">
-                <div class="hint hint-mt-sm">We'll POST JSON to this URL on status changes.</div>
+                <input type="password" name="webhook_url" class="mf-notify-channel-input" value="" placeholder="{{ '••••••••' if has_webhook else 'https://your-api.com/webhook' }}">
+                <input type="hidden" id="webhookClear" name="clear_webhook_url" value="">
+                <div class="hint hint-mt-sm">{{ 'Webhook is configured. Paste a new URL to change it, or toggle off to remove.' if has_webhook else 'We\'ll POST JSON to this URL on status changes.' }}</div>
             </div>
         </div>
 
@@ -337,14 +339,15 @@
                             </div>
                             <div class="mf-field-group">
                                 <label for="basic_auth_pass">Password</label>
-                                <input type="password" id="basic_auth_pass" name="basic_auth_pass" value="{{ monitor.get('basic_auth_pass', '') }}" placeholder="••••••">
+                                <input type="password" id="basic_auth_pass" name="basic_auth_pass" value="" placeholder="{{ '••••••••' if monitor.get('basic_auth_pass') else '' }}">
+                                {% if monitor.get('basic_auth_pass') %}<div class="hint">Leave blank to keep existing password.</div>{% endif %}
                             </div>
                         </div>
                         <div class="mf-auth-fields" id="authFieldsBearer" style="{% if auth_type != 'bearer' %}display: none;{% else %}display: block;{% endif %}">
                             <div class="mf-field-group">
                                 <label for="bearer_token">Token</label>
-                                <input type="text" id="bearer_token" name="bearer_token" value="{{ has_bearer }}" placeholder="eyJhbGciOiJIUzI1NiIs...">
-                                <div class="hint">Sent as <code>Authorization: Bearer &lt;token&gt;</code> header.</div>
+                                <input type="password" id="bearer_token" name="bearer_token" value="" placeholder="{{ '••••••••' if has_bearer else 'eyJhbGciOiJIUzI1NiIs...' }}">
+                                <div class="hint">Sent as <code>Authorization: Bearer &lt;token&gt;</code> header.{{ ' Leave blank to keep existing token.' if has_bearer else '' }}</div>
                             </div>
                         </div>
                     </div>
@@ -433,8 +436,8 @@
                 </div>
                 <div class="mf-field-group">
                     <label for="auth_header">Authorization header <span class="label-optional">(optional)</span></label>
-                    <input type="text" id="auth_header" name="auth_header" value="{{ monitor.get('auth_header', '') }}" placeholder="Bearer eyJhbGci...">
-                    <div class="hint">Sent as the <code>Authorization</code> header.</div>
+                    <input type="password" id="auth_header" name="auth_header" value="" placeholder="{{ '••••••••' if monitor.get('auth_header') else 'Bearer eyJhbGci...' }}">
+                    <div class="hint">Sent as the <code>Authorization</code> header.{{ ' Leave blank to keep existing.' if monitor.get('auth_header') else '' }}</div>
                 </div>
                 <div class="mf-field-group mf-field-group-mt">
                     <label>Custom headers <span class="label-optional">(optional)</span></label>
