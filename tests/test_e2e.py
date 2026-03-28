@@ -1967,6 +1967,7 @@ class TestApiDocsAccuracy:
                 "url": "https://httpbin.org/status/200",
                 "name": "E2E-ProInterval60",
                 "check_interval": 60,
+                "public": False,
             }, headers=pro_headers)
             assert resp.status_code == 201, \
                 f"Q.21 FAIL: Pro should allow 60s interval, got {resp.status_code}: {resp.text}"
@@ -1988,6 +1989,7 @@ class TestApiDocsAccuracy:
             cr = await client.post("/api/v1/monitors", json={
                 "url": "https://httpbin.org/status/200",
                 "name": "E2E-UpdateShape",
+                "public": False,
             }, headers=pro_headers)
             assert cr.status_code == 201, f"Q.22 FAIL: create failed: {cr.text}"
             mid = cr.json()["data"]["id"]
