@@ -21,7 +21,7 @@ from datetime import datetime
 
 router = APIRouter(prefix="/api/v1", tags=["monitors"])
 
-FREE_MONITOR_LIMIT = 100
+FREE_MONITOR_LIMIT = 10
 PRO_MONITOR_LIMIT = 200
 
 # Security scheme — tells Swagger to show an "Authorize" button + lock icons

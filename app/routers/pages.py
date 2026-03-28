@@ -669,7 +669,7 @@ async def add_monitor(
     # Plan enforcement
     existing = list_monitors_by_user(db, user["id"])
     plan = user.get("plan", "free")
-    limit = 200 if plan == "pro" else 100
+    limit = 200 if plan == "pro" else 10
     if len(existing) >= limit:
         return RedirectResponse(
             url=f"/dashboard?msg=Limited+to+{limit}+monitors.{'Contact+us+if+you+need+more.' if plan == 'pro' else '+Upgrade+to+Pro+for+up+to+200!'}&msg_type=error",
@@ -1163,7 +1163,7 @@ async def clone_monitor(request: Request, monitor_id: str):
     from app.models.monitor import list_monitors_by_user
     existing = list_monitors_by_user(db, user["id"])
     plan = user.get("plan", "free")
-    limit = 200 if plan == "pro" else 100
+    limit = 200 if plan == "pro" else 10
     if len(existing) >= limit:
         return JSONResponse({"error": "Monitor limit reached"}, status_code=403)
 

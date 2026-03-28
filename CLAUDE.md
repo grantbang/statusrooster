@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A free-first SaaS uptime monitoring product for indie developers. Monitors websites, APIs, cron jobs (heartbeat), and SSL certificates. Built with Python/FastAPI, server-side rendered with Jinja2, backed by Google Firestore, deployed on Google Cloud Run.
 
-**Strategy:** Maximize users via generous free tier (100 monitors, 60s checks, all alert channels, status pages). Pro ($9/mo) is a support/power-user tier, not a growth gate. Do NOT add new free-tier gates without explicit approval.
+**Strategy:** Attract users via a capable free tier (10 monitors, 60s checks, all alert channels, status pages). Pro ($9/mo, 200 monitors) is the natural upgrade when users outgrow the free limit. Do NOT add new free-tier gates without explicit approval.
 
 ## Development Commands
 

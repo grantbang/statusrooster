@@ -608,17 +608,16 @@ class TestPlanEnforcement:
     """Tests E.1–E.12: Verify Free vs Pro plan gating.
 
     Phase 1 unlocked most features for free users. Only SMS remains Pro-only.
-    Check interval minimum is 60s for all plans. Free limit = 100 monitors, Pro = 200.
+    Check interval minimum is 60s for all plans. Free limit = 10 monitors, Pro = 200.
     Status pages: 10 for all plans. Aggregate status page: Pro-only.
     """
 
-    # ── E.1: Free user monitor limit (100) ──
-    # We can't create 101 monitors in a test, so we verify that 6 monitors
-    # are allowed (was 5 before Phase 1) and the limit constant is correct.
+    # ── E.1: Free user monitor limit (10) ──
+    # Verify that 6 monitors are allowed under the free limit of 10.
 
     @pytest.mark.asyncio
     async def test_e1_free_monitor_limit(self, client, free_headers):
-        """E.1 — Free user: can create at least 6 monitors (limit is 100)"""
+        """E.1 — Free user: can create at least 6 monitors (limit is 10)"""
         existing_resp = await client.get("/api/v1/monitors", headers=free_headers)
         if existing_resp.status_code == 200:
             for m in existing_resp.json().get("data", []):
@@ -1956,7 +1955,7 @@ class TestApiDocsAccuracy:
 
     @pytest.mark.asyncio
     async def test_q21_plan_limits_documented(self, client, pro_headers):
-        """Q.21 — Plan limits from API docs: Free=100 monitors, Pro=200"""
+        """Q.21 — Plan limits from API docs: Free=10 monitors, Pro=200"""
         # Check that Pro user can set check_interval=60 (min for all plans)
         resp = await client.post("/api/v1/monitors", json={
             "url": "https://httpbin.org/status/200",
