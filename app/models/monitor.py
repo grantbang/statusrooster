@@ -45,11 +45,11 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
     plan = user_data.get("plan", "free")
 
     if plan == "pro":
-        # Pro: custom interval 30-300s, default 30
+        # Pro: custom interval 60-300s, default 60
         if check_interval is not None:
-            check_interval = max(30, min(300, int(check_interval)))
+            check_interval = max(60, min(300, int(check_interval)))
         else:
-            check_interval = 30
+            check_interval = 60
     else:
         # Free: custom interval 60-300s, default 60
         if check_interval is not None:

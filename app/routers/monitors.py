@@ -147,7 +147,7 @@ async def update(monitor_id: str, req: UpdateMonitorRequest, user: dict = Depend
     # Gate Pro-only fields
     if "check_interval" in updates:
         plan = user.get("plan", "free")
-        min_interval = 30 if plan == "pro" else 60
+        min_interval = 60
         updates["check_interval"] = max(min_interval, min(300, updates["check_interval"]))
     if "heartbeat_interval" in updates and updates["heartbeat_interval"] is not None:
         updates["heartbeat_interval"] = max(60, min(86400, updates["heartbeat_interval"]))

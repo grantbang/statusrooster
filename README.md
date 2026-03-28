@@ -139,7 +139,7 @@ Regional Workers — Cloud Run
 | | Free | Pro — $9/mo |
 |---|---|---|
 | **Monitors** | 100 | 200 |
-| **Check interval** | 60 seconds | 30 seconds |
+| **Check interval** | 60 seconds | 60 seconds |
 | **Regions** | 4 | 4 |
 | **Monitor types** | All 4 | All 4 |
 | **Alerts** | Email, Slack, Webhook | + SMS |

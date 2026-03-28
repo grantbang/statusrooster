@@ -187,7 +187,7 @@
         {% if user.get('plan', 'free') == 'pro' %}
         <div class="sub-plan-features">
             <span>200 monitors</span>
-            <span>30s checks</span>
+            <span>60s checks</span>
             <span>SMS alerts</span>
             <span>Custom branding</span>
             <span>90-day history</span>
@@ -207,7 +207,7 @@
 
     {% if user.get('plan', 'free') != 'pro' %}
     <div class="sub-upgrade-pitch">
-        <strong>Pro unlocks:</strong> 200 monitors, 30-second checks, SMS alerts, custom status page branding, and 90 days of history.
+        <strong>Pro unlocks:</strong> 200 monitors, SMS alerts, custom status page branding, and 90 days of history.
     </div>
     {% endif %}
 

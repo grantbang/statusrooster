@@ -251,15 +251,15 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <span class="mf-section-header-title">Monitor interval</span>
         </div>
-        {% set min_interval = 30 if plan == 'pro' else 60 %}
-        {% set default_interval = min_interval %}
+        {% set min_interval = 60 %}
+        {% set default_interval = 60 %}
         <div class="mf-interval-wrap">
             <input type="range" class="mf-interval-slider" id="check_interval" name="check_interval" min="{{ min_interval }}" max="300" step="10" value="{{ default_interval }}"
                    oninput="updateIntervalDisplay(this.value)">
             <span class="mf-interval-value" id="intervalDisplay">{{ default_interval }}s</span>
         </div>
-        <div class="mf-interval-labels"><span>{{ min_interval }}s</span><span>3m</span><span>5m</span></div>
-        <div class="hint hint-mt-md">Your monitor will be checked every <strong id="intervalText">{{ default_interval }} seconds</strong>.{% if plan != 'pro' %} <a href="/pricing" class="mf-pro-upgrade">Upgrade to Pro</a> for 30s checks.{% endif %}</div>
+        <div class="mf-interval-labels"><span>60s</span><span>3m</span><span>5m</span></div>
+        <div class="hint hint-mt-md">Your monitor will be checked every <strong id="intervalText">{{ default_interval }} seconds</strong>.</div>
     </div>
 
     <!-- 2.7: Advanced Settings (collapsible) -->

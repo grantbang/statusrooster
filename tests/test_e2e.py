@@ -607,8 +607,8 @@ class TestMonitorTypes:
 class TestPlanEnforcement:
     """Tests E.1–E.12: Verify Free vs Pro plan gating.
 
-    Phase 1 unlocked most features for free users. Only SMS and 30s intervals
-    remain Pro-only. Free limit = 100 monitors, Pro = 200.
+    Phase 1 unlocked most features for free users. Only SMS remains Pro-only.
+    Check interval minimum is 60s for all plans. Free limit = 100 monitors, Pro = 200.
     Status pages: 10 for all plans. Aggregate status page: Pro-only.
     """
 
@@ -808,13 +808,13 @@ class TestPlanEnforcement:
                 headers=free_headers,
             )
             assert update_resp.status_code == 200, f"E.8 FAIL: Expected 200 for 60s interval, got {update_resp.status_code}"
-            # 30s should be rejected for free (Pro-only)
+            # 30s should be rejected for all plans (minimum is 60s)
             update_resp2 = await client.patch(
                 f"/api/v1/monitors/{mid}",
                 json={"check_interval": 30},
                 headers=free_headers,
             )
-            assert update_resp2.status_code == 403, f"E.8 FAIL: Expected 403 for 30s interval on free, got {update_resp2.status_code}"
+            assert update_resp2.status_code == 403, f"E.8 FAIL: Expected 403 for 30s interval, got {update_resp2.status_code}"
         finally:
             if mid:
                 await client.delete(f"/api/v1/monitors/{mid}", headers=free_headers)
@@ -1799,9 +1799,9 @@ class TestApiDocsAccuracy:
         }, headers=pro_headers)
         assert resp.status_code == 201
         mon = resp.json()["data"]
-        # Pro default should be 30
-        assert mon.get("check_interval") == 30, \
-            f"Q.9 FAIL: expected default 30 for Pro, got {mon.get('check_interval')}"
+        # Pro default should be 60 (same as free)
+        assert mon.get("check_interval") == 60, \
+            f"Q.9 FAIL: expected default 60 for Pro, got {mon.get('check_interval')}"
 
     @pytest.mark.asyncio
     async def test_q10_check_interval_default_free(self, client, free_headers):
@@ -1817,7 +1817,7 @@ class TestApiDocsAccuracy:
 
     @pytest.mark.asyncio
     async def test_q11_check_interval_below_plan_min_rejected(self, client, free_headers):
-        """Q.11 — Free user: check_interval=30 returns 403 (doc says min is 60)"""
+        """Q.11 — Any user: check_interval=30 returns 403 (min is 60 for all plans)"""
         resp = await client.post("/api/v1/monitors", json={
             "url": "https://httpbin.org/status/200",
             "name": "E2E-IntervalTooLow",
@@ -1957,16 +1957,16 @@ class TestApiDocsAccuracy:
     @pytest.mark.asyncio
     async def test_q21_plan_limits_documented(self, client, pro_headers):
         """Q.21 — Plan limits from API docs: Free=100 monitors, Pro=200"""
-        # Check that Pro user can set check_interval=30 (documented Pro min)
+        # Check that Pro user can set check_interval=60 (min for all plans)
         resp = await client.post("/api/v1/monitors", json={
             "url": "https://httpbin.org/status/200",
-            "name": "E2E-ProInterval30",
-            "check_interval": 30,
+            "name": "E2E-ProInterval60",
+            "check_interval": 60,
         }, headers=pro_headers)
         assert resp.status_code == 201, \
-            f"Q.21 FAIL: Pro should allow 30s interval, got {resp.status_code}"
+            f"Q.21 FAIL: Pro should allow 60s interval, got {resp.status_code}"
         mon = resp.json()["data"]
-        assert mon["check_interval"] == 30
+        assert mon["check_interval"] == 60
 
     # -- Q.22 Update (PATCH) response matches docs --
 

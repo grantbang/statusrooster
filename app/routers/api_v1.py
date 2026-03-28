@@ -338,10 +338,10 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
 
     # Validate check_interval bounds (apply plan-appropriate default if omitted)
     check_interval = req.check_interval
-    min_interval = 30 if plan == "pro" else 60
+    min_interval = 60
     if check_interval is not None:
         if check_interval < min_interval:
-            err(f"Minimum check interval is {min_interval}s for your plan.", 403)
+            err(f"Minimum check interval is {min_interval}s.", 403)
         check_interval = max(min_interval, min(300, check_interval))
     else:
         check_interval = min_interval
@@ -482,9 +482,9 @@ async def api_update_monitor(
         updates["maintenance_windows"] = [w.model_dump() for w in req.maintenance_windows]
     if req.check_interval is not None:
         plan = user.get("plan", "free")
-        min_interval = 30 if plan == "pro" else 60
+        min_interval = 60
         if req.check_interval < min_interval:
-            err(f"Minimum check interval is {min_interval}s for your plan.", 403)
+            err(f"Minimum check interval is {min_interval}s.", 403)
         updates["check_interval"] = max(min_interval, min(300, req.check_interval))
     if req.heartbeat_interval is not None:
         updates["heartbeat_interval"] = max(60, min(86400, req.heartbeat_interval))

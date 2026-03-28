@@ -1097,11 +1097,10 @@ async def edit_monitor_submit(
     updates["webhook_url"] = "" if form.get("clear_webhook_url") == "1" else (webhook_url if webhook_url else monitor.get("webhook_url", ""))
     updates["maintenance_windows"] = maintenance_windows
 
-    # Custom check interval (free: 60-300s, pro: 30-300s)
+    # Custom check interval (60-300s for all plans)
     if check_interval_raw:
         try:
-            plan = user.get("plan", "free")
-            min_interval = 30 if plan == "pro" else 60
+            min_interval = 60
             ci = max(min_interval, min(300, int(check_interval_raw)))
             updates["check_interval"] = ci
         except (ValueError, TypeError):
