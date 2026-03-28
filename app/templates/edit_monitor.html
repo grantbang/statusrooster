@@ -237,7 +237,10 @@
             <div id="smsWrap" style="{% if not has_sms %}display: none;{% endif %}">
                 <input type="tel" id="alert_sms" name="alert_sms" class="mf-notify-channel-input" value="{{ has_sms }}" placeholder="+15551234567" oninput="validateSms(this)">
                 <p id="smsHint" class="mf-sms-hint {% if has_sms %}mf-sms-hint--ok{% endif %}">{% if has_sms %}Looks good!{% else %}Enter in international format: +1 555 123 4567{% endif %}</p>
-                <p class="mf-sms-consent">By enabling SMS alerts, you consent to receive transactional text messages about monitor status (down/recovery). Msg frequency varies by monitor activity. Msg &amp; data rates may apply. Reply STOP to opt out. Reply HELP for help. <a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms</a> · <a href="/sms-consent">SMS Consent</a></p>
+                <label class="mf-sms-consent-label" style="display: flex; align-items: flex-start; gap: 0.5rem; margin-top: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" id="smsConsent" name="sms_consent" value="1" {% if has_sms %}checked{% endif %} required style="margin-top: 3px; flex-shrink: 0;">
+                    <span class="mf-sms-consent">By checking this box, you agree to receive SMS alerts from StatusRooster regarding monitor status updates (down/recovery). Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for assistance. Consent is not a condition of purchase. <a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms of Service</a></span>
+                </label>
             </div>
             {% else %}
             <div class="mf-notify-channel-locked">

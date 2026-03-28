@@ -11,10 +11,44 @@
 
     <div style="line-height: 1.8; color: var(--text);">
 
-        <!-- ═══ COMPLIANCE REVIEWER BOX ═══ -->
+        <!-- ═══ INTERACTIVE DEMO — for compliance reviewers ═══ -->
         <div style="border: 2px solid var(--brand); border-radius: 12px; padding: 1.5rem; margin-bottom: 2.5rem; background: #f5f3ff;">
-            <h2 style="font-size: 1.1rem; font-weight: 700; margin: 0 0 0.5rem; color: var(--brand);">For Compliance Reviewers</h2>
-            <p style="font-size: 0.92rem; margin: 0 0 1rem; color: #555;">Our SMS opt-in occurs within a logged-in application. Because reviewers cannot access the form directly, this page provides complete public documentation with exact reproductions of every screen in the opt-in flow.</p>
+            <h2 style="font-size: 1.1rem; font-weight: 700; margin: 0 0 0.5rem; color: var(--brand);">Interactive Opt-In Demo</h2>
+            <p style="font-size: 0.92rem; margin: 0 0 1rem; color: #555;">This is the exact SMS opt-in flow users see in the application. Try it — toggle SMS on, enter a phone number, and check the consent box.</p>
+
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem;">
+                <!-- SMS toggle -->
+                <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81a19.79 19.79 0 01-3.07-8.68A2 2 0 012 .18h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.09-1.09a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 14.92v2z"/></svg>
+                    <span style="font-weight: 500; flex: 1; font-size: 0.95rem;">SMS Alerts</span>
+                    <label style="cursor: pointer;">
+                        <input type="checkbox" id="demoSmsToggle" onchange="document.getElementById('demoSmsFields').style.display = this.checked ? 'block' : 'none'" style="display: none;">
+                        <div id="demoToggleTrack" style="width: 36px; height: 20px; background: #d1d5db; border-radius: 10px; position: relative; transition: background 0.2s; cursor: pointer;" onclick="var cb=document.getElementById('demoSmsToggle'); cb.checked=!cb.checked; cb.dispatchEvent(new Event('change')); this.style.background=cb.checked?'#6366f1':'#d1d5db'; this.querySelector('div').style.left=cb.checked?'auto':'2px'; this.querySelector('div').style.right=cb.checked?'2px':'auto';">
+                            <div style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: all 0.2s;"></div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Fields (hidden until toggled on) -->
+                <div id="demoSmsFields" style="display: none; padding: 0.75rem; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+                    <input type="tel" placeholder="+15551234567" style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; box-sizing: border-box;">
+                    <p style="font-size: 0.8rem; color: #888; margin: 0.4rem 0 0.75rem;">Enter in international format: +1 555 123 4567</p>
+
+                    <label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="demoConsentBox" style="margin-top: 3px; flex-shrink: 0;">
+                        <span style="font-size: 0.82rem; color: #555; line-height: 1.5;">By checking this box, you agree to receive SMS alerts from StatusRooster regarding monitor status updates (down/recovery). Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for assistance. Consent is not a condition of purchase. <a href="/privacy" style="color: var(--brand);">Privacy Policy</a> &middot; <a href="/terms" style="color: var(--brand);">Terms of Service</a></span>
+                    </label>
+
+                    <button onclick="if(document.getElementById('demoConsentBox').checked){alert('Demo only — in the real app, this saves the monitor with SMS alerts enabled.')}else{alert('Please check the consent box to continue.')}" style="margin-top: 1rem; background: var(--brand); color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">Save Monitor (demo)</button>
+                </div>
+            </div>
+            <p style="font-size: 0.78rem; color: #999; margin: 0.75rem 0 0; font-style: italic;">This demo is non-functional — no data is submitted. The real form is at statusrooster.com/monitors/add (requires login).</p>
+        </div>
+
+        <!-- ═══ COMPLIANCE REVIEWER SUMMARY ═══ -->
+        <div style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2.5rem; background: #fafafa;">
+            <h2 style="font-size: 1.1rem; font-weight: 700; margin: 0 0 0.5rem;">Compliance Summary</h2>
+            <p style="font-size: 0.92rem; margin: 0 0 1rem; color: #555;">Our SMS opt-in uses an explicit checkbox with full disclosure. Below is the complete documentation of our consent flow.</p>
 
             <table style="width: 100%; font-size: 0.9rem; border-collapse: collapse;">
                 <tr style="border-bottom: 1px solid #e2e8f0;">
@@ -31,7 +65,7 @@
                 </tr>
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 0.5rem 0; font-weight: 600;">Opt-in method</td>
-                    <td style="padding: 0.5rem 0;">Electronic — user toggles SMS on, enters phone, reads consent disclosure, submits form. <strong>See full flow below.</strong></td>
+                    <td style="padding: 0.5rem 0;">Electronic — user toggles SMS on, enters phone, checks explicit consent checkbox, submits form. <strong>See interactive demo above and full flow below.</strong></td>
                 </tr>
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 0.5rem 0; font-weight: 600;">Consent disclosure includes</td>
@@ -129,8 +163,11 @@
                         <div style="padding: 0 0.75rem 0.75rem;">
                             <input type="tel" disabled value="+15551234567" style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; background: white; color: #333; box-sizing: border-box;">
                             <p style="font-size: 0.8rem; color: #888; margin: 0.4rem 0 0;">Enter in international format: +1 555 123 4567</p>
-                            <!-- CONSENT DISCLOSURE — exact text from the live application -->
-                            <p style="font-size: 0.78rem; color: #666; line-height: 1.5; background: #f9fafb; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.6rem 0.75rem; margin: 0.5rem 0 0;">By enabling SMS alerts, you consent to receive transactional text messages about monitor status (down/recovery). Msg frequency varies by monitor activity. Msg &amp; data rates may apply. Reply STOP to opt out. Reply HELP for help. <a href="/privacy" style="color: var(--brand);">Privacy Policy</a> · <a href="/terms" style="color: var(--brand);">Terms</a> · <a href="/sms-consent" style="color: var(--brand);">SMS Consent</a></p>
+                            <!-- CONSENT CHECKBOX — exact reproduction from the live application -->
+                            <label style="display: flex; align-items: flex-start; gap: 0.5rem; margin-top: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" checked disabled style="margin-top: 3px; flex-shrink: 0;">
+                                <span style="font-size: 0.78rem; color: #666; line-height: 1.5;">By checking this box, you agree to receive SMS alerts from StatusRooster regarding monitor status updates (down/recovery). Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for assistance. Consent is not a condition of purchase. <a href="/privacy" style="color: var(--brand);">Privacy Policy</a> &middot; <a href="/terms" style="color: var(--brand);">Terms of Service</a></span>
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -146,21 +183,22 @@
 
         <!-- Step 4 -->
         <div style="margin: 2rem 0;">
-            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Step 4: User reads the inline consent disclosure</h3>
-            <p>Directly below the phone number field, the following consent disclosure is displayed (visible in the screenshot above). The exact consent text is:</p>
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Step 4: User checks the consent checkbox</h3>
+            <p>Below the phone number field, an <strong>unchecked checkbox</strong> with the full consent disclosure must be checked before the form can be submitted. The checkbox is required — the form cannot be saved without it. The exact consent text is:</p>
             <blockquote style="border-left: 3px solid var(--brand); padding: 0.75rem 1rem; margin: 1rem 0; background: #f9fafb; border-radius: 0 8px 8px 0; font-size: 0.92rem;">
-                "By enabling SMS alerts, you consent to receive transactional text messages about monitor status (down/recovery). Msg frequency varies by monitor activity. Msg &amp; data rates may apply. Reply STOP to opt out. Reply HELP for help. Privacy Policy · Terms · SMS Consent"
+                "By checking this box, you agree to receive SMS alerts from StatusRooster regarding monitor status updates (down/recovery). Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for assistance. Consent is not a condition of purchase. Privacy Policy · Terms of Service"
             </blockquote>
             <p>This disclosure includes:</p>
             <ul style="padding-left: 1.5rem; margin: 0.5rem 0; font-size: 0.95rem;">
-                <li>Description of message content (transactional alerts about monitor status)</li>
-                <li>Message frequency disclosure ("varies by monitor activity")</li>
-                <li>"Msg &amp; data rates may apply"</li>
+                <li>Explicit checkbox (unchecked by default, required to submit)</li>
+                <li>Description of message content (monitor status updates — down/recovery)</li>
+                <li>Message frequency disclosure ("varies")</li>
+                <li>"Message and data rates may apply"</li>
                 <li>Opt-out instructions ("Reply STOP to opt out")</li>
-                <li>Help instructions ("Reply HELP for help")</li>
+                <li>Help instructions ("Reply HELP for assistance")</li>
+                <li>"Consent is not a condition of purchase"</li>
                 <li>Link to <a href="/privacy" style="color: var(--brand);">Privacy Policy</a></li>
                 <li>Link to <a href="/terms" style="color: var(--brand);">Terms of Service</a></li>
-                <li>Link to this <a href="/sms-consent" style="color: var(--brand);">SMS Consent</a> page</li>
             </ul>
         </div>
 
