@@ -124,10 +124,9 @@
     </div>
     <div class="md-card">
         <div class="md-card-label">{{ 'Last ping' if monitor.get('monitor_type') == 'heartbeat' else 'Last check' }}</div>
-        {% set display_time = monitor.get('last_check_completed') or monitor.get('last_checked') %}
         <div class="md-card-value" id="lastCheckValue"
-             {% if display_time %}
-             data-last-checked="{{ display_time.isoformat() if display_time.isoformat is defined else display_time }}"
+             {% if monitor.get('last_checked') %}
+             data-last-checked="{{ monitor.last_checked.isoformat() if monitor.last_checked.isoformat is defined else monitor.last_checked }}"
              {% endif %}>
             {% if monitor.get('monitor_type') == 'heartbeat' and not monitor.get('last_heartbeat') %}
                 Never

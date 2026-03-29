@@ -42,8 +42,9 @@ CHECK_REGIONS = ["us-east1", "us-west1", "europe-west1", "asia-east1"]
 CHECK_CONCURRENCY = 50
 _check_semaphore = asyncio.Semaphore(CHECK_CONCURRENCY)
 
-# Prevent overlapping run_checks() cycles (e.g. when cron fires while previous cycle is still running)
+# Prevent overlapping or too-frequent run_checks() cycles
 _run_checks_lock = asyncio.Lock()
+_last_cycle_start: float = 0  # monotonic timestamp of last cycle start
 
 # Shared httpx client for connection pooling (lazily created)
 _shared_client: httpx.AsyncClient | None = None
@@ -526,9 +527,19 @@ async def run_checks():
     Run checks for ALL monitors concurrently. Called by the cron endpoint.
     Returns summary of results.
     """
+    global _last_cycle_start
+
     if _run_checks_lock.locked():
         logger.warning("[checker] run_checks() already in progress, skipping overlapping invocation")
         return {"total": 0, "up": 0, "down": 0, "skipped": 0, "skipped_reason": "overlap"}
+
+    # Reject Cloud Scheduler retries/duplicates — must be at least 45s since last cycle
+    since_last = time.monotonic() - _last_cycle_start
+    if _last_cycle_start > 0 and since_last < 45:
+        logger.warning(f"[checker] Ignoring duplicate cron trigger ({since_last:.0f}s since last cycle)")
+        return {"total": 0, "up": 0, "down": 0, "skipped": 0, "skipped_reason": "too_soon"}
+
+    _last_cycle_start = time.monotonic()
 
     async with _run_checks_lock:
         return await _run_checks_inner()
@@ -574,8 +585,6 @@ async def _run_checks_inner():
                     results["skipped"] += 1
                     continue
 
-        # Tag with cycle start so Phase 3 can use it for next_check_due
-        monitor["_cycle_now"] = now
         due_monitors.append(monitor)
 
     # Phase 2: Run all network checks concurrently (bounded by semaphore)
@@ -648,8 +657,7 @@ async def _run_checks_inner():
 
         monitor_updates = {
             "status": new_status,
-            "last_checked": monitor.get("_cycle_now", now),  # cycle start — for scheduling
-            "last_check_completed": datetime.now(timezone.utc),  # actual time — for display
+            "last_checked": datetime.now(timezone.utc),
             "last_status_code": result["status_code"],
             "last_response_ms": result["response_ms"],
             "uptime_percent": uptime_percent,
