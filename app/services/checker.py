@@ -661,7 +661,7 @@ async def _run_checks_inner():
 
         monitor_updates = {
             "status": new_status,
-            "last_checked": datetime.now(timezone.utc),
+            "last_checked": now,  # cycle start time — must match Phase 1's 'now' for interval math
             "last_status_code": result["status_code"],
             "last_response_ms": result["response_ms"],
             "uptime_percent": uptime_percent,
