@@ -570,9 +570,7 @@ async def _run_checks_inner():
 
             if last_checked_dt:
                 elapsed = (now - last_checked_dt).total_seconds()
-                # 5s buffer prevents skipping due to cron jitter (cron fires
-                # every 60s but processing time can make elapsed land at 58-59s)
-                if elapsed < check_interval - 5:
+                if elapsed < check_interval:
                     results["skipped"] += 1
                     continue
 
@@ -648,7 +646,7 @@ async def _run_checks_inner():
 
         monitor_updates = {
             "status": new_status,
-            "last_checked": datetime.now(timezone.utc),
+            "last_checked": now,
             "last_status_code": result["status_code"],
             "last_response_ms": result["response_ms"],
             "uptime_percent": uptime_percent,
