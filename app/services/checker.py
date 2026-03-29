@@ -581,7 +581,7 @@ async def _run_checks_inner():
 
             if last_checked_dt:
                 elapsed = (now - last_checked_dt).total_seconds()
-                if elapsed < check_interval:
+                if elapsed < check_interval - 1:  # 1s tolerance for sub-second timing jitter
                     if check_interval == 60:
                         logger.info(f"[interval-debug] SKIP {monitor.get('name','?')} id={monitor.get('id','?')[:8]}: elapsed={elapsed:.1f}s now={now.isoformat()} lc={last_checked_dt.isoformat()}")
                     results["skipped"] += 1
@@ -662,6 +662,7 @@ async def _run_checks_inner():
         monitor_updates = {
             "status": new_status,
             "last_checked": now,  # cycle start time — must match Phase 1's 'now' for interval math
+            "last_check_completed": datetime.now(timezone.utc),  # actual time — for UI display
             "last_status_code": result["status_code"],
             "last_response_ms": result["response_ms"],
             "uptime_percent": uptime_percent,

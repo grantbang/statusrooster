@@ -1545,7 +1545,8 @@ async def monitor_status_api(request: Request, monitor_id: str):
     if not monitor or monitor["user_id"] != user["id"]:
         return JSONResponse({"error": "Not found"}, status_code=404)
 
-    lc = monitor.get("last_checked")
+    # Use last_check_completed for display (actual check time), fall back to last_checked
+    lc = monitor.get("last_check_completed") or monitor.get("last_checked")
     last_checked_iso = None
     if lc:
         if hasattr(lc, "isoformat"):
@@ -1553,10 +1554,17 @@ async def monitor_status_api(request: Request, monitor_id: str):
         else:
             last_checked_iso = str(lc)
 
+    # Return enough data for the detail page to live-update without refresh
+    response_by_region = monitor.get("last_response_by_region", {})
     return JSONResponse({
         "last_checked": last_checked_iso,
         "status": monitor.get("status", "pending"),
         "last_response_ms": monitor.get("last_response_ms"),
+        "last_status_code": monitor.get("last_status_code"),
+        "uptime_percent": monitor.get("uptime_percent"),
+        "last_regions_checked": monitor.get("last_regions_checked"),
+        "last_regions_up": monitor.get("last_regions_up"),
+        "last_response_by_region": response_by_region,
     })
 
 

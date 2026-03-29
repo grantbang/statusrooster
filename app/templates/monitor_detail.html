@@ -124,9 +124,10 @@
     </div>
     <div class="md-card">
         <div class="md-card-label">{{ 'Last ping' if monitor.get('monitor_type') == 'heartbeat' else 'Last check' }}</div>
+        {% set lc_display = monitor.get('last_check_completed') or monitor.get('last_checked') %}
         <div class="md-card-value" id="lastCheckValue"
-             {% if monitor.get('last_checked') %}
-             data-last-checked="{{ monitor.last_checked.isoformat() if monitor.last_checked.isoformat is defined else monitor.last_checked }}"
+             {% if lc_display %}
+             data-last-checked="{{ lc_display.isoformat() if lc_display.isoformat is defined else lc_display }}"
              {% endif %}>
             {% if monitor.get('monitor_type') == 'heartbeat' and not monitor.get('last_heartbeat') %}
                 Never
@@ -807,21 +808,41 @@ function updateLastCheck() {
 updateLastCheck();
 setInterval(updateLastCheck, 1000);
 
-/* Poll for new last_checked timestamp so the counter resets on each check */
-async function pollLastChecked() {
+/* Poll for live data updates — refreshes counter, response time, status, regions */
+async function pollMonitorStatus() {
     try {
         const resp = await fetch(`/api/monitors/${MONITOR_ID}/status`);
         if (!resp.ok) return;
         const data = await resp.json();
+
+        // Update last_checked counter
         if (data.last_checked) {
             const el = document.getElementById('lastCheckValue');
-            if (el) {
-                el.dataset.lastChecked = data.last_checked;
-            }
+            if (el) el.dataset.lastChecked = data.last_checked;
+        }
+
+        // Update response time in region section
+        if (data.last_response_ms !== undefined && data.last_response_ms !== null) {
+            const rtEls = document.querySelectorAll('[data-live-response-ms]');
+            rtEls.forEach(el => { el.textContent = Math.round(data.last_response_ms) + 'ms'; });
+        }
+
+        // Update status code badge
+        if (data.last_status_code) {
+            const scEl = document.querySelector('.md-status-code-badge');
+            if (scEl) scEl.textContent = data.last_status_code;
+        }
+
+        // Update per-region response times
+        if (data.last_response_by_region && typeof data.last_response_by_region === 'object') {
+            Object.entries(data.last_response_by_region).forEach(([region, ms]) => {
+                const el = document.querySelector(`[data-region="${region}"] .md-region-ms`);
+                if (el) el.textContent = Math.round(ms) + 'ms';
+            });
         }
     } catch(e) {}
 }
-setInterval(pollLastChecked, 15000); // poll every 15s
+setInterval(pollMonitorStatus, 15000); // poll every 15s
 
 /* ── Uptime period slicer ──────────────────────── */
 function switchUptimePeriod(period, btn) {
