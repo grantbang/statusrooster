@@ -151,7 +151,18 @@ Validate the system handles real-world scale before launch.
 - [x] Recovery alerts respect user `alert_on_recovery` preference
 - [x] QA walkthrough updated with settings test cases
 
-### Sprint 11: Auto-Discovery — NOT STARTED
+### Sprint 11: US-East1 Dedicated Worker — NOT STARTED
+Deploy a dedicated worker to us-east1 so the primary app doesn't run checks itself.
+Currently the primary handles checks AND web traffic, causing inflated response times
+(~800ms vs ~80ms on dedicated workers). Requires an extra Cloud Run service in us-east1.
+
+- [ ] Deploy `statusrooster-worker` to us-east1 (same image as other workers)
+- [ ] Add `WORKER_URL_US_EAST1` env var pointing to the new worker
+- [ ] Update checker to dispatch to us-east1 worker instead of running checks locally
+- [ ] Verify 4/4 regions now show similar response times
+- [ ] Update deploy.yml to include us-east1 in worker deploy targets
+
+### Sprint 12: Auto-Discovery — NOT STARTED
 Scan a domain to auto-discover endpoints and bulk-create monitors.
 
 **Backend (`app/services/discovery.py`):**
