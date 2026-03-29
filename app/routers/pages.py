@@ -1545,7 +1545,9 @@ async def monitor_status_api(request: Request, monitor_id: str):
     if not monitor or monitor["user_id"] != user["id"]:
         return JSONResponse({"error": "Not found"}, status_code=404)
 
-    lc = monitor.get("last_checked")
+    # Use last_check_completed (actual finish time) for display,
+    # fall back to last_checked (cycle start time) for older monitors
+    lc = monitor.get("last_check_completed") or monitor.get("last_checked")
     last_checked_iso = None
     if lc:
         if hasattr(lc, "isoformat"):

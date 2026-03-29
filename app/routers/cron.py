@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Request
 import httpx
 from app.config import settings
 from app.services.checker import run_checks
@@ -20,28 +20,21 @@ def _verify_cron_auth(request: Request):
         raise HTTPException(status_code=403, detail="Unauthorized cron request")
 
 
-async def _run_checks_and_ping():
-    """Run checks then ping self-monitor heartbeat."""
-    results = await run_checks()
-    if not results.get("skipped_reason"):
-        try:
-            async with httpx.AsyncClient() as hb:
-                await hb.get(_HEARTBEAT_URL)
-        except Exception:
-            pass
-
-
 @router.post("/check")
-async def cron_check(request: Request, background_tasks: BackgroundTasks):
+async def cron_check(request: Request):
     """
     Run uptime checks for all monitors.
     Called by Cloud Scheduler every 60 seconds.
-    Responds immediately (200) and runs checks in the background so
-    Cloud Scheduler doesn't retry due to long response times.
+    Authenticated via shared secret in header or query param.
     """
     _verify_cron_auth(request)
-    background_tasks.add_task(_run_checks_and_ping)
-    return {"status": "accepted"}
+    results = await run_checks()
+    try:
+        async with httpx.AsyncClient() as hb:
+            await hb.get(_HEARTBEAT_URL)
+    except Exception:
+        pass
+    return {"status": "completed", "results": results}
 
 
 @router.post("/cleanup")

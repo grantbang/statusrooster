@@ -574,6 +574,8 @@ async def _run_checks_inner():
                     results["skipped"] += 1
                     continue
 
+        # Tag with cycle start so Phase 3 can use it for next_check_due
+        monitor["_cycle_now"] = now
         due_monitors.append(monitor)
 
     # Phase 2: Run all network checks concurrently (bounded by semaphore)
@@ -646,7 +648,8 @@ async def _run_checks_inner():
 
         monitor_updates = {
             "status": new_status,
-            "last_checked": datetime.now(timezone.utc),
+            "last_checked": monitor.get("_cycle_now", now),  # cycle start — for scheduling
+            "last_check_completed": datetime.now(timezone.utc),  # actual time — for display
             "last_status_code": result["status_code"],
             "last_response_ms": result["response_ms"],
             "uptime_percent": uptime_percent,
