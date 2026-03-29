@@ -569,8 +569,11 @@ async def _run_checks_inner():
                 last_checked_dt = None
 
             if last_checked_dt:
-                elapsed = (now - last_checked_dt).total_seconds()
-                if elapsed < check_interval:
+                elapsed = (datetime.now(timezone.utc) - last_checked_dt).total_seconds()
+                # Use 90% of interval to account for processing time between
+                # when we filter (now) and when last_checked was written
+                # (during previous cycle's Phase 3, after network checks)
+                if elapsed < check_interval * 0.9:
                     results["skipped"] += 1
                     continue
 
@@ -646,7 +649,7 @@ async def _run_checks_inner():
 
         monitor_updates = {
             "status": new_status,
-            "last_checked": now,
+            "last_checked": datetime.now(timezone.utc),
             "last_status_code": result["status_code"],
             "last_response_ms": result["response_ms"],
             "uptime_percent": uptime_percent,
