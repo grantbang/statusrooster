@@ -582,8 +582,12 @@ async def _run_checks_inner():
             if last_checked_dt:
                 elapsed = (now - last_checked_dt).total_seconds()
                 if elapsed < check_interval:
+                    if check_interval == 60:
+                        logger.info(f"[interval-debug] SKIP {monitor.get('name','?')} id={monitor.get('id','?')[:8]}: elapsed={elapsed:.1f}s now={now.isoformat()} lc={last_checked_dt.isoformat()}")
                     results["skipped"] += 1
                     continue
+                elif check_interval == 60:
+                    logger.info(f"[interval-debug] PASS {monitor.get('name','?')} id={monitor.get('id','?')[:8]}: elapsed={elapsed:.1f}s")
 
         due_monitors.append(monitor)
 
