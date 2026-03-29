@@ -574,10 +574,6 @@ async def _run_checks_inner():
                     results["skipped"] += 1
                     continue
 
-        # Stamp last_checked NOW (Phase 1) so the next cycle's elapsed
-        # comparison is accurate regardless of how long Phase 2 takes.
-        # Phase 3 will write this along with check results.
-        monitor["_phase1_checked_at"] = now
         due_monitors.append(monitor)
 
     # Phase 2: Run all network checks concurrently (bounded by semaphore)
@@ -650,7 +646,7 @@ async def _run_checks_inner():
 
         monitor_updates = {
             "status": new_status,
-            "last_checked": monitor.get("_phase1_checked_at", now),
+            "last_checked": datetime.now(timezone.utc),
             "last_status_code": result["status_code"],
             "last_response_ms": result["response_ms"],
             "uptime_percent": uptime_percent,
