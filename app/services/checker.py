@@ -569,14 +569,15 @@ async def _run_checks_inner():
                 last_checked_dt = None
 
             if last_checked_dt:
-                elapsed = (datetime.now(timezone.utc) - last_checked_dt).total_seconds()
-                # Use 90% of interval to account for processing time between
-                # when we filter (now) and when last_checked was written
-                # (during previous cycle's Phase 3, after network checks)
-                if elapsed < check_interval * 0.9:
+                elapsed = (now - last_checked_dt).total_seconds()
+                if elapsed < check_interval:
                     results["skipped"] += 1
                     continue
 
+        # Stamp last_checked NOW (Phase 1) so the next cycle's elapsed
+        # comparison is accurate regardless of how long Phase 2 takes.
+        # Phase 3 will write this along with check results.
+        monitor["_phase1_checked_at"] = now
         due_monitors.append(monitor)
 
     # Phase 2: Run all network checks concurrently (bounded by semaphore)
@@ -649,7 +650,7 @@ async def _run_checks_inner():
 
         monitor_updates = {
             "status": new_status,
-            "last_checked": datetime.now(timezone.utc),
+            "last_checked": monitor.get("_phase1_checked_at", now),
             "last_status_code": result["status_code"],
             "last_response_ms": result["response_ms"],
             "uptime_percent": uptime_percent,
