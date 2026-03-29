@@ -570,7 +570,9 @@ async def _run_checks_inner():
 
             if last_checked_dt:
                 elapsed = (now - last_checked_dt).total_seconds()
-                if elapsed < check_interval:
+                # 5s buffer prevents skipping due to cron jitter (cron fires
+                # every 60s but processing time can make elapsed land at 58-59s)
+                if elapsed < check_interval - 5:
                     results["skipped"] += 1
                     continue
 
