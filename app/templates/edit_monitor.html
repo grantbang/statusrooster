@@ -285,7 +285,7 @@
                 {% else %}
                 <label class="mf-toggle-switch mf-toggle-switch-sm mf-toggle-ml-auto">
                     <input type="checkbox" id="smsToggle" {% if has_sms %}checked{% endif %}
-                           onchange="document.getElementById('smsWrap').style.display = this.checked ? 'block' : 'none'">
+                           onchange="document.getElementById('smsWrap').style.display = this.checked ? 'block' : 'none'; var cb=document.getElementById('smsConsent'); if(cb){if(this.checked){cb.setAttribute('required','')}else{cb.removeAttribute('required');cb.checked=false}}">
                     <span class="mf-toggle-slider"></span>
                 </label>
                 {% endif %}
@@ -295,7 +295,7 @@
                 <input type="tel" id="alert_sms" name="alert_sms" class="mf-notify-channel-input" value="{{ has_sms }}" placeholder="+15551234567" oninput="validateSms(this)">
                 <p id="smsHint" class="mf-sms-hint {% if has_sms %}mf-sms-hint--ok{% endif %}">{% if has_sms %}Looks good!{% else %}Enter in international format: +1 555 123 4567{% endif %}</p>
                 <label class="mf-sms-consent-label" style="display: flex; align-items: flex-start; gap: 0.5rem; margin-top: 0.5rem; cursor: pointer;">
-                    <input type="checkbox" id="smsConsent" name="sms_consent" value="1" {% if has_sms %}checked{% endif %} required style="margin-top: 3px; flex-shrink: 0;">
+                    <input type="checkbox" id="smsConsent" name="sms_consent" value="1" {% if has_sms %}checked required{% endif %} style="margin-top: 3px; flex-shrink: 0;">
                     <span class="mf-sms-consent">By checking this box, you agree to receive SMS alerts from StatusRooster regarding monitor status updates (down/recovery). Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for assistance. Consent is not a condition of purchase. <a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms of Service</a></span>
                 </label>
             </div>
