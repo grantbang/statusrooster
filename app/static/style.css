@@ -7307,6 +7307,62 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
     font-size: 0.85em;
 }
 
+/* ── Required field indicator ──────────────────────────── */
+.label-required::after {
+    content: " *";
+    color: var(--danger, #ef4444);
+    font-weight: 600;
+}
+
+/* ── Tooltip info icon ─────────────────────────────────── */
+.mf-tooltip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--border, #e2e8f0);
+    color: var(--text-muted, #6b7280);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: help;
+    margin-left: 6px;
+    vertical-align: middle;
+    position: relative;
+}
+.mf-tooltip:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f2937;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 400;
+    white-space: normal;
+    width: max-content;
+    max-width: 260px;
+    z-index: 100;
+    line-height: 1.4;
+    text-align: left;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.mf-tooltip:hover::before {
+    content: "";
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #1f2937;
+    z-index: 100;
+}
+
 /* ── Responsive ────────────────────────────────────────── */
 @media (max-width: 768px) {
     .mf-heading {

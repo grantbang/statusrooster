@@ -41,8 +41,36 @@
             <span class="mf-section-header-title">URL to monitor</span>
         </div>
         <div class="mf-field-group">
+            <label for="url" class="label-required">URL</label>
             <input type="text" id="url" name="url" class="mf-url-input" value="{{ monitor.url }}" required>
             <div class="hint">We'll check this URL at the interval you choose below.</div>
+        </div>
+
+        <!-- Expected status code (promoted from advanced) -->
+        <div class="mf-field-group" style="margin-top: 1rem;">
+            <label for="expected_status_code">Expected status code <span class="label-optional">(optional)</span> <span class="mf-tooltip" data-tip="The HTTP status code we expect. 200 means OK. Leave blank to accept any 2xx or 3xx response.">i</span></label>
+            <input type="number" id="expected_status_code" name="expected_status_code"
+                   value="{{ monitor.get('expected_status_code', '') or '' }}"
+                   placeholder="200" min="100" max="599">
+            <div class="hint">Leave blank for any 2xx/3xx.</div>
+        </div>
+
+        <!-- Keyword builder (promoted from advanced) -->
+        <div class="mf-field-group" style="margin-top: 1rem;">
+            <label for="keyword">Keyword check <span class="label-optional">(optional)</span> <span class="mf-tooltip" data-tip="Check that specific words appear (or don't appear) in the response body. If missing, the monitor is marked down.">i</span></label>
+            <input type="hidden" id="keyword" name="keyword" value="{{ monitor.get('keyword', '') }}">
+            <button type="button" class="kw-add-btn kw-add-btn-standalone" id="kwAddFirst" onclick="kwAddRow(); this.style.display='none';">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 7h5M7 4.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                Add keyword
+            </button>
+            <div class="kw-builder" id="kwBuilder" style="display: none;">
+                <div class="kw-rows" id="kwRows"></div>
+                <button type="button" class="kw-add-btn" onclick="kwAddRow()">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 7h5M7 4.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    Add another keyword
+                </button>
+            </div>
+            <div class="hint">Body must contain these keywords or the monitor is marked <strong>down</strong>.</div>
         </div>
     </div>
     {% endif %}
@@ -55,8 +83,37 @@
             <span class="mf-section-header-title">API endpoint URL</span>
         </div>
         <div class="mf-field-group">
+            <label for="url" class="label-required">URL</label>
             <input type="text" id="url" name="url" class="mf-url-input" value="{{ monitor.url }}" required>
             <div class="hint">We'll send a request and validate the JSON response.</div>
+        </div>
+
+        <!-- JSON assertions (promoted from advanced) -->
+        <div class="mf-field-group" style="margin-top: 1rem;">
+            <label>JSON assertions <span class="label-optional">(optional)</span> <span class="mf-tooltip" data-tip="Validate specific fields in the JSON response. For nested fields, use dot notation like 'data.status'.">i</span></label>
+            <div id="assertions-container">
+                {% for assertion in monitor.get('json_assertions', []) %}
+                <div class="builder-row assertion-row">
+                    <input type="text" name="assertion_path[]" value="{{ assertion.get('path', '') }}" placeholder="data.status">
+                    <select name="assertion_operator[]" class="builder-row-flex-auto">
+                        {% for val, label in [('equals','Equals'),('not_equals','Not equals'),('contains','Contains'),('not_contains','Not contains'),('exists','Exists'),('not_exists','Not exists'),('greater_than','Greater than'),('less_than','Less than')] %}
+                        <option value="{{ val }}" {% if assertion.get('operator') == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" name="assertion_value[]" value="{{ assertion.get('value', '') }}" placeholder="ok">
+                    <button type="button" class="builder-remove-btn" onclick="this.parentElement.remove()" title="Remove">&#10005;</button>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm mf-builder-add-btn" onclick="addAssertion()">+ Add assertion</button>
+            <div class="hint">Validate specific fields — e.g. <code>data.status</code> equals <code>ok</code>.</div>
+        </div>
+
+        <!-- Auth header (promoted from advanced) -->
+        <div class="mf-field-group" style="margin-top: 1rem;">
+            <label for="auth_header">Authorization header <span class="label-optional">(optional)</span></label>
+            <input type="password" id="auth_header" name="auth_header" value="" placeholder="{{ '••••••••' if monitor.get('auth_header') else 'Bearer eyJhbGci...' }}">
+            <div class="hint">Sent as the <code>Authorization</code> header.{{ ' Leave blank to keep existing.' if monitor.get('auth_header') else '' }}</div>
         </div>
     </div>
     {% endif %}
@@ -81,7 +138,7 @@
 
         <div class="mf-field-row">
             <div class="mf-field-group">
-                <label for="heartbeat_interval">Expected ping interval</label>
+                <label for="heartbeat_interval">Expected ping interval <span class="mf-tooltip" data-tip="How often your cron job or service should ping this URL. If a ping is missed, we'll alert you.">i</span></label>
                 <select id="heartbeat_interval" name="heartbeat_interval">
                     {% set hbi = monitor.get('heartbeat_interval', 300) %}
                     <option value="60" {% if hbi == 60 %}selected{% endif %}>Every 1 minute</option>
@@ -97,7 +154,7 @@
                 <div class="hint">Alert if no ping arrives within this window.</div>
             </div>
             <div class="mf-field-group">
-                <label for="heartbeat_grace_period">Grace period <span class="label-optional">(seconds)</span></label>
+                <label for="heartbeat_grace_period">Grace period <span class="label-optional">(seconds)</span> <span class="mf-tooltip" data-tip="Extra buffer time after a missed ping before marking the monitor as down.">i</span></label>
                 <input type="number" id="heartbeat_grace_period" name="heartbeat_grace_period"
                        value="{{ monitor.get('heartbeat_grace_period', 30) }}" min="0" max="3600" class="mf-input-sm">
                 <div class="hint">Extra time before marking as down.</div>
@@ -116,12 +173,12 @@
         </div>
         <div class="mf-field-row">
             <div class="mf-field-group">
-                <label for="ssl_domain">Domain</label>
+                <label for="ssl_domain" class="label-required">Domain</label>
                 <input type="text" id="ssl_domain" name="ssl_domain" value="{{ monitor.get('ssl_domain', '') }}" required>
                 <div class="hint">No protocol or path needed.</div>
             </div>
             <div class="mf-field-group">
-                <label for="ssl_expiry_threshold_days">Warning threshold <span class="label-optional">(days)</span></label>
+                <label for="ssl_expiry_threshold_days">Warning threshold <span class="label-optional">(days)</span> <span class="mf-tooltip" data-tip="We'll alert you this many days before your SSL certificate expires.">i</span></label>
                 <input type="number" id="ssl_expiry_threshold_days" name="ssl_expiry_threshold_days"
                        value="{{ monitor.get('ssl_expiry_threshold_days', 14) }}" min="1" max="90" class="mf-input-sm">
                 <div class="hint">Alert when cert expires within this many days.</div>
@@ -139,7 +196,7 @@
         </div>
         <div class="mf-field-row">
             <div class="mf-field-group">
-                <label for="name">Friendly name</label>
+                <label for="name" class="label-required">Friendly name</label>
                 <input type="text" id="name" name="name" value="{{ monitor.name }}" required>
                 <div class="hint">A short name for your dashboard.</div>
             </div>
@@ -256,7 +313,7 @@
     <div class="mf-section" id="intervalSection">
         <div class="mf-section-header">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <span class="mf-section-header-title">Monitor interval</span>
+            <span class="mf-section-header-title">Monitor interval <span class="mf-tooltip" data-tip="How often we check your monitor. Lower values detect issues faster.">i</span></span>
         </div>
         {% set min_interval = 60 %}
         {% set ci = monitor.get('check_interval', 60) %}
@@ -282,25 +339,16 @@
             <!-- HTTP advanced fields -->
             {% if is_http %}
             <div id="advHttp">
-                <div class="mf-field-row">
-                    <div class="mf-field-group">
-                        <label for="timeout">Request timeout <span class="label-optional">(seconds)</span></label>
-                        <input type="number" id="timeout" name="timeout" value="{{ monitor.get('timeout', 10) }}" min="1" max="60">
-                        <div class="hint">Max time to wait for a response.</div>
-                    </div>
-                    <div class="mf-field-group">
-                        <label for="expected_status_code">Expected status code <span class="label-optional">(optional)</span></label>
-                        <input type="number" id="expected_status_code" name="expected_status_code"
-                               value="{{ monitor.get('expected_status_code', '') or '' }}"
-                               placeholder="200" min="100" max="599">
-                        <div class="hint">Leave blank for any 2xx/3xx.</div>
-                    </div>
+                <div class="mf-field-group">
+                    <label for="timeout">Request timeout <span class="label-optional">(seconds)</span></label>
+                    <input type="number" id="timeout" name="timeout" value="{{ monitor.get('timeout', 10) }}" min="1" max="60">
+                    <div class="hint">Max time to wait for a response.</div>
                 </div>
 
                 <!-- HTTP method button group -->
                 {% set current_method = monitor.get('http_method', 'GET') %}
                 <div class="mf-field-group">
-                    <label>HTTP method</label>
+                    <label>HTTP method <span class="label-optional">(optional)</span></label>
                     <div class="mf-method-select" id="httpMethodGroup">
                         {% for method in ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] %}
                         <button type="button" class="mf-method-btn{% if current_method == method %} active{% endif %}" data-method="{{ method }}" onclick="selectMethod(this)">{{ method }}</button>
@@ -314,7 +362,7 @@
                 {% set follow_redir = monitor.get('follow_redirects', True) %}
                 <div class="mf-toggle-row">
                     <div class="mf-toggle-label">
-                        <span class="mf-toggle-label-text">Follow redirects</span>
+                        <span class="mf-toggle-label-text">Follow redirects <span class="mf-tooltip" data-tip="If the URL returns a 301/302 redirect, follow it and check the final destination.">i</span></span>
                         <span class="mf-toggle-label-hint">Automatically follow 3xx redirects when checking.</span>
                     </div>
                     <label class="mf-toggle-switch">
@@ -328,7 +376,7 @@
                 {% set has_bearer = monitor.get('bearer_token', '') %}
                 {% set auth_type = 'bearer' if has_bearer else ('basic' if has_auth_user else 'none') %}
                 <div class="mf-field-group mf-field-group-mt">
-                    <label>Authentication</label>
+                    <label>Authentication <span class="label-optional">(optional)</span></label>
                     <div class="mf-auth-section">
                         <select class="mf-auth-type-select" id="authTypeSelect" name="auth_type" onchange="toggleAuthFields(this.value)">
                             <option value="none" {% if auth_type == 'none' %}selected{% endif %}>None</option>
@@ -391,27 +439,9 @@
 
                 <hr class="form-divider">
 
-                <!-- Keyword builder -->
-                <div class="mf-field-group">
-                    <label for="keyword">Keyword check <span class="label-optional">(optional)</span></label>
-                    <input type="hidden" id="keyword" name="keyword" value="{{ monitor.get('keyword', '') }}">
-                    <button type="button" class="kw-add-btn kw-add-btn-standalone" id="kwAddFirst" onclick="kwAddRow(); this.style.display='none';">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 7h5M7 4.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                        Add keyword
-                    </button>
-                    <div class="kw-builder" id="kwBuilder" style="display: none;">
-                        <div class="kw-rows" id="kwRows"></div>
-                        <button type="button" class="kw-add-btn" onclick="kwAddRow()">
-                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 7h5M7 4.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                            Add another keyword
-                        </button>
-                    </div>
-                    <div class="hint">Body must contain these keywords or the monitor is marked <strong>down</strong>.</div>
-                </div>
-
                 <!-- Response threshold -->
                 <div class="mf-field-group">
-                    <label for="response_threshold_ms">Response threshold <span class="label-optional">(optional)</span></label>
+                    <label for="response_threshold_ms">Response threshold <span class="label-optional">(optional)</span> <span class="mf-tooltip" data-tip="Alert when response time exceeds a limit. Use '> 2000' for slower than 2 seconds, or '200-3000' for an acceptable range.">i</span></label>
                     <input type="text" id="response_threshold_ms" name="response_threshold_ms"
                            value="{{ monitor.get('response_threshold_ms', '') or '' }}"
                            placeholder="e.g. > 2000 or 200-3000">
@@ -430,17 +460,12 @@
                         <div class="hint">Max time to wait for a response.</div>
                     </div>
                     <div class="mf-field-group">
-                        <label for="expected_status_code">Expected status code <span class="label-optional">(optional)</span></label>
+                        <label for="expected_status_code">Expected status code <span class="label-optional">(optional)</span> <span class="mf-tooltip" data-tip="The HTTP status code we expect. 200 means OK. Leave blank to accept any 2xx or 3xx response.">i</span></label>
                         <input type="number" id="expected_status_code" name="expected_status_code"
                                value="{{ monitor.get('expected_status_code', '') or '' }}"
                                placeholder="200" min="100" max="599">
                         <div class="hint">Leave blank for any 2xx/3xx.</div>
                     </div>
-                </div>
-                <div class="mf-field-group">
-                    <label for="auth_header">Authorization header <span class="label-optional">(optional)</span></label>
-                    <input type="password" id="auth_header" name="auth_header" value="" placeholder="{{ '••••••••' if monitor.get('auth_header') else 'Bearer eyJhbGci...' }}">
-                    <div class="hint">Sent as the <code>Authorization</code> header.{{ ' Leave blank to keep existing.' if monitor.get('auth_header') else '' }}</div>
                 </div>
                 <div class="mf-field-group mf-field-group-mt">
                     <label>Custom headers <span class="label-optional">(optional)</span></label>
@@ -456,27 +481,10 @@
                     <button type="button" class="btn btn-secondary btn-sm mf-builder-add-btn" onclick="addJsonHeader()">+ Add header</button>
                     <div class="hint">Additional headers sent with each check request (e.g. <code>X-API-Key</code>).</div>
                 </div>
+
+                <!-- Response threshold -->
                 <div class="mf-field-group">
-                    <label>JSON assertions <span class="label-optional">(optional)</span></label>
-                    <div id="assertions-container">
-                        {% for assertion in monitor.get('json_assertions', []) %}
-                        <div class="builder-row assertion-row">
-                            <input type="text" name="assertion_path[]" value="{{ assertion.get('path', '') }}" placeholder="data.status">
-                            <select name="assertion_operator[]" class="builder-row-flex-auto">
-                                {% for val, label in [('equals','Equals'),('not_equals','Not equals'),('contains','Contains'),('not_contains','Not contains'),('exists','Exists'),('not_exists','Not exists'),('greater_than','Greater than'),('less_than','Less than')] %}
-                                <option value="{{ val }}" {% if assertion.get('operator') == val %}selected{% endif %}>{{ label }}</option>
-                                {% endfor %}
-                            </select>
-                            <input type="text" name="assertion_value[]" value="{{ assertion.get('value', '') }}" placeholder="ok">
-                            <button type="button" class="builder-remove-btn" onclick="this.parentElement.remove()" title="Remove">✕</button>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    <button type="button" class="btn btn-secondary btn-sm mf-builder-add-btn" onclick="addAssertion()">+ Add assertion</button>
-                    <div class="hint">Validate specific fields — e.g. <code>data.status</code> equals <code>ok</code>.</div>
-                </div>
-                <div class="mf-field-group">
-                    <label for="response_threshold_ms">Response threshold <span class="label-optional">(optional)</span></label>
+                    <label for="response_threshold_ms">Response threshold <span class="label-optional">(optional)</span> <span class="mf-tooltip" data-tip="Alert when response time exceeds a limit. Use '> 2000' for slower than 2 seconds, or '200-3000' for an acceptable range.">i</span></label>
                     <input type="text" id="response_threshold_ms" name="response_threshold_ms"
                            value="{{ monitor.get('response_threshold_ms', '') or '' }}"
                            placeholder="e.g. > 2000 or 200-3000">
@@ -526,7 +534,7 @@
             <!-- Maintenance Windows (Pro) -->
             <hr class="form-divider">
             <div class="mf-field-group">
-                <label>Maintenance windows</label>
+                <label>Maintenance windows <span class="label-optional">(optional)</span> <span class="mf-tooltip" data-tip="Suppress alerts during scheduled maintenance. Checks still run but alerts are muted.">i</span></label>
                 <div id="mw-container">
                     {% for mw in monitor.get('maintenance_windows', []) %}
                     <div class="builder-row">
@@ -757,15 +765,10 @@ function kwRender() {
 
     // Auto-open advanced if any advanced field has a non-default value
     let shouldOpen = false;
-    const statusCode = document.getElementById('expected_status_code');
-    if (statusCode && statusCode.value && statusCode.value !== '') shouldOpen = true;
     const timeoutField = document.getElementById('timeout');
     if (timeoutField && timeoutField.value && parseInt(timeoutField.value) !== 10) shouldOpen = true;
-    if (kwField && kwField.value.trim()) shouldOpen = true;
     const respThreshold = document.getElementById('response_threshold_ms');
     if (respThreshold && respThreshold.value && respThreshold.value !== '') shouldOpen = true;
-    const authHeader = document.getElementById('auth_header');
-    if (authHeader && authHeader.value && authHeader.value !== '') shouldOpen = true;
     const authUser = document.getElementById('basic_auth_user');
     if (authUser && authUser.value && authUser.value !== '') shouldOpen = true;
     const bearerToken = document.getElementById('bearer_token');
@@ -784,8 +787,6 @@ function kwRender() {
     if (publicToggle && publicToggle.checked) shouldOpen = true;
     const pausedCheck = document.querySelector('input[name="paused"]');
     if (pausedCheck && pausedCheck.checked) shouldOpen = true;
-    const assertionsContainer = document.getElementById('assertions-container');
-    if (assertionsContainer && assertionsContainer.children.length > 0) shouldOpen = true;
     const mwContainer = document.getElementById('mw-container');
     if (mwContainer && mwContainer.children.length > 0) shouldOpen = true;
 
