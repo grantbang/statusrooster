@@ -121,8 +121,9 @@ async def google_callback(request: Request, code: str = None, error: str = None,
 
     if user:
         # Existing user — link provider if not already set
-        if user.get("auth_provider") == "email":
-            update_user(db, user["id"], {"auth_provider": "email,google"})
+        provider = user.get("auth_provider") or "email"
+        if "google" not in provider:
+            update_user(db, user["id"], {"auth_provider": f"{provider},google"})
     else:
         # New user
         user = create_oauth_user(db, email, "google", name=name)
@@ -231,8 +232,9 @@ async def github_callback(request: Request, code: str = None, error: str = None,
     user = get_user_by_email(db, email)
 
     if user:
-        if user.get("auth_provider") == "email":
-            update_user(db, user["id"], {"auth_provider": "email,github"})
+        provider = user.get("auth_provider") or "email"
+        if "github" not in provider:
+            update_user(db, user["id"], {"auth_provider": f"{provider},github"})
     else:
         user = create_oauth_user(db, email, "github", name=name)
 
