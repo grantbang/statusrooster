@@ -707,8 +707,9 @@ class TestPlanEnforcement:
             assert resp.status_code == 201, f"E.4 FAIL: Expected 201, got {resp.status_code}"
             mid = resp.json()["data"]["id"]
             data = resp.json()["data"]
-            assert data.get("webhook_url") == "https://example.com/webhook", \
-                f"E.4 FAIL: Free webhook_url should be kept, got '{data.get('webhook_url')}'"
+            wh = data.get("webhook_url", "")
+            assert wh and "••••" in wh, \
+                f"E.4 FAIL: Free webhook_url should be set (masked), got '{wh}'"
         finally:
             if mid:
                 await client.delete(f"/api/v1/monitors/{mid}", headers=free_headers)
