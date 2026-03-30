@@ -296,7 +296,7 @@
 {% endif %}
 
 <!-- ── Response by Region ── -->
-{% if last_regions_checked > 1 %}
+{% if last_regions_checked > 1 and monitor.get('monitor_type', 'http') not in ('heartbeat', 'ssl') %}
 <div class="md-section md-region-section">
     <div class="md-section-header">
         <h2>Response by Region</h2>
@@ -449,11 +449,23 @@
             </div>
             <div class="md-config-row">
                 <span>Expires</span>
-                <span class="{% if (monitor.get('ssl_expiry_days', 999) or 999) <= monitor.get('ssl_expiry_threshold_days', 14) %}text-danger{% else %}text-success{% endif %}">
+                {% set _ssl_days = monitor.get('ssl_expiry_days') %}
+                {% if _ssl_days is not none and _ssl_days is not none %}
+                    {% if _ssl_days < 14 %}
+                        {% set _ssl_color = 'text-danger' %}
+                    {% elif _ssl_days <= 30 %}
+                        {% set _ssl_color = 'text-warning' %}
+                    {% else %}
+                        {% set _ssl_color = 'text-success' %}
+                    {% endif %}
+                {% else %}
+                    {% set _ssl_color = '' %}
+                {% endif %}
+                <span class="{{ _ssl_color }}">
                     {% if monitor.get('ssl_expiry') %}
                         {{ monitor.ssl_expiry.strftime('%b %d, %Y') if monitor.ssl_expiry.strftime is defined else monitor.ssl_expiry }}
-                        {% if monitor.get('ssl_expiry_days') is not none %}
-                            ({{ monitor.ssl_expiry_days }}d remaining)
+                        {% if _ssl_days is not none %}
+                            ({{ _ssl_days }}d remaining)
                         {% endif %}
                     {% else %}—{% endif %}
                 </span>

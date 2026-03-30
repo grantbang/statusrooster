@@ -14,7 +14,7 @@
 </div>
 
 {% if flash_message %}
-<div class="settings-flash settings-flash-{{ flash_type or 'success' }}">
+<div class="settings-flash settings-flash-{{ flash_type or 'success' }}" style="position: sticky; top: 1rem; z-index: 100;">
     {{ flash_message }}
 </div>
 {% endif %}
@@ -23,7 +23,7 @@
     <!-- Section Nav -->
     <nav class="settings-nav">
         <a href="#profile" class="settings-nav-link active" data-section="profile">Profile</a>
-        {% if user.get('auth_provider', 'email') == 'email' %}
+        {% if 'email' in user.get('auth_provider', 'email') %}
         <a href="#password" class="settings-nav-link" data-section="password">Password</a>
         {% endif %}
         <a href="#notifications" class="settings-nav-link" data-section="notifications">Notifications</a>
@@ -77,7 +77,7 @@
 </div>
 
 <!-- Password (email-auth only) -->
-{% if user.get('auth_provider', 'email') == 'email' %}
+{% if 'email' in user.get('auth_provider', 'email') %}
 <div class="settings-section" id="password">
     <h2>Password</h2>
     <div class="section-desc">Change your account password.</div>
@@ -120,16 +120,6 @@
                 Send recovery notifications
             </label>
             <div class="hint">Get notified when a monitor comes back up after an incident.</div>
-        </div>
-        <div class="form-group">
-            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 400;">
-                <input type="checkbox" name="weekly_digest" value="on"
-                       {% if user.get('weekly_digest', False) %}checked{% endif %}
-                       style="width: 18px; height: 18px;">
-                Weekly uptime digest
-                <span class="settings-coming-soon">Coming soon</span>
-            </label>
-            <div class="hint">A weekly summary of your monitors' uptime and incidents.</div>
         </div>
         <button type="submit" class="btn btn-primary">Save notifications</button>
     </form>

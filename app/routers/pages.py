@@ -869,7 +869,7 @@ async def add_monitor(
         update_monitor(db, monitor["id"], {"url": f"https://{ssl_domain}" if not ssl_domain.startswith("http") else ssl_domain})
 
     return RedirectResponse(
-        url=f"/dashboard?msg=Monitor+'{name}'+added!&msg_type=success",
+        url=f"/monitors/{monitor['id']}?msg=Monitor+'{name}'+added!&msg_type=success",
         status_code=302,
     )
 
@@ -1900,7 +1900,7 @@ async def change_password(request: Request):
         return RedirectResponse(url="/login", status_code=302)
 
     # Only email-auth users can change password
-    if user.get("auth_provider") != "email":
+    if "email" not in user.get("auth_provider", ""):
         response = RedirectResponse(url="/settings", status_code=302)
         _set_flash(response, "Password change is only available for email accounts.", "error")
         return response

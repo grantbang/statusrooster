@@ -159,11 +159,11 @@
                 ↕ <span id="sortLabel">Down first</span>
             </button>
             <div class="dropdown-menu dropdown-menu-right" id="sortDropdown">
-                <button class="dropdown-item active" onclick="setSortMode('down-first','Down first')">Down first</button>
-                <button class="dropdown-item" onclick="setSortMode('name-asc','A → Z')">A → Z</button>
-                <button class="dropdown-item" onclick="setSortMode('name-desc','Z → A')">Z → A</button>
-                <button class="dropdown-item" onclick="setSortMode('uptime-asc','Lowest uptime')">Lowest uptime</button>
-                <button class="dropdown-item" onclick="setSortMode('uptime-desc','Highest uptime')">Highest uptime</button>
+                <button class="dropdown-item active" onclick="setSortMode('down-first','Down first',this)">Down first</button>
+                <button class="dropdown-item" onclick="setSortMode('name-asc','A → Z',this)">A → Z</button>
+                <button class="dropdown-item" onclick="setSortMode('name-desc','Z → A',this)">Z → A</button>
+                <button class="dropdown-item" onclick="setSortMode('uptime-asc','Lowest uptime',this)">Lowest uptime</button>
+                <button class="dropdown-item" onclick="setSortMode('uptime-desc','Highest uptime',this)">Highest uptime</button>
             </div>
         </div>
     </div>
@@ -584,16 +584,17 @@ function clearAllFilters() {
 
 /* ── Sorting ───────────────────────────────────────────── */
 let currentSort = 'down-first';
-function setSortMode(mode, label) {
+function setSortMode(mode, label, btn) {
     currentSort = mode;
     document.getElementById('sortLabel').textContent = label;
     document.querySelectorAll('#sortDropdown .dropdown-item').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
+    if (btn) btn.classList.add('active');
     document.getElementById('sortDropdown').classList.remove('open');
     sortList();
 }
 function sortList() {
     const list = document.getElementById('monitorList');
+    if (!list) return;
     const allCards = Array.from(list.querySelectorAll('.monitor-card.d-two-tier[data-id]'));
     const addCard = list.querySelector('.monitor-card.d-two-tier:not([data-id])');
     const statusOrder = {down: 0, pending: 1, warn: 2, up: 3, paused: 4};
@@ -601,9 +602,12 @@ function sortList() {
     allCards.sort((a, b) => {
         switch (currentSort) {
             case 'down-first': {
-                const ao = a.dataset.status in statusOrder ? statusOrder[a.dataset.status] : 9;
-                const bo = b.dataset.status in statusOrder ? statusOrder[b.dataset.status] : 9;
-                return ao - bo;
+                const sa = (a.dataset.status || '').toLowerCase();
+                const sb = (b.dataset.status || '').toLowerCase();
+                const ao = sa in statusOrder ? statusOrder[sa] : 9;
+                const bo = sb in statusOrder ? statusOrder[sb] : 9;
+                if (ao !== bo) return ao - bo;
+                return a.dataset.name.localeCompare(b.dataset.name);
             }
             case 'name-asc': return a.dataset.name.localeCompare(b.dataset.name);
             case 'name-desc': return b.dataset.name.localeCompare(a.dataset.name);
