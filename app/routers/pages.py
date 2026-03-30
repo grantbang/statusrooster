@@ -2000,7 +2000,7 @@ async def generate_api_key_page(request: Request, label: str = Form("Default")):
     key_data = generate_api_key(db, user["id"], label=label.strip() or "Default")
 
     response = RedirectResponse(url="/settings#api-keys", status_code=302)
-    _set_flash(response, "API key created! Copy it now — you won't see it again.")
+    _set_flash(response, "API key created! Copy it now - you won't see it again.")
     response.set_cookie("new_api_key", key_data["raw_key"], max_age=10, httponly=True, secure=True, samesite="lax")
     return response
 
