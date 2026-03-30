@@ -1990,7 +1990,7 @@ async def delete_account(request: Request):
     return response
 
 
-@router.post("/settings/api-keys/generate", response_class=HTMLResponse)
+@router.post("/settings/api-keys/generate")
 async def generate_api_key_page(request: Request, label: str = Form("Default")):
     user = get_user_from_cookie(request)
     if not user:
@@ -2005,7 +2005,7 @@ async def generate_api_key_page(request: Request, label: str = Form("Default")):
     return response
 
 
-@router.post("/settings/api-keys/{key_id}/revoke", response_class=HTMLResponse)
+@router.post("/settings/api-keys/{key_id}/revoke")
 async def revoke_api_key_page(request: Request, key_id: str):
     user = get_user_from_cookie(request)
     if not user:
