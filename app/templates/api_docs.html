@@ -258,7 +258,7 @@ headers = {<span class="code-string">"X-API-Key"</span>: API_KEY}</div>
                         <tr><td><span class="param-name">url</span></td><td>string</td><td><span class="param-required">required</span></td><td>Full URL including protocol. Must be <code>http://</code> or <code>https://</code>. Example: <code>"https://example.com/health"</code>. Private/internal IPs are blocked.</td></tr>
                         <tr><td><span class="param-name">monitor_type</span></td><td>string</td><td>optional</td><td><code>"http"</code> — this is the default and can be omitted for HTTP monitors</td></tr>
                         <tr><td><span class="param-name">expected_status_code</span></td><td>integer</td><td>optional</td><td>HTTP status code the checker expects. Default: <code>200</code>. Common values: <code>200</code> (OK), <code>201</code> (Created), <code>204</code> (No Content), <code>301</code> (Redirect), <code>401</code> (to verify auth is enforced)</td></tr>
-                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>optional</td><td>Max seconds to wait for a response. Range: <code>1</code>–<code>60</code>. Default: <code>10</code>. Values above 60 are clamped to 60.</td></tr>
+                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>optional</td><td>Max seconds to wait for a response. Range: <code>1</code>–<code>60</code>. Default: <code>10</code>. Values outside this range return a 422 error.</td></tr>
                         <tr><td><span class="param-name">http_method</span></td><td>string</td><td>optional</td><td>The HTTP method the checker uses to hit your URL. Values: <code>GET</code>, <code>POST</code>, <code>HEAD</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code>, <code>OPTIONS</code>. Default: <code>GET</code>. Use <code>HEAD</code> for fast up/down checks without downloading the body.</td></tr>
                         <tr><td><span class="param-name">follow_redirects</span></td><td>boolean</td><td>optional</td><td>Follow HTTP 3xx redirects. Default: <code>true</code>. Set to <code>false</code> to verify a redirect itself returns the expected 301/302 status.</td></tr>
                         <tr><td><span class="param-name">basic_auth_user</span></td><td>string</td><td>optional</td><td>HTTP Basic Auth username. Sent as <code>Authorization: Basic base64(user:pass)</code> header.</td></tr>
@@ -388,7 +388,7 @@ console.log(<span class="code-string">`Created ${data.id}`</span>);</div>
                         <tr><td><span class="param-name">name</span></td><td>string</td><td>Display name. Example: <code>"Production API"</code></td></tr>
                         <tr><td><span class="param-name">url</span></td><td>string</td><td>Monitored URL. Must include protocol (<code>http://</code> or <code>https://</code>). Private IPs are blocked.</td></tr>
                         <tr><td><span class="param-name">expected_status_code</span></td><td>integer</td><td>Expected HTTP status code. Common values: <code>200</code>, <code>201</code>, <code>204</code>, <code>301</code></td></tr>
-                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>Request timeout in seconds. Range: <code>1</code>–<code>60</code>. Values above 60 are clamped.</td></tr>
+                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>Request timeout in seconds. Range: <code>1</code>–<code>60</code>. Values outside this range return a 422 error.</td></tr>
                         <tr><td><span class="param-name">http_method</span></td><td>string</td><td>HTTP method the checker uses to hit your URL. Values: <code>GET</code>, <code>POST</code>, <code>HEAD</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code>, <code>OPTIONS</code></td></tr>
                         <tr><td><span class="param-name">follow_redirects</span></td><td>boolean</td><td>Follow HTTP 3xx redirects. Set <code>false</code> to verify redirects return the expected 301/302.</td></tr>
                         <tr><td><span class="param-name">basic_auth_user</span></td><td>string</td><td>HTTP Basic Auth username. Sent as <code>Authorization: Basic base64(user:pass)</code>.</td></tr>
@@ -484,7 +484,7 @@ updated = r.json()[<span class="code-string">"data"</span>]</div>
                         <tr><td><span class="param-name">monitor_type</span></td><td>string</td><td><span class="param-required">required</span></td><td>Must be <code>"json_api"</code></td></tr>
                         <tr><td><span class="param-name">url</span></td><td>string</td><td><span class="param-required">required</span></td><td>API endpoint URL. Must return JSON. Example: <code>"https://api.example.com/v1/health"</code>. Private IPs are blocked.</td></tr>
                         <tr><td><span class="param-name">expected_status_code</span></td><td>integer</td><td>optional</td><td>Expected HTTP status code. Default: <code>200</code>. Common values: <code>200</code>, <code>201</code>, <code>204</code></td></tr>
-                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>optional</td><td>Max seconds to wait for a response. Range: <code>1</code>–<code>60</code>. Default: <code>10</code>. Values above 60 are clamped.</td></tr>
+                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>optional</td><td>Max seconds to wait for a response. Range: <code>1</code>–<code>60</code>. Default: <code>10</code>. Values outside this range return a 422 error.</td></tr>
                         <tr><td><span class="param-name">auth_header</span></td><td>string</td><td>optional</td><td>Full <code>Authorization</code> header value. Examples: <code>"Bearer tok_live_xxxx"</code>, <code>"Basic dXNlcjpwYXNz"</code>, <code>"Token my-api-key"</code></td></tr>
                         <tr><td><span class="param-name">json_assertions</span></td><td>array</td><td>optional</td><td>Array of assertion objects to validate the JSON response (see schema below). All assertions must pass for the check to be "up".</td></tr>
                         <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>optional</td><td>Response time condition in ms. Formats: <code>"&gt; 2000"</code> (slower than 2s), <code>"&lt; 50"</code>, <code>"200-3000"</code> (outside range)</td></tr>
@@ -619,7 +619,7 @@ print(f<span class="code-string">"Created {monitor['id']}"</span>)</div>
                         <tr><td><span class="param-name">name</span></td><td>string</td><td>Display name. Example: <code>"Health API"</code></td></tr>
                         <tr><td><span class="param-name">url</span></td><td>string</td><td>API endpoint URL. Must return JSON. Private IPs are blocked.</td></tr>
                         <tr><td><span class="param-name">expected_status_code</span></td><td>integer</td><td>Expected HTTP status code. Common values: <code>200</code>, <code>201</code>, <code>204</code></td></tr>
-                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>Request timeout in seconds. Range: <code>1</code>–<code>60</code>. Values above 60 are clamped.</td></tr>
+                        <tr><td><span class="param-name">timeout</span></td><td>integer</td><td>Request timeout in seconds. Range: <code>1</code>–<code>60</code>. Values outside this range return a 422 error.</td></tr>
                         <tr><td><span class="param-name">auth_header</span></td><td>string</td><td>Full Authorization header value. Examples: <code>"Bearer tok_xxx"</code>, <code>"Token my-key"</code>. Set to <code>""</code> to clear.</td></tr>
                         <tr><td><span class="param-name">json_assertions</span></td><td>array</td><td>Replaces all assertions. Array of <code>{path, operator, value}</code> objects. Send <code>[]</code> to clear all assertions.</td></tr>
                         <tr><td><span class="param-name">response_threshold_ms</span></td><td>string</td><td>Response time condition in ms. Formats: <code>"&gt; 2000"</code>, <code>"&lt; 50"</code>, <code>"200-3000"</code>. Set to <code>""</code> to clear.</td></tr>
@@ -1880,8 +1880,8 @@ app.post(<span class="code-string">"/webhooks/statusrooster"</span>, (req, res) 
     </div>
 
     <div class="api-section">
-        <h3>Value Clamping</h3>
-        <p>Numeric fields with documented ranges (e.g. <code>check_interval</code>, <code>timeout</code>, <code>heartbeat_interval</code>, <code>ssl_expiry_threshold_days</code>) are silently clamped to their valid bounds rather than rejected. For example, <code>timeout: 120</code> is stored as <code>60</code> (the maximum). <code>check_interval</code> below your plan minimum returns a <code>403</code> error instead of clamping.</p>
+        <h3>Value Validation</h3>
+        <p>Numeric fields with documented ranges (e.g. <code>check_interval</code>, <code>timeout</code>, <code>heartbeat_interval</code>, <code>heartbeat_grace_period</code>, <code>ssl_expiry_threshold_days</code>) return a <code>422</code> error if the value is outside the valid range. For example, <code>timeout: 120</code> returns <code>{"error": "timeout must be between 1 and 60 seconds"}</code>. <code>check_interval</code> below your plan minimum returns a <code>403</code> error. Query parameters like <code>limit</code> and <code>hours</code> on GET endpoints are silently clamped to their valid bounds.</p>
     </div>
 </div>
 
@@ -1963,6 +1963,23 @@ const observer = new IntersectionObserver(entries => {
 }, { rootMargin: '-80px 0px -60% 0px', threshold: 0 });
 
 sections.forEach(s => observer.observe(s));
+
+// Auto-inject endpoint path copy buttons
+document.querySelectorAll('.endpoint-path').forEach(span => {
+    const btn = document.createElement('button');
+    btn.className = 'endpoint-copy-btn';
+    btn.textContent = 'Copy';
+    btn.onclick = function(e) {
+        e.stopPropagation();
+        const path = span.textContent.trim();
+        navigator.clipboard.writeText(path).then(() => {
+            btn.textContent = 'Copied!';
+            btn.classList.add('copied');
+            setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+        });
+    };
+    span.after(btn);
+});
 
 // Auto-inject copy buttons
 document.querySelectorAll('.code-tabbed, .code-block, .response-shape').forEach(el => {

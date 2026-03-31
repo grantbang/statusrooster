@@ -1834,44 +1834,47 @@ class TestApiDocsAccuracy:
 
     @pytest.mark.asyncio
     async def test_q12_value_clamping_timeout(self, client, pro_headers):
-        """Q.12 — timeout value clamped to 1-60, not rejected"""
-        # Create with timeout=999 (should be clamped to 60)
+        """Q.12 — timeout outside 1-60 returns 422"""
+        # Create with timeout=999 (should be rejected)
         resp = await client.post("/api/v1/monitors", json={
             "url": "https://httpbin.org/status/200",
             "name": "E2E-ClampTimeout",
             "timeout": 999,
         }, headers=pro_headers)
-        assert resp.status_code == 201, f"Q.12 FAIL: should accept and clamp, got {resp.status_code}"
-        mon = resp.json()["data"]
-        assert mon.get("timeout") == 60, \
-            f"Q.12 FAIL: expected timeout clamped to 60, got {mon.get('timeout')}"
+        assert resp.status_code == 422, f"Q.12 FAIL: expected 422 for out-of-range timeout, got {resp.status_code}"
+        body = resp.json()
+        detail = body.get("detail", {})
+        assert "timeout" in detail.get("error", ""), \
+            f"Q.12 FAIL: expected error mentioning timeout, got {detail}"
 
     @pytest.mark.asyncio
     async def test_q13_value_clamping_heartbeat_interval(self, client, pro_headers):
-        """Q.13 — heartbeat_interval clamped to 60-86400"""
+        """Q.13 — heartbeat_interval outside 60-86400 returns 422"""
         resp = await client.post("/api/v1/monitors", json={
             "name": "E2E-ClampHeartbeat",
             "monitor_type": "heartbeat",
             "heartbeat_interval": 10,  # below min of 60
         }, headers=pro_headers)
-        assert resp.status_code == 201
-        mon = resp.json()["data"]
-        assert mon.get("heartbeat_interval") == 60, \
-            f"Q.13 FAIL: expected clamped to 60, got {mon.get('heartbeat_interval')}"
+        assert resp.status_code == 422, f"Q.13 FAIL: expected 422 for out-of-range heartbeat_interval, got {resp.status_code}"
+        body = resp.json()
+        detail = body.get("detail", {})
+        assert "heartbeat_interval" in detail.get("error", ""), \
+            f"Q.13 FAIL: expected error mentioning heartbeat_interval, got {detail}"
 
     @pytest.mark.asyncio
     async def test_q14_value_clamping_ssl_threshold(self, client, pro_headers):
-        """Q.14 — ssl_expiry_threshold_days clamped to 1-90"""
+        """Q.14 — ssl_expiry_threshold_days outside 1-90 returns 422"""
         resp = await client.post("/api/v1/monitors", json={
             "name": "E2E-ClampSSL",
             "monitor_type": "ssl",
             "ssl_domain": "example.com",
             "ssl_expiry_threshold_days": 200,  # above max of 90
         }, headers=pro_headers)
-        assert resp.status_code == 201
-        mon = resp.json()["data"]
-        assert mon.get("ssl_expiry_threshold_days") == 90, \
-            f"Q.14 FAIL: expected clamped to 90, got {mon.get('ssl_expiry_threshold_days')}"
+        assert resp.status_code == 422, f"Q.14 FAIL: expected 422 for out-of-range ssl_expiry_threshold_days, got {resp.status_code}"
+        body = resp.json()
+        detail = body.get("detail", {})
+        assert "ssl_expiry_threshold_days" in detail.get("error", ""), \
+            f"Q.14 FAIL: expected error mentioning ssl_expiry_threshold_days, got {detail}"
 
     # -- Q.15 Checks endpoint query param bounds --
 

@@ -309,8 +309,7 @@
                 {% set lhb = m.get('last_heartbeat') %}
                 <span class="d-secondary-stat">{{ 'No ping yet' if not lhb else '✓ Pinged' }}</span>
             {% elif m.get('monitor_type') == 'ssl' %}
-                {% set days_left = m.get('ssl_expiry_days') %}
-                <span class="d-secondary-stat {% if days_left is not none and days_left <= 14 %}text-red{% elif days_left is not none and days_left <= 30 %}text-yellow{% endif %}">{{ (days_left|string + 'd remaining') if days_left is not none else '—' }}</span>
+                <span class="d-secondary-stat">{{ m.get('ssl_issuer', '') | truncate(30, True, '…') if m.get('ssl_issuer') else 'SSL' }}</span>
             {% else %}
                 <span class="d-secondary-stat" title="{{ m.get('last_response_ms', 0)|int }}ms">{{ m.get('last_response_ms', 0)|int }}ms</span>
             {% endif %}

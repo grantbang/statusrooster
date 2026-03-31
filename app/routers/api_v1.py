@@ -342,15 +342,24 @@ async def api_create_monitor(req: ApiCreateMonitor, user: dict = Depends(get_api
     if check_interval is not None:
         if check_interval < min_interval:
             err(f"Minimum check interval is {min_interval}s.", 403)
-        check_interval = max(min_interval, min(300, check_interval))
+        if check_interval > 300:
+            err("check_interval must be between 60 and 300 seconds", 422)
     else:
         check_interval = min_interval
 
-    # Clamp optional numeric fields to valid bounds (consistent with update)
-    timeout = max(1, min(60, req.timeout)) if req.timeout is not None else None
-    heartbeat_interval = max(60, min(86400, req.heartbeat_interval)) if req.heartbeat_interval is not None else None
-    heartbeat_grace_period = max(0, min(3600, req.heartbeat_grace_period)) if req.heartbeat_grace_period is not None else None
-    ssl_expiry_threshold_days = max(1, min(90, req.ssl_expiry_threshold_days)) if req.ssl_expiry_threshold_days is not None else None
+    # Validate optional numeric fields are within valid bounds
+    timeout = req.timeout
+    if timeout is not None and (timeout < 1 or timeout > 60):
+        err("timeout must be between 1 and 60 seconds", 422)
+    heartbeat_interval = req.heartbeat_interval
+    if heartbeat_interval is not None and (heartbeat_interval < 60 or heartbeat_interval > 86400):
+        err("heartbeat_interval must be between 60 and 86400 seconds", 422)
+    heartbeat_grace_period = req.heartbeat_grace_period
+    if heartbeat_grace_period is not None and (heartbeat_grace_period < 0 or heartbeat_grace_period > 3600):
+        err("heartbeat_grace_period must be between 0 and 3600 seconds", 422)
+    ssl_expiry_threshold_days = req.ssl_expiry_threshold_days
+    if ssl_expiry_threshold_days is not None and (ssl_expiry_threshold_days < 1 or ssl_expiry_threshold_days > 90):
+        err("ssl_expiry_threshold_days must be between 1 and 90", 422)
 
     monitor = create_monitor(
         db,
@@ -485,15 +494,23 @@ async def api_update_monitor(
         min_interval = 60
         if req.check_interval < min_interval:
             err(f"Minimum check interval is {min_interval}s.", 403)
-        updates["check_interval"] = max(min_interval, min(300, req.check_interval))
+        if req.check_interval > 300:
+            err("check_interval must be between 60 and 300 seconds", 422)
+        updates["check_interval"] = req.check_interval
     if req.heartbeat_interval is not None:
-        updates["heartbeat_interval"] = max(60, min(86400, req.heartbeat_interval))
+        if req.heartbeat_interval < 60 or req.heartbeat_interval > 86400:
+            err("heartbeat_interval must be between 60 and 86400 seconds", 422)
+        updates["heartbeat_interval"] = req.heartbeat_interval
     if req.heartbeat_grace_period is not None:
-        updates["heartbeat_grace_period"] = max(0, min(3600, req.heartbeat_grace_period))
+        if req.heartbeat_grace_period < 0 or req.heartbeat_grace_period > 3600:
+            err("heartbeat_grace_period must be between 0 and 3600 seconds", 422)
+        updates["heartbeat_grace_period"] = req.heartbeat_grace_period
     if req.expected_status_code is not None:
         updates["expected_status_code"] = req.expected_status_code
     if req.timeout is not None:
-        updates["timeout"] = max(1, min(60, req.timeout))
+        if req.timeout < 1 or req.timeout > 60:
+            err("timeout must be between 1 and 60 seconds", 422)
+        updates["timeout"] = req.timeout
     if req.json_assertions is not None:
         updates["json_assertions"] = req.json_assertions
     if req.auth_header is not None:
@@ -501,7 +518,9 @@ async def api_update_monitor(
     if req.ssl_domain is not None:
         updates["ssl_domain"] = req.ssl_domain
     if req.ssl_expiry_threshold_days is not None:
-        updates["ssl_expiry_threshold_days"] = max(1, min(90, req.ssl_expiry_threshold_days))
+        if req.ssl_expiry_threshold_days < 1 or req.ssl_expiry_threshold_days > 90:
+            err("ssl_expiry_threshold_days must be between 1 and 90", 422)
+        updates["ssl_expiry_threshold_days"] = req.ssl_expiry_threshold_days
     if req.group is not None:
         updates["group"] = req.group
     if req.http_method is not None:

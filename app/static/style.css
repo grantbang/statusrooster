@@ -113,7 +113,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html {
-    overflow-x: hidden;
+    overflow-x: clip;
 }
 
 body {
@@ -124,7 +124,7 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow-x: hidden;
+    overflow-x: clip;
     width: 100%;
 }
 
@@ -4252,6 +4252,29 @@ code {
     top: 0.35rem;
     right: 0.5rem;
 }
+
+/* Endpoint path copy button */
+.endpoint-header { position: relative; }
+.endpoint-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    background: transparent;
+    border: 1px solid transparent;
+    color: #bbb;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: opacity 0.15s, background 0.15s, color 0.15s, border-color 0.15s;
+    opacity: 0;
+    margin-left: 0.25rem;
+    vertical-align: middle;
+    line-height: 1.4;
+}
+.endpoint-header:hover .endpoint-copy-btn { opacity: 1; border-color: var(--border); color: #999; }
+.endpoint-copy-btn:hover { background: rgba(0,0,0,0.06); color: #666; }
+.endpoint-copy-btn.copied { opacity: 1; color: var(--success); border-color: var(--success); background: rgba(34,197,94,0.06); }
 
 .code-comment { color: #6c757d; }
 .code-string { color: #98c379; }
