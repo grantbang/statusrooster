@@ -1,5 +1,7 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from passlib.context import CryptContext
+import secrets
+import hashlib
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -112,3 +114,61 @@ def delete_user(db, user_id: str) -> None:
 
     # Delete user document
     db.collection(COLLECTION).document(user_id).delete()
+
+
+# ---------------------------------------------------------------------------
+# Password reset tokens
+# ---------------------------------------------------------------------------
+
+RESET_COLLECTION = "password_resets"
+RESET_TOKEN_EXPIRY_MINUTES = 30
+
+
+def _hash_token(raw_token: str) -> str:
+    return hashlib.sha256(raw_token.encode()).hexdigest()
+
+
+def create_password_reset_token(db, user_id: str, email: str) -> str:
+    """Create a password reset token. Returns the raw token (only shown once)."""
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = _hash_token(raw_token)
+
+    # Invalidate any existing tokens for this user
+    existing = db.collection(RESET_COLLECTION).where("user_id", "==", user_id).get()
+    for doc in existing:
+        doc.reference.delete()
+
+    db.collection(RESET_COLLECTION).document().set({
+        "token_hash": token_hash,
+        "user_id": user_id,
+        "email": email,
+        "created_at": datetime.now(timezone.utc),
+        "expires_at": datetime.now(timezone.utc) + timedelta(minutes=RESET_TOKEN_EXPIRY_MINUTES),
+        "used": False,
+    })
+
+    return raw_token
+
+
+def verify_password_reset_token(db, raw_token: str) -> dict | None:
+    """Verify a reset token. Returns the token doc dict (with id) if valid, None otherwise."""
+    token_hash = _hash_token(raw_token)
+    docs = (
+        db.collection(RESET_COLLECTION)
+        .where("token_hash", "==", token_hash)
+        .where("used", "==", False)
+        .limit(1)
+        .get()
+    )
+    for doc in docs:
+        data = doc.to_dict()
+        data["id"] = doc.id
+        if data["expires_at"].replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+            return None
+        return data
+    return None
+
+
+def consume_password_reset_token(db, token_doc_id: str) -> None:
+    """Mark a reset token as used."""
+    db.collection(RESET_COLLECTION).document(token_doc_id).update({"used": True})

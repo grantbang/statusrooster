@@ -6,7 +6,7 @@ Separate from API routes which return JSON.
 from fastapi import APIRouter, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from app.database import get_db
-from app.models.user import create_user, get_user_by_email, verify_password, get_user_by_id, update_user, hash_password, delete_user
+from app.models.user import create_user, get_user_by_email, verify_password, get_user_by_id, update_user, hash_password, delete_user, create_password_reset_token, verify_password_reset_token, consume_password_reset_token
 from app.models.monitor import list_monitors_by_user, get_monitor, get_monitor_by_slug, create_monitor, update_monitor, delete_monitor
 from app.models.check import get_recent_checks, get_daily_uptime
 from app.models.incident import list_incidents_by_monitor, list_incidents_by_user, get_incident, get_incident_events
@@ -309,7 +309,12 @@ async def login_page(request: Request):
     if user:
         return RedirectResponse(url="/dashboard", status_code=302)
     error = request.query_params.get("error")
-    return templates.TemplateResponse("login.html", {"request": request, "user": None, "error": error})
+    flash_message = request.cookies.get("flash_message")
+    flash_type = request.cookies.get("flash_type", "success")
+    return templates.TemplateResponse("login.html", {
+        "request": request, "user": None, "error": error,
+        "flash_message": flash_message, "flash_type": flash_type,
+    })
 
 
 @router.post("/login", response_class=HTMLResponse)
@@ -354,6 +359,125 @@ async def login_submit(request: Request, email: str = Form(...), password: str =
 async def logout():
     response = RedirectResponse(url="/login", status_code=302)
     response.delete_cookie("access_token")
+    return response
+
+
+# ---------------------------------------------------------------------------
+# Forgot / Reset Password
+# ---------------------------------------------------------------------------
+
+@router.get("/forgot-password", response_class=HTMLResponse)
+async def forgot_password_page(request: Request):
+    return templates.TemplateResponse("forgot_password.html", {"request": request, "user": None})
+
+
+@router.post("/forgot-password", response_class=HTMLResponse)
+async def forgot_password_submit(request: Request, email: str = Form(...)):
+    from app.services.alerts import send_email
+    from app.config import settings
+
+    email = email.strip().lower()
+    db = get_db()
+    user = get_user_by_email(db, email)
+
+    # Always show success message to prevent email enumeration
+    success_msg = "If an account exists with that email, we've sent a reset link. Check your inbox (and spam folder)."
+
+    if not user:
+        return templates.TemplateResponse("forgot_password.html", {
+            "request": request, "user": None, "success": success_msg, "email": email
+        })
+
+    # Only email-auth users can reset passwords
+    if not user.get("password_hash"):
+        provider = user.get("auth_provider", "OAuth")
+        return templates.TemplateResponse("forgot_password.html", {
+            "request": request, "user": None,
+            "error": f"This account uses {provider.title()} login. Please sign in with {provider.title()} instead.",
+            "email": email
+        })
+
+    raw_token = create_password_reset_token(db, user["id"], email)
+    reset_url = f"{settings.APP_URL}/reset-password?token={raw_token}"
+
+    html_body = f"""
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 2rem;">
+        <h2 style="color: #1a1a1a; margin-bottom: 0.5rem;">Reset your password</h2>
+        <p style="color: #4a4a4a; line-height: 1.6;">
+            We received a request to reset the password for your StatusRooster account.
+            Click the button below to choose a new password.
+        </p>
+        <div style="text-align: center; margin: 2rem 0;">
+            <a href="{reset_url}" style="display: inline-block; background: #6366f1; color: #ffffff; padding: 0.75rem 2rem; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                Reset password
+            </a>
+        </div>
+        <p style="color: #6b7280; font-size: 0.875rem; line-height: 1.5;">
+            This link expires in 30 minutes. If you didn't request this, you can safely ignore this email.
+        </p>
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0;">
+        <p style="color: #9ca3af; font-size: 0.75rem;">
+            If the button doesn't work, copy and paste this URL into your browser:<br>
+            <span style="word-break: break-all;">{reset_url}</span>
+        </p>
+    </div>
+    """
+
+    await send_email(email, "Reset your StatusRooster password", html_body)
+
+    return templates.TemplateResponse("forgot_password.html", {
+        "request": request, "user": None, "success": success_msg, "email": email
+    })
+
+
+@router.get("/reset-password", response_class=HTMLResponse)
+async def reset_password_page(request: Request):
+    token = request.query_params.get("token", "")
+    if not token:
+        return templates.TemplateResponse("reset_password.html", {
+            "request": request, "user": None, "expired": True
+        })
+
+    db = get_db()
+    token_doc = verify_password_reset_token(db, token)
+    if not token_doc:
+        return templates.TemplateResponse("reset_password.html", {
+            "request": request, "user": None, "expired": True
+        })
+
+    return templates.TemplateResponse("reset_password.html", {
+        "request": request, "user": None, "token": token
+    })
+
+
+@router.post("/reset-password", response_class=HTMLResponse)
+async def reset_password_submit(request: Request, token: str = Form(...), password: str = Form(...), password_confirm: str = Form(...)):
+    db = get_db()
+    token_doc = verify_password_reset_token(db, token)
+
+    if not token_doc:
+        return templates.TemplateResponse("reset_password.html", {
+            "request": request, "user": None, "expired": True
+        })
+
+    if len(password) < 8:
+        return templates.TemplateResponse("reset_password.html", {
+            "request": request, "user": None, "token": token,
+            "error": "Password must be at least 8 characters."
+        })
+
+    if password != password_confirm:
+        return templates.TemplateResponse("reset_password.html", {
+            "request": request, "user": None, "token": token,
+            "error": "Passwords don't match."
+        })
+
+    # Update password and consume token
+    update_user(db, token_doc["user_id"], {"password_hash": hash_password(password)})
+    consume_password_reset_token(db, token_doc["id"])
+
+    response = RedirectResponse(url="/login", status_code=302)
+    _set_flash(response, "Password reset successful. Please log in with your new password.")
     return response
 
 

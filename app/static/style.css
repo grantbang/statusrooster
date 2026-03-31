@@ -616,6 +616,15 @@ code {
     font-size: var(--text-base);
     border: 1px solid #fecaca;
 }
+.auth-success {
+    background: #f0fdf4;
+    color: #15803d;
+    padding: 0.75rem var(--space-md);
+    border-radius: var(--radius-md);
+    margin-bottom: 1.25rem;
+    font-size: var(--text-base);
+    border: 1px solid #bbf7d0;
+}
 
 /* Auth submit = btn-block primary */
 .auth-submit {
