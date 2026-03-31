@@ -131,16 +131,8 @@
         <div class="md-card-value" style="font-size: 2rem; color: {% if _ssl_days is not none and _ssl_days <= 14 %}var(--danger){% elif _ssl_days is not none and _ssl_days <= 30 %}var(--warning){% elif _ssl_days is not none %}var(--success){% else %}var(--text-muted){% endif %};">
             {{ _ssl_days if _ssl_days is not none else '—' }}
         </div>
-        <div class="md-card-sub"
-             {% if monitor.get('last_status_change') and not monitor.get('paused') %}
-             data-status-since="{{ monitor.get('last_status_change').isoformat() if monitor.get('last_status_change').isoformat is defined else monitor.get('last_status_change') }}"
-             data-status="{{ monitor.status }}"
-             {% endif %}>
-            {% if monitor.get('paused') %}
-                Checks suspended
-            {% else %}
-                <span class="md-duration-text"></span>
-            {% endif %}
+        <div class="md-card-sub">
+            Alert at {{ monitor.get('ssl_expiry_threshold_days', 30) }}d
         </div>
     </div>
 {% else %}

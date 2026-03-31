@@ -329,10 +329,12 @@
             {% set ci = m.get('check_interval', 60) | int %}
             <span class="d-interval-badge" title="Check interval">⏱ {% if ci < 120 %}{{ ci }}s{% else %}{{ (ci / 60)|int }}m{% endif %}</span>
             {% endif %}
+            {% if m.get('monitor_type') != 'ssl' %}
             {% set lsc = m.get('last_status_change') %}
             {% if lsc and not m.get('paused') %}
             <span class="d-secondary-sep">·</span>
             <span class="d-status-duration" data-status-since="{{ lsc.isoformat() if lsc.isoformat is defined else lsc }}" data-status="{{ m.status|default('pending') }}"></span>
+            {% endif %}
             {% endif %}
             {% set inc_count = (incidents_per_monitor or {}).get(m.id, 0) %}
             {% if inc_count > 0 %}
