@@ -441,7 +441,7 @@
             <span>Duration</span>
         </div>
         {% for inc in incidents[:20] %}
-        <a href="/incidents/{{ inc.id }}" class="md-inc-row md-inc-row-link">
+        <a href="/incidents/{{ inc.id }}" class="md-inc-row md-inc-row-link" data-incident-id="{{ inc.id }}">
             <span class="md-inc-status">
                 {% if inc.status == 'open' %}
                     <span class="md-inc-badge md-inc-ongoing">● Ongoing</span>
@@ -1153,14 +1153,15 @@ function copyBadge(id) {
 /* ── Export incidents as CSV ─────────────────── */
 function exportIncidents() {
     const rows = document.querySelectorAll('.md-inc-row');
-    let csv = 'Status,Root Cause,Started,Duration\n';
+    let csv = 'Incident ID,Monitor ID,Status,Root Cause,Started,Duration\n';
     rows.forEach(row => {
+        const incId = row.dataset.incidentId || '';
         const cols = row.querySelectorAll('span');
         const status = (cols[0]?.textContent || '').trim();
         const cause = (cols[1]?.textContent || '').replace(/\s+/g, ' ').trim();
         const started = (cols[2]?.textContent || '').trim();
         const duration = (cols[3]?.textContent || '').trim();
-        csv += `"${status}","${cause}","${started}","${duration}"\n`;
+        csv += `"${incId}","${MONITOR_ID}","${status}","${cause}","${started}","${duration}"\n`;
     });
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);

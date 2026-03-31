@@ -36,6 +36,15 @@
             <h3 class="inc-section-title">Details</h3>
             <div class="inc-kv-grid">
                 <div class="inc-kv">
+                    <span class="inc-kv-label">Incident ID</span>
+                    <span class="inc-kv-value inc-kv-mono">
+                        <code>{{ incident.id }}</code>
+                        <button class="md-monitor-id-copy" onclick="navigator.clipboard.writeText('{{ incident.id }}'); this.innerHTML='&#10003;'; setTimeout(() => { this.innerHTML='<svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;><rect x=&quot;9&quot; y=&quot;9&quot; width=&quot;13&quot; height=&quot;13&quot; rx=&quot;2&quot;/><path d=&quot;M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1&quot;/></svg>'; }, 1500);" title="Copy incident ID">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                        </button>
+                    </span>
+                </div>
+                <div class="inc-kv">
                     <span class="inc-kv-label">Monitor</span>
                     <span class="inc-kv-value">
                         <a href="/monitors/{{ monitor.id }}" class="inc-monitor-link">{{ monitor.name }}</a>
