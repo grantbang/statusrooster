@@ -217,6 +217,21 @@
             <!-- Name -->
             <span class="monitor-name" title="{{ m.name }}">{{ m.name }}</span>
 
+            {% if m.get('monitor_type') == 'ssl' %}
+            <!-- SSL: Days remaining display -->
+            {% set _d_ssl_days = m.get('ssl_expiry_days') %}
+            <div class="d-uptime-bars d-ssl-days-wrap" title="SSL certificate expiry" style="justify-content: center; align-items: center; gap: 0.35rem;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="{% if _d_ssl_days is not none and _d_ssl_days <= 14 %}var(--danger){% elif _d_ssl_days is not none and _d_ssl_days <= 30 %}var(--warning){% else %}var(--success){% endif %}" stroke-width="2" width="14" height="14" style="flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                <span class="d-ssl-days" style="font-weight: 600; font-size: 0.85rem; white-space: nowrap; color: {% if _d_ssl_days is not none and _d_ssl_days <= 14 %}var(--danger){% elif _d_ssl_days is not none and _d_ssl_days <= 30 %}var(--warning){% else %}var(--success){% endif %};">
+                    {{ (_d_ssl_days|string ~ 'd remaining') if _d_ssl_days is not none else '—' }}
+                </span>
+            </div>
+
+            <!-- SSL: Expiry date instead of uptime % -->
+            <span class="uptime-value" style="font-size: 0.78rem; min-width: 72px; color: {% if _d_ssl_days is not none and _d_ssl_days <= 14 %}var(--danger){% elif _d_ssl_days is not none and _d_ssl_days <= 30 %}var(--warning){% else %}var(--text-muted){% endif %};" title="Certificate expiry date">
+                {% if m.get('ssl_expiry') %}{{ m.ssl_expiry.strftime('%b %d, %Y') if m.ssl_expiry.strftime is defined else m.ssl_expiry }}{% else %}—{% endif %}
+            </span>
+            {% else %}
             <!-- 30-day uptime bars (oldest left → newest right) -->
             {% set sorted_bars = daily_bars | sort(attribute='date') %}
             {% set bars_slice = sorted_bars[-30:] %}
@@ -246,6 +261,7 @@
                 {% set up = m.uptime_percent|default(100)|float %}
             {% endif %}
             <span class="uptime-value {% if up >= 99.5 %}text-green{% elif up >= 95 %}text-yellow{% else %}text-red{% endif %}" title="24h uptime: {{ '%.4f'|format(up) }}%">{{ '%.2f'|format(up) }}%</span>
+            {% endif %}
 
             <!-- ⋯ menu -->
             <div class="row-menu-wrap" onclick="event.stopPropagation()">
