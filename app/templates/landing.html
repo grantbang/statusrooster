@@ -391,7 +391,7 @@ function heroScan() {
         const LOW_PATTERNS = ['/terms', '/privacy', '/cookie', '/legal', '/tos', '/sitemap', '/robots', '/feed', '/rss'];
         window._heroDiscoveredUrls = result.urls;
         window._heroDomain = domain;
-        result.urls.slice(0, 10).forEach((item, i) => {
+        result.urls.forEach((item, i) => {
             const row = document.createElement('label');
             row.className = 'l-hero-result-row';
             const isSSL = item.suggested_type === 'ssl';
@@ -403,12 +403,6 @@ function heroScan() {
                 '<span class="discover-badge discover-badge-type">' + item.suggested_type.toUpperCase() + '</span>';
             list.appendChild(row);
         });
-        if (result.urls.length > 10) {
-            const more = document.createElement('div');
-            more.className = 'l-hero-result-more';
-            more.textContent = '+ ' + (result.urls.length - 10) + ' more endpoints (visible after signup)';
-            list.appendChild(more);
-        }
         heroUpdateCount();
         document.getElementById('heroResults').style.display = '';
     })

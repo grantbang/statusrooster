@@ -4864,6 +4864,8 @@ code {
     flex-direction: column;
     gap: 0.25rem;
     margin-bottom: 1rem;
+    max-height: 360px;
+    overflow-y: auto;
 }
 .l-hero-result-row {
     display: flex;
