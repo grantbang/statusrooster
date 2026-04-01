@@ -30,7 +30,8 @@
                 Found <strong id="heroCount">0</strong> endpoints on <strong id="heroDomainResult"></strong>
             </p>
             <div id="heroList" class="l-hero-list"></div>
-            <a href="/signup" class="l-btn-primary l-hero-cta" id="heroCta">Sign up free to monitor these</a>
+            <a href="/signup" class="l-btn-primary l-hero-cta" id="heroCta">Sign up free to start monitoring</a>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0.5rem 0 0; text-align: center;">No credit card required. 10 free monitors.</p>
         </div>
         <div id="heroEmpty" style="display:none; padding: 1rem 0; text-align: center;">
             <p style="color: var(--text-muted); margin: 0 0 0.75rem;" id="heroEmptyMsg">No endpoints found.</p>
@@ -386,11 +387,17 @@ function heroScan() {
         document.getElementById('heroDomainResult').textContent = result.domain;
         const list = document.getElementById('heroList');
         list.innerHTML = '';
-        result.urls.slice(0, 8).forEach(item => {
-            const row = document.createElement('div');
+        const LOW_PATTERNS = ['/terms', '/privacy', '/cookie', '/legal', '/tos', '/sitemap', '/robots', '/feed', '/rss'];
+        result.urls.slice(0, 10).forEach(item => {
+            const row = document.createElement('label');
             row.className = 'l-hero-result-row';
             const isSSL = item.suggested_type === 'ssl';
-            row.innerHTML = '<span class="l-hero-result-name">' + (isSSL ? '&#128274; ' : '') + escH(item.suggested_name) + '</span><span class="discover-badge discover-badge-' + item.source + '">' + item.source + '</span>';
+            const urlLower = (item.url || '').toLowerCase();
+            const isLow = LOW_PATTERNS.some(p => urlLower.includes(p));
+            row.innerHTML = '<input type="checkbox" class="discover-check" ' + (isLow ? '' : 'checked') + ' disabled style="pointer-events:none;opacity:0.7;">' +
+                '<span class="l-hero-result-name">' + (isSSL ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' : '') + escH(item.suggested_name) + '</span>' +
+                '<span class="discover-badge discover-badge-' + item.source + '">' + item.source + '</span>' +
+                '<span class="discover-badge discover-badge-type">' + item.suggested_type.toUpperCase() + '</span>';
             list.appendChild(row);
         });
         if (result.urls.length > 8) {

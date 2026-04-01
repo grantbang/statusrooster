@@ -598,6 +598,8 @@ class ApiBulkMonitorItem(BaseModel):
     ssl_domain: str = ""
     ssl_expiry_threshold_days: int = 30
     alert_email: str = ""
+    alert_slack_webhook: str = ""
+    check_interval: int = 0  # 0 = use plan default
     group: str = ""
     public: bool = False
 
@@ -637,8 +639,10 @@ async def api_bulk_create_monitors(req: ApiBulkCreateRequest, user: dict = Depen
                 name=item.name,
                 monitor_type=item.monitor_type,
                 alert_email=item.alert_email or user.get("alert_email", user.get("email", "")),
+                alert_slack_webhook=item.alert_slack_webhook,
                 ssl_domain=item.ssl_domain,
                 ssl_expiry_threshold_days=item.ssl_expiry_threshold_days,
+                check_interval=item.check_interval if item.check_interval > 0 else None,
                 group=item.group,
                 public=item.public,
             )

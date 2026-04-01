@@ -41,7 +41,43 @@
             </label>
             <span class="discover-selected-count" id="selectedCount">0 selected</span>
         </div>
+        <p class="discover-hint" style="margin: 0.25rem 0 0.5rem; text-align: left;">We pre-selected the endpoints that matter most. Uncheck any you don't need.</p>
         <div class="discover-list" id="discoverList"></div>
+        <details class="discover-quick-settings">
+            <summary class="discover-qs-toggle">Quick Settings <span style="color:var(--text-muted); font-weight:400;">(optional)</span></summary>
+            <div class="discover-qs-body">
+                <div class="discover-qs-field">
+                    <label for="discoverGroup">Group name</label>
+                    <input type="text" id="discoverGroup" placeholder="e.g. Production, Staging">
+                    <span class="discover-qs-hint">All selected monitors will be added to this group</span>
+                </div>
+                <div class="discover-qs-field">
+                    <label for="discoverAlertEmail">Alert email</label>
+                    <input type="email" id="discoverAlertEmail" value="{{ user.get('alert_email') or user.get('email', '') }}" placeholder="you@example.com">
+                    <span class="discover-qs-hint">Default: your account email</span>
+                </div>
+                <details class="discover-qs-advanced">
+                    <summary style="font-size: 0.85rem; color: var(--text-muted); cursor: pointer;">Advanced</summary>
+                    <div style="padding-top: 0.75rem;">
+                        <div class="discover-qs-field">
+                            <label for="discoverSlack">Slack webhook URL</label>
+                            <input type="url" id="discoverSlack" placeholder="https://hooks.slack.com/...">
+                        </div>
+                        <div class="discover-qs-field">
+                            <label for="discoverInterval">Check interval</label>
+                            <select id="discoverInterval">
+                                <option value="">Default (60s)</option>
+                                <option value="60">60 seconds</option>
+                                <option value="120">2 minutes</option>
+                                <option value="180">3 minutes</option>
+                                <option value="300">5 minutes</option>
+                            </select>
+                            <span class="discover-qs-hint">Free: 60-300s</span>
+                        </div>
+                    </div>
+                </details>
+            </div>
+        </details>
         <p class="discover-limit-warning" id="limitWarning" style="display:none;"></p>
         <div class="discover-actions">
             <button class="btn btn-primary discover-create-btn" id="createBtn" onclick="createMonitors()">
@@ -124,13 +160,16 @@ function showResults(result) {
     const list = document.getElementById('discoverList');
     list.innerHTML = '';
 
+    const LOW_PATTERNS = ['/terms', '/privacy', '/cookie', '/legal', '/tos', '/sitemap', '/robots', '/feed', '/rss'];
     discoveredUrls.forEach((item, i) => {
-        const isHigh = item.suggested_priority === 'high';
         const isSSL = item.suggested_type === 'ssl';
+        const urlLower = (item.url || '').toLowerCase();
+        const isLow = LOW_PATTERNS.some(p => urlLower.includes(p));
+        const preChecked = !isLow;
         const row = document.createElement('label');
         row.className = 'discover-row';
         row.innerHTML = `
-            <input type="checkbox" class="discover-check" data-index="${i}" checked onchange="updateCounts()">
+            <input type="checkbox" class="discover-check" data-index="${i}" ${preChecked ? 'checked' : ''} onchange="updateCounts()">
             <div class="discover-row-info">
                 <span class="discover-row-name">${isSSL ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:2px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' : ''}${escHtml(item.suggested_name)}</span>
                 <span class="discover-row-url">${escHtml(isSSL ? item.url : item.url.replace('https://', '').replace('http://', ''))}</span>
@@ -142,8 +181,9 @@ function showResults(result) {
     });
 
     updateCounts();
-    document.getElementById('selectAll').checked = true;
-    document.getElementById('selectAllLabel').textContent = 'Deselect all';
+    const allChecked = document.querySelectorAll('.discover-check').length === document.querySelectorAll('.discover-check:checked').length;
+    document.getElementById('selectAll').checked = allChecked;
+    document.getElementById('selectAllLabel').textContent = allChecked ? 'Deselect all' : 'Select all';
     document.getElementById('discoverResults').style.display = '';
 }
 
@@ -193,6 +233,11 @@ function createMonitors() {
     btn.disabled = true;
     btn.textContent = 'Creating monitors...';
 
+    const group = (document.getElementById('discoverGroup')?.value || '').trim();
+    const alertEmail = (document.getElementById('discoverAlertEmail')?.value || '').trim();
+    const slackWebhook = (document.getElementById('discoverSlack')?.value || '').trim();
+    const interval = document.getElementById('discoverInterval')?.value || '';
+
     const checks = document.querySelectorAll('.discover-check:checked');
     const monitors = [];
     checks.forEach(cb => {
@@ -200,7 +245,11 @@ function createMonitors() {
         const mon = {
             name: item.suggested_name,
             monitor_type: item.suggested_type,
+            group: group,
+            alert_email: alertEmail,
         };
+        if (slackWebhook) mon.alert_slack_webhook = slackWebhook;
+        if (interval) mon.check_interval = parseInt(interval);
         if (item.suggested_type === 'ssl') {
             mon.ssl_domain = item.url;
         } else {
@@ -222,7 +271,7 @@ function createMonitors() {
             return;
         }
         const count = data.data.count;
-        window.location.href = '/dashboard?msg=Created+' + count + '+monitors!+They%27ll+start+checking+in+60+seconds.';
+        window.location.href = '/dashboard?created=' + count;
     })
     .catch(() => {
         btn.textContent = 'Error - try again';

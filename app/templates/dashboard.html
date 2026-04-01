@@ -8,6 +8,20 @@
 
 {% block content %}
 
+{% if created_count %}
+<div class="discover-success-banner" id="discoverBanner" onclick="this.style.display='none'">
+    <div class="discover-success-inner">
+        <h3>{{ created_count }} monitors created!</h3>
+        <p>Your endpoints are now being monitored from 4 regions. We'll alert you immediately if anything goes down.</p>
+        <div style="margin-top: 0.75rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <a href="#" class="btn btn-sm" onclick="event.preventDefault(); document.getElementById('discoverBanner').style.display='none';" style="background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.3);">View your monitors</a>
+            <a href="/discover" class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.3);">Discover more endpoints</a>
+        </div>
+    </div>
+</div>
+<script>setTimeout(function(){ var b = document.getElementById('discoverBanner'); if (b) b.style.display = 'none'; }, 10000);</script>
+{% endif %}
+
 {% if user.get('plan', 'free') == 'free' and monitors | length >= 8 %}
 <div class="upgrade-banner">
     <p>You're using <strong>{{ monitors | length }} of 10</strong> free monitors. Upgrade to Pro for 200 monitors, SMS alerts, and 90 days of history.</p>

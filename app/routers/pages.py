@@ -538,14 +538,17 @@ async def discover_create_monitors(request: Request):
     created = []
     for item in monitors:
         try:
+            ci = item.get("check_interval")
             mon = _create_mon(
                 db,
                 user_id=user["id"],
                 url=item.get("url", ""),
                 name=item.get("name", "Untitled"),
                 monitor_type=item.get("monitor_type", "http"),
-                alert_email=user.get("alert_email", user.get("email", "")),
+                alert_email=item.get("alert_email") or user.get("alert_email", user.get("email", "")),
+                alert_slack_webhook=item.get("alert_slack_webhook", ""),
                 ssl_domain=item.get("ssl_domain", ""),
+                check_interval=int(ci) if ci and int(ci) > 0 else None,
                 group=item.get("group", ""),
                 public=item.get("public", False),
             )
@@ -625,6 +628,7 @@ async def dashboard(request: Request):
     # Get flash message from query params
     flash_message = request.query_params.get("msg")
     flash_type = request.query_params.get("msg_type", "success")
+    created_count = request.query_params.get("created")
 
     # ---------- Group names for filter dropdown ----------
     group_names = sorted(set(m.get("group", "") for m in monitors) - {""})
@@ -689,6 +693,7 @@ async def dashboard(request: Request):
         "monitors": monitors,
         "flash_message": flash_message,
         "flash_type": flash_type,
+        "created_count": created_count,
         "group_names": group_names,
         "avg_response_ms": avg_response_ms,
         "overall_uptime_pct": overall_uptime_pct,
