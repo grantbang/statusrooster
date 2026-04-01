@@ -4,6 +4,7 @@ Checks sitemap, robots.txt, homepage links, common paths, and SSL cert.
 """
 
 import asyncio
+import re
 import ssl
 import socket
 from html.parser import HTMLParser
@@ -125,7 +126,6 @@ async def _parse_sitemap(client: httpx.AsyncClient, base_url: str) -> list[dict]
 
     text = resp.text
     # Simple XML parsing — extract <loc> tags
-    import re
     locs = re.findall(r"<loc>\s*(.*?)\s*</loc>", text, re.IGNORECASE)
     domain = urlparse(base_url).netloc
 
@@ -255,6 +255,8 @@ async def discover_endpoints(domain: str, max_urls: int = MAX_URLS) -> dict:
     }
 
     try:
+        # verify=False intentional — discovery scans unknown domains that may have
+        # expired/self-signed certs. We still detect and report SSL info separately.
         async with httpx.AsyncClient(verify=False) as client:
             # Run all discovery methods concurrently
             sitemap_task = _parse_sitemap(client, base_url)

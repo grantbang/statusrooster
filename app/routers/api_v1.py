@@ -613,10 +613,13 @@ async def api_bulk_create_monitors(req: ApiBulkCreateRequest, user: dict = Depen
 
     plan = user.get("plan", "free")
     limit = PRO_MONITOR_LIMIT if plan == "pro" else FREE_MONITOR_LIMIT
-    current = user.get("monitors_count", 0)
 
     if not req.monitors:
         err("monitors list is empty", 422)
+
+    # Use actual Firestore count — monitors_count field can drift
+    existing = db.collection("monitors").where("user_id", "==", user["id"]).get()
+    current = len(existing)
 
     if current + len(req.monitors) > limit:
         remaining = max(0, limit - current)
@@ -656,4 +659,4 @@ async def api_bulk_create_monitors(req: ApiBulkCreateRequest, user: dict = Depen
     # Update monitor count
     update_user(db, user["id"], {"monitors_count": current + len(created)})
 
-    return ok(data={"created": [_serialize(m) for m in created], "count": len(created), "errors": errors})
+    return ok(data={"created": created, "count": len(created), "errors": errors})

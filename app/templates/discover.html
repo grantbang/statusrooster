@@ -42,6 +42,7 @@
             <span class="discover-selected-count" id="selectedCount">0 selected</span>
         </div>
         <div class="discover-list" id="discoverList"></div>
+        <p class="discover-limit-warning" id="limitWarning" style="display:none;"></p>
         <div class="discover-actions">
             <button class="btn btn-primary discover-create-btn" id="createBtn" onclick="createMonitors()">
                 Monitor Selected (<span id="createCount">0</span>)
@@ -69,6 +70,8 @@
 {% block extra_js %}
 <script>
 const API_KEY_HEADER = '{{ api_key or "" }}';
+const MONITORS_CURRENT = {{ monitors_current | default(0) }};
+const MONITORS_LIMIT = {{ monitors_limit | default(10) }};
 let discoveredUrls = [];
 
 function startScan() {
@@ -127,7 +130,7 @@ function showResults(result) {
         const row = document.createElement('label');
         row.className = 'discover-row';
         row.innerHTML = `
-            <input type="checkbox" class="discover-check" data-index="${i}" ${isHigh ? 'checked' : ''} onchange="updateCounts()">
+            <input type="checkbox" class="discover-check" data-index="${i}" checked onchange="updateCounts()">
             <div class="discover-row-info">
                 <span class="discover-row-name">${isSSL ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:2px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' : ''}${escHtml(item.suggested_name)}</span>
                 <span class="discover-row-url">${escHtml(isSSL ? item.url : item.url.replace('https://', '').replace('http://', ''))}</span>
@@ -170,9 +173,19 @@ function updateCounts() {
     const checks = document.querySelectorAll('.discover-check:checked');
     const count = checks.length;
     const total = document.querySelectorAll('.discover-check').length;
+    const remaining = Math.max(0, MONITORS_LIMIT - MONITORS_CURRENT);
+
     document.getElementById('selectedCount').textContent = count + ' of ' + total + ' selected';
-    document.getElementById('createCount').textContent = count;
-    document.getElementById('createBtn').disabled = count === 0;
+    document.getElementById('createCount').textContent = Math.min(count, remaining);
+
+    const warning = document.getElementById('limitWarning');
+    if (count > remaining) {
+        warning.textContent = 'You have ' + MONITORS_CURRENT + '/' + MONITORS_LIMIT + ' monitors. Only ' + remaining + ' can be created.';
+        warning.style.display = '';
+    } else {
+        warning.style.display = 'none';
+    }
+    document.getElementById('createBtn').disabled = count === 0 || remaining === 0;
 }
 
 function createMonitors() {

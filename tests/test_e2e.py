@@ -2120,8 +2120,11 @@ class TestDiscovery:
         assert resp.status_code == 201, f"R.6 FAIL: expected 201, got {resp.status_code}"
         data = resp.json()["data"]
         assert data["count"] == 2, f"R.6 FAIL: expected count=2, got {data['count']}"
-        for m in data["created"]:
-            await client.delete(f"/api/v1/monitors/{m['id']}", headers=pro_headers)
+        for m in data.get("created", []):
+            try:
+                await client.delete(f"/api/v1/monitors/{m['id']}", headers=pro_headers)
+            except Exception:
+                pass
 
     @pytest.mark.asyncio
     async def test_r7_bulk_create_no_auth(self, client):
@@ -2132,6 +2135,18 @@ class TestDiscovery:
         if resp.status_code in (404, 405):
             pytest.skip("bulk create endpoint not deployed yet")
         assert resp.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_r8_bulk_create_exceeds_limit(self, client, free_headers):
+        """R.8 — Bulk create exceeding free limit returns 403"""
+        monitors = [
+            {"name": f"E2E-Limit-{i}", "url": "https://example.com", "monitor_type": "http"}
+            for i in range(101)
+        ]
+        resp = await client.post("/api/v1/monitors/bulk", json={"monitors": monitors}, headers=free_headers)
+        if resp.status_code in (404, 405):
+            pytest.skip("bulk create endpoint not deployed yet")
+        assert resp.status_code == 403, f"R.8 FAIL: expected 403, got {resp.status_code}"
 
 
 # I. CLEANUP

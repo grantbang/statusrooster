@@ -498,10 +498,13 @@ async def discover_page(request: Request):
     user = get_user_from_cookie(request)
     if not user:
         return RedirectResponse(url="/login", status_code=302)
-    # Pass an API key if user has one, for potential future use
     domain = request.query_params.get("domain", "")
+    db = get_db()
+    current_monitors = len(db.collection("monitors").where("user_id", "==", user["id"]).get())
+    monitor_limit = 200 if user.get("plan", "free") == "pro" else 10
     return templates.TemplateResponse("discover.html", {
         "request": request, "user": user, "prefill_domain": domain,
+        "monitors_current": current_monitors, "monitors_limit": monitor_limit,
     })
 
 
@@ -523,7 +526,10 @@ async def discover_create_monitors(request: Request):
     db = get_db()
     plan = user.get("plan", "free")
     limit = 200 if plan == "pro" else 10
-    current = user.get("monitors_count", 0)
+
+    # Use actual Firestore count — monitors_count field can drift
+    existing = db.collection("monitors").where("user_id", "==", user["id"]).get()
+    current = len(existing)
 
     if current + len(monitors) > limit:
         remaining = max(0, limit - current)
@@ -1382,6 +1388,8 @@ async def delete_monitor_submit(request: Request, monitor_id: str):
 
     monitor_name = monitor["name"]
     delete_monitor(db, monitor_id)
+    new_count = max(0, user.get("monitors_count", 1) - 1)
+    update_user(db, user["id"], {"monitors_count": new_count})
 
     return RedirectResponse(
         url=f"/dashboard?msg=Monitor+'{monitor_name}'+deleted&msg_type=success",
@@ -1501,6 +1509,10 @@ async def bulk_action(request: Request):
         elif action == "delete":
             delete_monitor(db, mid)
         count += 1
+
+    if action == "delete" and count > 0:
+        new_count = max(0, user.get("monitors_count", count) - count)
+        update_user(db, user["id"], {"monitors_count": new_count})
 
     return JSONResponse({"ok": True, "affected": count})
 
