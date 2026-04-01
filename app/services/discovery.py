@@ -36,6 +36,51 @@ COMMON_PATHS = [
 HIGH_PRIORITY_PATTERNS = ["/", "/api", "/health", "/status", "/graphql", "/login", "/signup", "/app", "/dashboard"]
 LOW_PRIORITY_PATTERNS = ["/terms", "/privacy", "/cookie", "/legal", "/tos", "/sitemap", "/robots", "/feed", "/rss"]
 
+# Patterns that indicate deep/content pages (skip these)
+SKIP_PATTERNS = re.compile(
+    r'/(?:ip|dp|product|item|blog|news|articles?|posts?|collections|shop|products|categories|tags|archive|reviews?|comments?)/|'
+    r'/\d{4,}|'              # numeric IDs (4+ digits)
+    r'\.(pdf|jpg|png|gif|svg|css|js|xml|json|zip|webp)$|'
+    r'[?#]',                 # query strings or fragments
+    re.IGNORECASE,
+)
+
+# Important first path segments — always keep regardless of depth
+IMPORTANT_SEGMENTS = {
+    'api', 'health', 'status', 'login', 'signup', 'dashboard',
+    'admin', 'docs', 'app', 'graphql', 'pricing', 'contact',
+    'about', 'help', 'support', 'settings', 'account',
+}
+
+
+def _is_structural_url(url: str) -> bool:
+    """Return True if URL looks like a structural/navigational page worth monitoring."""
+    parsed = urlparse(url)
+    path = parsed.path.rstrip('/')
+
+    if not path:
+        return True  # homepage
+
+    # Skip file extensions, query strings, deep content
+    if SKIP_PATTERNS.search(path):
+        return False
+
+    # Skip very long paths
+    if len(path) > 80:
+        return False
+
+    segments = [s for s in path.split('/') if s]
+
+    # Always keep important paths
+    if segments and segments[0].lower() in IMPORTANT_SEGMENTS:
+        return True
+
+    # Max 2 path segments for general pages
+    if len(segments) > 2:
+        return False
+
+    return True
+
 
 # ---------------------------------------------------------------------------
 # Link extractor (lightweight, no BeautifulSoup)
@@ -129,10 +174,12 @@ async def _parse_sitemap(client: httpx.AsyncClient, base_url: str) -> list[dict]
     locs = re.findall(r"<loc>\s*(.*?)\s*</loc>", text, re.IGNORECASE)
     domain = urlparse(base_url).netloc
 
-    for loc in locs[:MAX_URLS]:
+    for loc in locs:
         parsed = urlparse(loc)
-        if parsed.netloc == domain and parsed.scheme in ("http", "https"):
+        if parsed.netloc == domain and parsed.scheme in ("http", "https") and _is_structural_url(loc):
             results.append({"url": loc, "source": "sitemap"})
+            if len(results) >= MAX_URLS:
+                break
 
     return results
 
@@ -144,7 +191,6 @@ async def _parse_robots(client: httpx.AsyncClient, base_url: str) -> list[dict]:
     if not resp or resp.status_code != 200:
         return results
 
-    import re
     sitemap_urls = re.findall(r"^Sitemap:\s*(.+)$", resp.text, re.MULTILINE | re.IGNORECASE)
     for sm_url in sitemap_urls[:5]:
         sm_url = sm_url.strip()
@@ -152,10 +198,12 @@ async def _parse_robots(client: httpx.AsyncClient, base_url: str) -> list[dict]:
         if sm_resp and sm_resp.status_code == 200:
             locs = re.findall(r"<loc>\s*(.*?)\s*</loc>", sm_resp.text, re.IGNORECASE)
             domain = urlparse(base_url).netloc
-            for loc in locs[:MAX_URLS]:
+            for loc in locs:
                 parsed = urlparse(loc)
-                if parsed.netloc == domain:
+                if parsed.netloc == domain and _is_structural_url(loc):
                     results.append({"url": loc, "source": "sitemap"})
+                    if len(results) >= MAX_URLS:
+                        break
 
     return results
 
@@ -170,8 +218,11 @@ async def _crawl_homepage(client: httpx.AsyncClient, base_url: str) -> list[dict
     try:
         parser = _LinkExtractor(base_url)
         parser.feed(resp.text[:500_000])  # Cap parsing to 500KB
-        for link in parser.links[:MAX_URLS]:
-            results.append({"url": link, "source": "crawl"})
+        for link in parser.links:
+            if _is_structural_url(link):
+                results.append({"url": link, "source": "crawl"})
+                if len(results) >= MAX_URLS:
+                    break
     except Exception:
         pass
 

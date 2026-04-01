@@ -263,19 +263,25 @@ function createMonitors() {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({monitors: monitors})
     })
-    .then(r => r.json())
+    .then(r => {
+        if (!r.ok) {
+            return r.json().then(d => { throw new Error(d.error || 'Failed to create monitors'); });
+        }
+        return r.json();
+    })
     .then(data => {
         if (data.error) {
-            btn.textContent = 'Error - try again';
-            btn.disabled = false;
-            return;
+            throw new Error(data.error);
         }
         const count = data.data.count;
         window.location.href = '/dashboard?created=' + count;
     })
-    .catch(() => {
-        btn.textContent = 'Error - try again';
+    .catch(err => {
         btn.disabled = false;
+        btn.innerHTML = 'Monitor Selected (<span id="createCount">' + monitors.length + '</span>)';
+        const warning = document.getElementById('limitWarning');
+        warning.textContent = err.message || 'Something went wrong. Please try again.';
+        warning.style.display = '';
     });
 }
 
@@ -301,19 +307,34 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('discoverLoading').style.display = '';
         document.getElementById('loadingDomain').textContent = 'Creating ' + pending.length + ' monitors';
 
+        // If more than limit, trim to fit
+        const limit = {{ monitors_limit }};
+        const current = {{ monitors_current }};
+        const remaining = Math.max(0, limit - current);
+        if (pending.length > remaining && remaining > 0) {
+            pending = pending.slice(0, remaining);
+        }
+
         fetch('/api/discover-create', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({monitors: pending})
         })
-        .then(r => r.json())
+        .then(r => {
+            if (!r.ok) return r.json().then(d => { throw new Error(d.error || 'Limit exceeded'); });
+            return r.json();
+        })
         .then(data => {
             const count = data.data ? data.data.count : 0;
             window.location.href = '/dashboard?created=' + count;
         })
-        .catch(() => {
-            // Fallback: just go to dashboard
-            window.location.href = '/dashboard';
+        .catch(err => {
+            // Show error on discover page instead of silently failing
+            document.getElementById('discoverLoading').style.display = 'none';
+            document.getElementById('discoverInput').style.display = 'none';
+            document.getElementById('discoverEmpty').style.display = '';
+            document.getElementById('emptyTitle').textContent = 'Could not create monitors';
+            document.getElementById('emptyText').textContent = err.message || 'You may have reached your monitor limit. Upgrade to Pro for 200 monitors.';
         });
     } else {
         // No localStorage data — just scan normally
