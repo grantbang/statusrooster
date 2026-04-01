@@ -285,8 +285,41 @@ function escHtml(s) {
     return d.innerHTML;
 }
 
-{% if prefill_domain %}
+{% if prefill_domain and not autocreate %}
 document.addEventListener('DOMContentLoaded', () => startScan());
+{% endif %}
+
+{% if autocreate %}
+document.addEventListener('DOMContentLoaded', () => {
+    // Auto-create monitors from localStorage (set during landing page signup flow)
+    let pending = null;
+    try { pending = JSON.parse(localStorage.getItem('sr_pending_monitors')); } catch(e) {}
+    if (pending && pending.length > 0) {
+        localStorage.removeItem('sr_pending_monitors');
+        // Show loading state
+        document.getElementById('discoverInput').style.display = 'none';
+        document.getElementById('discoverLoading').style.display = '';
+        document.getElementById('loadingDomain').textContent = 'Creating ' + pending.length + ' monitors';
+
+        fetch('/api/discover-create', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({monitors: pending})
+        })
+        .then(r => r.json())
+        .then(data => {
+            const count = data.data ? data.data.count : 0;
+            window.location.href = '/dashboard?created=' + count;
+        })
+        .catch(() => {
+            // Fallback: just go to dashboard
+            window.location.href = '/dashboard';
+        });
+    } else {
+        // No localStorage data — just scan normally
+        startScan();
+    }
+});
 {% endif %}
 </script>
 {% endblock %}

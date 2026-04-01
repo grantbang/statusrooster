@@ -30,7 +30,8 @@
                 Found <strong id="heroCount">0</strong> endpoints on <strong id="heroDomainResult"></strong>
             </p>
             <div id="heroList" class="l-hero-list"></div>
-            <a href="/signup" class="l-btn-primary l-hero-cta" id="heroCta">Sign up free to start monitoring</a>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0.5rem 0 0.75rem; text-align: left;" id="heroSelectedCount"></p>
+            <button class="l-btn-primary l-hero-cta" id="heroCta" onclick="heroSignup()">Sign up free to start monitoring</button>
             <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0.5rem 0 0; text-align: center;">No credit card required. 10 free monitors.</p>
         </div>
         <div id="heroEmpty" style="display:none; padding: 1rem 0; text-align: center;">
@@ -388,25 +389,27 @@ function heroScan() {
         const list = document.getElementById('heroList');
         list.innerHTML = '';
         const LOW_PATTERNS = ['/terms', '/privacy', '/cookie', '/legal', '/tos', '/sitemap', '/robots', '/feed', '/rss'];
-        result.urls.slice(0, 10).forEach(item => {
+        window._heroDiscoveredUrls = result.urls;
+        window._heroDomain = domain;
+        result.urls.slice(0, 10).forEach((item, i) => {
             const row = document.createElement('label');
             row.className = 'l-hero-result-row';
             const isSSL = item.suggested_type === 'ssl';
             const urlLower = (item.url || '').toLowerCase();
             const isLow = LOW_PATTERNS.some(p => urlLower.includes(p));
-            row.innerHTML = '<input type="checkbox" class="discover-check" ' + (isLow ? '' : 'checked') + ' disabled style="pointer-events:none;opacity:0.7;">' +
+            row.innerHTML = '<input type="checkbox" class="hero-check" data-index="' + i + '" ' + (isLow ? '' : 'checked') + ' onchange="heroUpdateCount()">' +
                 '<span class="l-hero-result-name">' + (isSSL ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' : '') + escH(item.suggested_name) + '</span>' +
                 '<span class="discover-badge discover-badge-' + item.source + '">' + item.source + '</span>' +
                 '<span class="discover-badge discover-badge-type">' + item.suggested_type.toUpperCase() + '</span>';
             list.appendChild(row);
         });
-        if (result.urls.length > 8) {
+        if (result.urls.length > 10) {
             const more = document.createElement('div');
             more.className = 'l-hero-result-more';
-            more.textContent = '+ ' + (result.urls.length - 8) + ' more endpoints';
+            more.textContent = '+ ' + (result.urls.length - 10) + ' more endpoints (visible after signup)';
             list.appendChild(more);
         }
-        document.getElementById('heroCta').href = '/signup?ref=discover&domain=' + encodeURIComponent(domain);
+        heroUpdateCount();
         document.getElementById('heroResults').style.display = '';
     })
     .catch(() => {
@@ -415,6 +418,32 @@ function heroScan() {
         document.getElementById('heroEmpty').style.display = '';
     });
 }
+function heroUpdateCount() {
+    const checked = document.querySelectorAll('.hero-check:checked').length;
+    const total = document.querySelectorAll('.hero-check').length;
+    document.getElementById('heroSelectedCount').textContent = checked + ' of ' + total + ' selected';
+    document.getElementById('heroCta').textContent = 'Sign up free to monitor ' + checked + ' endpoints';
+    document.getElementById('heroCta').disabled = checked === 0;
+}
+
+function heroSignup() {
+    const urls = window._heroDiscoveredUrls || [];
+    const domain = window._heroDomain || '';
+    const checks = document.querySelectorAll('.hero-check:checked');
+    const selected = [];
+    checks.forEach(cb => {
+        const item = urls[parseInt(cb.dataset.index)];
+        if (item) {
+            const mon = { name: item.suggested_name, monitor_type: item.suggested_type };
+            if (item.suggested_type === 'ssl') { mon.ssl_domain = item.url; }
+            else { mon.url = item.url; }
+            selected.push(mon);
+        }
+    });
+    try { localStorage.setItem('sr_pending_monitors', JSON.stringify(selected)); } catch(e) {}
+    window.location.href = '/signup?ref=discover&domain=' + encodeURIComponent(domain);
+}
+
 function escH(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 </script>
 {% endblock %}

@@ -298,7 +298,7 @@ async def signup_submit(request: Request, email: str = Form(...), password: str 
 
     # Redirect to discover if domain was passed, otherwise dashboard
     domain = request.query_params.get("domain", "")
-    redirect_url = f"/discover?domain={domain}" if domain else "/dashboard"
+    redirect_url = f"/discover?domain={domain}&autocreate=1" if domain else "/dashboard"
     response = RedirectResponse(url=redirect_url, status_code=302)
     response.set_cookie(
         key="access_token",
@@ -502,8 +502,10 @@ async def discover_page(request: Request):
     db = get_db()
     current_monitors = len(db.collection("monitors").where("user_id", "==", user["id"]).get())
     monitor_limit = 200 if user.get("plan", "free") == "pro" else 10
+    autocreate = request.query_params.get("autocreate", "")
     return templates.TemplateResponse("discover.html", {
         "request": request, "user": user, "prefill_domain": domain,
+        "autocreate": autocreate,
         "monitors_current": current_monitors, "monitors_limit": monitor_limit,
     })
 
