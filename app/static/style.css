@@ -1287,6 +1287,10 @@ code {
     color: var(--text-faint);
     border-bottom: 1px solid var(--border);
     user-select: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
 }
 .d-col-sortable { cursor: pointer; transition: color 0.15s; }
 .d-col-sortable:hover { color: var(--text); }
@@ -3051,6 +3055,10 @@ code {
     text-transform: uppercase;
     font-size: var(--text-xs);
     letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--surface);
 }
 .md-inc-badge {
     display: inline-block;
