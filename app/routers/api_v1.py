@@ -568,3 +568,92 @@ async def api_delete_monitor(monitor_id: str, user: dict = Depends(get_api_user)
     new_count = max(0, user.get("monitors_count", 1) - 1)
     update_user(db, user["id"], {"monitors_count": new_count})
     return ok(data={"deleted": True, "monitor_id": monitor_id})
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# AUTO-DISCOVERY
+# ═══════════════════════════════════════════════════════════════════════════
+
+class ApiDiscoverRequest(BaseModel):
+    domain: str
+
+
+@router.post("/discover")
+async def api_discover(req: ApiDiscoverRequest, user: dict = Depends(get_api_user)):
+    """Scan a domain and return discovered endpoints."""
+    from app.services.discovery import discover_endpoints
+
+    domain = req.domain.strip()
+    if not domain:
+        err("domain is required", 422)
+
+    result = await discover_endpoints(domain)
+    return ok(data=result)
+
+
+class ApiBulkMonitorItem(BaseModel):
+    name: str
+    url: str = ""
+    monitor_type: str = "http"
+    ssl_domain: str = ""
+    ssl_expiry_threshold_days: int = 30
+    alert_email: str = ""
+    group: str = ""
+    public: bool = False
+
+
+class ApiBulkCreateRequest(BaseModel):
+    monitors: list[ApiBulkMonitorItem]
+
+
+@router.post("/monitors/bulk", status_code=201)
+async def api_bulk_create_monitors(req: ApiBulkCreateRequest, user: dict = Depends(get_api_user)):
+    """Create multiple monitors in one request."""
+    db = get_db()
+
+    plan = user.get("plan", "free")
+    limit = PRO_MONITOR_LIMIT if plan == "pro" else FREE_MONITOR_LIMIT
+    current = user.get("monitors_count", 0)
+
+    if not req.monitors:
+        err("monitors list is empty", 422)
+
+    if current + len(req.monitors) > limit:
+        remaining = max(0, limit - current)
+        err(f"Would exceed monitor limit. You have {current}/{limit} monitors. Can create {remaining} more.", 403)
+
+    created = []
+    errors = []
+
+    for item in req.monitors:
+        try:
+            monitor = create_monitor(
+                db,
+                user_id=user["id"],
+                url=item.url,
+                name=item.name,
+                monitor_type=item.monitor_type,
+                alert_email=item.alert_email or user.get("alert_email", user.get("email", "")),
+                ssl_domain=item.ssl_domain,
+                ssl_expiry_threshold_days=item.ssl_expiry_threshold_days,
+                group=item.group,
+                public=item.public,
+            )
+            # Handle heartbeat ping URL
+            if item.monitor_type == "heartbeat":
+                import secrets as _secrets
+                from app.config import settings
+                ping_token = _secrets.token_urlsafe(32)
+                ping_url = f"{settings.APP_URL}/api/ping/{monitor['id']}?token={ping_token}"
+                from app.models.monitor import update_monitor as _update_mon
+                _update_mon(db, monitor["id"], {"url": ping_url, "ping_url": ping_url, "ping_token": ping_token})
+                monitor["ping_url"] = ping_url
+
+            created.append({"id": monitor["id"], "name": monitor["name"], "monitor_type": item.monitor_type})
+        except Exception as e:
+            errors.append({"name": item.name, "error": str(e)[:200]})
+
+    # Update monitor count
+    update_user(db, user["id"], {"monitors_count": current + len(created)})
+
+    return ok(data={"created": [_serialize(m) for m in created], "count": len(created), "errors": errors})

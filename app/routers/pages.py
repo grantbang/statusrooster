@@ -89,6 +89,12 @@ _url_check_cleanup_counter = 0
 _URL_CHECK_LIMIT = 10
 _URL_CHECK_WINDOW = 60  # seconds
 
+# Rate limiter for discover-preview: max 5 per IP per 60 seconds
+_discover_rate: dict[str, list] = {}
+_discover_cleanup_counter = 0
+_DISCOVER_LIMIT = 5
+_DISCOVER_WINDOW = 60
+
 @router.post("/api/check-url")
 async def public_url_check(request: Request):
     """Public endpoint: check a single URL and return enriched status."""
@@ -290,8 +296,10 @@ async def signup_submit(request: Request, email: str = Form(...), password: str 
 
     token = create_access_token(user_id=user["id"], email=user["email"])
 
-    # Set cookie and redirect to dashboard
-    response = RedirectResponse(url="/dashboard", status_code=302)
+    # Redirect to discover if domain was passed, otherwise dashboard
+    domain = request.query_params.get("domain", "")
+    redirect_url = f"/discover?domain={domain}" if domain else "/dashboard"
+    response = RedirectResponse(url=redirect_url, status_code=302)
     response.set_cookie(
         key="access_token",
         value=token,
@@ -479,6 +487,120 @@ async def reset_password_submit(request: Request, token: str = Form(...), passwo
     response = RedirectResponse(url="/login", status_code=302)
     _set_flash(response, "Password reset successful. Please log in with your new password.")
     return response
+
+
+# ---------------------------------------------------------------------------
+# Auto-Discovery
+# ---------------------------------------------------------------------------
+
+@router.get("/discover", response_class=HTMLResponse)
+async def discover_page(request: Request):
+    user = get_user_from_cookie(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+    # Pass an API key if user has one, for potential future use
+    domain = request.query_params.get("domain", "")
+    return templates.TemplateResponse("discover.html", {
+        "request": request, "user": user, "prefill_domain": domain,
+    })
+
+
+@router.post("/api/discover-create")
+async def discover_create_monitors(request: Request):
+    """Create monitors from discovery results (session-authenticated, no API key needed)."""
+    from fastapi.responses import JSONResponse
+    from app.models.monitor import create_monitor as _create_mon, update_monitor as _update_mon
+
+    user = get_user_from_cookie(request)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+
+    body = await request.json()
+    monitors = body.get("monitors", [])
+    if not monitors:
+        return JSONResponse({"error": "No monitors provided"}, status_code=422)
+
+    db = get_db()
+    plan = user.get("plan", "free")
+    limit = 200 if plan == "pro" else 10
+    current = user.get("monitors_count", 0)
+
+    if current + len(monitors) > limit:
+        remaining = max(0, limit - current)
+        return JSONResponse({"error": f"Would exceed monitor limit ({current}/{limit}). Can create {remaining} more."}, status_code=403)
+
+    created = []
+    for item in monitors:
+        try:
+            mon = _create_mon(
+                db,
+                user_id=user["id"],
+                url=item.get("url", ""),
+                name=item.get("name", "Untitled"),
+                monitor_type=item.get("monitor_type", "http"),
+                alert_email=user.get("alert_email", user.get("email", "")),
+                ssl_domain=item.get("ssl_domain", ""),
+                group=item.get("group", ""),
+                public=item.get("public", False),
+            )
+            if item.get("monitor_type") == "heartbeat":
+                import secrets as _secrets
+                from app.config import settings
+                ping_token = _secrets.token_urlsafe(32)
+                ping_url = f"{settings.APP_URL}/api/ping/{mon['id']}?token={ping_token}"
+                _update_mon(db, mon["id"], {"url": ping_url, "ping_url": ping_url, "ping_token": ping_token})
+            created.append({"id": mon["id"], "name": mon["name"]})
+        except Exception:
+            pass
+
+    from app.models.user import update_user as _update_usr
+    _update_usr(db, user["id"], {"monitors_count": current + len(created)})
+
+    return JSONResponse({"data": {"created": created, "count": len(created)}})
+
+
+# ---------------------------------------------------------------------------
+# Auto-Discovery (unauthenticated preview)
+# ---------------------------------------------------------------------------
+
+@router.post("/api/discover-preview")
+async def discover_preview(request: Request):
+    """Unauthenticated discovery preview — rate limited, capped at 20 URLs."""
+    import time
+    from fastapi.responses import JSONResponse
+    from app.services.discovery import discover_endpoints
+
+    client_ip = request.client.host if request.client else "unknown"
+    now_ts = time.monotonic()
+
+    hits = _discover_rate.get(client_ip, [])
+    hits = [t for t in hits if now_ts - t < _DISCOVER_WINDOW]
+    if len(hits) >= _DISCOVER_LIMIT:
+        retry_after = int(_DISCOVER_WINDOW - (now_ts - hits[0]))
+        return JSONResponse(
+            {"error": "Rate limit exceeded. Try again shortly.", "retry_after": retry_after},
+            status_code=429,
+            headers={"Retry-After": str(retry_after)},
+        )
+    hits.append(now_ts)
+    _discover_rate[client_ip] = hits
+
+    global _discover_cleanup_counter
+    _discover_cleanup_counter += 1
+    if _discover_cleanup_counter >= 50:
+        _discover_cleanup_counter = 0
+        stale_cutoff = now_ts - (_DISCOVER_WINDOW * 5)
+        stale_ips = [ip for ip, h in _discover_rate.items() if not h or h[-1] < stale_cutoff]
+        for ip in stale_ips:
+            del _discover_rate[ip]
+
+    body = await request.json()
+    domain = (body.get("domain") or "").strip()
+    if not domain:
+        return JSONResponse({"error": "domain is required"}, status_code=422)
+
+    result = await discover_endpoints(domain, max_urls=20)
+    return JSONResponse({"data": result})
 
 
 # ---------------------------------------------------------------------------

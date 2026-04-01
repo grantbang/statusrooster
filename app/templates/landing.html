@@ -12,12 +12,30 @@
 
 <!-- Hero -->
 <section class="l-hero">
-    <h1>Know when it breaks.<br>Before your users do.</h1>
-    <p class="l-hero-sub">Monitor your app, your APIs, and the services your stack depends on. 60-second checks from 4 regions, full REST API — free forever.</p>
+    <h1>Paste your domain.<br>Get monitored in 30 seconds.</h1>
+    <p class="l-hero-sub">We scan your site, find your endpoints, and set up monitoring automatically. 60-second checks from 4 regions — free forever.</p>
 
-    <div class="l-hero-actions">
-        <a href="/signup" class="l-btn-primary">Start monitoring free</a>
-        <a href="/docs/api" class="l-btn-ghost">View API docs</a>
+    <div class="l-hero-discover" id="heroDiscover">
+        <div class="l-hero-discover-input" id="heroInput">
+            <input type="text" id="heroDomain" class="l-hero-domain" placeholder="example.com" onkeydown="if(event.key==='Enter') heroScan()">
+            <button class="l-btn-primary l-hero-scan-btn" onclick="heroScan()">Scan</button>
+        </div>
+        <div id="heroLoading" style="display:none; padding: 1.5rem 0;">
+            <div class="discover-spinner" style="margin: 0 auto 0.5rem;"></div>
+            <p style="color: var(--text-muted); margin: 0;">Scanning <strong id="heroLoadingDomain"></strong>...</p>
+        </div>
+        <div id="heroResults" style="display:none;" class="l-hero-results">
+            <p class="l-hero-results-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" style="vertical-align:-3px;"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Found <strong id="heroCount">0</strong> endpoints on <strong id="heroDomainResult"></strong>
+            </p>
+            <div id="heroList" class="l-hero-list"></div>
+            <a href="/signup" class="l-btn-primary l-hero-cta" id="heroCta">Sign up free to monitor these</a>
+        </div>
+        <div id="heroEmpty" style="display:none; padding: 1rem 0; text-align: center;">
+            <p style="color: var(--text-muted); margin: 0 0 0.75rem;" id="heroEmptyMsg">No endpoints found.</p>
+            <a href="/signup" class="l-btn-primary">Start monitoring free</a>
+        </div>
     </div>
     <p class="l-hero-trust">No credit card &middot; Set up in 30 seconds &middot; Free forever</p>
 </section>
@@ -338,5 +356,58 @@ function switchTab(btn, id) {
     btn.setAttribute('aria-selected','true');
     document.getElementById('ss-' + id).classList.add('active');
 }
+
+/* ── Hero auto-discover ── */
+function heroScan() {
+    const domain = document.getElementById('heroDomain').value.trim();
+    if (!domain) return;
+
+    document.getElementById('heroInput').style.display = 'none';
+    document.getElementById('heroResults').style.display = 'none';
+    document.getElementById('heroEmpty').style.display = 'none';
+    document.getElementById('heroLoading').style.display = '';
+    document.getElementById('heroLoadingDomain').textContent = domain;
+
+    fetch('/api/discover-preview', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({domain: domain})
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('heroLoading').style.display = 'none';
+        if (data.error || !data.data || !data.data.urls || data.data.urls.length === 0) {
+            document.getElementById('heroEmptyMsg').textContent = (data.data && data.data.status !== 'ok') ? data.data.status : 'No endpoints found on ' + domain + '.';
+            document.getElementById('heroEmpty').style.display = '';
+            return;
+        }
+        const result = data.data;
+        document.getElementById('heroCount').textContent = result.total_found;
+        document.getElementById('heroDomainResult').textContent = result.domain;
+        const list = document.getElementById('heroList');
+        list.innerHTML = '';
+        result.urls.slice(0, 8).forEach(item => {
+            const row = document.createElement('div');
+            row.className = 'l-hero-result-row';
+            const isSSL = item.suggested_type === 'ssl';
+            row.innerHTML = '<span class="l-hero-result-name">' + (isSSL ? '&#128274; ' : '') + escH(item.suggested_name) + '</span><span class="discover-badge discover-badge-' + item.source + '">' + item.source + '</span>';
+            list.appendChild(row);
+        });
+        if (result.urls.length > 8) {
+            const more = document.createElement('div');
+            more.className = 'l-hero-result-more';
+            more.textContent = '+ ' + (result.urls.length - 8) + ' more endpoints';
+            list.appendChild(more);
+        }
+        document.getElementById('heroCta').href = '/signup?ref=discover&domain=' + encodeURIComponent(domain);
+        document.getElementById('heroResults').style.display = '';
+    })
+    .catch(() => {
+        document.getElementById('heroLoading').style.display = 'none';
+        document.getElementById('heroEmptyMsg').textContent = 'Something went wrong. Please try again.';
+        document.getElementById('heroEmpty').style.display = '';
+    });
+}
+function escH(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 </script>
 {% endblock %}

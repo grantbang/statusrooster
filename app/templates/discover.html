@@ -1,0 +1,230 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Auto-Discover Endpoints{% endblock %}
+{% block nav_discover %}active{% endblock %}
+
+{% block content %}
+<div class="discover-page">
+
+    <!-- STATE 1: Input -->
+    <div id="discoverInput" class="discover-card">
+        <h1 class="discover-title">Auto-Discover Your Endpoints</h1>
+        <p class="discover-subtitle">Enter your domain and we'll find what to monitor</p>
+        <div class="discover-form">
+            <input type="text" id="discoverDomain" class="discover-input" placeholder="example.com"
+                   {% if prefill_domain %}value="{{ prefill_domain }}"{% endif %}
+                   onkeydown="if(event.key==='Enter') startScan()">
+            <button class="btn btn-primary discover-btn" id="scanBtn" onclick="startScan()">Scan for endpoints</button>
+        </div>
+        <p class="discover-hint">We check your sitemap, crawl your homepage, and probe common paths</p>
+    </div>
+
+    <!-- STATE 2: Loading -->
+    <div id="discoverLoading" class="discover-card" style="display:none;">
+        <div class="discover-spinner"></div>
+        <p class="discover-loading-text">Scanning <strong id="loadingDomain"></strong><span class="discover-dots"></span></p>
+    </div>
+
+    <!-- STATE 3: Results -->
+    <div id="discoverResults" style="display:none;">
+        <div class="discover-results-header">
+            <h2 class="discover-results-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" style="vertical-align:-3px;margin-right:4px;"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Found <span id="resultCount">0</span> endpoints on <span id="resultDomain"></span>
+            </h2>
+            <p class="discover-sources" id="resultSources"></p>
+        </div>
+        <div class="discover-list-controls">
+            <label class="discover-select-all">
+                <input type="checkbox" id="selectAll" checked onchange="toggleSelectAll()">
+                <span id="selectAllLabel">Deselect all</span>
+            </label>
+            <span class="discover-selected-count" id="selectedCount">0 selected</span>
+        </div>
+        <div class="discover-list" id="discoverList"></div>
+        <div class="discover-actions">
+            <button class="btn btn-primary discover-create-btn" id="createBtn" onclick="createMonitors()">
+                Monitor Selected (<span id="createCount">0</span>)
+            </button>
+            <a href="/monitors/add" class="discover-manual-link">Or add monitors manually &rarr;</a>
+        </div>
+    </div>
+
+    <!-- STATE 4: Empty/Error -->
+    <div id="discoverEmpty" class="discover-card" style="display:none;">
+        <div class="discover-empty-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <h2 class="discover-empty-title" id="emptyTitle">No endpoints found</h2>
+        <p class="discover-empty-text" id="emptyText">This can happen if the site has bot protection, no public pages, or isn't reachable.</p>
+        <div class="discover-empty-actions">
+            <button class="btn btn-secondary" onclick="resetDiscover()">Try a different domain</button>
+            <a href="/monitors/add" class="btn btn-primary">Add monitors manually</a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const API_KEY_HEADER = '{{ api_key or "" }}';
+let discoveredUrls = [];
+
+function startScan() {
+    const domain = document.getElementById('discoverDomain').value.trim();
+    if (!domain) return;
+
+    document.getElementById('discoverInput').style.display = 'none';
+    document.getElementById('discoverResults').style.display = 'none';
+    document.getElementById('discoverEmpty').style.display = 'none';
+    document.getElementById('discoverLoading').style.display = '';
+    document.getElementById('loadingDomain').textContent = domain;
+
+    fetch('/api/discover-preview', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({domain: domain})
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('discoverLoading').style.display = 'none';
+        if (data.error) {
+            showEmpty(data.error);
+            return;
+        }
+        const result = data.data;
+        if (!result.urls || result.urls.length === 0) {
+            showEmpty(result.status !== 'ok' ? result.status : null);
+            return;
+        }
+        showResults(result);
+    })
+    .catch(err => {
+        document.getElementById('discoverLoading').style.display = 'none';
+        showEmpty('Something went wrong. Please try again.');
+    });
+}
+
+function showResults(result) {
+    discoveredUrls = result.urls;
+    document.getElementById('resultCount').textContent = result.total_found;
+    document.getElementById('resultDomain').textContent = result.domain;
+
+    const src = result.sources;
+    const parts = [];
+    if (src.sitemap) parts.push(src.sitemap + ' from sitemap');
+    if (src.crawl) parts.push(src.crawl + ' from crawl');
+    if (src.probe) parts.push(src.probe + ' from probe');
+    document.getElementById('resultSources').textContent = parts.join(' \u00b7 ');
+
+    const list = document.getElementById('discoverList');
+    list.innerHTML = '';
+
+    discoveredUrls.forEach((item, i) => {
+        const isHigh = item.suggested_priority === 'high';
+        const isSSL = item.suggested_type === 'ssl';
+        const row = document.createElement('label');
+        row.className = 'discover-row';
+        row.innerHTML = `
+            <input type="checkbox" class="discover-check" data-index="${i}" ${isHigh ? 'checked' : ''} onchange="updateCounts()">
+            <div class="discover-row-info">
+                <span class="discover-row-name">${isSSL ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:2px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' : ''}${escHtml(item.suggested_name)}</span>
+                <span class="discover-row-url">${escHtml(isSSL ? item.url : item.url.replace('https://', '').replace('http://', ''))}</span>
+            </div>
+            <span class="discover-badge discover-badge-${item.source}">${item.source}</span>
+            <span class="discover-badge discover-badge-type">${item.suggested_type.toUpperCase()}</span>
+        `;
+        list.appendChild(row);
+    });
+
+    updateCounts();
+    document.getElementById('selectAll').checked = true;
+    document.getElementById('selectAllLabel').textContent = 'Deselect all';
+    document.getElementById('discoverResults').style.display = '';
+}
+
+function showEmpty(message) {
+    document.getElementById('emptyTitle').textContent = 'No endpoints found';
+    document.getElementById('emptyText').textContent = message || "This can happen if the site has bot protection, no public pages, or isn't reachable.";
+    document.getElementById('discoverEmpty').style.display = '';
+}
+
+function resetDiscover() {
+    document.getElementById('discoverEmpty').style.display = 'none';
+    document.getElementById('discoverResults').style.display = 'none';
+    document.getElementById('discoverLoading').style.display = 'none';
+    document.getElementById('discoverInput').style.display = '';
+    document.getElementById('discoverDomain').value = '';
+    document.getElementById('discoverDomain').focus();
+}
+
+function toggleSelectAll() {
+    const checked = document.getElementById('selectAll').checked;
+    document.querySelectorAll('.discover-check').forEach(cb => cb.checked = checked);
+    document.getElementById('selectAllLabel').textContent = checked ? 'Deselect all' : 'Select all';
+    updateCounts();
+}
+
+function updateCounts() {
+    const checks = document.querySelectorAll('.discover-check:checked');
+    const count = checks.length;
+    const total = document.querySelectorAll('.discover-check').length;
+    document.getElementById('selectedCount').textContent = count + ' of ' + total + ' selected';
+    document.getElementById('createCount').textContent = count;
+    document.getElementById('createBtn').disabled = count === 0;
+}
+
+function createMonitors() {
+    const btn = document.getElementById('createBtn');
+    btn.disabled = true;
+    btn.textContent = 'Creating monitors...';
+
+    const checks = document.querySelectorAll('.discover-check:checked');
+    const monitors = [];
+    checks.forEach(cb => {
+        const item = discoveredUrls[parseInt(cb.dataset.index)];
+        const mon = {
+            name: item.suggested_name,
+            monitor_type: item.suggested_type,
+        };
+        if (item.suggested_type === 'ssl') {
+            mon.ssl_domain = item.url;
+        } else {
+            mon.url = item.url;
+        }
+        monitors.push(mon);
+    });
+
+    fetch('/api/discover-create', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({monitors: monitors})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            btn.textContent = 'Error - try again';
+            btn.disabled = false;
+            return;
+        }
+        const count = data.data.count;
+        window.location.href = '/dashboard?msg=Created+' + count + '+monitors!+They%27ll+start+checking+in+60+seconds.';
+    })
+    .catch(() => {
+        btn.textContent = 'Error - try again';
+        btn.disabled = false;
+    });
+}
+
+function escHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+{% if prefill_domain %}
+document.addEventListener('DOMContentLoaded', () => startScan());
+{% endif %}
+</script>
+{% endblock %}

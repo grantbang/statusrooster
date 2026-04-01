@@ -18,6 +18,7 @@ Covers sections A–Q:
   O. SSR Page Smoke Tests
   P. Incident & Check Filtering
   Q. API Documentation Accuracy
+  R. Auto-Discovery
   I. Cleanup
 
 Run:
@@ -2038,6 +2039,90 @@ class TestApiDocsAccuracy:
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# R. AUTO-DISCOVERY
+# ═══════════════════════════════════════════════════════════════════════
+
+class TestDiscovery:
+    """R — Auto-discovery endpoints"""
+
+    @pytest.mark.asyncio
+    async def test_r1_discover_authenticated(self, client, pro_headers):
+        """R.1 — POST /api/v1/discover with valid domain returns URLs"""
+        resp = await client.post("/api/v1/discover", json={
+            "domain": "statusrooster.com"
+        }, headers=pro_headers)
+        assert resp.status_code == 200, f"R.1 FAIL: expected 200, got {resp.status_code}"
+        data = resp.json()["data"]
+        assert "urls" in data
+        assert len(data["urls"]) >= 3, f"R.1 FAIL: expected >=3 URLs, got {len(data['urls'])}"
+        assert data["domain"] == "statusrooster.com"
+
+    @pytest.mark.asyncio
+    async def test_r2_discover_includes_ssl(self, client, pro_headers):
+        """R.2 — Discovery includes SSL info"""
+        resp = await client.post("/api/v1/discover", json={
+            "domain": "statusrooster.com"
+        }, headers=pro_headers)
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert data.get("ssl") is not None, "R.2 FAIL: expected ssl object in response"
+        assert "days_remaining" in data["ssl"]
+
+    @pytest.mark.asyncio
+    async def test_r3_discover_invalid_domain(self, client, pro_headers):
+        """R.3 — Discovery with invalid domain returns empty URLs"""
+        resp = await client.post("/api/v1/discover", json={
+            "domain": "thisisnotarealdomainabc123.com"
+        }, headers=pro_headers)
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        # Should return empty or very few URLs
+        assert data["total_found"] <= 1
+
+    @pytest.mark.asyncio
+    async def test_r4_discover_no_auth(self, client):
+        """R.4 — POST /api/v1/discover without API key returns 401"""
+        resp = await client.post("/api/v1/discover", json={
+            "domain": "statusrooster.com"
+        })
+        assert resp.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_r5_discover_preview(self, client):
+        """R.5 — POST /api/discover-preview works without auth"""
+        resp = await client.post("/api/discover-preview", json={
+            "domain": "statusrooster.com"
+        })
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert "urls" in data
+
+    @pytest.mark.asyncio
+    async def test_r6_bulk_create(self, client, pro_headers):
+        """R.6 — POST /api/v1/monitors/bulk creates monitors"""
+        resp = await client.post("/api/v1/monitors/bulk", json={
+            "monitors": [
+                {"name": "E2E-Discover1", "url": "https://example.com", "monitor_type": "http"},
+                {"name": "E2E-Discover2", "url": "https://example.com/api", "monitor_type": "http"},
+            ]
+        }, headers=pro_headers)
+        assert resp.status_code == 201, f"R.6 FAIL: expected 201, got {resp.status_code}"
+        data = resp.json()["data"]
+        assert data["count"] == 2, f"R.6 FAIL: expected count=2, got {data['count']}"
+
+        # Cleanup
+        for m in data["created"]:
+            await client.delete(f"/api/v1/monitors/{m['id']}", headers=pro_headers)
+
+    @pytest.mark.asyncio
+    async def test_r7_bulk_create_no_auth(self, client):
+        """R.7 — POST /api/v1/monitors/bulk without API key returns 401"""
+        resp = await client.post("/api/v1/monitors/bulk", json={
+            "monitors": [{"name": "E2E-NoAuth", "url": "https://example.com"}]
+        })
+        assert resp.status_code == 401
+
+
 # I. CLEANUP
 # ═══════════════════════════════════════════════════════════════════════
 
