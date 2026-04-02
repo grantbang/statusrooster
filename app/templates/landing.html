@@ -415,9 +415,16 @@ function heroScan() {
 function heroUpdateCount() {
     const checked = document.querySelectorAll('.hero-check:checked').length;
     const total = document.querySelectorAll('.hero-check').length;
-    document.getElementById('heroSelectedCount').textContent = checked + ' of ' + total + ' selected';
-    document.getElementById('heroCta').textContent = 'Sign up free to monitor ' + checked + ' endpoints';
-    document.getElementById('heroCta').disabled = checked === 0;
+    const countText = document.getElementById('heroSelectedCount');
+    const cta = document.getElementById('heroCta');
+    if (checked > 10) {
+        countText.innerHTML = checked + ' of ' + total + ' selected &middot; <span style="color: var(--warning);">Free plan includes 10 — we\'ll create the first 10</span>';
+        cta.textContent = 'Sign up free to monitor ' + checked + ' endpoints';
+    } else {
+        countText.textContent = checked + ' of ' + total + ' selected';
+        cta.textContent = 'Sign up free to monitor ' + checked + ' endpoints';
+    }
+    cta.disabled = checked === 0;
 }
 
 function heroSignup() {

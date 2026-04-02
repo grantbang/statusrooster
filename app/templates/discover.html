@@ -307,11 +307,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('discoverLoading').style.display = '';
         document.getElementById('loadingDomain').textContent = 'Creating ' + pending.length + ' monitors';
 
-        // If more than limit, trim to fit
+        // If more than limit, trim to fit and track the overflow
         const limit = {{ monitors_limit }};
         const current = {{ monitors_current }};
         const remaining = Math.max(0, limit - current);
+        let dropped = 0;
         if (pending.length > remaining && remaining > 0) {
+            dropped = pending.length - remaining;
             pending = pending.slice(0, remaining);
         }
 
@@ -326,7 +328,9 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then(data => {
             const count = data.data ? data.data.count : 0;
-            window.location.href = '/dashboard?created=' + count;
+            let url = '/dashboard?created=' + count;
+            if (dropped > 0) url += '&dropped=' + dropped;
+            window.location.href = url;
         })
         .catch(err => {
             // Show error on discover page instead of silently failing

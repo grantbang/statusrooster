@@ -631,6 +631,7 @@ async def dashboard(request: Request):
     flash_message = request.query_params.get("msg")
     flash_type = request.query_params.get("msg_type", "success")
     created_count = request.query_params.get("created")
+    dropped_count = request.query_params.get("dropped")
 
     # ---------- Group names for filter dropdown ----------
     group_names = sorted(set(m.get("group", "") for m in monitors) - {""})
@@ -696,6 +697,7 @@ async def dashboard(request: Request):
         "flash_message": flash_message,
         "flash_type": flash_type,
         "created_count": created_count,
+        "dropped_count": dropped_count,
         "group_names": group_names,
         "avg_response_ms": avg_response_ms,
         "overall_uptime_pct": overall_uptime_pct,
