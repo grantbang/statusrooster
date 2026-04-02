@@ -154,9 +154,10 @@ async def send_sms(phone: str, message: str) -> bool:
 
     account_sid = settings.TWILIO_ACCOUNT_SID
     auth_token = settings.TWILIO_AUTH_TOKEN
+    messaging_service_sid = settings.TWILIO_MESSAGING_SERVICE_SID
     from_number = settings.TWILIO_FROM_NUMBER
 
-    if not account_sid or not auth_token or not from_number:
+    if not account_sid or not auth_token or not (messaging_service_sid or from_number):
         print(f"[alert] Twilio not configured — skipping SMS to {phone}")
         return False
 
@@ -167,15 +168,18 @@ async def send_sms(phone: str, message: str) -> bool:
 
     url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json"
 
+    # Use Messaging Service SID for A2P compliance, fall back to From number
+    payload = {"To": clean_phone, "Body": message[:1600]}
+    if messaging_service_sid:
+        payload["MessagingServiceSid"] = messaging_service_sid
+    else:
+        payload["From"] = from_number
+
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.post(
                 url,
-                data={
-                    "To": clean_phone,
-                    "From": from_number,
-                    "Body": message[:1600],  # Twilio max
-                },
+                data=payload,
                 auth=(account_sid, auth_token),
                 timeout=15.0,
             )
