@@ -8065,6 +8065,24 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
 .discover-badge-crawl { background: #dbeafe; color: #2563eb; }
 .discover-badge-probe { background: #fef3c7; color: #d97706; }
 .discover-badge-type { background: #f3f4f6; color: #374151; }
+.discover-score-dot {
+    flex-shrink: 0;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+}
+.discover-score-high { background: var(--success); }
+.discover-score-med { background: var(--warning); }
+.discover-link-btn {
+    background: none;
+    border: none;
+    color: var(--brand);
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.discover-link-btn:hover { color: var(--brand-dark, #4f46e5); }
 .discover-actions {
     display: flex;
     align-items: center;

@@ -1,6 +1,7 @@
 """
 Auto-discovery service — scan a domain to find monitorable endpoints.
 Checks sitemap, robots.txt, homepage links, common paths, and SSL cert.
+Scores URLs 0-100 to filter junk and prioritize important endpoints.
 """
 
 import asyncio
@@ -32,54 +33,147 @@ COMMON_PATHS = [
     "/.well-known/security.txt",
 ]
 
-# Priority rules: path substring → priority
-HIGH_PRIORITY_PATTERNS = ["/", "/api", "/health", "/status", "/graphql", "/login", "/signup", "/app", "/dashboard"]
-LOW_PRIORITY_PATTERNS = ["/terms", "/privacy", "/cookie", "/legal", "/tos", "/sitemap", "/robots", "/feed", "/rss"]
-
-# Patterns that indicate deep/content pages (skip these)
-SKIP_PATTERNS = re.compile(
-    r'/(?:ip|dp|product|item|blog|news|articles?|posts?|collections|shop|products|categories|tags|archive|reviews?|comments?)/|'
-    r'/\d{4,}|'              # numeric IDs (4+ digits)
-    r'\.(pdf|jpg|png|gif|svg|css|js|xml|json|zip|webp)$|'
-    r'[?#]',                 # query strings or fragments
-    re.IGNORECASE,
-)
-
-# Important first path segments — always keep regardless of depth
-IMPORTANT_SEGMENTS = {
-    'api', 'health', 'status', 'login', 'signup', 'dashboard',
-    'admin', 'docs', 'app', 'graphql', 'pricing', 'contact',
-    'about', 'help', 'support', 'settings', 'account',
-}
+# Minimum score to include in results; pre-check threshold for UI
+SCORE_SHOW_THRESHOLD = 20
+SCORE_PRECHECK_THRESHOLD = 60
 
 
-def _is_structural_url(url: str) -> bool:
-    """Return True if URL looks like a structural/navigational page worth monitoring."""
+# ---------------------------------------------------------------------------
+# URL Scoring (replaces binary include/exclude filtering)
+# ---------------------------------------------------------------------------
+
+def _score_url(url: str, status_code: int = 200, response_ms: float = 0,
+               content_type: str = "", source: str = "crawl") -> int:
+    """
+    Score a URL 0-100 based on how likely it is to be worth monitoring.
+    Higher = more important to monitor.
+    """
+    score = 50  # baseline
     parsed = urlparse(url)
-    path = parsed.path.rstrip('/')
+    path = parsed.path.rstrip("/").lower() or "/"
+    segments = [s for s in path.split("/") if s]
 
-    if not path:
-        return True  # homepage
+    # ── SOURCE BONUS ──────────────────────────
+    if source == "sitemap":
+        score += 5
+    if source == "probe":
+        score += 10
 
-    # Skip file extensions, query strings, deep content
-    if SKIP_PATTERNS.search(path):
-        return False
+    # ── PATH IMPORTANCE (biggest signal) ──────
 
-    # Skip very long paths
+    # Homepage is always critical
+    if path == "/":
+        score += 40
+
+    # API and infrastructure endpoints
+    api_patterns = {"api", "health", "healthz", "healthcheck", "status",
+                    "ping", "graphql", "webhook", "webhooks", "v1", "v2", "v3"}
+    if segments and segments[0] in api_patterns:
+        score += 35
+    elif any(seg in api_patterns for seg in segments):
+        score += 25
+
+    # Authentication pages
+    auth_patterns = {"login", "signin", "sign-in", "signup", "sign-up",
+                     "register", "auth", "oauth", "sso"}
+    if segments and segments[0] in auth_patterns:
+        score += 30
+
+    # Core app pages
+    app_patterns = {"dashboard", "app", "console", "portal", "admin",
+                    "settings", "account", "billing", "checkout", "pay"}
+    if segments and segments[0] in app_patterns:
+        score += 25
+
+    # Documentation and support
+    docs_patterns = {"docs", "documentation", "help", "support", "faq",
+                     "guides", "reference"}
+    if segments and segments[0] in docs_patterns:
+        score += 10
+
+    # Marketing pages
+    marketing_patterns = {"pricing", "features", "about", "contact",
+                          "demo", "tour", "integrations"}
+    if segments and segments[0] in marketing_patterns:
+        score += 10
+
+    # ── PATH PENALTIES (filter out junk) ──────
+
+    # Deep paths are almost always content, not structure
+    if len(segments) > 3:
+        score -= 30
+    elif len(segments) > 2:
+        score -= 15
+
+    # Numeric IDs = dynamic content pages
+    if re.search(r'/\d{3,}', path):
+        score -= 35
+
+    # Date slugs = blog/news content
+    if re.search(r'/\d{4}/\d{2}', path):
+        score -= 40
+
+    # Known content/junk path patterns
+    content_patterns = [
+        "/blog", "/news", "/articles", "/posts", "/stories",
+        "/ip/", "/dp/", "/product/", "/item/", "/listing/",
+        "/tag/", "/tags/", "/category/", "/categories/",
+        "/archive", "/feed", "/rss", "/atom",
+        "/wp-content", "/wp-admin", "/wp-includes",
+        "/cdn-cgi", "/assets/", "/static/",
+    ]
+    for pattern in content_patterns:
+        if pattern in path:
+            score -= 30
+            break
+
+    # Legal/boilerplate pages
+    legal_patterns = ["/terms", "/privacy", "/cookie", "/legal",
+                      "/tos", "/gdpr", "/dmca", "/disclaimer",
+                      "/sitemap", "/robots"]
+    for pattern in legal_patterns:
+        if pattern in path:
+            score -= 25
+            break
+
+    # File extensions that aren't pages
+    if re.search(r'\.(pdf|jpg|jpeg|png|gif|svg|css|js|xml|json|zip|webp|ico|woff|mp4|mp3)$', path):
+        score -= 50
+
+    # Query strings suggest dynamic/filtered content
+    if parsed.query:
+        score -= 15
+
+    # Fragment-only links aren't real endpoints
+    if parsed.fragment and not parsed.path.strip("/"):
+        score -= 50
+
+    # Very long paths
     if len(path) > 80:
-        return False
+        score -= 20
 
-    segments = [s for s in path.split('/') if s]
+    # ── RESPONSE SIGNALS ──────────────────────
 
-    # Always keep important paths
-    if segments and segments[0].lower() in IMPORTANT_SEGMENTS:
-        return True
+    if response_ms and response_ms < 100:
+        score += 5
 
-    # Max 2 path segments for general pages
-    if len(segments) > 2:
-        return False
+    if status_code and status_code != 200:
+        if status_code in (301, 302, 307, 308):
+            score -= 10
+        elif status_code in (401, 403):
+            score -= 15
+        elif status_code == 404:
+            score -= 40
+        elif status_code >= 500:
+            score -= 5  # broken right now, but WORTH monitoring
 
-    return True
+    if content_type:
+        if "json" in content_type:
+            score += 10
+        elif "html" not in content_type and "text" not in content_type:
+            score -= 20
+
+    return max(0, min(100, score))
 
 
 # ---------------------------------------------------------------------------
@@ -107,7 +201,7 @@ class _LinkExtractor(HTMLParser):
 
 
 # ---------------------------------------------------------------------------
-# Name + priority helpers
+# Name helper
 # ---------------------------------------------------------------------------
 
 def _suggest_name(url: str, domain: str) -> str:
@@ -118,36 +212,24 @@ def _suggest_name(url: str, domain: str) -> str:
     if not path or path == "/":
         return "Homepage"
 
-    # Clean up the path segment
     segment = path.split("/")[-1]
-    # Handle common patterns
     name_map = {
-        "health": "API Health", "status": "API Status", "graphql": "GraphQL",
-        "login": "Login Page", "signup": "Signup Page", "dashboard": "Dashboard",
-        "admin": "Admin Panel", "docs": "Documentation", "app": "App",
-        "security.txt": "Security Policy", "api": "API", "v1": "API v1",
+        "health": "API Health", "healthz": "API Health", "healthcheck": "API Health",
+        "status": "API Status", "graphql": "GraphQL",
+        "login": "Login Page", "signin": "Login Page", "sign-in": "Login Page",
+        "signup": "Signup Page", "sign-up": "Signup Page", "register": "Signup Page",
+        "dashboard": "Dashboard", "admin": "Admin Panel",
+        "docs": "Documentation", "documentation": "Documentation",
+        "app": "App", "console": "Console", "portal": "Portal",
+        "security.txt": "Security Policy", "api": "API", "v1": "API v1", "v2": "API v2",
+        "pricing": "Pricing", "about": "About", "contact": "Contact",
+        "help": "Help", "support": "Support", "faq": "FAQ",
+        "settings": "Settings", "account": "Account", "billing": "Billing",
     }
     if segment in name_map:
         return name_map[segment]
 
-    # Title-case the segment
     return segment.replace("-", " ").replace("_", " ").title()
-
-
-def _suggest_priority(url: str) -> str:
-    """Assign high/medium/low priority based on URL path."""
-    parsed = urlparse(url)
-    path = parsed.path.rstrip("/") or "/"
-
-    for pattern in LOW_PRIORITY_PATTERNS:
-        if pattern in path.lower():
-            return "low"
-    for pattern in HIGH_PRIORITY_PATTERNS:
-        if path.lower() == pattern or path.lower().startswith(pattern + "/"):
-            return "high"
-    if path == "/":
-        return "high"
-    return "medium"
 
 
 # ---------------------------------------------------------------------------
@@ -170,15 +252,14 @@ async def _parse_sitemap(client: httpx.AsyncClient, base_url: str) -> list[dict]
         return results
 
     text = resp.text
-    # Simple XML parsing — extract <loc> tags
     locs = re.findall(r"<loc>\s*(.*?)\s*</loc>", text, re.IGNORECASE)
     domain = urlparse(base_url).netloc
 
     for loc in locs:
         parsed = urlparse(loc)
-        if parsed.netloc == domain and parsed.scheme in ("http", "https") and _is_structural_url(loc):
+        if parsed.netloc == domain and parsed.scheme in ("http", "https"):
             results.append({"url": loc, "source": "sitemap"})
-            if len(results) >= MAX_URLS:
+            if len(results) >= MAX_URLS * 2:  # collect extra, scoring will filter
                 break
 
     return results
@@ -200,9 +281,9 @@ async def _parse_robots(client: httpx.AsyncClient, base_url: str) -> list[dict]:
             domain = urlparse(base_url).netloc
             for loc in locs:
                 parsed = urlparse(loc)
-                if parsed.netloc == domain and _is_structural_url(loc):
+                if parsed.netloc == domain:
                     results.append({"url": loc, "source": "sitemap"})
-                    if len(results) >= MAX_URLS:
+                    if len(results) >= MAX_URLS * 2:
                         break
 
     return results
@@ -219,10 +300,9 @@ async def _crawl_homepage(client: httpx.AsyncClient, base_url: str) -> list[dict
         parser = _LinkExtractor(base_url)
         parser.feed(resp.text[:500_000])  # Cap parsing to 500KB
         for link in parser.links:
-            if _is_structural_url(link):
-                results.append({"url": link, "source": "crawl"})
-                if len(results) >= MAX_URLS:
-                    break
+            results.append({"url": link, "source": "crawl"})
+            if len(results) >= MAX_URLS * 2:
+                break
     except Exception:
         pass
 
@@ -237,7 +317,14 @@ async def _probe_common_paths(client: httpx.AsyncClient, base_url: str) -> list[
     responses = await asyncio.gather(*[_fetch(client, url) for url in urls])
     for url, resp in zip(urls, responses):
         if resp and resp.status_code == 200:
-            results.append({"url": url, "source": "probe"})
+            elapsed = resp.elapsed.total_seconds() * 1000 if hasattr(resp, 'elapsed') else 0
+            results.append({
+                "url": url,
+                "source": "probe",
+                "status_code": resp.status_code,
+                "response_ms": elapsed,
+                "content_type": resp.headers.get("content-type", ""),
+            })
 
     return results
 
@@ -276,12 +363,12 @@ def _grab_ssl_info(domain: str) -> dict | None:
 
 async def discover_endpoints(domain: str, max_urls: int = MAX_URLS) -> dict:
     """
-    Scan a domain and return discovered endpoints.
+    Scan a domain and return discovered endpoints, scored and filtered.
 
     Returns:
         {
             "domain": str,
-            "urls": [{"url", "source", "suggested_name", "suggested_type", "suggested_priority"}, ...],
+            "urls": [{"url", "source", "score", "suggested_name", "suggested_type", "suggested_priority"}, ...],
             "ssl": {...} or None,
             "total_found": int,
             "sources": {"sitemap": N, "crawl": N, "probe": N},
@@ -292,7 +379,6 @@ async def discover_endpoints(domain: str, max_urls: int = MAX_URLS) -> dict:
     domain = domain.strip().lower()
     domain = domain.replace("https://", "").replace("http://", "")
     domain = domain.rstrip("/")
-    # Remove path if someone pasted a full URL
     domain = domain.split("/")[0]
 
     base_url = f"https://{domain}"
@@ -309,7 +395,6 @@ async def discover_endpoints(domain: str, max_urls: int = MAX_URLS) -> dict:
         # verify=False intentional — discovery scans unknown domains that may have
         # expired/self-signed certs. We still detect and report SSL info separately.
         async with httpx.AsyncClient(verify=False) as client:
-            # Run all discovery methods concurrently
             sitemap_task = _parse_sitemap(client, base_url)
             robots_task = _parse_robots(client, base_url)
             crawl_task = _crawl_homepage(client, base_url)
@@ -320,13 +405,12 @@ async def discover_endpoints(domain: str, max_urls: int = MAX_URLS) -> dict:
                 return_exceptions=True,
             )
 
-            # Merge results, handling exceptions
             all_urls: list[dict] = []
             for batch in [sitemap_results, robots_results, crawl_results, probe_results]:
                 if isinstance(batch, list):
                     all_urls.extend(batch)
 
-        # Deduplicate by URL
+        # Deduplicate by URL (keep first occurrence, which preserves source priority)
         seen: set[str] = set()
         unique: list[dict] = []
         for item in all_urls:
@@ -340,40 +424,52 @@ async def discover_endpoints(domain: str, max_urls: int = MAX_URLS) -> dict:
         if homepage_normalized not in seen:
             unique.insert(0, {"url": base_url, "source": "probe"})
 
-        # Cap results
-        unique = unique[:max_urls]
-
-        # Enrich with metadata
+        # Score every URL and filter
+        scored: list[dict] = []
         for item in unique:
+            url_score = _score_url(
+                item["url"],
+                status_code=item.get("status_code", 200),
+                response_ms=item.get("response_ms", 0),
+                content_type=item.get("content_type", ""),
+                source=item.get("source", "crawl"),
+            )
+            item["score"] = url_score
             item["suggested_name"] = f"{domain} - {_suggest_name(item['url'], domain)}"
             item["suggested_type"] = "http"
-            item["suggested_priority"] = _suggest_priority(item["url"])
+            item["suggested_priority"] = "high" if url_score >= 60 else "medium" if url_score >= 30 else "low"
 
-        # Sort: high first, then medium, then low
-        priority_order = {"high": 0, "medium": 1, "low": 2}
-        unique.sort(key=lambda x: priority_order.get(x["suggested_priority"], 1))
+            if url_score >= SCORE_SHOW_THRESHOLD:
+                scored.append(item)
+
+        # Sort by score descending
+        scored.sort(key=lambda x: -x["score"])
+
+        # Cap at max_urls
+        scored = scored[:max_urls]
 
         # SSL detection (synchronous, run in thread)
         ssl_info = await asyncio.to_thread(_grab_ssl_info, domain)
         result["ssl"] = ssl_info
 
-        # Add SSL as first URL entry if detected
+        # Add SSL as first entry if detected
         if ssl_info:
-            unique.insert(0, {
+            scored.insert(0, {
                 "url": domain,
                 "source": "probe",
+                "score": 95,
                 "suggested_name": f"SSL - {domain}",
                 "suggested_type": "ssl",
                 "suggested_priority": "high",
                 "ssl_info": ssl_info,
             })
 
-        result["urls"] = unique
-        result["total_found"] = len(unique)
+        result["urls"] = scored
+        result["total_found"] = len(scored)
         result["sources"] = {
-            "sitemap": sum(1 for u in unique if u["source"] == "sitemap"),
-            "crawl": sum(1 for u in unique if u["source"] == "crawl"),
-            "probe": sum(1 for u in unique if u["source"] == "probe"),
+            "sitemap": sum(1 for u in scored if u["source"] == "sitemap"),
+            "crawl": sum(1 for u in scored if u["source"] == "crawl"),
+            "probe": sum(1 for u in scored if u["source"] == "probe"),
         }
 
     except httpx.ConnectError:
