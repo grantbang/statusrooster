@@ -417,14 +417,30 @@ function heroUpdateCount() {
     const total = document.querySelectorAll('.hero-check').length;
     const countText = document.getElementById('heroSelectedCount');
     const cta = document.getElementById('heroCta');
+    countText.textContent = checked + ' of ' + total + ' selected';
     if (checked > 10) {
-        countText.innerHTML = checked + ' of ' + total + ' selected &middot; <span style="color: var(--warning);">Free plan includes 10 — we\'ll create the first 10</span>';
-        cta.textContent = 'Sign up free to monitor ' + checked + ' endpoints';
+        cta.textContent = 'Start free with 10 monitors';
+    } else if (checked > 0) {
+        cta.textContent = 'Start free — monitor ' + checked + ' endpoint' + (checked === 1 ? '' : 's');
     } else {
-        countText.textContent = checked + ' of ' + total + ' selected';
-        cta.textContent = 'Sign up free to monitor ' + checked + ' endpoints';
+        cta.textContent = 'Select endpoints to monitor';
     }
     cta.disabled = checked === 0;
+
+    // Show/hide the upgrade nudge
+    let nudge = document.getElementById('heroUpgradeNudge');
+    if (checked > 10) {
+        if (!nudge) {
+            nudge = document.createElement('p');
+            nudge.id = 'heroUpgradeNudge';
+            nudge.style.cssText = 'font-size: 0.82rem; margin: 0.4rem 0 0; text-align: center; color: var(--text-muted);';
+            cta.parentNode.insertBefore(nudge, cta.nextSibling);
+        }
+        nudge.innerHTML = 'Free plan includes 10 monitors. <strong>Upgrade to Pro for 200</strong> — $9/mo.';
+        nudge.style.display = '';
+    } else if (nudge) {
+        nudge.style.display = 'none';
+    }
 }
 
 function heroSignup() {
