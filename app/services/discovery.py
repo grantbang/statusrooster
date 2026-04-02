@@ -34,7 +34,7 @@ COMMON_PATHS = [
 ]
 
 # Minimum score to include in results; pre-check threshold for UI
-SCORE_SHOW_THRESHOLD = 20
+SCORE_SHOW_THRESHOLD = 30
 SCORE_PRECHECK_THRESHOLD = 60
 
 
