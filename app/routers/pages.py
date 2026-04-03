@@ -76,7 +76,21 @@ async def landing_page(request: Request, preview: str = None):
     user = get_user_from_cookie(request)
     if user and preview is None:
         return RedirectResponse(url="/dashboard", status_code=302)
-    return templates.TemplateResponse("landing.html", {"request": request, "user": None})
+
+    # Live stats for social proof
+    db = get_db()
+    try:
+        from google.cloud.firestore_v1 import aggregation
+        monitors_count = db.collection("monitors").count().get()[0][0].value
+        users_count = db.collection("users").count().get()[0][0].value
+    except Exception:
+        monitors_count = 0
+        users_count = 0
+
+    return templates.TemplateResponse("landing.html", {
+        "request": request, "user": None,
+        "monitors_count": monitors_count, "users_count": users_count,
+    })
 
 
 # ---------------------------------------------------------------------------

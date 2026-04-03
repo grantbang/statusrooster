@@ -13,13 +13,14 @@
 <!-- Hero -->
 <section class="l-hero">
     <h1>Paste your domain.<br>Get monitored in 30 seconds.</h1>
-    <p class="l-hero-sub">We scan your site, find your endpoints, and set up monitoring automatically. 60-second checks from 4 regions — free forever.</p>
+    <p class="l-hero-sub">We scan your site, discover your endpoints, and set up monitoring automatically. 60-second checks from 4 regions — free forever.</p>
 
     <div class="l-hero-discover" id="heroDiscover">
         <div class="l-hero-discover-input" id="heroInput">
             <input type="text" id="heroDomain" class="l-hero-domain" placeholder="example.com" onkeydown="if(event.key==='Enter') heroScan()">
-            <button class="l-btn-primary l-hero-scan-btn" onclick="heroScan()">Scan</button>
+            <button class="l-btn-primary l-hero-scan-btn" id="heroScanBtn" onclick="heroScan()">Scan</button>
         </div>
+        <p class="l-hero-try" id="heroTry">Try it: <a href="#" onclick="heroTryScan('stripe.com'); return false;">stripe.com</a> · <a href="#" onclick="heroTryScan('github.com'); return false;">github.com</a> · <a href="#" onclick="heroTryScan('walmart.com'); return false;">walmart.com</a></p>
         <div id="heroLoading" style="display:none; padding: 1.5rem 0;">
             <div class="discover-spinner" style="margin: 0 auto 0.5rem;"></div>
             <p style="color: var(--text-muted); margin: 0;">Scanning <strong id="heroLoadingDomain"></strong>...</p>
@@ -42,110 +43,57 @@
     <p class="l-hero-trust">No credit card &middot; Set up in 30 seconds &middot; Free forever</p>
 </section>
 
+<!-- Social proof -->
+{% if monitors_count and monitors_count > 0 %}
+<section class="l-social-proof">
+    <p>Monitoring <strong>{{ monitors_count }}</strong> endpoints across <strong>{{ users_count }}</strong> developers</p>
+</section>
+{% endif %}
+
 <!-- What you get — feature showcase -->
 <section class="l-features">
     <h2>Everything you need. Nothing you don't.</h2>
     <div class="l-feature-grid">
         <div class="l-feature-card">
-            <h3>Full REST API</h3>
-            <p>Create monitors, pull check data, automate your workflow. Wire it into CI/CD. Free on every plan.</p>
+            <h3>Auto-Discovery</h3>
+            <p>Enter your domain — we crawl your sitemap, probe common paths, and find every endpoint worth monitoring. One click to monitor them all.</p>
         </div>
         <div class="l-feature-card">
             <h3>4-Region Consensus</h3>
             <p>Every check runs from US-East, US-West, Europe, and Asia. Majority vote means no false alarms.</p>
         </div>
         <div class="l-feature-card">
-            <h3>Slack, Email &amp; Webhooks</h3>
-            <p>Get alerted the way you work. All channels included free — no paywall on Slack or webhooks.</p>
+            <h3>Cron &amp; Heartbeat</h3>
+            <p>Unique ping URL for your scheduled jobs. If your cron misses its window, you'll know immediately.</p>
         </div>
         <div class="l-feature-card">
             <h3>JSON/API Assertions</h3>
             <p>Assert on response fields with dot-path selectors. Catch broken APIs that return 200 with bad data.</p>
         </div>
         <div class="l-feature-card">
-            <h3>Cron &amp; Heartbeat</h3>
-            <p>Unique ping URL for your scheduled jobs. If your cron misses its window, you'll know immediately.</p>
-        </div>
-        <div class="l-feature-card">
             <h3>SSL Expiry Alerts</h3>
             <p>Get warned before your cert expires. Catches mismatched domains and broken chains too.</p>
+        </div>
+        <div class="l-feature-card">
+            <h3>Slack, Email &amp; Webhooks</h3>
+            <p>Get alerted the way you work. All channels included free — no paywall on Slack or webhooks.</p>
         </div>
         <div class="l-feature-card">
             <h3>Public Status Pages</h3>
             <p>Share a clean status page with your users — 30-day history, live status, incident log. No login needed.</p>
         </div>
         <div class="l-feature-card">
-            <h3>Uptime Badges</h3>
-            <p>Embed live uptime badges in your GitHub README, docs, or landing page. Always current. Zero config.</p>
+            <h3>Full REST API</h3>
+            <p>Create monitors, pull check data, automate your workflow. Wire it into CI/CD. Free on every plan.</p>
         </div>
     </div>
 </section>
 
-<!-- API showcase -->
-<section class="l-features">
-    <div class="l-feature">
-        <div class="l-feature-content">
-            <h2>API-first. Automate everything.</h2>
-            <p>Create monitors, pull uptime data, and wire monitoring into your deploy pipeline — all with a REST API that's free on every plan. <a href="/docs/api">Full docs here</a>.</p>
-            <div class="l-code l-code-sm">
-<pre>$ curl -X POST https://statusrooster.com/api/v1/monitors \
-    -H "X-API-Key: sr_live_abc123" \
-    -d '{"url":"https://myapp.com","name":"Production"}'
-
-<span class="c-muted">{"data":{"id":"m_8f3k","status":"pending","monitor_type":"http"}}</span></pre>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- URL Checker — try before you sign up -->
-<section class="l-checker-wrap">
-    <h2>Try it now — check any site or API you depend on.</h2>
-    <div class="url-checker">
-        <form class="checker-form" id="checkerForm" onsubmit="return checkUrl(event)">
-            <input type="text" class="checker-input" id="checkerUrl"
-                   placeholder="https://your-site.com" autocomplete="off" required
-                   aria-label="URL to check">
-            <button type="submit" class="checker-btn" id="checkerBtn">Check</button>
-        </form>
-    </div>
-
-    <div class="check-result" id="checkResult">
-        <div class="result-header">
-            <div class="result-status-dot" id="resultDot"></div>
-            <div class="result-url" id="resultUrl"></div>
-            <div class="result-verdict" id="resultVerdict"></div>
-        </div>
-        <div class="result-stats">
-            <div>
-                <div class="result-stat-label">Status</div>
-                <div class="result-stat-value" id="resultStatus">—</div>
-            </div>
-            <div>
-                <div class="result-stat-label">Response</div>
-                <div class="result-stat-value" id="resultTime">—</div>
-            </div>
-            <div>
-                <div class="result-stat-label">Server</div>
-                <div class="result-stat-value" id="resultServer">—</div>
-            </div>
-            <div>
-                <div class="result-stat-label">SSL</div>
-                <div class="result-stat-value" id="resultSSL">—</div>
-            </div>
-            <div>
-                <div class="result-stat-label">SSL Expires</div>
-                <div class="result-stat-value" id="resultSSLExpiry">—</div>
-            </div>
-            <div>
-                <div class="result-stat-label">Redirects</div>
-                <div class="result-stat-value" id="resultRedirects">—</div>
-            </div>
-        </div>
-        <div class="result-cta">
-            <p>Want to know the moment this site goes down?</p>
-            <a href="/signup" id="resultCtaLink">Monitor this site free</a>
-        </div>
+<!-- API callout (slim) -->
+<section class="l-api-callout">
+    <div class="l-api-callout-inner">
+        <strong>API-first.</strong> Full REST API on every plan. Create monitors, pull data, automate everything.
+        <a href="/docs/api">View API docs &rarr;</a>
     </div>
 </section>
 
@@ -157,10 +105,10 @@
         <div class="l-howto-step">
             <div class="l-howto-num">1</div>
             <div class="l-howto-icon">
-                <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
             </div>
-            <h3>Add a URL</h3>
-            <p>Your site, a third-party API, a payment provider, a webhook — anything your stack depends on.</p>
+            <h3>Paste your domain</h3>
+            <p>We discover your endpoints automatically — sitemap, common paths, SSL cert. Or add URLs manually.</p>
         </div>
         <div class="l-howto-connector" aria-hidden="true"></div>
         <div class="l-howto-step">
@@ -183,31 +131,6 @@
     </div>
 </section>
 
-<!-- Screenshots -->
-<section class="l-screenshots">
-    <h2>See exactly what you get.</h2>
-    <p class="l-screenshots-sub">Clean dashboard. No clutter. Every monitor at a glance.</p>
-    <div class="l-ss-tabs" role="tablist">
-        <button class="l-ss-tab active" onclick="switchTab(this,'dashboard')" role="tab" aria-selected="true">Dashboard</button>
-        <button class="l-ss-tab" onclick="switchTab(this,'detail')" role="tab" aria-selected="false">Monitor detail</button>
-        <button class="l-ss-tab" onclick="switchTab(this,'status')" role="tab" aria-selected="false">Status page</button>
-    </div>
-    <div class="l-ss-frame">
-        <div class="l-ss-panel active" id="ss-dashboard">
-            <img src="/static/screenshots/dashboard.svg" alt="StatusRooster dashboard — monitor list with status, uptime bars, response time" loading="lazy">
-            <p class="l-ss-caption">Every monitor in one view — status, 30-day uptime bars, response time, and quick actions.</p>
-        </div>
-        <div class="l-ss-panel" id="ss-detail">
-            <img src="/static/screenshots/monitor_detail.svg" alt="Monitor detail page — response time chart, uptime slicer, incident history" loading="lazy">
-            <p class="l-ss-caption">Response time chart with per-region overlay, uptime slicer, and full incident history.</p>
-        </div>
-        <div class="l-ss-panel" id="ss-status">
-            <img src="/static/screenshots/status_page.svg" alt="Public status page — clean public view with 90-day uptime history" loading="lazy">
-            <p class="l-ss-caption">Share a clean public status page — 90-day history, incident log, live status. No login needed to view.</p>
-        </div>
-    </div>
-</section>
-
 <!-- Pricing -->
 <section class="l-pricing">
     <h2>Simple pricing. No surprises.</h2>
@@ -219,6 +142,7 @@
             <ul>
                 <li><strong>10 monitors</strong></li>
                 <li>60-second checks from 4 regions</li>
+                <li>Auto-discovery endpoint scanning</li>
                 <li>Email, Slack &amp; webhook alerts</li>
                 <li>HTTP, SSL, Heartbeat &amp; JSON/API</li>
                 <li>Full REST API &amp; uptime badges</li>
@@ -226,6 +150,7 @@
                 <li>Maintenance windows</li>
                 <li>30 days of history</li>
             </ul>
+            <p class="l-price-upsell">Need more? Pro gives you 200.</p>
             <a href="/signup" class="l-price-cta">Get started free</a>
         </div>
         <div class="l-price-card l-price-card-pro">
@@ -243,6 +168,7 @@
                 <li>90 days of history</li>
                 <li>Priority support</li>
             </ul>
+            <p class="l-price-annual">Or $79/year (save 27%)</p>
             <a href="/pricing" class="l-price-cta l-price-cta-pro">Upgrade to Pro</a>
         </div>
     </div>
@@ -260,111 +186,36 @@
     </a>
 </section>
 
-<!-- Bottom CTA -->
+<!-- Footer CTA — repeat the scanner -->
 <section class="l-bottom-cta">
-    <h2>Your users shouldn't be your monitoring system.</h2>
-    <p>10 free monitors. 60-second checks. 4 regions. Full API. Upgrade for 200.</p>
-    <a href="/signup" class="l-btn-primary">Start monitoring free</a>
+    <h2>Ready to try it?</h2>
+    <div class="l-bottom-discover">
+        <input type="text" id="bottomDomain" class="l-hero-domain" placeholder="your-domain.com" onkeydown="if(event.key==='Enter'){ document.getElementById('heroDomain').value=this.value; heroScan(); window.scrollTo({top:0, behavior:'smooth'}); }">
+        <button class="l-btn-primary" onclick="document.getElementById('heroDomain').value=document.getElementById('bottomDomain').value; heroScan(); window.scrollTo({top:0, behavior:'smooth'});">Scan</button>
+    </div>
+    <p style="color: var(--text-muted); margin-top: 0.75rem;">10 free monitors. No credit card. 30 seconds.</p>
 </section>
 
 {% endblock %}
 
 {% block extra_js %}
 <script>
-async function checkUrl(e) {
-    e.preventDefault();
-    const btn = document.getElementById('checkerBtn');
-    const input = document.getElementById('checkerUrl');
-    const resultEl = document.getElementById('checkResult');
-    let url = input.value.trim();
-    if (!url) return false;
-
-    btn.disabled = true;
-    btn.textContent = 'Checking...';
-    resultEl.classList.remove('visible');
-
-    try {
-        const resp = await fetch('/api/check-url', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url })
-        });
-        const data = await resp.json();
-
-        const dot = document.getElementById('resultDot');
-        const urlEl = document.getElementById('resultUrl');
-        const verdict = document.getElementById('resultVerdict');
-        const status = document.getElementById('resultStatus');
-        const time = document.getElementById('resultTime');
-        const server = document.getElementById('resultServer');
-        const sslEl = document.getElementById('resultSSL');
-        const sslExpiry = document.getElementById('resultSSLExpiry');
-        const redirects = document.getElementById('resultRedirects');
-
-        urlEl.textContent = data.url;
-        server.textContent = data.server || 'Hidden';
-        redirects.textContent = data.redirects || '0';
-
-        if (data.ssl_issuer) {
-            sslEl.textContent = data.ssl_issuer;
-            sslEl.className = 'result-stat-value good';
-        } else if (data.url.startsWith('https')) {
-            sslEl.textContent = 'Valid';
-            sslEl.className = 'result-stat-value good';
-        } else {
-            sslEl.textContent = 'None (HTTP)';
-            sslEl.className = 'result-stat-value warn';
-        }
-
-        if (data.ssl_expiry) {
-            const match = data.ssl_expiry.match(/\((\d+)d\)/);
-            const days = match ? parseInt(match[1]) : 999;
-            sslExpiry.textContent = data.ssl_expiry;
-            sslExpiry.className = 'result-stat-value ' + (days > 30 ? 'good' : days > 7 ? 'warn' : 'bad');
-        } else {
-            sslExpiry.textContent = '—';
-            sslExpiry.className = 'result-stat-value';
-        }
-
-        if (data.is_up) {
-            dot.className = 'result-status-dot up';
-            verdict.className = 'result-verdict up';
-            verdict.textContent = 'UP';
-            status.textContent = data.status_code || '—';
-            time.textContent = data.response_ms ? data.response_ms + ' ms' : '—';
-        } else {
-            dot.className = 'result-status-dot down';
-            verdict.className = 'result-verdict down';
-            verdict.textContent = 'DOWN';
-            status.textContent = data.status_code || 'Unreachable';
-            time.textContent = data.response_ms ? data.response_ms + ' ms' : '—';
-        }
-
-        resultEl.classList.add('visible');
-    } catch (err) {
-        alert('Something went wrong. Try again.');
-    }
-
-    btn.disabled = false;
-    btn.textContent = 'Check';
-    return false;
-}
-
-/* ── Screenshot tab switcher ── */
-function switchTab(btn, id) {
-    document.querySelectorAll('.l-ss-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
-    document.querySelectorAll('.l-ss-panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    btn.setAttribute('aria-selected','true');
-    document.getElementById('ss-' + id).classList.add('active');
-}
-
 /* ── Hero auto-discover ── */
+function heroTryScan(domain) {
+    document.getElementById('heroDomain').value = domain;
+    heroScan();
+}
+
 function heroScan() {
     const domain = document.getElementById('heroDomain').value.trim();
     if (!domain) return;
 
+    const btn = document.getElementById('heroScanBtn');
+    btn.disabled = true;
+    btn.textContent = 'Scanning...';
+
     document.getElementById('heroInput').style.display = 'none';
+    document.getElementById('heroTry').style.display = 'none';
     document.getElementById('heroResults').style.display = 'none';
     document.getElementById('heroEmpty').style.display = 'none';
     document.getElementById('heroLoading').style.display = '';
@@ -378,6 +229,8 @@ function heroScan() {
     .then(r => r.json())
     .then(data => {
         document.getElementById('heroLoading').style.display = 'none';
+        btn.disabled = false;
+        btn.textContent = 'Scan';
         if (data.error || !data.data || !data.data.urls || data.data.urls.length === 0) {
             document.getElementById('heroEmptyMsg').textContent = (data.data && data.data.status !== 'ok') ? data.data.status : 'No endpoints found on ' + domain + '.';
             document.getElementById('heroEmpty').style.display = '';
@@ -407,10 +260,13 @@ function heroScan() {
     })
     .catch(() => {
         document.getElementById('heroLoading').style.display = 'none';
+        btn.disabled = false;
+        btn.textContent = 'Scan';
         document.getElementById('heroEmptyMsg').textContent = 'Something went wrong. Please try again.';
         document.getElementById('heroEmpty').style.display = '';
     });
 }
+
 function heroUpdateCount() {
     const checked = document.querySelectorAll('.hero-check:checked').length;
     const total = document.querySelectorAll('.hero-check').length;
@@ -420,13 +276,12 @@ function heroUpdateCount() {
     if (checked > 10) {
         cta.textContent = 'Start free with 10 monitors';
     } else if (checked > 0) {
-        cta.textContent = 'Start free — monitor ' + checked + ' endpoint' + (checked === 1 ? '' : 's');
+        cta.textContent = 'Start free \u2014 monitor ' + checked + ' endpoint' + (checked === 1 ? '' : 's');
     } else {
         cta.textContent = 'Select endpoints to monitor';
     }
     cta.disabled = checked === 0;
 
-    // Show/hide the upgrade nudge
     let nudge = document.getElementById('heroUpgradeNudge');
     if (checked > 10) {
         if (!nudge) {
@@ -435,7 +290,7 @@ function heroUpdateCount() {
             nudge.style.cssText = 'font-size: 0.82rem; margin: 0.4rem 0 0; text-align: center; color: var(--text-muted);';
             cta.parentNode.insertBefore(nudge, cta.nextSibling);
         }
-        nudge.innerHTML = 'Free plan includes 10 monitors. <strong>Upgrade to Pro for 200</strong> — $9/mo.';
+        nudge.innerHTML = 'Free plan includes 10 monitors. <strong>Upgrade to Pro for 200</strong> \u2014 $9/mo.';
         nudge.style.display = '';
     } else if (nudge) {
         nudge.style.display = 'none';

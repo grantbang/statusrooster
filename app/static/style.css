@@ -5252,6 +5252,73 @@ code {
     margin: 0.25rem 0 0;
     letter-spacing: 0.01em;
 }
+.l-hero-try {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin: 0.5rem 0 0;
+    text-align: center;
+}
+.l-hero-try a {
+    color: var(--brand);
+    text-decoration: none;
+}
+.l-hero-try a:hover { text-decoration: underline; }
+
+/* Social proof */
+.l-social-proof {
+    text-align: center;
+    padding: 1rem 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+.l-social-proof strong { color: var(--text); }
+
+/* API callout (slim) */
+.l-api-callout {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 0 var(--space-md);
+}
+.l-api-callout-inner {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.5rem;
+    font-size: 0.9rem;
+    color: var(--text);
+    text-align: center;
+}
+.l-api-callout-inner a {
+    color: var(--brand);
+    text-decoration: none;
+    margin-left: 0.5rem;
+}
+.l-api-callout-inner a:hover { text-decoration: underline; }
+
+/* Price upsell + annual */
+.l-price-upsell {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0 0 0.75rem;
+    text-align: center;
+}
+.l-price-annual {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0 0 0.75rem;
+    text-align: center;
+}
+
+/* Footer CTA discover input */
+.l-bottom-discover {
+    display: flex;
+    gap: 0.5rem;
+    max-width: 420px;
+    margin: 0 auto;
+}
+.l-bottom-discover input {
+    flex: 1;
+}
 .l-hero-stat-strip {
     display: flex;
     flex-direction: column;
@@ -8206,4 +8273,6 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
     .l-hero-scan-btn { width: 100%; }
     .l-hero-result-row { gap: 0.3rem; }
     .l-hero-result-name { font-size: 0.8rem; }
+    .l-bottom-discover { flex-direction: column; }
+    .l-api-callout-inner { padding: 0.75rem 1rem; font-size: 0.85rem; }
 }
