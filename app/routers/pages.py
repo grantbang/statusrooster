@@ -514,13 +514,25 @@ async def discover_page(request: Request):
         return RedirectResponse(url="/login", status_code=302)
     domain = request.query_params.get("domain", "")
     db = get_db()
-    current_monitors = len(db.collection("monitors").where("user_id", "==", user["id"]).get())
+    existing_monitors = db.collection("monitors").where("user_id", "==", user["id"]).get()
+    current_monitors = len(existing_monitors)
     monitor_limit = 200 if user.get("plan", "free") == "pro" else 10
+    # Collect existing monitor URLs for duplicate detection
+    existing_urls = set()
+    for mon in existing_monitors:
+        d = mon.to_dict()
+        url = (d.get("url") or "").rstrip("/").lower()
+        ssl_domain = (d.get("ssl_domain") or "").lower()
+        if url:
+            existing_urls.add(url)
+        if ssl_domain:
+            existing_urls.add(ssl_domain)
     autocreate = request.query_params.get("autocreate", "")
     return templates.TemplateResponse("discover.html", {
         "request": request, "user": user, "prefill_domain": domain,
         "autocreate": autocreate,
         "monitors_current": current_monitors, "monitors_limit": monitor_limit,
+        "existing_urls": list(existing_urls),
     })
 
 

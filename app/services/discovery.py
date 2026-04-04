@@ -310,21 +310,56 @@ async def _crawl_homepage(client: httpx.AsyncClient, base_url: str) -> list[dict
 
 
 async def _probe_common_paths(client: httpx.AsyncClient, base_url: str) -> list[dict]:
-    """Probe common paths concurrently, return those that respond with 200."""
+    """Probe common paths concurrently, return those that respond with 200.
+    Detects soft 404s, bot blocks, and redirect-to-homepage patterns."""
     results = []
-    urls = [f"{base_url}{path}" for path in COMMON_PATHS]
+    base_domain = urlparse(base_url).netloc
 
+    urls = [f"{base_url}{path}" for path in COMMON_PATHS]
     responses = await asyncio.gather(*[_fetch(client, url) for url in urls])
+
+    # Collect body lengths to detect when many probes return the same page
+    body_lengths: list[int] = []
+    valid_responses: list[tuple[str, httpx.Response]] = []
+
     for url, resp in zip(urls, responses):
         if resp and resp.status_code == 200:
-            elapsed = resp.elapsed.total_seconds() * 1000 if hasattr(resp, 'elapsed') else 0
-            results.append({
-                "url": url,
-                "source": "probe",
-                "status_code": resp.status_code,
-                "response_ms": elapsed,
-                "content_type": resp.headers.get("content-type", ""),
-            })
+            final_url = str(resp.url)
+            final_parsed = urlparse(final_url)
+
+            # Skip if redirected to a different path (bot block, login redirect, etc.)
+            # Allow redirects that just add www. or trailing slash
+            requested_path = urlparse(url).path.rstrip("/")
+            final_path = final_parsed.path.rstrip("/")
+            if final_path != requested_path:
+                # Redirected away — likely bot block or catch-all
+                continue
+
+            body_lengths.append(len(resp.text))
+            valid_responses.append((url, resp))
+
+    # If 60%+ of probes returned the same body length, they're all soft 404s
+    soft_404_len = None
+    if len(body_lengths) >= 3:
+        from collections import Counter
+        length_counts = Counter(body_lengths)
+        most_common_len, most_common_count = length_counts.most_common(1)[0]
+        if most_common_count >= len(body_lengths) * 0.6:
+            soft_404_len = most_common_len
+
+    for url, resp in valid_responses:
+        resp_len = len(resp.text)
+        if soft_404_len and resp_len == soft_404_len:
+            continue  # Skip soft 404s
+
+        elapsed = resp.elapsed.total_seconds() * 1000 if hasattr(resp, 'elapsed') else 0
+        results.append({
+            "url": url,
+            "source": "probe",
+            "status_code": resp.status_code,
+            "response_ms": elapsed,
+            "content_type": resp.headers.get("content-type", ""),
+        })
 
     return results
 

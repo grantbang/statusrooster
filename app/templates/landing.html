@@ -20,7 +20,6 @@
             <input type="text" id="heroDomain" class="l-hero-domain" placeholder="example.com" onkeydown="if(event.key==='Enter') heroScan()">
             <button class="l-btn-primary l-hero-scan-btn" id="heroScanBtn" onclick="heroScan()">Scan</button>
         </div>
-        <p class="l-hero-try" id="heroTry">Try it: <a href="#" onclick="heroTryScan('stripe.com'); return false;">stripe.com</a> · <a href="#" onclick="heroTryScan('github.com'); return false;">github.com</a> · <a href="#" onclick="heroTryScan('walmart.com'); return false;">walmart.com</a></p>
         <div id="heroLoading" style="display:none; padding: 1.5rem 0;">
             <div class="discover-spinner" style="margin: 0 auto 0.5rem;"></div>
             <p style="color: var(--text-muted); margin: 0;">Scanning <strong id="heroLoadingDomain"></strong>...</p>
@@ -32,8 +31,12 @@
             </p>
             <div id="heroList" class="l-hero-list"></div>
             <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0.5rem 0 0.75rem; text-align: left;" id="heroSelectedCount"></p>
-            <button class="l-btn-primary l-hero-cta" id="heroCta" onclick="heroSignup()">Sign up free to start monitoring</button>
+            <div class="l-hero-cta-row">
+                <button class="l-btn-primary l-hero-cta" id="heroCta" onclick="heroSignup()">Sign up free to start monitoring</button>
+                <button class="l-btn-pro l-hero-cta" id="heroCtaPro" onclick="heroSignupPro()" style="display:none;">Upgrade to Pro — monitor all</button>
+            </div>
             <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0.5rem 0 0; text-align: center;">No credit card required. 10 free monitors.</p>
+            <button class="l-hero-reset" id="heroReset" onclick="heroResetScan()">Scan a different domain</button>
         </div>
         <div id="heroEmpty" style="display:none; padding: 1rem 0; text-align: center;">
             <p style="color: var(--text-muted); margin: 0 0 0.75rem;" id="heroEmptyMsg">No endpoints found.</p>
@@ -272,13 +275,18 @@ function heroUpdateCount() {
     const total = document.querySelectorAll('.hero-check').length;
     const countText = document.getElementById('heroSelectedCount');
     const cta = document.getElementById('heroCta');
+    const ctaPro = document.getElementById('heroCtaPro');
     countText.textContent = checked + ' of ' + total + ' selected';
     if (checked > 10) {
         cta.textContent = 'Start free with 10 monitors';
+        ctaPro.textContent = 'Upgrade to Pro \u2014 monitor all ' + checked;
+        ctaPro.style.display = '';
     } else if (checked > 0) {
         cta.textContent = 'Start free \u2014 monitor ' + checked + ' endpoint' + (checked === 1 ? '' : 's');
+        ctaPro.style.display = 'none';
     } else {
         cta.textContent = 'Select endpoints to monitor';
+        ctaPro.style.display = 'none';
     }
     cta.disabled = checked === 0;
 
@@ -288,18 +296,17 @@ function heroUpdateCount() {
             nudge = document.createElement('p');
             nudge.id = 'heroUpgradeNudge';
             nudge.style.cssText = 'font-size: 0.82rem; margin: 0.4rem 0 0; text-align: center; color: var(--text-muted);';
-            cta.parentNode.insertBefore(nudge, cta.nextSibling);
+            document.getElementById('heroCta').parentNode.parentNode.appendChild(nudge);
         }
-        nudge.innerHTML = 'Free plan includes 10 monitors. <strong>Upgrade to Pro for 200</strong> \u2014 $9/mo.';
+        nudge.innerHTML = 'Free plan includes 10 monitors. Pro gives you 200 for $9/mo.';
         nudge.style.display = '';
     } else if (nudge) {
         nudge.style.display = 'none';
     }
 }
 
-function heroSignup() {
+function _getSelectedMonitors() {
     const urls = window._heroDiscoveredUrls || [];
-    const domain = window._heroDomain || '';
     const checks = document.querySelectorAll('.hero-check:checked');
     const selected = [];
     checks.forEach(cb => {
@@ -311,8 +318,33 @@ function heroSignup() {
             selected.push(mon);
         }
     });
+    return selected;
+}
+
+function heroSignup() {
+    const selected = _getSelectedMonitors();
+    const domain = window._heroDomain || '';
     try { localStorage.setItem('sr_pending_monitors', JSON.stringify(selected)); } catch(e) {}
     window.location.href = '/signup?ref=discover&domain=' + encodeURIComponent(domain);
+}
+
+function heroSignupPro() {
+    const selected = _getSelectedMonitors();
+    const domain = window._heroDomain || '';
+    try { localStorage.setItem('sr_pending_monitors', JSON.stringify(selected)); } catch(e) {}
+    // Sign up first, then upgrade via Stripe after account creation
+    try { localStorage.setItem('sr_upgrade_after_signup', '1'); } catch(e) {}
+    window.location.href = '/signup?ref=discover_pro&domain=' + encodeURIComponent(domain);
+}
+
+function heroResetScan() {
+    document.getElementById('heroResults').style.display = 'none';
+    document.getElementById('heroEmpty').style.display = 'none';
+    document.getElementById('heroInput').style.display = '';
+    document.getElementById('heroDomain').value = '';
+    document.getElementById('heroDomain').focus();
+    window._heroDiscoveredUrls = [];
+    window._heroDomain = '';
 }
 
 function escH(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }

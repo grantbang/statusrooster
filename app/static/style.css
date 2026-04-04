@@ -4891,12 +4891,40 @@ code {
     color: var(--text-muted);
     padding: 0.3rem 0;
 }
+.l-hero-cta-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
 .l-hero-cta {
-    display: block;
+    flex: 1;
     text-align: center;
     padding: 0.75rem 1.5rem;
     font-size: 1rem;
+    min-width: 0;
 }
+.l-btn-pro {
+    background: linear-gradient(135deg, #7c3aed, #6366f1);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+.l-btn-pro:hover { opacity: 0.9; }
+.l-hero-reset {
+    display: block;
+    margin: 0.75rem auto 0;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.l-hero-reset:hover { color: var(--brand); }
 
 /* Hero feature checklist */
 .l-hero-features {
@@ -8132,6 +8160,8 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
 .discover-badge-crawl { background: #dbeafe; color: #2563eb; }
 .discover-badge-probe { background: #fef3c7; color: #d97706; }
 .discover-badge-type { background: #f3f4f6; color: #374151; }
+.discover-badge-existing { background: #dbeafe; color: #1d4ed8; }
+.discover-row-existing { opacity: 0.5; }
 .discover-score-dot {
     flex-shrink: 0;
     width: 8px; height: 8px;
