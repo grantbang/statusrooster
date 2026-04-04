@@ -310,9 +310,15 @@ async def signup_submit(request: Request, email: str = Form(...), password: str 
 
     token = create_access_token(user_id=user["id"], email=user["email"])
 
-    # Redirect to discover if domain was passed, otherwise dashboard
+    # Redirect based on flow
     domain = request.query_params.get("domain", "")
-    redirect_url = f"/discover?domain={domain}&autocreate=1" if domain else "/dashboard"
+    if ref == "discover_pro" and domain:
+        # Pro signup: go to Stripe checkout first, then discover with autocreate
+        redirect_url = f"/upgrade-and-discover?domain={domain}"
+    elif domain:
+        redirect_url = f"/discover?domain={domain}&autocreate=1"
+    else:
+        redirect_url = "/dashboard"
     response = RedirectResponse(url=redirect_url, status_code=302)
     response.set_cookie(
         key="access_token",
@@ -506,6 +512,45 @@ async def reset_password_submit(request: Request, token: str = Form(...), passwo
 # ---------------------------------------------------------------------------
 # Auto-Discovery
 # ---------------------------------------------------------------------------
+
+@router.get("/upgrade-and-discover")
+async def upgrade_and_discover(request: Request):
+    """After Pro signup from landing page: Stripe checkout → discover with autocreate."""
+    import stripe
+    from app.config import settings
+
+    user = get_user_from_cookie(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+
+    domain = request.query_params.get("domain", "")
+    db = get_db()
+
+    # Get or create Stripe customer
+    customer_id = user.get("stripe_customer_id")
+    if not customer_id:
+        customer = stripe.Customer.create(
+            email=user["email"],
+            metadata={"user_id": user["id"]},
+        )
+        customer_id = customer.id
+        update_user(db, user["id"], {"stripe_customer_id": customer_id})
+
+    success_url = f"{settings.APP_URL}/discover?domain={domain}&autocreate=1"
+    cancel_url = f"{settings.APP_URL}/discover?domain={domain}"
+
+    session = stripe.checkout.Session.create(
+        customer=customer_id,
+        payment_method_types=["card"],
+        mode="subscription",
+        line_items=[{"price": settings.STRIPE_PRICE_ID_PRO, "quantity": 1}],
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata={"user_id": user["id"]},
+    )
+
+    return RedirectResponse(url=session.url, status_code=303)
+
 
 @router.get("/discover", response_class=HTMLResponse)
 async def discover_page(request: Request):
