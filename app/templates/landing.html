@@ -204,11 +204,6 @@
 {% block extra_js %}
 <script>
 /* ── Hero auto-discover ── */
-function heroTryScan(domain) {
-    document.getElementById('heroDomain').value = domain;
-    heroScan();
-}
-
 function heroScan() {
     const domain = document.getElementById('heroDomain').value.trim();
     if (!domain) return;
@@ -218,7 +213,6 @@ function heroScan() {
     btn.textContent = 'Scanning...';
 
     document.getElementById('heroInput').style.display = 'none';
-    document.getElementById('heroTry').style.display = 'none';
     document.getElementById('heroResults').style.display = 'none';
     document.getElementById('heroEmpty').style.display = 'none';
     document.getElementById('heroLoading').style.display = '';
