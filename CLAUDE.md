@@ -41,6 +41,8 @@ Local dev uses production Firestore (same project). Cloud Scheduler cron and mul
 
 **Pre-computed dashboard data:** Monitor Firestore docs hold `daily_uptime_bars`, `hourly_uptime_bars`, `uptime_percent`, `last_response_by_region`, etc. The dashboard reads only monitor docs — zero queries to the `checks` collection. The checker (`services/checker.py`) updates these incrementally.
 
+**Incident detection:** Requires 2 consecutive failed check cycles (majority-vote DOWN). Single failures are logged but don't trigger alerts. Recovery is instant on first successful check. Tracked via `consecutive_failures` field on the monitor document.
+
 ## Key Files
 
 | Path | Purpose |

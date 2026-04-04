@@ -808,6 +808,31 @@ async def _run_checks_inner():
                         await send_ssl_expiry_alert(monitor, ssl_days, ssl_exp)
                         monitor_updates["ssl_expiry_alerted_days"] = threshold_days
 
+        # ----- Consecutive failure tracking (2 failures before alerting) -----
+        prev_consecutive = monitor.get("consecutive_failures", 0)
+
+        if not result["is_up"]:
+            consecutive_failures = prev_consecutive + 1
+            monitor_updates["consecutive_failures"] = consecutive_failures
+
+            if consecutive_failures < 2:
+                # First failure — don't change status, don't create incident
+                print(f"[checker] {monitor['name']} failed 1/2 confirmation checks — waiting for confirmation")
+                # Keep status as previous (don't flip to "down" yet)
+                new_status = previous_status if previous_status != "pending" else "up"
+                monitor_updates["status"] = new_status
+                status_changed = False
+            else:
+                # 2+ consecutive failures — confirmed down
+                new_status = "down"
+                monitor_updates["status"] = new_status
+                status_changed = previous_status != new_status
+        else:
+            # UP — reset consecutive failures
+            if prev_consecutive > 0:
+                monitor_updates["consecutive_failures"] = 0
+            consecutive_failures = 0
+
         # ----- Status change detection + Incidents + Alerts -----
         if status_changed and new_status == "down":
             existing = get_open_incident(db, monitor["id"])
@@ -840,7 +865,7 @@ async def _run_checks_inner():
                                            f"alert_{channel}_{'sent' if ok else 'failed'}")
                     if monitor.get("webhook_url"):
                         await send_webhook_notification(monitor, "monitor.down", result)
-                print(f"[checker] INCIDENT CREATED: {monitor['name']} is DOWN" +
+                print(f"[checker] INCIDENT CREATED: {monitor['name']} is DOWN (confirmed after 2 consecutive failures)" +
                       (" (maintenance — alerts suppressed)" if in_maintenance else ""))
             else:
                 print(f"[checker] {monitor['name']} still DOWN — incident already open, skipping alert")
