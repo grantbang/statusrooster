@@ -2194,3 +2194,41 @@ class TestCleanup:
         monitors = resp.json()["data"]
         e2e_remaining = [m for m in monitors if m.get("name", "").startswith("E2E-")]
         assert len(e2e_remaining) == 0, f"I.2 FAIL: {len(e2e_remaining)} E2E monitors still exist"
+
+    @pytest.mark.asyncio
+    async def test_i3_cleanup_e2e_users(self, client, free_user):
+        """I.3 — Delete all e2e-* test user accounts via login + delete-account"""
+        # Delete the free user created by this test run
+        login_resp = await client.post("/login", data={
+            "email": free_user["email"],
+            "password": free_user["password"],
+        }, follow_redirects=False)
+        if login_resp.status_code in (302, 303):
+            cookies = dict(login_resp.cookies)
+            await client.post("/settings/delete-account", data={
+                "confirm_email": free_user["email"],
+            }, cookies=cookies, follow_redirects=False)
+            print(f"I.3: Deleted free user {free_user['email']}")
+
+        # Also clean up any orphaned e2e users from previous runs via Firestore
+        try:
+            import httpx as _httpx
+            from google.cloud import firestore
+            db = firestore.Client(project="statusrooster")
+            orphans = db.collection("users").where("email", ">=", "e2e-").where("email", "<", "e2e.").get()
+            count = 0
+            for doc in orphans:
+                user_data = doc.to_dict()
+                email = user_data.get("email", "")
+                if email.startswith("e2e-") and email.endswith("@statusrooster.com"):
+                    # Delete user's monitors, API keys, etc.
+                    for mon in db.collection("monitors").where("user_id", "==", doc.id).get():
+                        mon.reference.delete()
+                    for key in db.collection("api_keys").where("user_id", "==", doc.id).get():
+                        key.reference.delete()
+                    doc.reference.delete()
+                    count += 1
+            if count:
+                print(f"I.3: Cleaned up {count} orphaned e2e-* user accounts")
+        except Exception as e:
+            print(f"I.3: Firestore cleanup skipped ({e})")
