@@ -20,3 +20,14 @@ Thumbs.db
 *.egg-info/
 dist/
 build/
+
+# Planning/feedback docs (local only)
+DISCOVERY_FEEDBACK.md
+DISCOVERY_UX_ENHANCEMENT.md
+LANDING_PAGE_FEEDBACK.md
+PRODUCTHUNT_LAUNCH_STRATEGY.md
+auto-discovery-feature.txt
+auto-harvest-logic-feedback.txt
+feedback-on-bad-results.txt
+notification-change.md
+twilioticket.txt
