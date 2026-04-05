@@ -27,9 +27,14 @@
         <div id="heroResults" style="display:none;" class="l-hero-results">
             <p class="l-hero-results-title">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" style="vertical-align:-3px;"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                Found <strong id="heroCount">0</strong> endpoints on <strong id="heroDomainResult"></strong>
+                <strong id="heroCount">0</strong> recommended monitors for <strong id="heroDomainResult"></strong>
             </p>
             <div id="heroList" class="l-hero-list"></div>
+            <div class="l-hero-add-manual">
+                <input type="text" id="heroManualUrl" class="l-hero-manual-input" placeholder="https://api.example.com/v2" onkeydown="if(event.key==='Enter') heroAddManual()">
+                <button class="l-hero-manual-btn" onclick="heroAddManual()" title="Add URL">+</button>
+            </div>
+            <p style="color: var(--text-faint); font-size: 0.75rem; margin: 0.25rem 0 0;">Add a URL the scanner missed</p>
             <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0.5rem 0 0.75rem; text-align: left;" id="heroSelectedCount"></p>
             <div class="l-hero-cta-row">
                 <button class="l-btn-primary l-hero-cta" id="heroCta" onclick="heroSignup()">Sign up free to start monitoring</button>
@@ -339,6 +344,35 @@ function heroResetScan() {
     document.getElementById('heroDomain').focus();
     window._heroDiscoveredUrls = [];
     window._heroDomain = '';
+}
+
+function heroAddManual() {
+    let url = (document.getElementById('heroManualUrl').value || '').trim();
+    if (!url) return;
+    if (!url.startsWith('http')) url = 'https://' + url;
+
+    const urls = window._heroDiscoveredUrls || [];
+    // Check for duplicate
+    const normalized = url.replace(/\/+$/, '').toLowerCase();
+    if (urls.some(u => (u.url || '').replace(/\/+$/, '').toLowerCase() === normalized)) return;
+
+    const item = { url: url, source: 'manual', score: 70, suggested_name: url.replace('https://', '').replace('http://', ''), suggested_type: 'http' };
+    urls.push(item);
+    window._heroDiscoveredUrls = urls;
+
+    const i = urls.length - 1;
+    const list = document.getElementById('heroList');
+    const row = document.createElement('label');
+    row.className = 'l-hero-result-row';
+    row.innerHTML = '<input type="checkbox" class="hero-check" data-index="' + i + '" checked onchange="heroUpdateCount()">' +
+        '<span class="l-hero-result-name">' + escH(item.suggested_name) + '</span>' +
+        '<span class="discover-badge discover-badge-probe">manual</span>' +
+        '<span class="discover-badge discover-badge-type">HTTP</span>';
+    list.appendChild(row);
+
+    document.getElementById('heroManualUrl').value = '';
+    document.getElementById('heroCount').textContent = urls.length;
+    heroUpdateCount();
 }
 
 function escH(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }

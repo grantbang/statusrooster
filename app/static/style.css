@@ -4926,6 +4926,43 @@ code {
 }
 .l-hero-reset:hover { color: var(--brand); }
 
+/* Manual URL add input */
+.l-hero-add-manual, .discover-add-manual {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+}
+.l-hero-manual-input, .discover-manual-input {
+    flex: 1;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.85rem;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    outline: none;
+    background: var(--bg);
+}
+.l-hero-manual-input:focus, .discover-manual-input:focus {
+    border-color: var(--brand);
+    border-style: solid;
+}
+.l-hero-manual-btn, .discover-manual-btn {
+    width: 32px; height: 32px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: var(--brand);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+.l-hero-manual-btn:hover, .discover-manual-btn:hover {
+    background: var(--brand);
+    color: #fff;
+    border-color: var(--brand);
+}
+
 /* Hero feature checklist */
 .l-hero-features {
     display: flex;

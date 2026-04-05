@@ -30,7 +30,7 @@
         <div class="discover-results-header">
             <h2 class="discover-results-title">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" style="vertical-align:-3px;margin-right:4px;"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                Found <span id="resultCount">0</span> endpoints on <span id="resultDomain"></span>
+                <span id="resultCount">0</span> recommended monitors for <span id="resultDomain"></span>
             </h2>
             <p class="discover-sources" id="resultSources"></p>
         </div>
@@ -46,6 +46,11 @@
         </div>
         <p class="discover-hint" style="margin: 0.25rem 0 0.5rem; text-align: left;">We pre-selected the endpoints that matter most. Uncheck any you don't need.</p>
         <div class="discover-list" id="discoverList"></div>
+        <div class="discover-add-manual">
+            <input type="text" id="discoverManualUrl" class="discover-manual-input" placeholder="https://api.example.com/v2" onkeydown="if(event.key==='Enter') addManualUrl()">
+            <button class="discover-manual-btn" onclick="addManualUrl()" title="Add URL">+</button>
+            <span style="color: var(--text-faint); font-size: 0.75rem; margin-left: 0.5rem;">Add a URL the scanner missed</span>
+        </div>
         <details class="discover-quick-settings">
             <summary class="discover-qs-toggle">Quick Settings <span style="color:var(--text-muted); font-weight:400;">(optional)</span></summary>
             <div class="discover-qs-body">
@@ -303,6 +308,38 @@ function escHtml(s) {
     const d = document.createElement('div');
     d.textContent = s;
     return d.innerHTML;
+}
+
+function addManualUrl() {
+    let url = (document.getElementById('discoverManualUrl').value || '').trim();
+    if (!url) return;
+    if (!url.startsWith('http')) url = 'https://' + url;
+
+    const normalized = url.replace(/\/+$/, '').toLowerCase();
+    if (discoveredUrls.some(u => (u.url || '').replace(/\/+$/, '').toLowerCase() === normalized)) return;
+
+    const item = { url: url, source: 'manual', score: 70, suggested_name: url.replace('https://', '').replace('http://', ''), suggested_type: 'http', suggested_priority: 'high' };
+    discoveredUrls.push(item);
+
+    const i = discoveredUrls.length - 1;
+    const list = document.getElementById('discoverList');
+    const row = document.createElement('label');
+    row.className = 'discover-row';
+    row.innerHTML = `
+        <input type="checkbox" class="discover-check" data-index="${i}" data-score="70" checked onchange="updateCounts()">
+        <span class="discover-score-dot discover-score-high" title="Score: 70"></span>
+        <div class="discover-row-info">
+            <span class="discover-row-name">${escHtml(item.suggested_name)}</span>
+            <span class="discover-row-url">${escHtml(url.replace('https://', '').replace('http://', ''))}</span>
+        </div>
+        <span class="discover-badge discover-badge-probe">manual</span>
+        <span class="discover-badge discover-badge-type">HTTP</span>
+    `;
+    list.appendChild(row);
+
+    document.getElementById('discoverManualUrl').value = '';
+    document.getElementById('resultCount').textContent = discoveredUrls.length;
+    updateCounts();
 }
 
 {% if prefill_domain and not autocreate %}
