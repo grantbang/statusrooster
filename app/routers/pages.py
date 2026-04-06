@@ -2361,6 +2361,82 @@ async def revoke_api_key_page(request: Request, key_id: str):
 
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Support Tickets
+# ---------------------------------------------------------------------------
+
+@router.get("/support", response_class=HTMLResponse)
+async def support_page(request: Request):
+    user = get_user_from_cookie(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+    flash_message = request.query_params.get("msg")
+    return templates.TemplateResponse("support.html", {
+        "request": request, "user": user,
+        "flash_message": flash_message, "flash_type": "success",
+    })
+
+
+@router.post("/api/support/ticket")
+async def submit_ticket(request: Request):
+    from fastapi.responses import JSONResponse
+    from datetime import datetime, timezone
+    from app.services.alerts import send_email
+
+    user = get_user_from_cookie(request)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+
+    body = await request.json()
+    ticket_type = body.get("type", "").strip()
+    subject = body.get("subject", "").strip()
+    description = body.get("description", "").strip()
+    screenshot = body.get("screenshot", "")
+
+    if not ticket_type or not subject or not description:
+        return JSONResponse({"error": "Type, subject, and description are required."}, status_code=422)
+
+    if ticket_type not in ("bug", "feature", "question"):
+        return JSONResponse({"error": "Invalid ticket type."}, status_code=422)
+
+    # Cap screenshot at 2MB base64
+    if len(screenshot) > 2_800_000:
+        return JSONResponse({"error": "Screenshot too large (max 2MB)."}, status_code=422)
+
+    db = get_db()
+    ticket_data = {
+        "user_id": user["id"],
+        "user_email": user.get("email", ""),
+        "type": ticket_type,
+        "subject": subject,
+        "description": description,
+        "screenshot": screenshot if screenshot else None,
+        "status": "open",
+        "created_at": datetime.now(timezone.utc),
+    }
+    doc_ref = db.collection("tickets").document()
+    doc_ref.set(ticket_data)
+
+    # Email notification to admin
+    type_labels = {"bug": "Bug Report", "feature": "Feature Request", "question": "Question"}
+    html_body = f"""
+    <div style="font-family: -apple-system, sans-serif; max-width: 600px;">
+        <h2 style="margin: 0 0 0.5rem;">New {type_labels.get(ticket_type, ticket_type)} Ticket</h2>
+        <p><strong>From:</strong> {user.get('email', 'unknown')}</p>
+        <p><strong>Subject:</strong> {subject}</p>
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 1rem 0;">
+        <p style="white-space: pre-wrap;">{description}</p>
+        {'<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 1rem 0;"><p><strong>Screenshot attached</strong> — view in admin dashboard.</p>' if screenshot else ''}
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 1rem 0;">
+        <p style="color: #6b7280; font-size: 0.85rem;">Ticket ID: {doc_ref.id}<br>View at: <a href="https://statusrooster.com/admin">Admin Dashboard</a></p>
+    </div>
+    """
+    await send_email("gjbangerter@gmail.com", f"[StatusRooster] {type_labels.get(ticket_type, 'Ticket')}: {subject}", html_body)
+
+    return JSONResponse({"ok": True, "ticket_id": doc_ref.id})
+
+
+# ---------------------------------------------------------------------------
 # Admin Dashboard
 # ---------------------------------------------------------------------------
 
@@ -2487,6 +2563,10 @@ async def admin_dashboard(request: Request):
     rev_docs = db.collection("admin_revenue").order_by("timestamp", direction="DESCENDING").limit(50).get()
     revenue_events = [r.to_dict() | {"id": r.id} for r in rev_docs]
 
+    # --- Support Tickets ---
+    ticket_docs = db.collection("tickets").order_by("created_at", direction="DESCENDING").limit(100).get()
+    tickets = [t.to_dict() | {"id": t.id} for t in ticket_docs]
+
     return templates.TemplateResponse("admin.html", {
         "request": request,
         "user": user,
@@ -2506,7 +2586,20 @@ async def admin_dashboard(request: Request):
         "monthly_manual_total": round(monthly_manual_total, 2),
         "revenue_events": revenue_events,
         "gcp_costs": gcp_bigquery_costs,
+        "tickets": tickets,
     })
+
+
+# --- Admin Ticket Actions ---
+
+@router.post("/admin/tickets/{ticket_id}/resolve")
+async def resolve_ticket(request: Request, ticket_id: str):
+    user = get_user_from_cookie(request)
+    if not user or user.get("email", "").lower() != ADMIN_EMAIL:
+        raise HTTPException(status_code=404)
+    db = get_db()
+    db.collection("tickets").document(ticket_id).update({"status": "resolved"})
+    return RedirectResponse(url="/admin", status_code=302)
 
 
 # --- Admin Cost CRUD (AJAX) ---

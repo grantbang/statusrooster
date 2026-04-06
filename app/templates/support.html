@@ -1,0 +1,175 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Submit a Ticket{% endblock %}
+{% block nav_support %}active{% endblock %}
+
+{% block content %}
+<div class="support-page">
+    <h1>Submit a Ticket</h1>
+    <p class="support-sub">Report a bug, request a feature, or ask a question. We'll get back to you via email.</p>
+
+    <form class="support-form" id="supportForm" onsubmit="return submitTicket(event)">
+        <div class="support-field">
+            <label for="ticketType">Type</label>
+            <select id="ticketType" required>
+                <option value="">Select type...</option>
+                <option value="bug">Bug Report</option>
+                <option value="feature">Feature Request</option>
+                <option value="question">Question</option>
+            </select>
+        </div>
+        <div class="support-field">
+            <label for="ticketSubject">Subject</label>
+            <input type="text" id="ticketSubject" placeholder="Brief summary" required maxlength="200">
+        </div>
+        <div class="support-field">
+            <label for="ticketDescription">Description</label>
+            <textarea id="ticketDescription" rows="5" placeholder="Tell us what happened, what you expected, or what you'd like to see." required maxlength="5000"></textarea>
+        </div>
+        <div class="support-field">
+            <label for="ticketScreenshot">Screenshot <span style="color: var(--text-faint); font-weight: 400;">(optional, max 2MB)</span></label>
+            <input type="file" id="ticketScreenshot" accept="image/*" onchange="previewScreenshot(this)">
+            <div id="screenshotPreview" style="display:none; margin-top: 0.5rem;">
+                <img id="screenshotImg" style="max-width: 100%; max-height: 200px; border-radius: 6px; border: 1px solid var(--border);">
+                <button type="button" class="support-remove-screenshot" onclick="removeScreenshot()">Remove</button>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary support-submit" id="submitBtn">Submit Ticket</button>
+    </form>
+</div>
+
+<style>
+.support-page {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: var(--space-lg) var(--space-md);
+}
+.support-page h1 {
+    font-size: 1.4rem;
+    margin: 0 0 0.25rem;
+}
+.support-sub {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 0 0 1.5rem;
+}
+.support-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.support-field label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    color: var(--text);
+}
+.support-field input[type="text"],
+.support-field select,
+.support-field textarea {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    outline: none;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+.support-field input:focus,
+.support-field select:focus,
+.support-field textarea:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+.support-field textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+.support-field input[type="file"] {
+    font-size: 0.85rem;
+}
+.support-submit {
+    padding: 0.7rem 1.5rem;
+    font-size: 1rem;
+    align-self: flex-start;
+}
+.support-remove-screenshot {
+    display: inline-block;
+    margin-top: 0.35rem;
+    background: none;
+    border: none;
+    color: var(--danger);
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-decoration: underline;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let screenshotBase64 = '';
+
+function previewScreenshot(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+        alert('Screenshot must be under 2MB.');
+        input.value = '';
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        screenshotBase64 = e.target.result;
+        document.getElementById('screenshotImg').src = screenshotBase64;
+        document.getElementById('screenshotPreview').style.display = '';
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeScreenshot() {
+    screenshotBase64 = '';
+    document.getElementById('ticketScreenshot').value = '';
+    document.getElementById('screenshotPreview').style.display = 'none';
+}
+
+function submitTicket(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    const payload = {
+        type: document.getElementById('ticketType').value,
+        subject: document.getElementById('ticketSubject').value.trim(),
+        description: document.getElementById('ticketDescription').value.trim(),
+        screenshot: screenshotBase64 || '',
+    };
+
+    fetch('/api/support/ticket', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+            btn.disabled = false;
+            btn.textContent = 'Submit Ticket';
+            return;
+        }
+        window.location.href = '/support?msg=Ticket+submitted!+We%27ll+get+back+to+you.';
+    })
+    .catch(() => {
+        alert('Something went wrong. Please try again.');
+        btn.disabled = false;
+        btn.textContent = 'Submit Ticket';
+    });
+
+    return false;
+}
+</script>
+{% endblock %}
