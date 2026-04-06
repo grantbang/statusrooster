@@ -16,14 +16,31 @@
     <p class="l-hero-sub">We scan your site, discover your endpoints, and set up monitoring automatically. 60-second checks from 4 regions — free forever.</p>
 
     <div class="l-hero-discover" id="heroDiscover">
+        <!-- Scan input -->
         <div class="l-hero-discover-input" id="heroInput">
             <input type="text" id="heroDomain" class="l-hero-domain" placeholder="example.com" onkeydown="if(event.key==='Enter') heroScan()">
             <button class="l-btn-primary l-hero-scan-btn" id="heroScanBtn" onclick="heroScan()">Scan</button>
         </div>
+
+        <!-- Manual add mode (hidden by default) -->
+        <div id="heroManualMode" style="display:none;">
+            <div class="l-hero-manual-add">
+                <input type="text" id="heroManualUrlDirect" class="l-hero-domain" placeholder="https://your-site.com" onkeydown="if(event.key==='Enter') heroAddManualDirect()">
+                <button class="l-btn-primary l-hero-scan-btn" onclick="heroAddManualDirect()">+</button>
+            </div>
+            <div id="heroManualList" class="l-hero-list" style="margin-top: 0.75rem;"></div>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0.5rem 0 0.75rem;" id="heroManualCount"></p>
+            <button class="l-btn-primary l-hero-cta" id="heroManualCta" onclick="heroSignup()" disabled>Select endpoints to monitor</button>
+            <button class="l-hero-reset" onclick="heroShowScanMode()">Back to auto-scan</button>
+        </div>
+
+        <!-- Loading -->
         <div id="heroLoading" style="display:none; padding: 1.5rem 0;">
             <div class="discover-spinner" style="margin: 0 auto 0.5rem;"></div>
             <p style="color: var(--text-muted); margin: 0;">Scanning <strong id="heroLoadingDomain"></strong>...</p>
         </div>
+
+        <!-- Results -->
         <div id="heroResults" style="display:none;" class="l-hero-results">
             <p class="l-hero-results-title">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" style="vertical-align:-3px;"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -33,22 +50,24 @@
             <div class="l-hero-add-manual">
                 <input type="text" id="heroManualUrl" class="l-hero-manual-input" placeholder="https://api.example.com/v2" onkeydown="if(event.key==='Enter') heroAddManual()">
                 <button class="l-hero-manual-btn" onclick="heroAddManual()" title="Add URL">+</button>
+                <span class="l-hero-manual-hint">Add a URL the scanner missed</span>
             </div>
-            <p style="color: var(--text-faint); font-size: 0.75rem; margin: 0.25rem 0 0;">Add a URL the scanner missed</p>
-            <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0.5rem 0 0.75rem; text-align: left;" id="heroSelectedCount"></p>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0.75rem 0 0.75rem;" id="heroSelectedCount"></p>
             <div class="l-hero-cta-row">
                 <button class="l-btn-primary l-hero-cta" id="heroCta" onclick="heroSignup()">Sign up free to start monitoring</button>
                 <button class="l-btn-pro l-hero-cta" id="heroCtaPro" onclick="heroSignupPro()" style="display:none;">Upgrade to Pro — monitor all</button>
             </div>
-            <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0.5rem 0 0; text-align: center;">No credit card required. 10 free monitors.</p>
-            <button class="l-hero-reset" id="heroReset" onclick="heroResetScan()">Scan a different domain</button>
+            <button class="l-hero-reset" onclick="heroResetScan()">Scan a different domain</button>
         </div>
+
+        <!-- Empty -->
         <div id="heroEmpty" style="display:none; padding: 1rem 0; text-align: center;">
             <p style="color: var(--text-muted); margin: 0 0 0.75rem;" id="heroEmptyMsg">No endpoints found.</p>
             <a href="/signup" class="l-btn-primary">Start monitoring free</a>
         </div>
     </div>
     <p class="l-hero-trust">No credit card &middot; Set up in 30 seconds &middot; Free forever</p>
+    <p class="l-hero-manual-link"><a href="#" onclick="heroShowManualMode(); return false;">Or just add URLs manually &rarr;</a></p>
 </section>
 
 <!-- Social proof -->
@@ -339,11 +358,71 @@ function heroSignupPro() {
 function heroResetScan() {
     document.getElementById('heroResults').style.display = 'none';
     document.getElementById('heroEmpty').style.display = 'none';
+    document.getElementById('heroManualMode').style.display = 'none';
     document.getElementById('heroInput').style.display = '';
+    document.querySelector('.l-hero-manual-link').style.display = '';
     document.getElementById('heroDomain').value = '';
     document.getElementById('heroDomain').focus();
     window._heroDiscoveredUrls = [];
     window._heroDomain = '';
+}
+
+function heroShowManualMode() {
+    document.getElementById('heroInput').style.display = 'none';
+    document.querySelector('.l-hero-manual-link').style.display = 'none';
+    document.getElementById('heroManualMode').style.display = '';
+    document.getElementById('heroManualUrlDirect').focus();
+    window._heroDiscoveredUrls = [];
+    window._heroDomain = 'manual';
+}
+
+function heroShowScanMode() {
+    document.getElementById('heroManualMode').style.display = 'none';
+    document.getElementById('heroInput').style.display = '';
+    document.querySelector('.l-hero-manual-link').style.display = '';
+    document.getElementById('heroDomain').focus();
+    window._heroDiscoveredUrls = [];
+}
+
+function heroAddManualDirect() {
+    let url = (document.getElementById('heroManualUrlDirect').value || '').trim();
+    if (!url) return;
+    if (!url.startsWith('http')) url = 'https://' + url;
+
+    const urls = window._heroDiscoveredUrls || [];
+    const normalized = url.replace(/\/+$/, '').toLowerCase();
+    if (urls.some(u => (u.url || '').replace(/\/+$/, '').toLowerCase() === normalized)) return;
+
+    const item = { url: url, source: 'manual', score: 70, suggested_name: url.replace('https://', '').replace('http://', ''), suggested_type: 'http' };
+    urls.push(item);
+    window._heroDiscoveredUrls = urls;
+
+    const i = urls.length - 1;
+    const list = document.getElementById('heroManualList');
+    const row = document.createElement('label');
+    row.className = 'l-hero-result-row';
+    row.innerHTML = '<input type="checkbox" class="hero-check" data-index="' + i + '" checked onchange="heroUpdateManualCount()">' +
+        '<span class="l-hero-result-name">' + escH(item.suggested_name) + '</span>' +
+        '<span class="discover-badge discover-badge-type">HTTP</span>';
+    list.appendChild(row);
+
+    document.getElementById('heroManualUrlDirect').value = '';
+    document.getElementById('heroManualUrlDirect').focus();
+    heroUpdateManualCount();
+}
+
+function heroUpdateManualCount() {
+    const checked = document.querySelectorAll('#heroManualList .hero-check:checked').length;
+    const total = document.querySelectorAll('#heroManualList .hero-check').length;
+    document.getElementById('heroManualCount').textContent = checked + ' of ' + total + ' selected';
+    const cta = document.getElementById('heroManualCta');
+    if (checked > 0) {
+        cta.textContent = 'Sign up free — monitor ' + checked + ' endpoint' + (checked === 1 ? '' : 's');
+        cta.disabled = false;
+    } else {
+        cta.textContent = 'Add URLs to monitor';
+        cta.disabled = true;
+    }
 }
 
 function heroAddManual() {

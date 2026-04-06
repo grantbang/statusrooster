@@ -4962,6 +4962,27 @@ code {
     color: #fff;
     border-color: var(--brand);
 }
+.l-hero-manual-hint {
+    font-size: 0.75rem;
+    color: var(--text-faint);
+    white-space: nowrap;
+}
+.l-hero-manual-link {
+    font-size: 0.85rem;
+    margin: 0.5rem 0 0;
+    text-align: center;
+}
+.l-hero-manual-link a {
+    color: var(--text-muted);
+    text-decoration: none;
+}
+.l-hero-manual-link a:hover { color: var(--brand); }
+.l-hero-manual-add {
+    display: flex;
+    gap: 0.5rem;
+    max-width: 480px;
+    margin: 0 auto;
+}
 
 /* Hero feature checklist */
 .l-hero-features {
@@ -8337,9 +8358,13 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
     .discover-empty-actions { flex-direction: column; }
     .discover-qs-body { padding: 0 0.75rem 0.75rem; }
     .l-hero-discover-input { flex-direction: column; }
+    .l-hero-manual-add { flex-direction: column; }
     .l-hero-scan-btn { width: 100%; }
+    .l-hero-cta-row { flex-direction: column; }
     .l-hero-result-row { gap: 0.3rem; }
     .l-hero-result-name { font-size: 0.8rem; }
+    .l-hero-add-manual { flex-wrap: wrap; }
+    .l-hero-manual-hint { width: 100%; margin-top: 0.15rem; }
     .l-bottom-discover { flex-direction: column; }
     .l-api-callout-inner { padding: 0.75rem 1rem; font-size: 0.85rem; }
 }
