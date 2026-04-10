@@ -8715,3 +8715,68 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
     .api-layout { grid-template-columns: 1fr; }
     .api-sidebar { display: none; }
 }
+
+/* ── API docs: fix endpoint header & type header overflow on mobile ── */
+@media (max-width: 768px) {
+    /* Type section header — stack heading and badge vertically */
+    .api-type-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.4rem;
+    }
+    .api-type-header h2 {
+        font-size: 1.15rem;
+        line-height: 1.25;
+        word-break: break-word;
+    }
+    .api-type-section {
+        padding: var(--space-md);
+    }
+    .api-type-desc { font-size: 0.88rem; }
+
+    /* Endpoint header — wrap method/path on row 1, description on row 2 */
+    .endpoint-header {
+        flex-wrap: wrap;
+        gap: 0.4rem 0.5rem;
+        padding-right: 2rem; /* leave room for absolute chevron */
+        position: relative;
+        align-items: center;
+    }
+    .endpoint-header .method-badge {
+        flex-shrink: 0;
+    }
+    .endpoint-path {
+        flex: 1 1 auto;
+        min-width: 0;
+        word-break: break-all;
+        font-size: 0.78rem;
+    }
+    .endpoint-desc {
+        flex-basis: 100%;
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin-top: 0.15rem;
+        word-break: break-word;
+    }
+    .endpoint-header .chevron {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        margin-left: 0;
+    }
+    .endpoint.open .endpoint-header .chevron {
+        transform: translateY(-50%) rotate(90deg);
+    }
+    .endpoint-copy-btn { display: none !important; }
+}
+
+@media (max-width: 480px) {
+    .api-type-header h2 { font-size: 1.05rem; }
+    .api-type-badge { font-size: 0.65rem; padding: 0.15rem 0.4rem; }
+    .endpoint-path { font-size: 0.72rem; }
+    .endpoint-desc { font-size: 0.72rem; }
+    .endpoint-header { padding: 0.5rem 1.75rem 0.5rem 0.6rem; }
+    .endpoint-header .chevron { right: 0.5rem; }
+    .api-type-section { padding: 0.85rem 0.65rem; }
+}
