@@ -16,7 +16,7 @@
         {% if dropped_count %}
         <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(255,255,255,0.15); border-radius: 8px;">
             <p style="margin: 0 0 0.5rem; font-weight: 600;">{{ dropped_count }} more endpoint{{ 's' if dropped_count|int > 1 else '' }} couldn't be added — free plan includes 10 monitors.</p>
-            <p style="margin: 0 0 0.75rem; opacity: 0.9; font-size: 0.85rem;">Upgrade to Pro for 200 monitors, SMS alerts, and 90 days of history.</p>
+            <p style="margin: 0 0 0.75rem; opacity: 0.9; font-size: 0.85rem;">Need more? Upgrade to Pro for 200 monitors.</p>
             <form method="POST" action="/api/billing/checkout" style="margin:0; display: inline;">
                 <button type="submit" class="btn btn-sm" style="background: #fff; color: var(--brand); font-weight: 600; border: none;">Upgrade to Pro — $9/mo</button>
             </form>
@@ -36,7 +36,7 @@
 
 {% if user.get('plan', 'free') == 'free' and monitors | length >= 8 %}
 <div class="upgrade-banner">
-    <p>You're using <strong>{{ monitors | length }} of 10</strong> free monitors. Upgrade to Pro for 200 monitors, SMS alerts, and 90 days of history.</p>
+    <p>You're using <strong>{{ monitors | length }} of 10</strong> free monitors. Need more? Upgrade to Pro for up to 200.</p>
     <form method="POST" action="/api/billing/checkout" style="margin:0;">
         <button type="submit" class="upgrade-btn">Upgrade to Pro — $9/mo</button>
     </form>
@@ -384,7 +384,7 @@
 {% if user.get('plan', 'free') == 'free' %}
 <div class="d-pro-footer">
     <span class="d-pro-footer-text">
-        <strong>Upgrade to Pro</strong> — get 200 monitors, SMS alerts, and 90 days of history.
+        <strong>Need more monitors?</strong> Upgrade to Pro for up to 200.
     </span>
     <form method="POST" action="/api/billing/checkout" style="margin:0;">
         <button type="submit" class="d-pro-footer-cta">Upgrade — $9/mo</button>

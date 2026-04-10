@@ -80,7 +80,7 @@
                                 <option value="180">3 minutes</option>
                                 <option value="300">5 minutes</option>
                             </select>
-                            <span class="discover-qs-hint">Free: 60-300s</span>
+                            <span class="discover-qs-hint">60-300s</span>
                         </div>
                     </div>
                 </details>
@@ -389,7 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('discoverInput').style.display = 'none';
             document.getElementById('discoverEmpty').style.display = '';
             document.getElementById('emptyTitle').textContent = 'Could not create monitors';
-            document.getElementById('emptyText').textContent = err.message || 'You may have reached your monitor limit. Upgrade to Pro for 200 monitors.';
+            document.getElementById('emptyText').textContent = err.message || 'You may have reached your monitor limit.';
         });
     } else {
         // No localStorage data — just scan normally

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}Pricing{% endblock %}
-{% block description %}Monitor your app and the services your stack depends on. 10 monitors free, 200 for $9/mo. No bloat, no confusion.{% endblock %}
+{% block description %}Monitor your app and the services your stack depends on. Every feature free — up to 10 monitors. Need more? $9/mo for 200.{% endblock %}
 {% block canonical %}<link rel="canonical" href="https://statusrooster.com/pricing">{% endblock %}
 
 {% block extra_css %}
@@ -12,8 +12,8 @@
 
     <!-- Hero -->
     <div class="pricing-hero">
-        <h1>Simple pricing.<br>Start free, upgrade when you're ready.</h1>
-        <p class="tagline">Two plans. One generous free tier. No credit card required.</p>
+        <h1>Every feature. Free.<br>Upgrade only for more monitors.</h1>
+        <p class="tagline">No feature walls. No gotchas. Free gets everything — Pro just gives you room to grow.</p>
     </div>
 
     <!-- Plan Cards -->
@@ -24,36 +24,18 @@
             <div class="subtitle">For side projects &amp; personal sites</div>
             <div class="price-amount">$0 <span>/ forever</span></div>
 
-            <div class="section-label">Monitoring</div>
+            <div class="section-label">Everything included</div>
             <ul class="price-features">
                 <li><span class="check">✓</span> Up to <strong>10</strong> monitors</li>
-                <li><span class="check">✓</span> 60-second check interval (custom per monitor)</li>
-                <li><span class="check">✓</span> JSON/API response validation</li>
-                <li><span class="check">✓</span> SSL certificate expiry monitoring</li>
+                <li><span class="check">✓</span> 60-second check interval</li>
                 <li><span class="check">✓</span> Multi-region checks (4 regions)</li>
-                <li><span class="check">✓</span> Heartbeat / cron job monitoring</li>
+                <li><span class="check">✓</span> HTTP, JSON/API, SSL &amp; heartbeat monitors</li>
                 <li><span class="check">✓</span> Keyword / content verification</li>
-            </ul>
-
-            <div class="section-label">Alerts</div>
-            <ul class="price-features">
-                <li><span class="check">✓</span> Email notifications</li>
-                <li><span class="check">✓</span> Slack notifications</li>
-                <li><span class="check">✓</span> Webhook notifications (JSON POST)</li>
-            </ul>
-
-            <div class="section-label">Developer Tools</div>
-            <ul class="price-features">
-                <li><span class="check">✓</span> Full REST API access</li>
-                <li><span class="check">✓</span> Uptime badges for READMEs</li>
-                <li><span class="check">✓</span> OpenAPI spec</li>
-            </ul>
-
-            <div class="section-label">Status Pages</div>
-            <ul class="price-features">
+                <li><span class="check">✓</span> Email, Slack, SMS &amp; webhook alerts</li>
+                <li><span class="check">✓</span> 90-day data retention</li>
+                <li><span class="check">✓</span> Custom status page branding</li>
+                <li><span class="check">✓</span> Full REST API &amp; uptime badges</li>
                 <li><span class="check">✓</span> Up to 10 public status pages</li>
-                <li><span class="check">✓</span> 30-day uptime history</li>
-                <li><span class="check">✓</span> Incident timeline</li>
                 <li><span class="check">✓</span> Maintenance windows</li>
             </ul>
 
@@ -69,38 +51,16 @@
         <!-- Pro Plan -->
         <div class="price-card featured">
             <h3>Pro</h3>
-            <div class="subtitle">For production apps</div>
+            <div class="subtitle">When you need more monitors</div>
             <div class="price-amount">$9 <span>/ month</span></div>
 
             <div class="section-label">Everything in Free, plus</div>
             <ul class="price-features">
                 <li><span class="check">✓</span> Up to <strong>200</strong> monitors</li>
-                <li><span class="check">✓</span> <strong>60-second</strong> check interval</li>
-                <li><span class="check">✓</span> Multi-region checks (4 regions)</li>
-                <li><span class="check">✓</span> Remove "Powered by" on status pages</li>
-                <li><span class="check">✓</span> Custom status page branding (logo, colors)</li>
-                <li><span class="check">✓</span> 90-day data retention (vs 30-day)</li>
-            </ul>
-
-            <div class="section-label">Alerts</div>
-            <ul class="price-features">
-                <li><span class="check">✓</span> Email notifications</li>
-                <li><span class="check">✓</span> Slack notifications</li>
-                <li><span class="check">✓</span> SMS / text alerts</li>
-                <li><span class="check">✓</span> Webhook notifications (JSON POST)</li>
-            </ul>
-
-            <div class="section-label">Status Pages</div>
-            <ul class="price-features">
-                <li><span class="check">✓</span> Up to 10 public status pages</li>
-                <li><span class="check">✓</span> Aggregate multi-monitor page</li>
-                <li><span class="check">✓</span> Maintenance windows</li>
-            </ul>
-
-            <div class="section-label">Support</div>
-            <ul class="price-features">
                 <li><span class="check">✓</span> Priority email support</li>
             </ul>
+
+            <p style="margin: 1.25rem 0 0; font-size: 0.9rem; color: var(--text-muted);">Same features, same check intervals, same alerts — just more room to grow.</p>
 
             {% if user and user.get('plan', 'free') == 'pro' %}
                 <button class="price-cta current-plan" disabled>Current Plan</button>
@@ -119,28 +79,23 @@
         <h2>Questions? Answers.</h2>
 
         <div class="faq-item">
+            <h4>What's the difference between Free and Pro?</h4>
+            <p>Just the number of monitors. Free gets 10, Pro gets 200. Every feature — SMS alerts, custom branding, 90-day history, API access — is included on both plans.</p>
+        </div>
+
+        <div class="faq-item">
             <h4>What counts as a monitor?</h4>
-            <p>Each URL you want to check = one monitor. Free gets 10, Pro gets 200.</p>
-        </div>
-
-        <div class="faq-item">
-            <h4>What's the difference in check intervals?</h4>
-            <p>All monitors can be checked as often as every 60 seconds (custom per monitor, up to every 5 minutes). Pro users get 200 monitors, SMS alerts, custom branding, and 90 days of history.</p>
-        </div>
-
-        <div class="faq-item">
-            <h4>Do I get API access on Free?</h4>
-            <p>Yes — full REST API on every plan. Create monitors, pull check data, automate your workflow. Generate an API key in Settings.</p>
+            <p>Each URL, API endpoint, heartbeat, or SSL certificate you want to check = one monitor.</p>
         </div>
 
         <div class="faq-item">
             <h4>Do I need a credit card to start?</h4>
-            <p>Nope. The free plan is genuinely free — 10 monitors, SSL monitoring, keyword checks, email + Slack + webhook alerts, full API, and uptime badges. No trial, no expiration.</p>
+            <p>Nope. The free plan is genuinely free — every feature included. No trial, no expiration.</p>
         </div>
 
         <div class="faq-item">
             <h4>Can I cancel Pro anytime?</h4>
-            <p>Yes, cancel anytime from Settings. You'll keep Pro features through the end of your billing period. No questions asked.</p>
+            <p>Yes, cancel anytime from Settings. You'll keep Pro through the end of your billing period. No questions asked.</p>
         </div>
 
         <div class="faq-item">
@@ -150,14 +105,14 @@
 
         <div class="faq-item">
             <h4>What about status pages?</h4>
-            <p>Free users get up to 10 public status pages. Pro users also get an aggregate page showing all monitors at once, plus custom branding (logo, colors, hide "Powered by").</p>
+            <p>Every plan gets up to 10 public status pages with custom branding, incident timeline, and maintenance windows.</p>
         </div>
     </div>
 
     <!-- Bottom CTA -->
     <div class="bottom-cta">
         <h2>Start monitoring in 30 seconds</h2>
-        <p>10 monitors free. Multi-region checks, full API, uptime badges, SSL alerts, and keyword checks included.</p>
+        <p>Every feature included free. SMS, Slack, webhooks, custom branding, 90-day history, full API.</p>
         {% if user %}
             <a href="/dashboard">Go to dashboard</a>
         {% else %}

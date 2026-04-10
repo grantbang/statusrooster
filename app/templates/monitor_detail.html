@@ -625,7 +625,7 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
             </span>
             <span class="md-ch-name">SMS</span>
-            <span class="md-ch-status">{% if monitor.get('alert_sms') %}{{ monitor.alert_sms }}{% elif user.get('plan', 'free') != 'pro' %}Pro only{% else %}Not configured{% endif %}</span>
+            <span class="md-ch-status">{% if monitor.get('alert_sms') %}{{ monitor.alert_sms }}{% else %}Not configured{% endif %}</span>
         </div>
     </div>
 </div>

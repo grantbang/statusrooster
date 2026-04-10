@@ -130,18 +130,18 @@ r = requests.get(<span class="code-string">"{{ app_url }}/api/v1/monitors"</span
             <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
             <tbody>
                 <tr><td><code>401</code></td><td>Missing or invalid API key</td></tr>
-                <tr><td><code>403</code></td><td>Plan limit exceeded, or Pro feature used on Free plan</td></tr>
+                <tr><td><code>403</code></td><td>Monitor limit exceeded</td></tr>
                 <tr><td><code>404</code></td><td>Resource not found</td></tr>
                 <tr><td><code>422</code></td><td>Invalid or missing request body</td></tr>
             </tbody>
         </table>
 
         <p><strong>Error response example:</strong></p>
-        <div class="response-shape"><span class="code-comment">// 403 — Pro feature on Free plan</span>
+        <div class="response-shape"><span class="code-comment">// 403 — Monitor limit exceeded</span>
 {
   "detail": {
     "data": null,
-    "error": "SMS alerts require a Pro plan."
+    "error": "Free plan limited to 10 monitors. Upgrade to Pro for up to 200."
   }
 }
 
@@ -155,7 +155,7 @@ r = requests.get(<span class="code-string">"{{ app_url }}/api/v1/monitors"</span
     }
   ]
 }</div>
-        <p class="api-helper-text">Pro-only fields (<code>alert_sms</code>, <code>check_interval</code> below 60s) return <code>403</code> if used on a Free plan. All other fields (Slack, webhooks, maintenance windows, custom headers, basic auth) are available on all plans.</p>
+        <p class="api-helper-text">All features (SMS, Slack, webhooks, maintenance windows, custom headers, basic auth) are available on all plans. The only limit is the number of monitors: Free gets 10, Pro gets 200.</p>
     </div>
 </div>
 
@@ -1850,19 +1850,19 @@ app.post(<span class="code-string">"/webhooks/statusrooster"</span>, (req, res) 
 <div class="api-type-section" id="plan-limits">
     <div class="api-section">
         <h2>Plan Limits</h2>
-        <p>Limits are enforced server-side on every API call. Exceeding a limit returns <code>403 Forbidden</code>.</p>
+        <p>All features are available on every plan. The only difference is the number of monitors. Exceeding the monitor limit returns <code>403 Forbidden</code>.</p>
         <table class="param-table">
             <thead><tr><th>Limit</th><th>Free</th><th>Pro ($9/mo)</th></tr></thead>
             <tbody>
                 <tr><td>Monitors</td><td>10</td><td>200</td></tr>
-                <tr><td>Check interval</td><td>60–300s (custom)</td><td>60–300s (custom)</td></tr>
-                <tr><td>Email / Slack / Webhooks</td><td>✓</td><td>✓</td></tr>
-                <tr><td>SMS alerts</td><td>—</td><td>✓</td></tr>
+                <tr><td>Check interval</td><td>60–300s</td><td>60–300s</td></tr>
+                <tr><td>Email / Slack / SMS / Webhooks</td><td>✓</td><td>✓</td></tr>
                 <tr><td>Status pages</td><td>10</td><td>10</td></tr>
+                <tr><td>Custom branding</td><td>✓</td><td>✓</td></tr>
                 <tr><td>Maintenance windows</td><td>✓</td><td>✓</td></tr>
                 <tr><td>Custom headers / Basic Auth</td><td>✓</td><td>✓</td></tr>
                 <tr><td>Multi-region checks</td><td>4 regions</td><td>4 regions</td></tr>
-                <tr><td>Data retention</td><td>30 days</td><td>90 days</td></tr>
+                <tr><td>Data retention</td><td>90 days</td><td>90 days</td></tr>
             </tbody>
         </table>
     </div>

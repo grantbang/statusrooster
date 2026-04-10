@@ -279,13 +279,13 @@ class ApiCreateMonitor(BaseModel):
     ssl_expiry_threshold_days: int | None = None
     group: str = ""
     http_method: str = "GET"             # GET, POST, HEAD, PUT, PATCH, DELETE, OPTIONS
-    basic_auth_user: str = ""            # Basic Auth username (Pro)
-    basic_auth_pass: str = ""            # Basic Auth password (Pro)
+    basic_auth_user: str = ""            # Basic Auth username
+    basic_auth_pass: str = ""            # Basic Auth password
     follow_redirects: bool = True        # Follow HTTP redirects
     bearer_token: str = ""               # Bearer token auth (sent as Authorization: Bearer <token>)
     request_body: str = ""               # Request body for POST/PUT/PATCH/DELETE
     request_content_type: str = ""       # Content-Type for request body (e.g. application/json)
-    custom_headers: list[dict] | None = None  # [{key, value}] custom request headers (Pro)
+    custom_headers: list[dict] | None = None  # [{key, value}] custom request headers
 
 
 @router.post("/monitors", status_code=201)
@@ -438,7 +438,7 @@ class ApiUpdateMonitor(BaseModel):
     bearer_token: str | None = None         # Bearer token auth
     request_body: str | None = None         # Request body for POST/PUT/PATCH/DELETE
     request_content_type: str | None = None # Content-Type for request body
-    custom_headers: list[dict] | None = None  # [{key, value}] custom request headers (Pro)
+    custom_headers: list[dict] | None = None  # [{key, value}] custom request headers
 
 
 @router.put("/monitors/{monitor_id}")

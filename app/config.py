@@ -36,9 +36,8 @@ class Settings:
     GITHUB_CLIENT_ID: str = os.getenv("GITHUB_CLIENT_ID", "")
     GITHUB_CLIENT_SECRET: str = os.getenv("GITHUB_CLIENT_SECRET", "")
 
-    # Data retention (days)
-    FREE_DATA_RETENTION_DAYS: int = 30
-    PRO_DATA_RETENTION_DAYS: int = 90
+    # Data retention (days) — same for all plans
+    DATA_RETENTION_DAYS: int = 90
 
     # App
     APP_URL: str = os.getenv("APP_URL", "http://localhost:8080")

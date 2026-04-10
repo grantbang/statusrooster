@@ -1008,9 +1008,9 @@ async def add_monitor(
             status_code=302,
         )
 
-    # Normalize + validate SMS (Pro only)
+    # Normalize + validate SMS
     alert_sms = ""
-    if plan == "pro" and alert_sms_raw.strip():
+    if alert_sms_raw.strip():
         alert_sms, sms_err = _normalize_sms(alert_sms_raw)
         if sms_err:
             return RedirectResponse(
@@ -1148,7 +1148,7 @@ async def add_monitor(
         name=name,
         alert_email=alert_email or user.get("email", ""),
         alert_slack_webhook=alert_slack_webhook or "",
-        alert_sms=alert_sms if user.get("plan", "free") == "pro" else "",
+        alert_sms=alert_sms,
         keyword=keyword,
         response_threshold_ms=response_threshold_ms.strip() if response_threshold_ms else None,
         webhook_url=webhook_url or "",
@@ -1283,17 +1283,15 @@ async def edit_monitor_submit(
     if not monitor or monitor["user_id"] != user["id"]:
         return RedirectResponse(url="/dashboard?msg=Monitor+not+found&msg_type=error", status_code=302)
 
-    # Normalize + validate SMS (Pro only)
+    # Normalize + validate SMS
     alert_sms = ""
-    if user.get("plan", "free") == "pro" and alert_sms_raw.strip():
+    if alert_sms_raw.strip():
         alert_sms, sms_err = _normalize_sms(alert_sms_raw)
         if sms_err:
             return RedirectResponse(
                 url=f"/monitors/{monitor_id}/edit?msg={sms_err.replace(' ', '+')}&msg_type=error",
                 status_code=302,
             )
-    elif user.get("plan", "free") != "pro":
-        alert_sms = monitor.get("alert_sms", "")  # preserve existing value, don't let Free user clear it via bypass
 
     # Validate URL (skip empty URLs — heartbeat/SSL use hidden fields)
     if url and not url.startswith(("http://", "https://")):
@@ -1323,7 +1321,7 @@ async def edit_monitor_submit(
         "name": name,
         "alert_email": alert_email,
         "alert_slack_webhook": "" if form.get("clear_slack_webhook") == "1" else (alert_slack_webhook if alert_slack_webhook else monitor.get("alert_slack_webhook", "")),
-        "alert_sms": alert_sms if user.get("plan", "free") == "pro" else monitor.get("alert_sms", ""),
+        "alert_sms": alert_sms,
         "slug": slug,
         "public": public == "true",
         "paused": form.get("paused") == "true",
@@ -2016,17 +2014,13 @@ async def aggregate_status_page(request: Request, user_id: str):
     # Overall status
     all_up = all(m.get("status") == "up" for m in public_monitors)
 
-    # Branding (Pro only)
-    branding = {}
-    if owner.get("plan", "free") == "pro":
-        branding = {
-            "brand_name": owner.get("status_page_brand_name", ""),
-            "logo_url": owner.get("status_page_logo_url", ""),
-            "accent_color": owner.get("status_page_accent_color", ""),
-            "show_powered_by": not owner.get("hide_powered_by", False),
-        }
-    else:
-        branding = {"brand_name": "", "logo_url": "", "accent_color": "", "show_powered_by": True}
+    # Branding
+    branding = {
+        "brand_name": owner.get("status_page_brand_name", ""),
+        "logo_url": owner.get("status_page_logo_url", ""),
+        "accent_color": owner.get("status_page_accent_color", ""),
+        "show_powered_by": not owner.get("hide_powered_by", False),
+    }
 
     return templates.TemplateResponse("aggregate_status.html", {
         "request": request,
@@ -2055,7 +2049,7 @@ async def public_status_page(request: Request, slug: str):
         raise HTTPException(status_code=404, detail="Status page not found")
 
     # Get 90-day uptime data for the bar chart
-    # Branding (Pro only)
+    # Branding
     owner = get_user_by_id(db, monitor.get("user_id", ""))
     owner_plan = owner.get("plan", "free") if owner else "free"
 
@@ -2063,14 +2057,12 @@ async def public_status_page(request: Request, slug: str):
 
     # Get recent incidents
     incidents = list_incidents_by_monitor(db, monitor["id"], limit=10)
-    branding = {"brand_name": "", "logo_url": "", "accent_color": "", "show_powered_by": True}
-    if owner and owner.get("plan", "free") == "pro":
-        branding = {
-            "brand_name": owner.get("status_page_brand_name", ""),
-            "logo_url": owner.get("status_page_logo_url", ""),
-            "accent_color": owner.get("status_page_accent_color", ""),
-            "show_powered_by": not owner.get("hide_powered_by", False),
-        }
+    branding = {
+        "brand_name": owner.get("status_page_brand_name", "") if owner else "",
+        "logo_url": owner.get("status_page_logo_url", "") if owner else "",
+        "accent_color": owner.get("status_page_accent_color", "") if owner else "",
+        "show_powered_by": not owner.get("hide_powered_by", False) if owner else True,
+    }
 
     return templates.TemplateResponse("status_page.html", {
         "request": request,
@@ -2178,12 +2170,6 @@ async def save_branding(request: Request):
     user = get_user_from_cookie(request)
     if not user:
         return RedirectResponse(url="/login", status_code=302)
-
-    # Pro-only feature
-    if user.get("plan", "free") != "pro":
-        response = RedirectResponse(url="/settings", status_code=302)
-        _set_flash(response, "Custom branding is a Pro feature.", "error")
-        return response
 
     form = await request.form()
     brand_name = form.get("status_page_brand_name", "").strip()[:100]

@@ -8368,3 +8368,182 @@ details[open] > .inc-region-summary::before { transform: rotate(90deg); }
     .l-bottom-discover { flex-direction: column; }
     .l-api-callout-inner { padding: 0.75rem 1rem; font-size: 0.85rem; }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE OPTIMIZATION — Additional improvements
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Touch targets: ensure 44px minimum ── */
+@media (max-width: 768px) {
+    .mf-toggle-switch { min-width: 44px; min-height: 24px; }
+    .mf-notify-channel-header { min-height: 44px; }
+    .d-filter-pill { min-height: 36px; display: inline-flex; align-items: center; }
+    .toolbar-dropdown { min-height: 40px; }
+    .btn { min-height: 40px; }
+}
+
+/* ── Type selector: 2x2 on small phones ── */
+@media (max-width: 480px) {
+    .mf-type-select { grid-template-columns: repeat(2, 1fr); }
+    .mf-type-btn { padding: 0.65rem 0.4rem; font-size: 0.75rem; }
+}
+
+/* ── Dashboard: improve monitor card mobile layout ── */
+@media (max-width: 640px) {
+    .monitor-card.d-two-tier {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .d-row-primary {
+        width: 100%;
+    }
+    .d-row-secondary {
+        padding-left: 36px;
+        width: 100%;
+    }
+    .d-row-secondary .d-secondary-sep { display: none; }
+    .dash-header-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+    }
+    .dash-header-actions .btn {
+        flex: 1 1 auto;
+        text-align: center;
+        min-width: 0;
+    }
+}
+
+/* ── Dashboard: bulk actions bar ── */
+@media (max-width: 480px) {
+    .d-bulk-bar {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: stretch;
+        padding: 0.5rem;
+    }
+    .d-bulk-bar .btn { width: 100%; text-align: center; }
+}
+
+/* ── Incident detail: stack grids on mobile ── */
+@media (max-width: 640px) {
+    .inc-detail-grid {
+        grid-template-columns: 1fr;
+    }
+    .inc-detail-stats {
+        grid-template-columns: 1fr 1fr;
+    }
+    .inc-timeline-event {
+        padding-left: 1.25rem;
+    }
+    .inc-timeline-ts {
+        font-size: 0.72rem;
+    }
+}
+
+/* ── Settings: better mobile layout ── */
+@media (max-width: 640px) {
+    .settings-layout { grid-template-columns: 1fr; }
+    .settings-nav { display: none; }
+    .sub-plan-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    .sub-plan-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .sub-plan-actions .btn,
+    .sub-plan-actions button { flex: 1 1 auto; text-align: center; }
+    .sub-plan-features {
+        flex-wrap: wrap;
+        gap: 0.35rem;
+    }
+}
+
+/* ── Pricing page: better mobile spacing ── */
+@media (max-width: 640px) {
+    .pricing-hero h1 { font-size: 1.5rem; line-height: 1.25; }
+    .pricing-hero .tagline { font-size: 0.9rem; }
+    .pricing-grid { grid-template-columns: 1fr; gap: 1rem; }
+    .price-card { padding: 1.5rem 1rem; }
+    .faq-section { padding: 1rem; }
+    .faq-item h4 { font-size: 0.92rem; }
+    .faq-item p { font-size: 0.85rem; }
+    .bottom-cta { padding: 1.5rem 1rem; }
+    .bottom-cta h2 { font-size: 1.25rem; }
+}
+
+/* ── Monitor detail: chart containers responsive ── */
+@media (max-width: 480px) {
+    .md-chart-wrap canvas {
+        max-height: 200px;
+    }
+    .md-response-stats {
+        gap: 0.35rem;
+    }
+    .md-response-stat {
+        padding: 0.5rem;
+    }
+    .md-response-stat-label { font-size: 0.68rem; }
+    .md-response-stat-value { font-size: 1rem; }
+    .md-alert-ch { padding: 0.5rem; min-height: 44px; }
+}
+
+/* ── Landing: hero results list mobile ── */
+@media (max-width: 480px) {
+    .l-hero-result-row {
+        flex-wrap: wrap;
+    }
+    .l-hero-result-url {
+        width: 100%;
+        font-size: 0.72rem;
+        word-break: break-all;
+    }
+    .l-hero-cta-row .l-btn-primary,
+    .l-hero-cta-row .l-btn-pro {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* ── Status page: uptime bars overflow ── */
+@media (max-width: 480px) {
+    .uptime-bar {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .uptime-section h2 { font-size: 1rem; }
+    .sp-monitor-name { font-size: 0.9rem; }
+}
+
+/* ── Admin page ── */
+@media (max-width: 640px) {
+    .admin-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .admin-tabs {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+    .admin-tab { font-size: 0.78rem; padding: 0.4rem 0.6rem; }
+    .admin-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+@media (max-width: 375px) {
+    .admin-kpi-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Support page ── */
+@media (max-width: 480px) {
+    .support-form { padding: 1rem; }
+    .support-form textarea { min-height: 120px; }
+}
+
+/* ── API docs sidebar ── */
+@media (max-width: 768px) {
+    .api-layout { grid-template-columns: 1fr; }
+    .api-sidebar { display: none; }
+}

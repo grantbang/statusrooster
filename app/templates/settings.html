@@ -174,30 +174,19 @@
             </div>
         </div>
 
-        {% if user.get('plan', 'free') == 'pro' %}
         <div class="sub-plan-features">
-            <span>200 monitors</span>
+            <span>{% if user.get('plan', 'free') == 'pro' %}200{% else %}10{% endif %} monitors</span>
             <span>60s checks</span>
-            <span>SMS alerts</span>
+            <span>All alert channels</span>
             <span>Custom branding</span>
             <span>90-day history</span>
-            <span>{{ user.get('monitors_count', 0) }} / 200 monitors used</span>
+            <span>{{ user.get('monitors_count', 0) }} / {% if user.get('plan', 'free') == 'pro' %}200{% else %}10{% endif %} monitors used</span>
         </div>
-        {% else %}
-        <div class="sub-plan-features">
-            <span>10 monitors</span>
-            <span>60s checks</span>
-            <span>Email + Slack + Webhooks</span>
-            <span>Full API</span>
-            <span>10 status pages</span>
-            <span>{{ user.get('monitors_count', 0) }} / 10 monitors used</span>
-        </div>
-        {% endif %}
     </div>
 
     {% if user.get('plan', 'free') != 'pro' %}
     <div class="sub-upgrade-pitch">
-        <strong>Pro unlocks:</strong> 200 monitors, SMS alerts, custom status page branding, and 90 days of history.
+        <strong>Need more monitors?</strong> Upgrade to Pro for up to 200 monitors.
     </div>
     {% endif %}
 
@@ -279,8 +268,7 @@
     </form>
 </div>
 
-<!-- Status Page Branding (Pro) -->
-{% if user.get('plan', 'free') == 'pro' %}
+<!-- Status Page Branding -->
 <div class="settings-section" id="branding">
     <h2>Status Page Branding</h2>
     <div class="section-desc">Customize how your public status pages look. These settings apply to all your status pages.</div>
@@ -320,7 +308,6 @@
         <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Save branding</button>
     </form>
 </div>
-{% endif %}
 
 <!-- API Keys -->
 <div class="settings-section" id="api-keys">

@@ -4,10 +4,9 @@ from app.config import settings
 COLLECTION = "checks"
 
 
-def get_retention_cutoff(plan: str) -> datetime:
-    """Return the earliest timestamp allowed for a given plan."""
-    days = settings.PRO_DATA_RETENTION_DAYS if plan == "pro" else settings.FREE_DATA_RETENTION_DAYS
-    return datetime.now(timezone.utc) - timedelta(days=days)
+def get_retention_cutoff(plan: str = "free") -> datetime:
+    """Return the earliest timestamp allowed (same for all plans)."""
+    return datetime.now(timezone.utc) - timedelta(days=settings.DATA_RETENTION_DAYS)
 
 
 def create_check(db, monitor_id: str, status_code: int | None,
@@ -83,8 +82,7 @@ def get_daily_uptime(db, monitor_id: str, days: int = 90, plan: str | None = Non
     If plan is provided, caps days to the plan's retention limit.
     """
     if plan:
-        max_days = settings.PRO_DATA_RETENTION_DAYS if plan == "pro" else settings.FREE_DATA_RETENTION_DAYS
-        days = min(days, max_days)
+        days = min(days, settings.DATA_RETENTION_DAYS)
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
     docs = (
         db.collection(COLLECTION)

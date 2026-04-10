@@ -253,9 +253,9 @@ async def send_down_alert(monitor: dict, incident: dict) -> dict:
         """
         results["email"] = await send_email(alert_email, subject, html)
 
-    # --- Slack (Pro only) ---
+    # --- Slack ---
     slack_webhook = monitor.get("alert_slack_webhook", "")
-    if slack_webhook and user_plan == "pro":
+    if slack_webhook:
         message = (
             f"🔴 *DOWN: {name}*\n"
             f"URL: {url}\n"
@@ -266,9 +266,9 @@ async def send_down_alert(monitor: dict, incident: dict) -> dict:
         )
         results["slack"] = await send_slack(slack_webhook, message)
 
-    # --- SMS (Pro only) ---
+    # --- SMS ---
     sms_number = monitor.get("alert_sms", "")
-    if sms_number and user_plan == "pro":
+    if sms_number:
         results["sms"] = await send_sms(sms_number, f"[StatusRooster] ALERT: {name} is DOWN — Status {status_code}. Reply STOP to opt out, HELP for help.")
 
     return results
@@ -328,9 +328,9 @@ async def send_recovery_alert(monitor: dict, incident: dict) -> dict:
         """
         results["email"] = await send_email(alert_email, subject, html)
 
-    # --- Slack (Pro only) ---
+    # --- Slack ---
     slack_webhook = monitor.get("alert_slack_webhook", "")
-    if slack_webhook and user_plan == "pro":
+    if slack_webhook:
         message = (
             f"🟢 *RECOVERED: {name}*\n"
             f"URL: {url}\n"
@@ -341,9 +341,9 @@ async def send_recovery_alert(monitor: dict, incident: dict) -> dict:
         )
         results["slack"] = await send_slack(slack_webhook, message)
 
-    # --- SMS (Pro only) ---
+    # --- SMS ---
     sms_number = monitor.get("alert_sms", "")
-    if sms_number and user_plan == "pro":
+    if sms_number:
         results["sms"] = await send_sms(sms_number, f"[StatusRooster] RECOVERY: {name} is back UP — downtime: {duration_str}. Reply STOP to opt out, HELP for help.")
 
     return results
@@ -387,9 +387,9 @@ async def send_ssl_expiry_alert(monitor: dict, days_left: int, expiry_date) -> N
         """
         await send_email(alert_email, subject, html)
 
-    # --- Slack (Pro only) ---
+    # --- Slack ---
     slack_webhook = monitor.get("alert_slack_webhook", "")
-    if slack_webhook and user_plan == "pro":
+    if slack_webhook:
         message = (
             f"{urgency} *SSL Certificate Expiring: {name}*\n"
             f"URL: {url}\n"
@@ -435,9 +435,9 @@ async def send_keyword_alert(monitor: dict, keyword: str) -> None:
         """
         await send_email(alert_email, subject, html)
 
-    # --- Slack (Pro only) ---
+    # --- Slack ---
     slack_webhook = monitor.get("alert_slack_webhook", "")
-    if slack_webhook and user_plan == "pro":
+    if slack_webhook:
         message = (
             f"🔍 *Keyword Missing: {name}*\n"
             f"URL: {url}\n"
@@ -485,9 +485,9 @@ async def send_threshold_alert(monitor: dict, actual_ms: float, threshold_ms) ->
         """
         await send_email(alert_email, subject, html)
 
-    # --- Slack (Pro only) ---
+    # --- Slack ---
     slack_webhook = monitor.get("alert_slack_webhook", "")
-    if slack_webhook and user_plan == "pro":
+    if slack_webhook:
         message = (
             f"🐢 *Response Threshold Violated: {name}*\n"
             f"URL: {url}\n"
@@ -499,7 +499,7 @@ async def send_threshold_alert(monitor: dict, actual_ms: float, threshold_ms) ->
 
 
 # ---------------------------------------------------------------------------
-# Webhook Notification (Pro feature)
+# Webhook Notification
 # ---------------------------------------------------------------------------
 
 async def send_webhook_notification(monitor: dict, event: str, check_result: dict) -> bool:
@@ -587,14 +587,14 @@ async def send_test_alert(monitor: dict, user_plan: str = "free") -> dict:
         )
         results["slack"] = await send_slack(slack_webhook, message)
 
-    # --- SMS (Pro only) ---
+    # --- SMS ---
     sms_number = monitor.get("alert_sms", "")
-    if sms_number and user_plan == "pro":
+    if sms_number:
         results["sms"] = await send_sms(sms_number, f"[StatusRooster] Test alert: {name} — your SMS alerts are working! Reply STOP to opt out, HELP for help.")
 
-    # --- Webhook (Pro only) ---
+    # --- Webhook ---
     webhook_url = monitor.get("webhook_url", "")
-    if webhook_url and user_plan != "free":
+    if webhook_url:
         payload = {
             "event": "test",
             "monitor_name": name,

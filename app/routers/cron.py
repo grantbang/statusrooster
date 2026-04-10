@@ -40,9 +40,8 @@ async def cron_check(request: Request):
 @router.post("/cleanup")
 async def cron_cleanup(request: Request):
     """
-    Delete check records older than the retention period.
+    Delete check records older than the retention period (90 days).
     Called by Cloud Scheduler once daily.
-    Free plan: 30 days. Pro plan: 90 days.
     """
     _verify_cron_auth(request)
 

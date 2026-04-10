@@ -102,12 +102,12 @@
             <p>Get warned before your cert expires. Catches mismatched domains and broken chains too.</p>
         </div>
         <div class="l-feature-card">
-            <h3>Slack, Email &amp; Webhooks</h3>
-            <p>Get alerted the way you work. All channels included free — no paywall on Slack or webhooks.</p>
+            <h3>Email, Slack, SMS &amp; Webhooks</h3>
+            <p>Get alerted the way you work. Every channel included free — no paywalls.</p>
         </div>
         <div class="l-feature-card">
             <h3>Public Status Pages</h3>
-            <p>Share a clean status page with your users — 30-day history, live status, incident log. No login needed.</p>
+            <p>Share a clean status page with your users — 90-day history, live status, incident log. Custom branding included.</p>
         </div>
         <div class="l-feature-card">
             <h3>Full REST API</h3>
@@ -160,42 +160,33 @@
 
 <!-- Pricing -->
 <section class="l-pricing">
-    <h2>Simple pricing. No surprises.</h2>
-    <p class="l-pricing-sub">Start free. Upgrade when your side project becomes a real business.</p>
+    <h2>Every feature. Free. No walls.</h2>
+    <p class="l-pricing-sub">Free gets everything. Pro just gives you more monitors.</p>
     <div class="l-pricing-grid">
         <div class="l-price-card">
             <h3>Free</h3>
             <div class="l-price">$0 <span>/ forever</span></div>
             <ul>
-                <li><strong>10 monitors</strong></li>
+                <li><strong>10 monitors</strong> — every feature included</li>
                 <li>60-second checks from 4 regions</li>
-                <li>Auto-discovery endpoint scanning</li>
-                <li>Email, Slack &amp; webhook alerts</li>
+                <li>Email, Slack, SMS &amp; webhook alerts</li>
                 <li>HTTP, SSL, Heartbeat &amp; JSON/API</li>
+                <li>Custom status page branding</li>
+                <li>90 days of history</li>
                 <li>Full REST API &amp; uptime badges</li>
-                <li>10 public status pages</li>
-                <li>Maintenance windows</li>
-                <li>30 days of history</li>
             </ul>
-            <p class="l-price-upsell">Need more? Pro gives you 200.</p>
+            <p class="l-price-upsell">Need more monitors? Pro gives you 200.</p>
             <a href="/signup" class="l-price-cta">Get started free</a>
         </div>
         <div class="l-price-card l-price-card-pro">
-            <div class="l-price-badge">For production apps</div>
+            <div class="l-price-badge">When you need more room</div>
             <h3>Pro</h3>
             <div class="l-price">$9 <span>/ mo</span></div>
             <ul>
                 <li><strong>200 monitors</strong></li>
-                <li><strong>60-second</strong> checks</li>
-                <li>Everything in Free, plus:</li>
-                <li>SMS alerts (Twilio)</li>
-                <li>Remove "Powered by" branding</li>
-                <li>Custom status page branding</li>
-                <li>Aggregate status page</li>
-                <li>90 days of history</li>
-                <li>Priority support</li>
+                <li>Everything in Free — same features, same speed</li>
+                <li>Priority email support</li>
             </ul>
-            <p class="l-price-annual">Or $79/year (save 27%)</p>
             <a href="/pricing" class="l-price-cta l-price-cta-pro">Upgrade to Pro</a>
         </div>
     </div>
@@ -220,7 +211,7 @@
         <input type="text" id="bottomDomain" class="l-hero-domain" placeholder="your-domain.com" onkeydown="if(event.key==='Enter'){ document.getElementById('heroDomain').value=this.value; heroScan(); window.scrollTo({top:0, behavior:'smooth'}); }">
         <button class="l-btn-primary" onclick="document.getElementById('heroDomain').value=document.getElementById('bottomDomain').value; heroScan(); window.scrollTo({top:0, behavior:'smooth'});">Scan</button>
     </div>
-    <p style="color: var(--text-muted); margin-top: 0.75rem;">10 free monitors. No credit card. 30 seconds.</p>
+    <p style="color: var(--text-muted); margin-top: 0.75rem;">Every feature free. No credit card. 30 seconds.</p>
 </section>
 
 {% endblock %}
@@ -316,7 +307,7 @@ function heroUpdateCount() {
             nudge.style.cssText = 'font-size: 0.82rem; margin: 0.4rem 0 0; text-align: center; color: var(--text-muted);';
             document.getElementById('heroCta').parentNode.parentNode.appendChild(nudge);
         }
-        nudge.innerHTML = 'Free plan includes 10 monitors. Pro gives you 200 for $9/mo.';
+        nudge.innerHTML = 'Free plan includes 10 monitors. Need more? Pro gives you 200 for $9/mo.';
         nudge.style.display = '';
     } else if (nudge) {
         nudge.style.display = 'none';
