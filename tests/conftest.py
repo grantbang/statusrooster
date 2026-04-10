@@ -199,10 +199,16 @@ def check_and_get_result(client, pro_cookie):
 
 @pytest_asyncio.fixture
 async def make_monitor(client, pro_headers, created_monitor_ids):
-    """Factory fixture: create a monitor and auto-delete after test."""
+    """Factory fixture: create a monitor and auto-delete after test.
+
+    Defaults `public` to False so the test account's 10-public-page slots
+    are not silently consumed. Tests that specifically need a public
+    monitor can pass `public: True` explicitly.
+    """
     ids = []
 
     async def _create(body: dict) -> dict:
+        body = {"public": False, **body}  # default non-public; caller can override
         resp = await client.post(
             "/api/v1/monitors",
             json=body,

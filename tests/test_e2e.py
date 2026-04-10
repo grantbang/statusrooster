@@ -474,6 +474,7 @@ class TestMonitorTypes:
                 "url": "https://httpbin.org/status/200",
                 "monitor_type": "http",
                 "http_method": method,
+                "public": False,  # don't consume status-page slots — this test is about HTTP methods
             })
             assert monitor["http_method"] == method, f"D.4 FAIL: Method {method} not stored"
 
