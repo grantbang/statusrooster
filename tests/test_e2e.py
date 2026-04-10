@@ -1209,11 +1209,11 @@ class TestApiResponseShape:
 # ═══════════════════════════════════════════════════════════════════════
 
 class TestCustomBranding:
-    """Tests K.1–K.5: Custom status page branding (Pro-only)."""
+    """Tests K.1–K.5: Custom status page branding (available on all plans)."""
 
     @pytest.mark.asyncio
-    async def test_k1_branding_free_rejected(self, client, free_cookie):
-        """K.1 — Free user: POST /settings/branding → redirect with error"""
+    async def test_k1_branding_free_accepted(self, client, free_cookie):
+        """K.1 — Free user: POST /settings/branding → saves successfully (no plan gating)"""
         resp = await client.post(
             "/settings/branding",
             data={
@@ -1228,13 +1228,12 @@ class TestCustomBranding:
             pytest.skip("Branding endpoint not deployed yet")
         # Should redirect back to settings
         assert resp.status_code == 302, f"K.1 FAIL: Expected 302, got {resp.status_code}"
-        # Check for error flash cookie
-        cookies = {}
+        # Check for success flash (not error) — branding is no longer Pro-only
+        flash_ok = False
         for header_val in resp.headers.get_list("set-cookie"):
-            if "flash_message=" in header_val:
-                cookies["flash_message"] = header_val
-        assert "Pro" in cookies.get("flash_message", ""), \
-            "K.1 FAIL: Should show Pro-only error message"
+            if "flash_type=success" in header_val:
+                flash_ok = True
+        assert flash_ok, "K.1 FAIL: Free user should be able to save branding (every feature is free)"
 
     @pytest.mark.asyncio
     async def test_k2_branding_pro_accepted(self, client, pro_cookie):

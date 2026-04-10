@@ -104,9 +104,13 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
         "keyword": keyword,                          # Expected keyword in response body
         "response_threshold_ms": response_threshold_ms,  # Alert if response > this many ms
         "http_method": http_method,                  # HTTP method (GET, POST, HEAD, etc.)
-        "basic_auth_user": basic_auth_user,          # Basic Auth username        "basic_auth_pass": basic_auth_pass,          # Basic Auth password        "bearer_token": bearer_token,                # Bearer token        "request_body": request_body,                # Request body for POST/PUT/PATCH
+        "basic_auth_user": basic_auth_user,          # Basic Auth username
+        "basic_auth_pass": basic_auth_pass,          # Basic Auth password
+        "bearer_token": bearer_token,                # Bearer token
+        "request_body": request_body,                # Request body for POST/PUT/PATCH
         "request_content_type": request_content_type,  # Content-Type for request body
-        "custom_headers": custom_headers or [],      # Custom request headers [{key, value}]        "follow_redirects": follow_redirects,        # Follow HTTP redirects (default True)
+        "custom_headers": custom_headers or [],      # Custom request headers [{key, value}]
+        "follow_redirects": follow_redirects,        # Follow HTTP redirects (default True)
         # JSON/API assertion fields
         "json_assertions": json_assertions or [],    # List of {path, operator, value}
         "auth_header": auth_header,                  # Authorization header value
@@ -119,10 +123,12 @@ def create_monitor(db, user_id: str, url: str, name: str, alert_email: str = "",
         "ssl_domain": ssl_domain,                    # Domain to check SSL for (ssl type only)
         "ssl_expiry_threshold_days": ssl_expiry_threshold_days,  # Days before expiry to warn
         # Shared monitoring fields
-        "webhook_url": webhook_url,                  # POST JSON on status change        "ssl_expiry": None,            # SSL cert expiry date (auto-detected on http, primary on ssl)
+        "webhook_url": webhook_url,                  # POST JSON on status change
+        "ssl_expiry": None,            # SSL cert expiry date (auto-detected on http, primary on ssl)
         "ssl_issuer": None,            # SSL cert issuer
         "ssl_expiry_alerted_days": None,  # Track which threshold we last alerted at
-        "maintenance_windows": maintenance_windows or [],  # List of {day, start_utc, end_utc}        "public": public,
+        "maintenance_windows": maintenance_windows or [],  # List of {day, start_utc, end_utc}
+        "public": public,
         "slug": slug,
         "group": group,
         "regions": [],  # Populated after checks — list of regions that checked this monitor
