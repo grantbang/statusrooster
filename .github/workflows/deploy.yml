@@ -14,9 +14,15 @@ permissions:
   contents: read
 
 jobs:
-  # ── Run E2E + functional tests ──
+  # ── Run E2E + functional tests against a LOCAL server ──
+  # Tests run against http://localhost:8080 (built from current commit),
+  # NOT against prod. This prevents the chicken-and-egg problem where a
+  # broken-in-prod test blocks the deploy that would fix it.
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -36,15 +42,48 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-asyncio
 
+      # Authenticate to GCP so the local server can talk to Firestore
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/286329122172/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-deploy@statusrooster.iam.gserviceaccount.com
+
+      - name: Start local server
+        env:
+          GCP_PROJECT_ID: statusrooster
+          APP_ENV: development
+          JWT_SECRET: ci-test-secret-not-used-in-prod
+          WORKER_SECRET: ""
+        run: |
+          nohup uvicorn app.main:app --host 0.0.0.0 --port 8080 > server.log 2>&1 &
+          echo $! > server.pid
+          # Wait for server to be ready (max 30s)
+          for i in {1..30}; do
+            if curl -sf http://localhost:8080/ > /dev/null 2>&1; then
+              echo "Server up after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+          curl -sf http://localhost:8080/ > /dev/null || (echo "Server failed to start"; cat server.log; exit 1)
+
       - name: Run E2E tests
         env:
+          SR_BASE_URL: http://localhost:8080
           SR_API_KEY: ${{ secrets.SR_API_KEY }}
         run: pytest tests/test_e2e.py -v --asyncio-mode=auto -k "not slow"
 
       - name: Run functional tests
         env:
+          SR_BASE_URL: http://localhost:8080
           SR_API_KEY: ${{ secrets.SR_API_KEY }}
         run: pytest tests/test_functional.py -v --asyncio-mode=auto
+
+      - name: Stop local server
+        if: always()
+        run: |
+          if [ -f server.pid ]; then kill $(cat server.pid) || true; fi
+          if [ -f server.log ]; then echo "=== server.log ==="; tail -50 server.log; fi
 
   # ── Deploy primary app to Cloud Run ──
   deploy-primary:
