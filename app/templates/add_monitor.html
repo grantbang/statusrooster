@@ -207,6 +207,19 @@
             <span class="mf-section-header-title">Notifications</span>
         </div>
 
+        <!-- Alert conditions summary -->
+        <div class="mf-alert-conditions">
+            <div class="mf-alert-conditions-title">You'll be alerted when:</div>
+            <ul class="mf-alert-conditions-list">
+                <li><span class="mf-ac-icon mf-ac-icon-down">●</span> <strong>Monitor goes down</strong> — confirmed after 2 consecutive failed checks (no false alarms)</li>
+                <li><span class="mf-ac-icon mf-ac-icon-up">●</span> <strong>Monitor recovers</strong> — instantly on the first successful check</li>
+                <li id="alertCondKeyword" style="display:none;"><span class="mf-ac-icon mf-ac-icon-warn">●</span> <strong>Keyword missing</strong> — when expected text is no longer found in the response</li>
+                <li id="alertCondThreshold" style="display:none;"><span class="mf-ac-icon mf-ac-icon-warn">●</span> <strong>Slow response</strong> — after 2 consecutive checks above the threshold (then once when recovered)</li>
+                <li id="alertCondSsl"><span class="mf-ac-icon mf-ac-icon-warn">●</span> <strong>SSL certificate expiring</strong> — at 14, 7, and 3 days before expiry</li>
+            </ul>
+            <p class="mf-alert-conditions-hint">Configure where alerts go below. Email is on by default — Slack, SMS &amp; webhooks are optional.</p>
+        </div>
+
         <!-- Email (always on, editable) -->
         <div class="mf-notify-channel">
             <div class="mf-notify-channel-header">
@@ -538,7 +551,34 @@ function setMonitorType(type) {
         interval.style.display = 'none';
         syncFieldNames('ssl');
     }
+    updateAlertConditions();
 }
+
+/* ── Alert Conditions: dynamically show what will trigger alerts ── */
+function updateAlertConditions() {
+    const type = document.getElementById('monitor_type').value;
+    const kwInput = document.getElementById('keyword');
+    const kwHasValue = kwInput && kwInput.value && kwInput.value.trim() !== '';
+    const respThreshold = document.getElementById('response_threshold_ms');
+    const jsonRespThreshold = document.getElementById('json_response_threshold_ms');
+    const hasThreshold = (respThreshold && respThreshold.value && respThreshold.value.trim() !== '') ||
+                         (jsonRespThreshold && jsonRespThreshold.value && jsonRespThreshold.value.trim() !== '');
+
+    const condKw = document.getElementById('alertCondKeyword');
+    const condTh = document.getElementById('alertCondThreshold');
+    const condSsl = document.getElementById('alertCondSsl');
+
+    if (condKw) condKw.style.display = (kwHasValue && (type === 'http' || type === 'json_api')) ? '' : 'none';
+    if (condTh) condTh.style.display = (hasThreshold && (type === 'http' || type === 'json_api')) ? '' : 'none';
+    if (condSsl) condSsl.style.display = (type === 'http' || type === 'json_api' || type === 'ssl') ? '' : 'none';
+}
+document.addEventListener('DOMContentLoaded', function() {
+    updateAlertConditions();
+    ['response_threshold_ms', 'json_response_threshold_ms', 'keyword'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateAlertConditions);
+    });
+});
 function syncFieldNames(type) {
     // Ensure correct name attributes reach the server
     const urlField = document.getElementById('url');
@@ -688,6 +728,7 @@ function kwSync() {
         parts.push(r.operator === 'not_contains' ? '!' + kw : kw);
     });
     document.getElementById('keyword').value = parts.join(' ');
+    if (typeof updateAlertConditions === 'function') updateAlertConditions();
 }
 function kwRender() {
     var container = document.getElementById('kwRows');

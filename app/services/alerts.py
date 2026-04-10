@@ -498,6 +498,51 @@ async def send_threshold_alert(monitor: dict, actual_ms: float, threshold_ms) ->
         await send_slack(slack_webhook, message)
 
 
+async def send_threshold_recovery_alert(monitor: dict, actual_ms: float, threshold_ms) -> None:
+    """Send recovery alert when response time returns under the threshold."""
+    name = monitor.get("name", monitor.get("url", "Unknown"))
+    url = monitor.get("url", "")
+    monitor_id = monitor.get("id", "")
+    app_url = settings.APP_URL or "https://statusrooster.com"
+    detail_url = f"{app_url}/monitors/{monitor_id}"
+    time_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    condition_str = str(threshold_ms)
+
+    # --- Email ---
+    alert_email = monitor.get("alert_email", "")
+    if alert_email:
+        subject = f"✅ Response time recovered on {name}: {actual_ms:.0f}ms"
+        html = f"""
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto;">
+            <h2 style="color: #22c55e;">✅ Response Time Recovered</h2>
+            <p style="color: #555;">Response time is back under the configured threshold.</p>
+            <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+                <tr><td style="padding: 8px 0; color: #666;">Monitor</td><td style="padding: 8px 0;"><strong>{name}</strong></td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">URL</td><td style="padding: 8px 0;"><a href="{url}">{url}</a></td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">Response Time</td><td style="padding: 8px 0;"><strong style="color: #22c55e;">{actual_ms:.0f}ms</strong></td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">Condition</td><td style="padding: 8px 0;"><code>{condition_str}</code></td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">Recovered</td><td style="padding: 8px 0;">{time_str}</td></tr>
+            </table>
+            <p><a href="{detail_url}" style="display: inline-block; background: #22c55e; color: #fff; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">View Monitor →</a></p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+            <p style="color: #aaa; font-size: 12px;">StatusRooster 🐓 — Uptime monitoring for developers</p>
+        </div>
+        """
+        await send_email(alert_email, subject, html)
+
+    # --- Slack ---
+    slack_webhook = monitor.get("alert_slack_webhook", "")
+    if slack_webhook:
+        message = (
+            f"✅ *Response Time Recovered: {name}*\n"
+            f"URL: {url}\n"
+            f"Response: {actual_ms:.0f}ms (condition: `{condition_str}`)\n"
+            f"Recovered: {time_str}\n"
+            f"<{detail_url}|View on StatusRooster →>"
+        )
+        await send_slack(slack_webhook, message)
+
+
 # ---------------------------------------------------------------------------
 # Webhook Notification
 # ---------------------------------------------------------------------------

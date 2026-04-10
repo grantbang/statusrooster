@@ -8,7 +8,7 @@ from app.config import settings
 from app.models.monitor import get_all_monitors, get_due_monitors, update_monitor
 from app.models.check import create_check, create_checks_batch
 from app.models.incident import create_incident, resolve_incident, get_open_incident, log_incident_event
-from app.services.alerts import send_down_alert, send_recovery_alert, send_ssl_expiry_alert, send_keyword_alert, send_threshold_alert, send_webhook_notification
+from app.services.alerts import send_down_alert, send_recovery_alert, send_ssl_expiry_alert, send_keyword_alert, send_threshold_alert, send_threshold_recovery_alert, send_webhook_notification
 
 # Import pure check functions from checker_core (shared with regional workers)
 from checker_core import (
@@ -766,20 +766,44 @@ async def _run_checks_inner():
                     monitor_updates["keyword_failing"] = False
 
         # ----- Response Time Threshold — HTTP + JSON/API monitors -----
+        # Hysteresis: require 2 consecutive violations to alert, 2 consecutive
+        # sub-threshold checks to clear. Prevents flapping-induced alert spam.
         has_response = monitor.get("monitor_type") in ("http", "json_api")
         threshold = monitor.get("response_threshold_ms")
         if has_response and threshold and result["response_ms"] and result["is_up"]:
             threshold_str = str(threshold)
             threshold_violated = _check_threshold_condition(threshold_str, result["response_ms"])
             was_threshold_failing = monitor.get("threshold_failing", False)
+            consecutive_threshold_failures = monitor.get("consecutive_threshold_failures", 0)
+            consecutive_threshold_oks = monitor.get("consecutive_threshold_oks", 0)
+
             if threshold_violated:
-                monitor_updates["threshold_failing"] = True
-                if not was_threshold_failing and not in_maintenance:
+                consecutive_threshold_failures += 1
+                consecutive_threshold_oks = 0
+                monitor_updates["consecutive_threshold_failures"] = consecutive_threshold_failures
+                monitor_updates["consecutive_threshold_oks"] = 0
+
+                # Only alert after 2 consecutive violations AND not already in failing state
+                if consecutive_threshold_failures >= 2 and not was_threshold_failing and not in_maintenance:
+                    monitor_updates["threshold_failing"] = True
+                    monitor_updates["threshold_failing_since"] = datetime.now(timezone.utc)
                     await send_threshold_alert(monitor, result["response_ms"], threshold)
-                    print(f"[checker] THRESHOLD: {monitor['name']} {result['response_ms']}ms violated condition '{threshold_str}'")
+                    print(f"[checker] THRESHOLD: {monitor['name']} {result['response_ms']}ms violated condition '{threshold_str}' (2 consecutive)")
+                elif consecutive_threshold_failures < 2:
+                    print(f"[checker] THRESHOLD: {monitor['name']} {result['response_ms']}ms violated ({consecutive_threshold_failures}/2 — waiting for confirmation)")
             else:
-                if was_threshold_failing:
+                consecutive_threshold_oks += 1
+                consecutive_threshold_failures = 0
+                monitor_updates["consecutive_threshold_oks"] = consecutive_threshold_oks
+                monitor_updates["consecutive_threshold_failures"] = 0
+
+                # Only clear after 2 consecutive OK checks (hysteresis to prevent flapping)
+                if was_threshold_failing and consecutive_threshold_oks >= 2:
                     monitor_updates["threshold_failing"] = False
+                    monitor_updates["threshold_failing_since"] = None
+                    if not in_maintenance:
+                        await send_threshold_recovery_alert(monitor, result["response_ms"], threshold)
+                        print(f"[checker] THRESHOLD RECOVERY: {monitor['name']} {result['response_ms']}ms back under threshold")
 
         # ----- SSL Expiry Alerts (14, 7, 3 days) — HTTP + JSON/API monitors (auto-detect) -----
         if monitor.get("monitor_type") in ("http", "json_api") and ssl_info.get("ssl_expiry_days") is not None:

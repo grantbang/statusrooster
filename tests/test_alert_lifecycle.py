@@ -396,7 +396,11 @@ class TestThresholdAlertDedup:
 
     @pytest.mark.asyncio
     async def test_th1_threshold_exceeded_sets_flag(self, client, pro_headers):
-        """TH.1 — Slow response exceeds threshold → threshold_failing=True."""
+        """TH.1 — Slow response exceeds threshold for 2 cycles → threshold_failing=True.
+
+        New behavior (hysteresis): threshold_failing only flips True after
+        2 consecutive violations, to prevent flapping-induced alert spam.
+        """
         mid = None
         try:
             # httpbin.org/delay/3 takes ~3 seconds; threshold at > 100ms will trigger
@@ -411,12 +415,14 @@ class TestThresholdAlertDedup:
             })
             mid = mon["id"]
 
-            await trigger_cron(client)
-            await asyncio.sleep(5)
+            # Need 2 consecutive violations to flip the flag
+            for _ in range(2):
+                await trigger_cron(client)
+                await asyncio.sleep(5)
 
             mon_state = await get_monitor(client, mid, pro_headers)
             assert mon_state.get("threshold_failing") is True, \
-                f"TH.1 FAIL: threshold_failing should be True, got {mon_state.get('threshold_failing')}"
+                f"TH.1 FAIL: threshold_failing should be True after 2 consecutive violations, got {mon_state.get('threshold_failing')}"
 
         finally:
             if mid:

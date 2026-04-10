@@ -600,6 +600,29 @@
 </div>
 {% endif %}
 
+<!-- ── Alert Conditions ── -->
+<div class="md-section">
+    <div class="md-section-header">
+        <h2>Alert conditions</h2>
+    </div>
+    <div class="mf-alert-conditions" style="margin: 0;">
+        <div class="mf-alert-conditions-title">You'll be alerted when:</div>
+        <ul class="mf-alert-conditions-list">
+            <li><span class="mf-ac-icon mf-ac-icon-down">●</span> <strong>Monitor goes down</strong> — confirmed after 2 consecutive failed checks (no false alarms)</li>
+            <li><span class="mf-ac-icon mf-ac-icon-up">●</span> <strong>Monitor recovers</strong> — instantly on the first successful check</li>
+            {% if monitor.get('keyword') %}
+            <li><span class="mf-ac-icon mf-ac-icon-warn">●</span> <strong>Keyword missing</strong> — when expected text is no longer found in the response (then once when restored)</li>
+            {% endif %}
+            {% if monitor.get('response_threshold_ms') %}
+            <li><span class="mf-ac-icon mf-ac-icon-warn">●</span> <strong>Slow response</strong> — after 2 consecutive checks above <code>{{ monitor.response_threshold_ms }}</code> (then once when recovered)</li>
+            {% endif %}
+            {% if monitor.get('monitor_type') in ('http', 'json_api', 'ssl') %}
+            <li><span class="mf-ac-icon mf-ac-icon-warn">●</span> <strong>SSL certificate expiring</strong> — at 14, 7, and 3 days before expiry</li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+
 <!-- ── Alert Settings ── -->
 <div class="md-section">
     <div class="md-section-header">

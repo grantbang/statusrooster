@@ -220,6 +220,25 @@
             <span class="mf-section-header-title">Notifications</span>
         </div>
 
+        <!-- Alert conditions summary -->
+        <div class="mf-alert-conditions">
+            <div class="mf-alert-conditions-title">You'll be alerted when:</div>
+            <ul class="mf-alert-conditions-list">
+                <li><span class="mf-ac-icon mf-ac-icon-down">●</span> <strong>Monitor goes down</strong> — confirmed after 2 consecutive failed checks (no false alarms)</li>
+                <li><span class="mf-ac-icon mf-ac-icon-up">●</span> <strong>Monitor recovers</strong> — instantly on the first successful check</li>
+                {% if monitor.get('keyword') %}
+                <li><span class="mf-ac-icon mf-ac-icon-warn">●</span> <strong>Keyword missing</strong> — when expected text is no longer found in the response</li>
+                {% endif %}
+                {% if monitor.get('response_threshold_ms') %}
+                <li><span class="mf-ac-icon mf-ac-icon-warn">●</span> <strong>Slow response</strong> — after 2 consecutive checks above the threshold (then once when recovered)</li>
+                {% endif %}
+                {% if monitor.get('monitor_type') in ('http', 'json_api', 'ssl') %}
+                <li><span class="mf-ac-icon mf-ac-icon-warn">●</span> <strong>SSL certificate expiring</strong> — at 14, 7, and 3 days before expiry</li>
+                {% endif %}
+            </ul>
+            <p class="mf-alert-conditions-hint">Configure where alerts go below. Email is on by default — Slack, SMS &amp; webhooks are optional.</p>
+        </div>
+
         <!-- Email (always on, editable) -->
         <div class="mf-notify-channel">
             <div class="mf-notify-channel-header">
