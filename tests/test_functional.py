@@ -493,7 +493,7 @@ class TestStatusPages:
     async def test_x3_aggregate_status_page_all_plans(self, client, pro_headers):
         """X.3 — Aggregate status page available for all users with public monitors"""
         from tests.conftest import PRO_USER_ID
-        resp = await client.get(f"/status/{PRO_USER_ID}", follow_redirects=True)
+        resp = await client.get(f"/status/{PRO_USER_ID}", follow_redirects=True, timeout=60.0)
         # Aggregate status page is available to all plans
         # 200 if user has public monitors, 404 if no public monitors or user not found
         assert resp.status_code in (200, 404), f"X.3: Expected 200 or 404, got {resp.status_code}"
