@@ -490,12 +490,12 @@ class TestStatusPages:
         assert resp.status_code == 404
 
     @pytest.mark.asyncio
-    async def test_x3_aggregate_status_page_requires_pro(self, client, pro_headers):
-        """X.3 — Aggregate status page returns 404 for free users"""
+    async def test_x3_aggregate_status_page_all_plans(self, client, pro_headers):
+        """X.3 — Aggregate status page available for all users with public monitors"""
         from tests.conftest import PRO_USER_ID
         resp = await client.get(f"/status/{PRO_USER_ID}", follow_redirects=True)
-        # Aggregate status page is pro-only; if user is free it returns 404
-        # If pro with public monitors → 200; if no public monitors → 404
+        # Aggregate status page is available to all plans
+        # 200 if user has public monitors, 404 if no public monitors or user not found
         assert resp.status_code in (200, 404), f"X.3: Expected 200 or 404, got {resp.status_code}"
 
 

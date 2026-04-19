@@ -5,7 +5,7 @@ Copy each field below and paste directly into the Twilio form.
 
 --- FIELD: Campaign description ---
 
-StatusRooster (https://statusrooster.com) is an uptime monitoring service. This campaign sends transactional SMS alerts to Pro plan subscribers ($9/month) who have explicitly opted in to receive text message notifications when their monitored websites or APIs go down or recover. Messages are strictly transactional. No marketing, promotional, or advertising content is ever sent.
+StatusRooster (https://statusrooster.com) is an uptime monitoring service. This campaign sends transactional SMS alerts to users who have explicitly opted in to receive text message notifications when their monitored websites or APIs go down or recover. SMS is available on all plans (Free and Pro). Messages are strictly transactional. No marketing, promotional, or advertising content is ever sent.
 
 
 --- FIELD: Sample message #1 ---
@@ -49,7 +49,7 @@ Our opt-in flow is inside a logged-in web application, so it cannot be accessed 
 
 OPT-IN PROCESS (6 steps):
 1. User logs in to StatusRooster and navigates to the Add Monitor or Edit Monitor form.
-2. In the Notifications section, user toggles SMS from OFF to ON. SMS is off by default and cannot be pre-selected. Free users cannot enable SMS — it requires a paid Pro plan ($9/month).
+2. In the Notifications section, user toggles SMS from OFF to ON. SMS is off by default and cannot be pre-selected. Available on all plans (Free and Pro).
 3. User enters their phone number in E.164 format (e.g., +15551234567).
 4. An inline consent disclosure is displayed directly below the phone input. It reads: "By enabling SMS alerts, you consent to receive transactional text messages about monitor status (down/recovery). Msg frequency varies by monitor activity. Msg & data rates may apply. Reply STOP to opt out. Reply HELP for help." with links to our Privacy Policy, Terms, and SMS Consent page.
 5. User clicks "Create Monitor" or "Save Changes" to submit.

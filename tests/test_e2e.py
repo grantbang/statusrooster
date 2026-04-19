@@ -610,9 +610,9 @@ class TestMonitorTypes:
 class TestPlanEnforcement:
     """Tests E.1–E.12: Verify Free vs Pro plan gating.
 
-    Phase 1 unlocked most features for free users. Only SMS remains Pro-only.
-    Check interval minimum is 60s for all plans. Free limit = 10 monitors, Pro = 200.
-    Status pages: 10 for all plans. Aggregate status page: Pro-only.
+    Every feature is available on all plans. The only difference is monitor count:
+    Free = 10 monitors, Pro = 200. Check interval minimum is 60s for all plans.
+    Status pages: 10 for all plans. Aggregate status page: all plans.
     """
 
     # ── E.1: Free user monitor limit (10) ──

@@ -2,7 +2,7 @@
 
 **Uptime monitoring for developers who ship.**
 
-Monitor your app, your APIs, and the services your stack depends on. 60-second checks from 4 global regions, full REST API — free forever. Pro at $9/mo for 200 monitors, SMS alerts, and more.
+Monitor your app, your APIs, and the services your stack depends on. 60-second checks from 4 global regions, full REST API — every feature free. Pro ($9/mo) just adds more monitors.
 
 [Website](https://statusrooster.com) · [API Docs](https://statusrooster.com/docs/api) · [Pricing](https://statusrooster.com/pricing) · [Status Page](https://statusrooster.com/s/statusrooster-com-d0f7a4)
 
@@ -26,11 +26,11 @@ Every check runs from **US-East, US-West, Europe, and Asia** simultaneously. Res
 
 ### Alerts That Actually Work
 
-Email, Slack, webhooks (JSON POST), and SMS (Pro). Edge-triggered — you get one alert when something breaks and one when it recovers. No spam.
+Email, Slack, SMS, and webhooks (JSON POST). All channels on every plan. Edge-triggered — you get one alert when something breaks and one when it recovers. No spam.
 
 ### Public Status Pages
 
-Share a hosted status page with your users at `statusrooster.com/s/your-slug`. 30-day uptime history, live status, incident log. Pro users can add their logo, brand colors, and hide the "Powered by" footer.
+Share a hosted status page with your users at `statusrooster.com/s/your-slug`. 90-day uptime history, live status, incident log. Custom branding (logo, colors, hide "Powered by") included on every plan.
 
 ### Full REST API
 
@@ -71,7 +71,7 @@ But AI-assisted doesn't mean AI-autonomous. I've spent countless hours manually 
 | **Scheduling** | Google Cloud Scheduler | Triggers `/cron/check` every 60 seconds |
 | **CI/CD** | GitHub Actions | Push to main → test → build → deploy to Cloud Run |
 | **Email alerts** | SendGrid | Transactional email API |
-| **SMS alerts** | Twilio | Pro tier, ~$0.008/message |
+| **SMS alerts** | Twilio | All plans, ~$0.008/message |
 | **Payments** | Stripe Checkout + Webhooks | Hosted payment flow, subscription management |
 | **Charts** | Chart.js | Response time graphs, per-region overlays |
 | **SSL/TLS** | Google-managed certs | Auto-provisioned on Cloud Run custom domain |
@@ -144,7 +144,7 @@ Regional Workers — Cloud Run
 | **Monitor types** | All 4 | All 4 |
 | **Alerts** | Email, Slack, Webhook | + SMS |
 | **Status pages** | 10 (with "Powered by") | 10 (custom branding, remove footer) |
-| **History** | 30 days | 90 days |
+| **History** | 90 days | 90 days |
 | **API access** | Full | Full |
 | **Aggregate status page** | — | Included |
 

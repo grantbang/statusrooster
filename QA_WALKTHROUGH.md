@@ -211,8 +211,8 @@ Check each item off as you go. If something looks wrong, note it.
 **Timezone (existing):**
 - [X] Select a timezone, save — should show success message
 
-**Status Page Branding (Pro only, existing):**
-- [not tested] Section only visible for Pro users
+**Status Page Branding (all plans):**
+- [X] Section visible for all users
 - [coudl we make this better? make this an actual tab in the app instead of burried in settings?  and also enhance?] Logo URL, brand name, accent color, hide powered-by checkbox
 
 **API Keys (existing):**

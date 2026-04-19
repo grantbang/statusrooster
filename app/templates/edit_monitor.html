@@ -251,7 +251,7 @@
             <input type="email" name="alert_email" id="alert_email" value="{{ monitor.alert_email or user.email }}" class="mf-notify-channel-input" placeholder="you@example.com">
         </div>
 
-        <!-- Slack (Pro) -->
+        <!-- Slack -->
         {% set has_slack = monitor.get('alert_slack_webhook', '') %}
         <div class="mf-notify-channel">
             <div class="mf-notify-channel-header">
@@ -272,7 +272,7 @@
             </div>
         </div>
 
-        <!-- Webhook (Pro) -->
+        <!-- Webhook -->
         {% set has_webhook = monitor.get('webhook_url', '') %}
         <div class="mf-notify-channel">
             <div class="mf-notify-channel-header">
@@ -429,7 +429,7 @@
                     <div class="hint">Body sent with POST, PUT, PATCH, or DELETE requests.</div>
                 </div>
 
-                <!-- Custom headers (Pro) -->
+                <!-- Custom headers -->
                 <div class="mf-field-group mf-field-group-mt">
                     <label>Custom headers <span class="label-optional">(optional)</span></label>
                     <div id="custom-headers-container">
@@ -539,7 +539,7 @@
                 </label>
             </div>
 
-            <!-- Maintenance Windows (Pro) -->
+            <!-- Maintenance Windows -->
             <hr class="form-divider">
             <div class="mf-field-group">
                 <label>Maintenance windows <span class="label-optional">(optional)</span> <span class="mf-tooltip" data-tip="Suppress alerts during scheduled maintenance. Checks still run but alerts are muted.">i</span></label>

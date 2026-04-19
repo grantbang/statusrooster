@@ -1996,10 +1996,6 @@ async def aggregate_status_page(request: Request, user_id: str):
     if not owner:
         raise HTTPException(status_code=404, detail="Status page not found")
 
-    # Pro-only feature check
-    if owner.get("plan", "free") == "free":
-        raise HTTPException(status_code=404, detail="Status page not found")
-
     # Get all public monitors for this user
     all_monitors = list_monitors_by_user(db, user_id)
     public_monitors = [m for m in all_monitors if m.get("public", False)]

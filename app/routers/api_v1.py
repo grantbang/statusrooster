@@ -432,8 +432,8 @@ class ApiUpdateMonitor(BaseModel):
     ssl_expiry_threshold_days: int | None = None
     group: str | None = None
     http_method: str | None = None          # GET, POST, HEAD, PUT, PATCH, DELETE, OPTIONS
-    basic_auth_user: str | None = None      # Basic Auth username (Pro)
-    basic_auth_pass: str | None = None      # Basic Auth password (Pro)
+    basic_auth_user: str | None = None      # Basic Auth username
+    basic_auth_pass: str | None = None      # Basic Auth password
     follow_redirects: bool | None = None    # Follow HTTP redirects
     bearer_token: str | None = None         # Bearer token auth
     request_body: str | None = None         # Request body for POST/PUT/PATCH/DELETE
