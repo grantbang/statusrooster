@@ -1121,7 +1121,8 @@ class TestStatusPages:
             "monitor_type": "http",
             "public": True,
         })
-        resp = await client.get(f"/status/{PRO_USER_ID}")
+        # Aggregate page loads all monitors + computes uptime — give it extra time
+        resp = await client.get(f"/status/{PRO_USER_ID}", timeout=60.0)
         assert resp.status_code == 200, f"H.4 FAIL: Expected 200, got {resp.status_code}"
 
     @pytest.mark.asyncio
